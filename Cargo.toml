@@ -1,0 +1,15 @@
+[package]
+name = "tgbot"
+description = "A Telegram Bot library"
+version = "0.1.0"
+authors = ["Ross Nomann <rossnomann@protonmail.com>"]
+edition = "2018"
+readme = "README.md"
+license = "MIT"
+documentation = "https://docs.rs/tgbot"
+repository = "https://github.com/rossnomann/tgbot"
+
+[badges]
+travis-ci = { repository = "rossnomann/tgbot", branch = "master" }
+
+[dependencies]
