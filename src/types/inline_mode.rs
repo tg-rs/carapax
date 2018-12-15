@@ -1,4 +1,4 @@
-use crate::types::inline_keyboard_markup::InlineKeyboardMarkup;
+use crate::types::keyboards::InlineKeyboardMarkup;
 use crate::types::location::Location;
 use crate::types::primitive::{Float, Integer};
 use crate::types::user::User;
