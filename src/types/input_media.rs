@@ -1,5 +1,20 @@
 use crate::types::primitive::{Integer, ParseMode};
 
+/// This object represents the content of a media message to be sent.
+#[derive(Debug)]
+pub enum InputMedia {
+    /// Animation file
+    Animation(InputMediaAnimation),
+    /// Audio file
+    Audio(InputMediaAudio),
+    /// A general file
+    Document(InputMediaDocument),
+    /// A photo
+    Photo(InputMediaPhoto),
+    /// Video file
+    Video(InputMediaVideo),
+}
+
 /// Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent.
 #[derive(Debug)]
 pub struct InputMediaAnimation {
@@ -24,7 +39,7 @@ pub struct InputMediaAnimation {
     /// as a new file, so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>.
-    // pub thumb: Option<InputFile | String>, // TODO
+    pub thumb: Option<String>,
     /// Caption of the animation to be sent, 0-1024 characters
     pub caption: Option<String>,
     /// Parse mode
@@ -59,7 +74,7 @@ pub struct InputMediaAudio {
     /// so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>.
-    // pub thumb: Option<InputFile | String>, // TODO
+    pub thumb: Option<String>,
     /// Caption of the audio to be sent, 0-1024 characters
     pub caption: Option<String>,
     /// Parse mode
@@ -94,7 +109,7 @@ pub struct InputMediaDocument {
     /// so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>.
-    // pub thumb: Option<InputFile | String>, // TODO
+    pub thumb: Option<String>,
     /// Caption of the document to be sent, 0-1024 characters
     pub caption: Option<String>,
     /// Parse mode
@@ -138,7 +153,7 @@ pub struct InputMediaVideo {
     /// so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>.
-    // pub thumb: Option<InputFile | String>, // TODO
+    pub thumb: Option<String>,
     /// Caption of the video to be sent, 0-1024 characters
     pub caption: Option<String>,
     /// Parse mode
