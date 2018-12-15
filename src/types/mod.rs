@@ -1,4 +1,3 @@
-mod callback_query;
 mod chat;
 mod contact;
 mod force_reply;
@@ -15,7 +14,6 @@ mod response_parameters;
 mod update;
 mod user;
 
-pub use self::callback_query::CallbackQuery;
 pub use self::chat::*;
 pub use self::contact::Contact;
 pub use self::force_reply::ForceReply;

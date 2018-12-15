@@ -1,5 +1,5 @@
-use crate::types::callback_query::CallbackQuery;
 use crate::types::inline_mode::{ChosenInlineResult, InlineQuery};
+use crate::types::keyboards::CallbackQuery;
 use crate::types::message::Message;
 use crate::types::payments::{PreCheckoutQuery, ShippingQuery};
 use crate::types::primitive::Integer;
