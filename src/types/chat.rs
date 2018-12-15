@@ -7,8 +7,8 @@ use crate::types::user::User;
 pub struct Chat {
     /// Unique identifier for this chat.
     pub id: Integer,
-    /// Type of chat, can be either “private”, “group”, “supergroup” or “channel”
-    pub kind: String, // TODO: type, enum
+    /// Type of chat
+    pub kind: ChatType, // TODO: rename to type
     /// Title, for supergroups, channels and group chats
     pub title: Option<String>,
     /// Username, for private chats, supergroups and channels if available
@@ -31,6 +31,20 @@ pub struct Chat {
     pub sticker_set_name: Option<String>,
     /// True, if the bot can change the group sticker set. Returned only in getChat.
     pub can_set_sticker_set: Option<bool>,
+}
+
+/// Type of chat
+/// Can be either “private”, “group”, “supergroup” or “channel”
+#[derive(Debug)]
+pub enum ChatType {
+    /// Private chat
+    Private,
+    /// Group chat
+    Group,
+    /// Supergroup chat
+    Supergroup,
+    /// Channel
+    Channel,
 }
 
 /// This object contains information about one member of a chat.
