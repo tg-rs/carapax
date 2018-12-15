@@ -1,9 +1,8 @@
 use crate::types::callback_query::CallbackQuery;
 use crate::types::inline_mode::{ChosenInlineResult, InlineQuery};
 use crate::types::message::Message;
-use crate::types::pre_checkout_query::PreCheckoutQuery;
+use crate::types::payments::{PreCheckoutQuery, ShippingQuery};
 use crate::types::primitive::Integer;
-use crate::types::shipping_query::ShippingQuery;
 
 /// This object represents an incoming update.
 /// At most one of the optional parameters can be present in any given update.
