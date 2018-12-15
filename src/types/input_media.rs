@@ -1,4 +1,4 @@
-use crate::types::primitive::Integer;
+use crate::types::primitive::{Integer, ParseMode};
 
 /// Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent.
 #[derive(Debug)]
@@ -27,11 +27,8 @@ pub struct InputMediaAnimation {
     // pub thumb: Option<InputFile | String>, // TODO
     /// Caption of the animation to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>, // TODO: enum
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Animation width
     pub width: Option<Integer>,
     /// Animation height
@@ -65,11 +62,8 @@ pub struct InputMediaAudio {
     // pub thumb: Option<InputFile | String>, // TODO
     /// Caption of the audio to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>, // TODO: enum
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Duration of the audio in seconds
     pub duration: Option<Integer>,
     /// Performer of the audio
@@ -103,11 +97,8 @@ pub struct InputMediaDocument {
     // pub thumb: Option<InputFile | String>, // TODO
     /// Caption of the document to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>, // TODO: enum
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
 }
 
 /// Represents a photo to be sent.
@@ -124,10 +115,8 @@ pub struct InputMediaPhoto {
     pub media: String,
     /// Caption of the photo to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show bold, italic,
-    /// fixed-width text or inline URLs in the media caption.
-    pub parse_mode: Option<String>, // TODO: enum
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
 }
 
 /// Represents a video to be sent.
@@ -152,11 +141,8 @@ pub struct InputMediaVideo {
     // pub thumb: Option<InputFile | String>, // TODO
     /// Caption of the video to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>, // TODO: enum
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Video width
     pub width: Option<Integer>,
     /// Video height

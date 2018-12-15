@@ -1,6 +1,6 @@
 use crate::types::keyboards::InlineKeyboardMarkup;
 use crate::types::location::Location;
-use crate::types::primitive::{Float, Integer};
+use crate::types::primitive::{Float, Integer, ParseMode};
 use crate::types::user::User;
 
 /// This object represents an incoming inline query.
@@ -62,11 +62,8 @@ pub struct InlineQueryResultAudio {
     pub title: String,
     /// Caption, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Performer
     pub performer: Option<String>,
     /// Audio duration in seconds
@@ -92,11 +89,8 @@ pub struct InlineQueryResultCachedAudio {
     pub audio_file_id: String,
     /// Caption, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the audio
@@ -123,11 +117,8 @@ pub struct InlineQueryResultCachedDocument {
     pub description: Option<String>,
     /// Caption of the document to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the file
@@ -152,11 +143,8 @@ pub struct InlineQueryResultCachedGif {
     pub title: Option<String>,
     /// Caption of the GIF file to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text
-    /// or inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the GIF animation
@@ -183,11 +171,8 @@ pub struct InlineQueryResultCachedMpeg4Gif {
     pub title: Option<String>,
     /// Caption of the MPEG-4 file to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the video animation
@@ -212,11 +197,8 @@ pub struct InlineQueryResultCachedPhoto {
     pub description: Option<String>,
     /// Caption of the photo to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the photo
@@ -261,11 +243,8 @@ pub struct InlineQueryResultCachedVideo {
     pub description: Option<String>,
     /// Caption of the video to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the video
@@ -291,11 +270,8 @@ pub struct InlineQueryResultCachedVoice {
     pub title: String,
     /// Caption, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the voice message
@@ -347,11 +323,8 @@ pub struct InlineQueryResultDocument {
     pub title: String,
     /// Caption of the document to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// A valid URL for the file
     pub document_url: String,
     /// Mime type of the content of the file, either “application/pdf” or “application/zip”
@@ -408,11 +381,8 @@ pub struct InlineQueryResultGif {
     pub title: Option<String>,
     /// Caption of the GIF file to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the GIF animation
@@ -478,11 +448,8 @@ pub struct InlineQueryResultMpeg4Gif {
     pub title: Option<String>,
     /// Caption of the MPEG-4 file to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the video animation
@@ -515,11 +482,8 @@ pub struct InlineQueryResultPhoto {
     pub description: Option<String>,
     /// Caption of the photo to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the photo
@@ -584,11 +548,8 @@ pub struct InlineQueryResultVideo {
     pub title: String,
     /// Caption of the video to be sent, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Video width
     pub video_width: Option<Integer>,
     /// Video height
@@ -621,11 +582,8 @@ pub struct InlineQueryResultVoice {
     pub title: String,
     /// Caption, 0-1024 characters
     pub caption: Option<String>,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in the media caption.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     /// Recording duration in seconds
     pub voice_duration: Option<Integer>,
     /// Inline keyboard attached to the message
@@ -652,11 +610,8 @@ pub enum InputMessageContent {
 pub struct InputTextMessageContent {
     /// Text of the message to be sent, 1-4096 characters
     pub message_text: String,
-    /// Send Markdown or HTML,
-    /// if you want Telegram apps to show
-    /// bold, italic, fixed-width text or
-    /// inline URLs in your bot's message.
-    pub parse_mode: Option<String>,
+    /// Parse mode
+    pub parse_mode: Option<ParseMode>,
     ///  Disables link previews for links in the sent message
     pub disable_web_page_preview: Option<bool>,
 }
