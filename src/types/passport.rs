@@ -3,7 +3,7 @@ use crate::types::primitive::Integer;
 /// Contains information about
 /// Telegram Passport data
 /// shared with the bot by the user.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportData {
     /// Array with information about documents
     /// and other Telegram Passport elements
@@ -16,7 +16,7 @@ pub struct PassportData {
 /// This object represents a file uploaded to Telegram Passport.
 /// Currently all Telegram Passport files are in JPEG
 /// format when decrypted and don't exceed 10MB.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportFile {
     /// Unique identifier for this file
     pub file_id: String,
@@ -29,7 +29,7 @@ pub struct PassportFile {
 /// Contains information about documents or
 /// other Telegram Passport elements
 /// shared with the bot by the user.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct EncryptedPassportElement {
     /// Element type.
     /// One of
@@ -97,7 +97,7 @@ pub struct EncryptedPassportElement {
 /// and authenticating EncryptedPassportElement.
 /// See the Telegram Passport Documentation for a complete description
 /// of the data decryption and authentication processes.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct EncryptedCredentials {
     /// Base64-encoded encrypted JSON-serialized data
     /// with unique user's payload,
@@ -115,7 +115,7 @@ pub struct EncryptedCredentials {
 /// This object represents an error in the Telegram Passport
 /// element which was submitted that should
 /// be resolved by the user.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum PassportElementError {
     /// Represents an issue in one of the data fields that was provided by the user.
     /// The error is considered resolved when the field's value changes.
@@ -154,7 +154,7 @@ pub enum PassportElementError {
 
 /// Represents an issue in one of the data fields that was provided by the user.
 /// The error is considered resolved when the field's value changes.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportElementErrorDataField {
     /// Error source, must be data
     pub source: String,
@@ -173,7 +173,7 @@ pub struct PassportElementErrorDataField {
 /// Represents an issue with the front side of a document.
 /// The error is considered resolved when the file
 /// with the front side of the document changes.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportElementErrorFrontSide {
     /// Error source, must be front_side
     pub source: String,
@@ -191,7 +191,7 @@ pub struct PassportElementErrorFrontSide {
 /// Represents an issue with the reverse side of a document.
 /// The error is considered resolved when the
 /// file with reverse side of the document changes.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportElementErrorReverseSide {
     /// Error source, must be reverse_side
     pub source: String,
@@ -206,7 +206,7 @@ pub struct PassportElementErrorReverseSide {
 
 /// Represents an issue with the selfie with a document.
 /// The error is considered resolved when the file with the selfie changes.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportElementErrorSelfie {
     /// Error source, must be selfie
     pub source: String,
@@ -224,7 +224,7 @@ pub struct PassportElementErrorSelfie {
 /// Represents an issue with a document scan.
 /// The error is considered resolved when
 /// the file with the document scan changes.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportElementErrorFile {
     /// Error source, must be file
     pub source: String,
@@ -243,7 +243,7 @@ pub struct PassportElementErrorFile {
 /// Represents an issue with a list of scans.
 /// The error is considered resolved when
 /// the list of files containing the scans changes.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportElementErrorFiles {
     /// Error source, must be files
     pub source: String,
@@ -262,7 +262,7 @@ pub struct PassportElementErrorFiles {
 /// Represents an issue with one of the files that constitute
 /// the translation of a document.
 /// The error is considered resolved when the file changes.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportElementErrorTranslationFile {
     /// Error source, must be translation_file
     pub source: String,
@@ -282,7 +282,7 @@ pub struct PassportElementErrorTranslationFile {
 /// Represents an issue with the translated version of a document.
 /// The error is considered resolved when a file
 /// with the document translation change.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportElementErrorTranslationFiles {
     /// Error source, must be translation_files
     pub source: String,
@@ -301,7 +301,7 @@ pub struct PassportElementErrorTranslationFiles {
 
 /// Represents an issue in an unspecified place.
 /// The error is considered resolved when new data is added.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PassportElementErrorUnspecified {
     /// Error source, must be unspecified
     pub source: String,

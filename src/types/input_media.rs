@@ -1,7 +1,7 @@
 use crate::types::primitive::{Integer, ParseMode};
 
 /// This object represents the content of a media message to be sent.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum InputMedia {
     /// Animation file
     Animation(InputMediaAnimation),
@@ -16,7 +16,7 @@ pub enum InputMedia {
 }
 
 /// Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct InputMediaAnimation {
     /// Type of the result, must be animation
     pub kind: String, // TODO: rename to type
@@ -53,7 +53,7 @@ pub struct InputMediaAnimation {
 }
 
 /// Represents an audio file to be treated as music to be sent.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct InputMediaAudio {
     /// Type of the result, must be audio
     pub kind: String, // TODO: rename to type
@@ -88,7 +88,7 @@ pub struct InputMediaAudio {
 }
 
 /// Represents a general file to be sent.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct InputMediaDocument {
     /// Type of the result, must be document
     pub kind: String, // TODO: rename to type
@@ -117,7 +117,7 @@ pub struct InputMediaDocument {
 }
 
 /// Represents a photo to be sent.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct InputMediaPhoto {
     /// Type of the result, must be photo
     pub kind: String, // TODO: rename to type
@@ -135,7 +135,7 @@ pub struct InputMediaPhoto {
 }
 
 /// Represents a video to be sent.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct InputMediaVideo {
     /// Type of the result, must be video
     pub kind: String, // TODO: rename to type

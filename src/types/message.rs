@@ -11,7 +11,7 @@ use crate::types::primitive::Integer;
 use crate::types::user::User;
 
 /// This object represents a message.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Message {
     /// Unique message identifier inside this chat
     pub message_id: Integer,
@@ -117,7 +117,7 @@ pub struct Message {
 
 /// This object represents one special entity in a text message.
 /// For example, hashtags, usernames, URLs, etc.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct MessageEntity {
     /// Type of the entity.
     pub kind: MessageEntityKind, // TODO: rename to type
@@ -132,7 +132,7 @@ pub struct MessageEntity {
 }
 
 /// Type of the message entity.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum MessageEntityKind {
     /// Bold text (bold)
     Bold,

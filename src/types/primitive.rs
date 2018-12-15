@@ -8,7 +8,7 @@ pub type Float = f32;
 /// if you want Telegram apps to show
 /// bold, italic, fixed-width text or
 /// inline URLs in the media caption.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum ParseMode {
     /// HTML
     Html,

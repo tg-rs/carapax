@@ -2,7 +2,7 @@ use crate::types::location::Location;
 use crate::types::primitive::{Float, Integer};
 
 /// This object represents an animation file (GIF or H.264/MPEG-4 AVC video without sound).
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Animation {
     /// Unique file identifier
     pub file_id: String,
@@ -23,7 +23,7 @@ pub struct Animation {
 }
 
 /// This object represents an audio file to be treated as music by the Telegram clients.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Audio {
     /// Unique identifier for this file
     pub file_id: String,
@@ -42,7 +42,7 @@ pub struct Audio {
 }
 
 /// This object represents a general file (as opposed to photos, voice messages and audio files).
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Document {
     /// Unique file identifier
     pub file_id: String,
@@ -61,7 +61,7 @@ pub struct Document {
 /// It is guaranteed that the link will be valid for at least 1 hour.
 /// When the link expires, a new one can be requested by calling getFile.
 /// Maximum file size to download is 20 MB
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct File {
     /// Unique identifier for this file
     pub file_id: String,
@@ -73,7 +73,7 @@ pub struct File {
 }
 
 /// This object describes the position on faces where a mask should be placed by default.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct MaskPosition {
     /// The part of the face relative
     /// to which the mask should be placed.
@@ -98,7 +98,7 @@ pub struct MaskPosition {
 
 /// The part of the face relative
 /// to which the mask should be placed.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum MaskPositionPoint {
     /// “forehead”
     Forehead,
@@ -111,7 +111,7 @@ pub enum MaskPositionPoint {
 }
 
 /// This object represents one size of a photo or a file / sticker thumbnail.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PhotoSize {
     /// Unique identifier for this file
     pub file_id: String,
@@ -124,7 +124,7 @@ pub struct PhotoSize {
 }
 
 /// This object represents a sticker.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Sticker {
     /// Unique identifier for this file
     pub file_id: String,
@@ -145,7 +145,7 @@ pub struct Sticker {
 }
 
 /// This object represents a sticker set.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct StickerSet {
     /// Sticker set name
     pub name: String,
@@ -158,7 +158,7 @@ pub struct StickerSet {
 }
 
 /// This object represents a venue.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Venue {
     /// Venue location
     pub location: Location,
@@ -175,7 +175,7 @@ pub struct Venue {
 }
 
 /// This object represents a video file.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Video {
     /// Unique identifier for this file
     pub file_id: String,
@@ -194,7 +194,7 @@ pub struct Video {
 }
 
 /// This object represents a video message
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct VideoNote {
     /// Unique identifier for this file
     pub file_id: String,
@@ -209,7 +209,7 @@ pub struct VideoNote {
 }
 
 /// This object represents a voice note.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Voice {
     /// Unique identifier for this file
     file_id: String,

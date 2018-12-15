@@ -6,7 +6,7 @@ use crate::types::user::User;
 /// This object represents a game.
 /// Use BotFather to create and edit games,
 /// their short names will act as unique identifiers.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Game {
     /// Title of the game
     pub title: String,
@@ -27,7 +27,7 @@ pub struct Game {
 }
 
 /// This object represents one row of the high scores table for a game.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct GameHighScore {
     /// Position in high score table for the game
     pub position: Integer,

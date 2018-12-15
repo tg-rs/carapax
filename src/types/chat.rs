@@ -3,7 +3,7 @@ use crate::types::primitive::Integer;
 use crate::types::user::User;
 
 /// This object represents a chat.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Chat {
     /// Unique identifier for this chat.
     pub id: Integer,
@@ -35,7 +35,7 @@ pub struct Chat {
 
 /// Type of chat
 /// Can be either “private”, “group”, “supergroup” or “channel”
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum ChatType {
     /// Private chat
     Private,
@@ -48,7 +48,7 @@ pub enum ChatType {
 }
 
 /// This object contains information about one member of a chat.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ChatMember {
     /// Information about the user
     pub user: User,
@@ -114,7 +114,7 @@ pub struct ChatMember {
 
 /// Status of a chat member
 /// Can be “creator”, “administrator”, “member”, “restricted”, “left” or “kicked”
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum ChatMemberStatus {
     /// User is admin in a chat
     Administrator,
@@ -131,7 +131,7 @@ pub enum ChatMemberStatus {
 }
 
 /// This object represents a chat photo.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ChatPhoto {
     /// Unique file identifier of small (160x160) chat photo.
     /// This file_id can be used only for photo download.

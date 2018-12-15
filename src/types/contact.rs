@@ -1,7 +1,7 @@
 use crate::types::primitive::Integer;
 
 /// This object represents a phone contact.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Contact {
     /// Contact's phone number
     pub phone_number: String,

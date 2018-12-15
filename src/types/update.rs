@@ -6,7 +6,7 @@ use crate::types::primitive::Integer;
 
 /// This object represents an incoming update.
 /// At most one of the optional parameters can be present in any given update.
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Update {
     /// The update‘s unique identifier.
     /// Update identifiers start from a certain positive number and increase sequentially.
