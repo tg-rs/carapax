@@ -117,7 +117,7 @@ pub struct Message {
 
 /// This object represents one special entity in a text message.
 /// For example, hashtags, usernames, URLs, etc.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct MessageEntity {
     /// Type of the entity.
     pub kind: MessageEntityKind, // TODO: rename to type
@@ -132,7 +132,7 @@ pub struct MessageEntity {
 }
 
 /// Type of the message entity.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub enum MessageEntityKind {
     /// Bold text (bold)
     Bold,

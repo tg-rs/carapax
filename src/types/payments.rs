@@ -2,7 +2,7 @@ use crate::types::primitive::Integer;
 use crate::types::user::User;
 
 /// This object contains basic information about an invoice.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct Invoice {
     /// Product name
     pub title: String,
@@ -22,7 +22,7 @@ pub struct Invoice {
 }
 
 /// This object represents a portion of the price for goods or services.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct LabeledPrice {
     /// Portion label
     pub label: String,
@@ -37,7 +37,7 @@ pub struct LabeledPrice {
 }
 
 /// This object represents information about an order.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct OrderInfo {
     /// User name
     pub name: Option<String>,
@@ -50,7 +50,7 @@ pub struct OrderInfo {
 }
 
 /// This object contains information about an incoming pre-checkout query.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct PreCheckoutQuery {
     /// Unique query identifier
     pub id: String,
@@ -75,7 +75,7 @@ pub struct PreCheckoutQuery {
 }
 
 /// This object represents a shipping address.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct ShippingAddress {
     /// ISO 3166-1 alpha-2 country code
     pub country_code: String,
@@ -92,7 +92,7 @@ pub struct ShippingAddress {
 }
 
 /// This object represents one shipping option.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct ShippingOption {
     /// Shipping option identifier
     pub id: String,
@@ -103,7 +103,7 @@ pub struct ShippingOption {
 }
 
 /// This object contains information about an incoming shipping query.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct ShippingQuery {
     /// Unique query identifier
     pub id: String,
@@ -116,7 +116,7 @@ pub struct ShippingQuery {
 }
 
 /// This object contains basic information about a successful payment.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct SuccessfulPayment {
     /// Three-letter ISO 4217 currency code
     pub currency: String,

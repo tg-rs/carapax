@@ -1,7 +1,7 @@
 use crate::types::primitive::Float;
 
 /// This object represents a point on the map.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct Location {
     /// Longitude as defined by sender
     pub longitude: Float,

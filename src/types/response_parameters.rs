@@ -1,7 +1,7 @@
 use crate::types::primitive::Integer;
 
 /// Contains information about why a request was unsuccessful.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct ResponseParameters {
     /// The group has been migrated to a supergroup with the specified identifier.
     migrate_to_chat_id: Option<Integer>,

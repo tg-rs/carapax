@@ -5,7 +5,7 @@ use crate::types::user::User;
 
 /// This object represents an incoming inline query.
 /// When the user sends an empty query, your bot could return some default or trending results.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct InlineQuery {
     /// Unique identifier for this query
     pub id: String,
@@ -20,7 +20,7 @@ pub struct InlineQuery {
 }
 
 /// Represents a link to an article or web page.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultArticle {
     /// Type of the result, must be article
     pub kind: String, // TODO: rename to type
@@ -50,7 +50,7 @@ pub struct InlineQueryResultArticle {
 /// By default, this audio file will be sent by the user.
 /// Alternatively, you can use input_message_content to send
 /// a message with the specified content instead of the audio.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultAudio {
     /// Type of the result, must be audio
     pub kind: String, // TODO: rename to type
@@ -79,7 +79,7 @@ pub struct InlineQueryResultAudio {
 /// By default, this audio file will be sent by the user.
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the audio.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultCachedAudio {
     /// Type of the result, must be audio
     pub kind: String, // TODO: rename to type
@@ -103,7 +103,7 @@ pub struct InlineQueryResultCachedAudio {
 /// by the user with an optional caption.
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the file.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultCachedDocument {
     /// Type of the result, must be document
     pub kind: String, // TODO: rename to type
@@ -131,7 +131,7 @@ pub struct InlineQueryResultCachedDocument {
 /// by the user with an optional caption.
 /// Alternatively, you can use input_message_content to send
 /// a message with specified content instead of the animation.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultCachedGif {
     /// Type of the result, must be gif
     pub kind: String, // TODO: rename to type
@@ -159,7 +159,7 @@ pub struct InlineQueryResultCachedGif {
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content
 /// instead of the animation.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultCachedMpeg4Gif {
     /// Type of the result, must be mpeg4_gif
     pub kind: String, // TODO: rename to type
@@ -183,7 +183,7 @@ pub struct InlineQueryResultCachedMpeg4Gif {
 /// By default, this photo will be sent by the user with an optional caption.
 /// Alternatively, you can use input_message_content to send
 /// a message with the specified content instead of the photo.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultCachedPhoto {
     /// Type of the result, must be photo
     pub kind: String, // TODO: rename to type
@@ -209,7 +209,7 @@ pub struct InlineQueryResultCachedPhoto {
 /// By default, this sticker will be sent by the user.
 /// Alternatively, you can use input_message_content to
 /// send a message with the specified content instead of the sticker.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultCachedSticker {
     /// Type of the result, must be sticker
     pub kind: String, // TODO: rename to type
@@ -229,7 +229,7 @@ pub struct InlineQueryResultCachedSticker {
 /// will be sent by the user with an optional caption.
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the video.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultCachedVideo {
     /// Type of the result, must be video
     pub kind: String, // TODO: rename to type
@@ -258,7 +258,7 @@ pub struct InlineQueryResultCachedVideo {
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content
 /// instead of the voice message.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultCachedVoice {
     /// Type of the result, must be voice
     pub kind: String, // TODO: rename to type
@@ -282,7 +282,7 @@ pub struct InlineQueryResultCachedVoice {
 /// By default, this contact will be sent by the user.
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the contact.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultContact {
     /// Type of the result, must be contact
     pub kind: String, // TODO: rename to type
@@ -313,7 +313,7 @@ pub struct InlineQueryResultContact {
 /// Alternatively, you can use input_message_content to send a message
 /// with the specified content instead of the file.
 /// Currently, only .PDF and .ZIP files can be sent using this method.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultDocument {
     /// Type of the result, must be document
     pub kind: String, // TODO: rename to type
@@ -344,7 +344,7 @@ pub struct InlineQueryResultDocument {
 }
 
 /// Represents a Game.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultGame {
     /// Type of the result, must be game
     pub kind: String, // TODO: rename to type
@@ -361,7 +361,7 @@ pub struct InlineQueryResultGame {
 /// will be sent by the user with optional caption.
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the animation.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultGif {
     /// Type of the result, must be gif
     pub kind: String, // TODO: rename to type
@@ -393,7 +393,7 @@ pub struct InlineQueryResultGif {
 /// By default, the location will be sent by the user.
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the location.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultLocation {
     /// Type of the result, must be location
     pub kind: String, // TODO: rename to type
@@ -428,7 +428,7 @@ pub struct InlineQueryResultLocation {
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content
 /// instead of the animation.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultMpeg4Gif {
     /// Type of the result, must be mpeg4_gif
     pub kind: String, // TODO: rename to type
@@ -460,7 +460,7 @@ pub struct InlineQueryResultMpeg4Gif {
 /// By default, this photo will be sent by the user with optional caption.
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the photo.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultPhoto {
     /// Type of the result, must be photo
     pub kind: String, // TODO: rename to type
@@ -495,7 +495,7 @@ pub struct InlineQueryResultPhoto {
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content
 /// instead of the venue.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultVenue {
     /// Type of the result, must be venue
     pub kind: String, // TODO: rename to type
@@ -532,7 +532,7 @@ pub struct InlineQueryResultVenue {
 /// the specified content instead of the video.
 /// If an InlineQueryResultVideo message contains an embedded video (e.g., YouTube),
 /// you must replace its content using input_message_content.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultVideo {
     /// Type of the result, must be video
     pub kind: String, // TODO: rename to type
@@ -570,7 +570,7 @@ pub struct InlineQueryResultVideo {
 /// By default, this voice recording will be sent by the user.
 /// Alternatively, you can use input_message_content to send
 /// a message with the specified content instead of the the voice message.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InlineQueryResultVoice {
     /// Type of the result, must be voice
     pub kind: String, // TODO: rename to type
@@ -593,7 +593,7 @@ pub struct InlineQueryResultVoice {
 }
 
 /// This object represents the content of a message to be sent as a result of an inline query.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub enum InputMessageContent {
     /// Represents the content of a text message to be sent as the result of an inline query.
     Text(InputTextMessageContent),
@@ -606,7 +606,7 @@ pub enum InputMessageContent {
 }
 
 /// Represents the content of a text message to be sent as the result of an inline query.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InputTextMessageContent {
     /// Text of the message to be sent, 1-4096 characters
     pub message_text: String,
@@ -617,7 +617,7 @@ pub struct InputTextMessageContent {
 }
 
 /// Represents the content of a location message to be sent as the result of an inline query.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InputLocationMessageContent {
     /// Latitude of the location in degrees
     pub latitude: Float,
@@ -628,7 +628,7 @@ pub struct InputLocationMessageContent {
 }
 
 /// Represents the content of a venue message to be sent as the result of an inline query.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InputVenueMessageContent {
     /// Latitude of the venue in degrees
     pub latitude: Float,
@@ -647,7 +647,7 @@ pub struct InputVenueMessageContent {
 }
 
 /// Represents the content of a contact message to be sent as the result of an inline query.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct InputContactMessageContent {
     /// Contact's phone number
     pub phone_number: String,
@@ -660,7 +660,7 @@ pub struct InputContactMessageContent {
 }
 
 /// Represents a result of an inline query that was chosen by the user and sent to their chat partner.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct ChosenInlineResult {
     /// The unique identifier for the result that was chosen
     pub result_id: String,
