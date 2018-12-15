@@ -3,7 +3,7 @@ use crate::types::audio::Audio;
 use crate::types::chat::Chat;
 use crate::types::contact::Contact;
 use crate::types::document::Document;
-use crate::types::game::Game;
+use crate::types::games::Game;
 use crate::types::location::Location;
 use crate::types::message_entity::MessageEntity;
 use crate::types::payments::{Invoice, SuccessfulPayment};

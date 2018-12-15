@@ -1,6 +1,8 @@
 use crate::types::animation::Animation;
 use crate::types::message_entity::MessageEntity;
 use crate::types::photo_size::PhotoSize;
+use crate::types::primitive::Integer;
+use crate::types::user::User;
 
 /// This object represents a game.
 /// Use BotFather to create and edit games,
@@ -23,4 +25,15 @@ pub struct Game {
     /// Animation that will be displayed in the game message in chats.
     /// Upload via BotFather
     pub animation: Option<Animation>,
+}
+
+/// This object represents one row of the high scores table for a game.
+#[derive(Debug)]
+pub struct GameHighScore {
+    /// Position in high score table for the game
+    pub position: Integer,
+    /// User
+    pub user: User,
+    /// Score
+    pub score: Integer,
 }
