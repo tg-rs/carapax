@@ -53,8 +53,7 @@ pub struct ChatMember {
     /// Information about the user
     pub user: User,
     /// The member's status in the chat.
-    /// Can be “creator”, “administrator”, “member”, “restricted”, “left” or “kicked”
-    pub status: String, // TODO: enum
+    pub status: ChatMemberStatus,
     /// Restricted and kicked only.
     /// Date when restrictions will be lifted for this user, unix time
     pub until_date: Option<Integer>,
@@ -111,6 +110,24 @@ pub struct ChatMember {
     /// True, if user may add web page previews
     /// to his messages, implies can_send_media_messages
     pub can_add_web_page_previews: Option<bool>,
+}
+
+/// Status of a chat member
+/// Can be “creator”, “administrator”, “member”, “restricted”, “left” or “kicked”
+#[derive(Debug)]
+pub enum ChatMemberStatus {
+    /// User is admin in a chat
+    Administrator,
+    /// User has created a chat
+    Creator,
+    /// User has kicked from a chat
+    Kicked,
+    /// User has left a chat
+    Left,
+    /// User is a member of chat
+    Member,
+    /// User is in restricted list
+    Restricted,
 }
 
 /// This object represents a chat photo.
