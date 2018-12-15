@@ -77,8 +77,7 @@ pub struct File {
 pub struct MaskPosition {
     /// The part of the face relative
     /// to which the mask should be placed.
-    /// One of “forehead”, “eyes”, “mouth”, or “chin”.
-    pub point: String, // TODO: enum,
+    pub point: MaskPositionPoint,
     /// Shift by X-axis measured in widths
     /// of the mask scaled to the face size,
     /// from left to right.
@@ -95,6 +94,20 @@ pub struct MaskPosition {
     /// Mask scaling coefficient.
     /// For example, 2.0 means double size.
     pub scale: Float,
+}
+
+/// The part of the face relative
+/// to which the mask should be placed.
+#[derive(Debug)]
+pub enum MaskPositionPoint {
+    /// “forehead”
+    Forehead,
+    /// “eyes”
+    Eyes,
+    /// “mouth”
+    Mouth,
+    /// “chin”
+    Chin,
 }
 
 /// This object represents one size of a photo or a file / sticker thumbnail.
