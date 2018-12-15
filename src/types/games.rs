@@ -1,5 +1,5 @@
 use crate::types::media::{Animation, PhotoSize};
-use crate::types::message_entity::MessageEntity;
+use crate::types::message::MessageEntity;
 use crate::types::primitive::Integer;
 use crate::types::user::User;
 
