@@ -11,7 +11,7 @@ use crate::types::primitive::Integer;
 use crate::types::user::User;
 
 /// This object represents a message.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct Message {
     /// Unique message identifier inside this chat
     pub message_id: Integer,

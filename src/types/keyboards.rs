@@ -8,7 +8,7 @@ use crate::types::user::User;
 /// to a message sent via the bot (in inline mode),
 /// the field inline_message_id will be present.
 /// Exactly one of the fields data or game_short_name will be present.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct CallbackQuery {
     /// Unique identifier for this query
     pub id: String,

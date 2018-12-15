@@ -1,54 +1,195 @@
 use crate::types::message::Message;
 use crate::types::primitive::Integer;
 use crate::types::user::User;
+use serde::de::{Deserialize, Deserializer, Error};
 
-/// This object represents a chat.
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Chat {
-    /// Unique identifier for this chat.
+/// This object represents a chat
+#[derive(Debug)]
+pub enum Chat {
+    /// Channel
+    Channel(ChannelChat),
+    /// Group
+    Group(GroupChat),
+    /// Private chat
+    Private(PrivateChat),
+    /// Supergroup
+    Supergroup(SupergroupChat),
+}
+
+impl<'de> Deserialize<'de> for Chat {
+    fn deserialize<D>(deserializer: D) -> Result<Chat, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw_chat: RawChat = Deserialize::deserialize(deserializer)?;
+        macro_rules! required {
+            ($name:ident) => {{
+                match raw_chat.$name {
+                    Some(val) => val,
+                    None => return Err(D::Error::missing_field(stringify!($name))),
+                }
+            }};
+        };
+        Ok(match raw_chat.kind {
+            RawChatKind::Channel => Chat::Channel(ChannelChat {
+                id: raw_chat.id,
+                username: raw_chat.username,
+                title: required!(title),
+                description: raw_chat.description,
+                photo: raw_chat.photo,
+                pinned_message: raw_chat.pinned_message,
+                invite_link: raw_chat.invite_link,
+            }),
+            RawChatKind::Group => Chat::Group(GroupChat {
+                id: raw_chat.id,
+                title: required!(title),
+                all_members_are_administrators: required!(all_members_are_administrators),
+                photo: raw_chat.photo,
+                pinned_message: raw_chat.pinned_message,
+                invite_link: raw_chat.invite_link,
+            }),
+            RawChatKind::Private => Chat::Private(PrivateChat {
+                id: raw_chat.id,
+                username: raw_chat.username,
+                first_name: required!(first_name),
+                last_name: raw_chat.last_name,
+                photo: raw_chat.photo,
+            }),
+            RawChatKind::Supergroup => Chat::Supergroup(SupergroupChat {
+                id: raw_chat.id,
+                username: required!(username),
+                title: required!(title),
+                description: raw_chat.description,
+                photo: raw_chat.photo,
+                pinned_message: raw_chat.pinned_message,
+                invite_link: raw_chat.invite_link,
+                sticker_set_name: raw_chat.sticker_set_name,
+                can_set_sticker_set: raw_chat.can_set_sticker_set,
+            }),
+        })
+    }
+}
+
+/// This object represents a channel
+#[derive(Debug)]
+pub struct ChannelChat {
+    /// Unique identifier for this chat
     pub id: Integer,
-    /// Type of chat
-    pub kind: ChatType, // TODO: rename to type
-    /// Title, for supergroups, channels and group chats
-    pub title: Option<String>,
-    /// Username, for private chats, supergroups and channels if available
+    /// Title
+    pub title: String,
+    /// Username of a channel
     pub username: Option<String>,
-    /// First name of the other party in a private chat
-    pub first_name: Option<String>,
-    /// Last name of the other party in a private chat
-    pub last_name: Option<String>,
-    /// True if a group has ‘All Members Are Admins’ enabled.
-    pub all_members_are_administrators: Option<bool>,
-    /// Chat photo. Returned only in getChat.
+    /// Chat photo
+    /// Returned only in getChat
     pub photo: Option<ChatPhoto>,
-    /// Description, for supergroups and channel chats. Returned only in getChat.
+    /// Description of a channel
+    /// Returned only in getChat.
     pub description: Option<String>,
-    /// Chat invite link, for supergroups and channel chats. Returned only in getChat.
+    /// Invite link
+    /// Returned only in getChat
     pub invite_link: Option<String>,
-    /// Pinned message, for supergroups and channel chats. Returned only in getChat.
+    /// Pinned message
+    /// Returned only in getChat
     pub pinned_message: Option<Box<Message>>,
-    /// For supergroups, name of group sticker set. Returned only in getChat.
+}
+
+/// This object represents a group
+#[derive(Debug)]
+pub struct GroupChat {
+    /// Unique identifier for this chat
+    pub id: Integer,
+    /// Title
+    pub title: String,
+    /// True if a group has ‘All Members Are Admins’ enabled
+    pub all_members_are_administrators: bool,
+    /// Chat photo
+    /// Returned only in getChat
+    pub photo: Option<ChatPhoto>,
+    /// Invite link
+    /// Returned only in getChat
+    pub invite_link: Option<String>,
+    /// Pinned message
+    /// Returned only in getChat
+    pub pinned_message: Option<Box<Message>>,
+}
+
+/// This object represents a private chat
+#[derive(Debug)]
+pub struct PrivateChat {
+    /// Unique identifier for this chat
+    pub id: Integer,
+    /// First name of the other party
+    pub first_name: String,
+    /// Last name of the other party
+    pub last_name: Option<String>,
+    /// Username of a chat
+    pub username: Option<String>,
+    /// Chat photo
+    /// Returned only in getChat
+    pub photo: Option<ChatPhoto>,
+}
+
+/// This object represents a supergroup
+#[derive(Debug)]
+pub struct SupergroupChat {
+    /// Unique identifier for this chat
+    pub id: Integer,
+    /// Title
+    pub title: String,
+    /// Username of a supergroup
+    pub username: String,
+    /// Photo of a supergroup
+    /// Returned only in getChat
+    pub photo: Option<ChatPhoto>,
+    /// Description of a supergroup
+    /// Returned only in getChat
+    pub description: Option<String>,
+    /// Invite link
+    /// Returned only in getChat
+    pub invite_link: Option<String>,
+    /// Pinned message
+    /// Returned only in getChat
+    pub pinned_message: Option<Box<Message>>,
+    /// For supergroups, name of group sticker set
+    /// Returned only in getChat
     pub sticker_set_name: Option<String>,
-    /// True, if the bot can change the group sticker set. Returned only in getChat.
+    /// True, if the bot can change the group sticker set
+    /// Returned only in getChat
     pub can_set_sticker_set: Option<bool>,
 }
 
-/// Type of chat
-/// Can be either “private”, “group”, “supergroup” or “channel”
-#[derive(Debug, Deserialize, Serialize)]
-pub enum ChatType {
-    /// Private chat
+#[derive(Debug, Deserialize)]
+struct RawChat {
+    id: Integer,
+    #[serde(rename = "type")]
+    kind: RawChatKind,
+    title: Option<String>,
+    username: Option<String>,
+    first_name: Option<String>,
+    last_name: Option<String>,
+    all_members_are_administrators: Option<bool>,
+    photo: Option<ChatPhoto>,
+    description: Option<String>,
+    invite_link: Option<String>,
+    pinned_message: Option<Box<Message>>,
+    sticker_set_name: Option<String>,
+    can_set_sticker_set: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+enum RawChatKind {
+    #[serde(rename = "private")]
     Private,
-    /// Group chat
+    #[serde(rename = "group")]
     Group,
-    /// Supergroup chat
+    #[serde(rename = "supergroup")]
     Supergroup,
-    /// Channel
+    #[serde(rename = "channel")]
     Channel,
 }
 
 /// This object contains information about one member of a chat.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub struct ChatMember {
     /// Information about the user
     pub user: User,
@@ -113,30 +254,235 @@ pub struct ChatMember {
 }
 
 /// Status of a chat member
-/// Can be “creator”, “administrator”, “member”, “restricted”, “left” or “kicked”
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub enum ChatMemberStatus {
     /// User is admin in a chat
+    #[serde(rename = "administrator")]
     Administrator,
     /// User has created a chat
+    #[serde(rename = "creator")]
     Creator,
     /// User has kicked from a chat
+    #[serde(rename = "kicked")]
     Kicked,
     /// User has left a chat
+    #[serde(rename = "left")]
     Left,
     /// User is a member of chat
+    #[serde(rename = "member")]
     Member,
     /// User is in restricted list
+    #[serde(rename = "restricted")]
     Restricted,
 }
 
-/// This object represents a chat photo.
-#[derive(Debug, Deserialize, Serialize)]
+/// This object represents a chat photo
+#[derive(Debug, Deserialize)]
 pub struct ChatPhoto {
-    /// Unique file identifier of small (160x160) chat photo.
-    /// This file_id can be used only for photo download.
+    /// Unique file identifier of small (160x160) chat photo
+    /// This file_id can be used only for photo download
     pub small_file_id: String,
-    /// Unique file identifier of big (640x640) chat photo.
-    /// This file_id can be used only for photo download.
+    /// Unique file identifier of big (640x640) chat photo
+    /// This file_id can be used only for photo download
     pub big_file_id: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deserialize_channel() {
+        let input = r#"{
+            "id": 1,
+            "type": "channel",
+            "title": "channeltitle",
+            "username": "channelusername",
+            "photo": {
+                "small_file_id": "smallfileid",
+                "big_file_id": "bigfileid"
+            },
+            "description": "channeldescription",
+            "invite_link": "channelinvitelink"
+        }"#;
+        // TODO: test pinned message
+        let chat: Chat = serde_json::from_str(input).unwrap();
+        if let Chat::Channel(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, String::from("channeltitle"));
+            assert_eq!(chat.username, Some(String::from("channelusername")));
+            let photo = chat.photo.unwrap();
+            assert_eq!(photo.small_file_id, String::from("smallfileid"));
+            assert_eq!(photo.big_file_id, String::from("bigfileid"));
+            assert_eq!(chat.description, Some(String::from("channeldescription")));
+            assert_eq!(chat.invite_link, Some(String::from("channelinvitelink")));
+        } else {
+            panic!("Unexpected chat: {:?}", chat);
+        }
+        let input = r#"{
+            "id": 1,
+            "type": "channel",
+            "title": "channeltitle"
+        }"#;
+        let chat: Chat = serde_json::from_str(input).unwrap();
+        if let Chat::Channel(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, String::from("channeltitle"));
+            assert_eq!(chat.username.is_none(), true);
+            assert_eq!(chat.photo.is_none(), true);
+            assert_eq!(chat.description.is_none(), true);
+            assert_eq!(chat.invite_link.is_none(), true);
+            assert_eq!(chat.pinned_message.is_none(), true);
+        } else {
+            panic!("Unexpected chat: {:?}", chat);
+        }
+    }
+
+    #[test]
+    fn test_deserialize_group() {
+        let input = r#"{
+            "id": 1,
+            "type": "group",
+            "title": "grouptitle",
+            "all_members_are_administrators": true,
+            "photo": {
+                "small_file_id": "smallfileid",
+                "big_file_id": "bigfileid"
+            },
+            "invite_link": "groupinvitelink"
+        }"#;
+        // TODO: test pinned message
+        let chat: Chat = serde_json::from_str(input).unwrap();
+        if let Chat::Group(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, String::from("grouptitle"));
+            assert_eq!(chat.all_members_are_administrators, true);
+            let photo = chat.photo.unwrap();
+            assert_eq!(photo.small_file_id, String::from("smallfileid"));
+            assert_eq!(photo.big_file_id, String::from("bigfileid"));
+            assert_eq!(chat.invite_link, Some(String::from("groupinvitelink")));
+        } else {
+            panic!("Unexpected chat: {:?}", chat);
+        }
+        let input = r#"{
+            "id": 1,
+            "type": "group",
+            "title": "grouptitle",
+            "all_members_are_administrators": false
+        }"#;
+        let chat: Chat = serde_json::from_str(input).unwrap();
+        if let Chat::Group(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, String::from("grouptitle"));
+            assert_eq!(chat.all_members_are_administrators, false);
+            assert_eq!(chat.photo.is_none(), true);
+            assert_eq!(chat.invite_link.is_none(), true);
+            assert_eq!(chat.pinned_message.is_none(), true);
+        } else {
+            panic!("Unexpected chat: {:?}", chat);
+        }
+    }
+
+    #[test]
+    fn test_deserialize_private() {
+        let input = r#"{
+            "id": 1,
+            "type": "private",
+            "username": "testusername",
+            "first_name": "testfirstname",
+            "last_name": "testlastname",
+            "photo": {
+                "small_file_id": "smallfileid",
+                "big_file_id": "bigfileid"
+            }
+        }"#;
+        let chat: Chat = serde_json::from_str(input).unwrap();
+        if let Chat::Private(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.username, Some(String::from("testusername")));
+            assert_eq!(chat.first_name, String::from("testfirstname"));
+            assert_eq!(chat.last_name, Some(String::from("testlastname")));
+            let photo = chat.photo.unwrap();
+            assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.big_file_id, "bigfileid");
+        } else {
+            panic!("Unexpected chat: {:?}", chat)
+        }
+
+        let input = r#"{
+            "id": 1,
+            "type": "private",
+            "first_name": "testfirstname"
+        }"#;
+        let chat: Chat = serde_json::from_str(input).unwrap();
+        if let Chat::Private(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.username.is_none(), true);
+            assert_eq!(chat.first_name, String::from("testfirstname"));
+            assert_eq!(chat.last_name.is_none(), true);
+            assert_eq!(chat.photo.is_none(), true);
+        } else {
+            panic!("Unexpected chat: {:?}", chat)
+        }
+    }
+
+    #[test]
+    fn test_deserialize_supergroup() {
+        let input = r#"{
+            "id": 1,
+            "type": "supergroup",
+            "title": "supergrouptitle",
+            "username": "supergroupusername",
+            "photo": {
+                "small_file_id": "smallfileid",
+                "big_file_id": "bigfileid"
+            },
+            "description": "supergroupdescription",
+            "invite_link": "supergroupinvitelink",
+            "sticker_set_name": "supergroupstickersetname",
+            "can_set_sticker_set": true
+        }"#;
+        // TODO: test pinned message
+        let chat: Chat = serde_json::from_str(input).unwrap();
+        if let Chat::Supergroup(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, String::from("supergrouptitle"));
+            assert_eq!(chat.username, String::from("supergroupusername"));
+            let photo = chat.photo.unwrap();
+            assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.big_file_id, "bigfileid");
+            assert_eq!(
+                chat.description,
+                Some(String::from("supergroupdescription"))
+            );
+            assert_eq!(chat.invite_link, Some(String::from("supergroupinvitelink")));
+            assert_eq!(
+                chat.sticker_set_name,
+                Some(String::from("supergroupstickersetname"))
+            );
+            assert_eq!(chat.can_set_sticker_set, Some(true));
+        } else {
+            panic!("Unexpected chat: {:?}", chat)
+        }
+        let input = r#"{
+            "id": 1,
+            "type": "supergroup",
+            "title": "supergrouptitle",
+            "username": "supergroupusername"
+        }"#;
+        let chat: Chat = serde_json::from_str(input).unwrap();
+        if let Chat::Supergroup(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, String::from("supergrouptitle"));
+            assert_eq!(chat.username, String::from("supergroupusername"));
+            assert_eq!(chat.photo.is_none(), true);
+            assert_eq!(chat.description.is_none(), true);
+            assert_eq!(chat.invite_link.is_none(), true);
+            assert_eq!(chat.sticker_set_name.is_none(), true);
+            assert_eq!(chat.can_set_sticker_set.is_none(), true);
+            assert_eq!(chat.pinned_message.is_none(), true);
+        } else {
+            panic!("Unexpected chat: {:?}", chat)
+        }
+    }
 }
