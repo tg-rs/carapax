@@ -1,4 +1,4 @@
-use crate::types::photo_size::PhotoSize;
+use crate::types::media::PhotoSize;
 use crate::types::primitive::Integer;
 
 /// This object represents a Telegram user or bot.
