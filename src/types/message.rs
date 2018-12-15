@@ -5,6 +5,7 @@ use crate::types::location::Location;
 use crate::types::media::{
     Animation, Audio, Document, PhotoSize, Sticker, Venue, Video, VideoNote, Voice,
 };
+use crate::types::passport::PassportData;
 use crate::types::payments::{Invoice, SuccessfulPayment};
 use crate::types::primitive::Integer;
 use crate::types::user::User;
@@ -110,8 +111,8 @@ pub struct Message {
     pub successful_payment: Option<SuccessfulPayment>,
     /// The domain name of the website on which the user has logged in.
     pub connected_website: Option<String>,
-    // Telegram Passport data
-    // pub passport_data: Option<PassportData> // TODO
+    /// Telegram Passport data
+    pub passport_data: Option<PassportData>,
 }
 
 /// This object represents one special entity in a text message.
