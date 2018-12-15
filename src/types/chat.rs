@@ -188,90 +188,185 @@ enum RawChatKind {
     Channel,
 }
 
-/// This object contains information about one member of a chat.
-#[derive(Debug, Deserialize)]
-pub struct ChatMember {
+/// This object contains information about one member of a chat
+#[derive(Debug)]
+pub enum ChatMember {
+    /// Chat admin
+    Administrator(ChatMemberAdministrator),
+    /// Chat creator
+    Creator(User),
+    /// Kicked user
+    Kicked(ChatMemberKicked),
+    /// Left user
+    Left(User),
+    /// Chat member
+    Member(User),
+    /// Restricted user
+    Restricted(ChatMemberRestricted),
+}
+
+impl ChatMember {
+    /// Returns a user object
+    pub fn user(&self) -> &User {
+        use self::ChatMember::*;
+        match self {
+            Administrator(ref admin) => &admin.user,
+            Creator(ref user) => user,
+            Kicked(ref kicked) => &kicked.user,
+            Left(ref user) => user,
+            Member(ref user) => user,
+            Restricted(ref restricted) => &restricted.user,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for ChatMember {
+    fn deserialize<D>(deserializer: D) -> Result<ChatMember, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw: RawChatMember = Deserialize::deserialize(deserializer)?;
+        macro_rules! required {
+            ($name:ident) => {{
+                match raw.$name {
+                    Some(val) => val,
+                    None => return Err(D::Error::missing_field(stringify!($name))),
+                }
+            }};
+        };
+        Ok(match raw.status {
+            RawChatMemberStatus::Administrator => {
+                ChatMember::Administrator(ChatMemberAdministrator {
+                    user: raw.user,
+                    can_be_edited: required!(can_be_edited),
+                    can_change_info: required!(can_change_info),
+                    can_post_messages: required!(can_post_messages),
+                    can_edit_messages: required!(can_edit_messages),
+                    can_delete_messages: required!(can_delete_messages),
+                    can_invite_users: required!(can_invite_users),
+                    can_restrict_members: required!(can_restrict_members),
+                    can_pin_messages: required!(can_pin_messages),
+                    can_promote_members: required!(can_promote_members),
+                })
+            }
+            RawChatMemberStatus::Creator => ChatMember::Creator(raw.user),
+            RawChatMemberStatus::Kicked => ChatMember::Kicked(ChatMemberKicked {
+                user: raw.user,
+                until_date: required!(until_date),
+            }),
+            RawChatMemberStatus::Left => ChatMember::Left(raw.user),
+            RawChatMemberStatus::Member => ChatMember::Member(raw.user),
+            RawChatMemberStatus::Restricted => ChatMember::Restricted(ChatMemberRestricted {
+                user: raw.user,
+                until_date: required!(until_date),
+                can_send_messages: required!(can_send_messages),
+                can_send_media_messages: required!(can_send_media_messages),
+                can_send_other_messages: required!(can_send_other_messages),
+                can_add_web_page_previews: required!(can_add_web_page_previews),
+            }),
+        })
+    }
+}
+
+/// Chat admin
+#[derive(Debug)]
+pub struct ChatMemberAdministrator {
     /// Information about the user
     pub user: User,
-    /// The member's status in the chat.
-    pub status: ChatMemberStatus,
-    /// Restricted and kicked only.
-    /// Date when restrictions will be lifted for this user, unix time
-    pub until_date: Option<Integer>,
-    /// Administrators only.
     /// True, if the bot is allowed
     /// to edit administrator privileges of that user
-    pub can_be_edited: Option<bool>,
-    /// Administrators only.
+    pub can_be_edited: bool,
     /// True, if the administrator can change
     /// the chat title, photo and other settings
-    pub can_change_info: Option<bool>,
-    /// Administrators only.
-    /// True, if the administrator can post in the channel, channels only
-    pub can_post_messages: Option<bool>,
-    /// Administrators only.
+    pub can_change_info: bool,
+    /// True, if the administrator can post
+    /// in the channel, channels only
+    pub can_post_messages: bool,
     /// True, if the administrator can edit messages
     /// of other users and can pin messages, channels only
-    pub can_edit_messages: Option<bool>,
-    /// Administrators only.
+    pub can_edit_messages: bool,
     /// True, if the administrator can delete messages of other users
-    pub can_delete_messages: Option<bool>,
-    /// Administrators only.
+    pub can_delete_messages: bool,
     /// True, if the administrator can invite new users to the chat
-    pub can_invite_users: Option<bool>,
-    /// Administrators only.
+    pub can_invite_users: bool,
     /// True, if the administrator can restrict, ban or unban chat members
-    pub can_restrict_members: Option<bool>,
-    /// Administrators only.
+    pub can_restrict_members: bool,
     /// True, if the administrator can pin messages, supergroups only
-    pub can_pin_messages: Option<bool>,
-    /// Administrators only.
+    pub can_pin_messages: bool,
     /// True, if the administrator can
     /// add new administrators with a subset
     /// of his own privileges or
     /// demote administrators that he has promoted,
     /// directly or indirectly
     /// (promoted by administrators that were appointed by the user)
-    pub can_promote_members: Option<bool>,
-    /// Restricted only.
+    pub can_promote_members: bool,
+}
+
+/// Kicked user
+#[derive(Debug)]
+pub struct ChatMemberKicked {
+    /// Information about the user
+    pub user: User,
+    /// Date when restrictions will be lifted for this user, unix time
+    pub until_date: Integer,
+}
+
+/// Restricted user
+#[derive(Debug)]
+pub struct ChatMemberRestricted {
+    /// Information about the user
+    pub user: User,
+    /// Date when restrictions will be lifted for this user, unix time
+    pub until_date: Integer,
     /// True, if the user can send
     /// text messages, contacts, locations and venues
-    pub can_send_messages: Option<bool>,
-    /// Restricted only.
+    pub can_send_messages: bool,
     /// True, if the user can send
     /// audios, documents, photos, videos,
     /// video notes and voice notes, implies can_send_messages
-    pub can_send_media_messages: Option<bool>,
-    /// Restricted only.
+    pub can_send_media_messages: bool,
     /// True, if the user can send
     /// animations, games, stickers
     /// and use inline bots, implies can_send_media_messages
-    pub can_send_other_messages: Option<bool>,
-    /// Restricted only.
+    pub can_send_other_messages: bool,
     /// True, if user may add web page previews
     /// to his messages, implies can_send_media_messages
-    pub can_add_web_page_previews: Option<bool>,
+    pub can_add_web_page_previews: bool,
 }
 
-/// Status of a chat member
+/// This object contains information about one member of a chat.
 #[derive(Debug, Deserialize)]
-pub enum ChatMemberStatus {
-    /// User is admin in a chat
+struct RawChatMember {
+    user: User,
+    status: RawChatMemberStatus,
+    until_date: Option<Integer>,
+    can_be_edited: Option<bool>,
+    can_change_info: Option<bool>,
+    can_post_messages: Option<bool>,
+    can_edit_messages: Option<bool>,
+    can_delete_messages: Option<bool>,
+    can_invite_users: Option<bool>,
+    can_restrict_members: Option<bool>,
+    can_pin_messages: Option<bool>,
+    can_promote_members: Option<bool>,
+    can_send_messages: Option<bool>,
+    can_send_media_messages: Option<bool>,
+    can_send_other_messages: Option<bool>,
+    can_add_web_page_previews: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+enum RawChatMemberStatus {
     #[serde(rename = "administrator")]
     Administrator,
-    /// User has created a chat
     #[serde(rename = "creator")]
     Creator,
-    /// User has kicked from a chat
     #[serde(rename = "kicked")]
     Kicked,
-    /// User has left a chat
     #[serde(rename = "left")]
     Left,
-    /// User is a member of chat
     #[serde(rename = "member")]
     Member,
-    /// User is in restricted list
     #[serde(rename = "restricted")]
     Restricted,
 }
@@ -483,6 +578,179 @@ mod tests {
             assert_eq!(chat.pinned_message.is_none(), true);
         } else {
             panic!("Unexpected chat: {:?}", chat)
+        }
+    }
+
+    #[test]
+    fn test_deserialize_chat_member_admin() {
+        let admin = r#"{
+            "status": "administrator",
+            "user": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "firstname",
+                "last_name": "lastname",
+                "username": "username",
+                "language_code": "RU"
+            },
+            "can_be_edited": true,
+            "can_change_info": false,
+            "can_post_messages": true,
+            "can_edit_messages": false,
+            "can_delete_messages": true,
+            "can_invite_users": false,
+            "can_restrict_members": true,
+            "can_pin_messages": false,
+            "can_promote_members": true
+        }"#;
+        let admin: ChatMember = serde_json::from_str(admin).unwrap();
+        if let ChatMember::Administrator(ref admin) = admin {
+            assert_eq!(admin.user.id, 1);
+            assert_eq!(admin.user.is_bot, false);
+            assert_eq!(admin.user.first_name, String::from("firstname"));
+            assert_eq!(admin.user.last_name, Some(String::from("lastname")));
+            assert_eq!(admin.user.username, Some(String::from("username")));
+            assert_eq!(admin.user.language_code, Some(String::from("RU")));
+            assert_eq!(admin.can_be_edited, true);
+            assert_eq!(admin.can_change_info, false);
+            assert_eq!(admin.can_post_messages, true);
+            assert_eq!(admin.can_edit_messages, false);
+            assert_eq!(admin.can_delete_messages, true);
+            assert_eq!(admin.can_invite_users, false);
+            assert_eq!(admin.can_restrict_members, true);
+            assert_eq!(admin.can_pin_messages, false);
+            assert_eq!(admin.can_promote_members, true);
+        } else {
+            panic!("Unexpected chat member: {:?}", admin);
+        }
+    }
+
+    #[test]
+    fn test_deserialize_chat_member_creator() {
+        let creator = r#"{
+            "status": "creator",
+            "user": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "firstname"
+            }
+        }"#;
+        let creator: ChatMember = serde_json::from_str(creator).unwrap();
+        if let ChatMember::Creator(ref creator) = creator {
+            assert_eq!(creator.id, 1);
+            assert_eq!(creator.is_bot, false);
+            assert_eq!(creator.first_name, String::from("firstname"));
+            assert_eq!(creator.last_name, None);
+            assert_eq!(creator.username, None);
+            assert_eq!(creator.language_code, None);
+        } else {
+            panic!("Unexpected chat member: {:?}", creator);
+        }
+    }
+
+    #[test]
+    fn test_deserialize_chat_member_kicked() {
+        let kicked = r#"{
+            "status": "kicked",
+            "user": {
+                "id": 1,
+                "is_bot": true,
+                "first_name": "firstname",
+                "last_name": "lastname",
+                "username": "username"
+            },
+            "until_date": 0
+        }"#;
+        let kicked: ChatMember = serde_json::from_str(kicked).unwrap();
+        if let ChatMember::Kicked(ref kicked) = kicked {
+            assert_eq!(kicked.user.id, 1);
+            assert_eq!(kicked.user.is_bot, true);
+            assert_eq!(kicked.user.first_name, String::from("firstname"));
+            assert_eq!(kicked.user.last_name, Some(String::from("lastname")));
+            assert_eq!(kicked.user.username, Some(String::from("username")));
+            assert_eq!(kicked.user.language_code, None);
+            assert_eq!(kicked.until_date, 0);
+        } else {
+            panic!("Unexpected chat member: {:?}", kicked);
+        }
+    }
+
+    #[test]
+    fn test_deserialize_chat_member_left() {
+        let left = r#"{
+            "status": "left",
+            "user": {
+                "id": 1,
+                "is_bot": true,
+                "first_name": "firstname"
+            }
+        }"#;
+        let left: ChatMember = serde_json::from_str(left).unwrap();
+        if let ChatMember::Left(ref left) = left {
+            assert_eq!(left.id, 1);
+            assert_eq!(left.is_bot, true);
+            assert_eq!(left.first_name, String::from("firstname"));
+            assert_eq!(left.last_name, None);
+            assert_eq!(left.username, None);
+            assert_eq!(left.language_code, None);
+        } else {
+            panic!("Unexpected chat member: {:?}", left);
+        }
+    }
+
+    #[test]
+    fn test_deserialize_chat_member_plain() {
+        let plain = r#"{
+            "status": "member",
+            "user": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "firstname"
+            }
+        }"#;
+        let plain: ChatMember = serde_json::from_str(plain).unwrap();
+        if let ChatMember::Member(ref plain) = plain {
+            assert_eq!(plain.id, 1);
+            assert_eq!(plain.is_bot, false);
+            assert_eq!(plain.first_name, String::from("firstname"));
+            assert_eq!(plain.last_name, None);
+            assert_eq!(plain.username, None);
+            assert_eq!(plain.language_code, None);
+        } else {
+            panic!("Unexpected chat member: {:?}", plain);
+        }
+    }
+
+    #[test]
+    fn test_deserialize_chat_member_restricted() {
+        let restricted = r#"{
+            "status": "restricted",
+            "user": {
+                "id": 1,
+                "is_bot": true,
+                "first_name": "firstname"
+            },
+            "until_date": 0,
+            "can_send_messages": true,
+            "can_send_media_messages": false,
+            "can_send_other_messages": true,
+            "can_add_web_page_previews": false
+        }"#;
+        let restricted: ChatMember = serde_json::from_str(restricted).unwrap();
+        if let ChatMember::Restricted(ref restricted) = restricted {
+            assert_eq!(restricted.user.id, 1);
+            assert_eq!(restricted.user.is_bot, true);
+            assert_eq!(restricted.user.first_name, String::from("firstname"));
+            assert_eq!(restricted.user.last_name, None);
+            assert_eq!(restricted.user.username, None);
+            assert_eq!(restricted.user.language_code, None);
+            assert_eq!(restricted.until_date, 0);
+            assert_eq!(restricted.can_send_messages, true);
+            assert_eq!(restricted.can_send_media_messages, false);
+            assert_eq!(restricted.can_send_other_messages, true);
+            assert_eq!(restricted.can_add_web_page_previews, false);
+        } else {
+            panic!("Unexpected chat member: {:?}", restricted);
         }
     }
 }
