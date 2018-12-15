@@ -1,3 +1,5 @@
+use crate::types::primitive::Integer;
+
 /// Represents an audio file to be treated as music to be sent.
 #[derive(Debug)]
 pub struct InputMediaAudio {
@@ -29,7 +31,7 @@ pub struct InputMediaAudio {
     /// inline URLs in the media caption.
     pub parse_mode: Option<String>, // TODO: enum
     /// Duration of the audio in seconds
-    pub duration: Option<i64>,
+    pub duration: Option<Integer>,
     /// Performer of the audio
     pub performer: Option<String>,
     /// Title of the audio

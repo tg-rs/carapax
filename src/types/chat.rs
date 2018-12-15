@@ -1,11 +1,12 @@
 use crate::types::chat_photo::ChatPhoto;
 use crate::types::message::Message;
+use crate::types::primitive::Integer;
 
 /// This object represents a chat.
 #[derive(Debug)]
 pub struct Chat {
     /// Unique identifier for this chat.
-    pub id: i64,
+    pub id: Integer,
     /// Type of chat, can be either “private”, “group”, “supergroup” or “channel”
     pub kind: String, // TODO: type, enum
     /// Title, for supergroups, channels and group chats

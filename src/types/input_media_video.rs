@@ -1,3 +1,5 @@
+use crate::types::primitive::Integer;
+
 /// Represents a video to be sent.
 #[derive(Debug)]
 pub struct InputMediaVideo {
@@ -26,11 +28,11 @@ pub struct InputMediaVideo {
     /// inline URLs in the media caption.
     pub parse_mode: Option<String>, // TODO: enum
     /// Video width
-    pub width: Option<i64>,
+    pub width: Option<Integer>,
     /// Video height
-    pub height: Option<i64>,
+    pub height: Option<Integer>,
     /// Video duration
-    pub duration: Option<i64>,
+    pub duration: Option<Integer>,
     /// Pass True, if the uploaded video is suitable for streaming
     pub supports_streaming: Option<bool>,
 }

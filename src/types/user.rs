@@ -1,8 +1,10 @@
+use crate::types::primitive::Integer;
+
 /// This object represents a Telegram user or bot.
 #[derive(Debug)]
 pub struct User {
     /// Unique identifier for this user or bot
-    pub id: i64,
+    pub id: Integer,
     /// True, if this user is a bot
     pub is_bot: bool,
     /// User‘s or bot’s first name

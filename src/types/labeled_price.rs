@@ -1,3 +1,5 @@
+use crate::types::primitive::Integer;
+
 /// This object represents a portion of the price for goods or services.
 #[derive(Debug)]
 pub struct LabeledPrice {
@@ -10,5 +12,5 @@ pub struct LabeledPrice {
     /// it shows the number of digits past the
     /// decimal point for each currency
     /// (2 for the majority of currencies).
-    pub amount: i64,
+    pub amount: Integer,
 }

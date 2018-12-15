@@ -1,3 +1,4 @@
+use crate::types::primitive::Integer;
 use crate::types::user::User;
 
 /// This object represents one special entity in a text message.
@@ -13,9 +14,9 @@ pub struct MessageEntity {
     /// text_mention (for users without usernames)
     pub kind: String, // TODO: enum, type
     /// Offset in UTF-16 code units to the start of the entity
-    pub offset: i64,
+    pub offset: Integer,
     /// Length of the entity in UTF-16 code units
-    pub length: i64,
+    pub length: Integer,
     /// For “text_link” only, url that will be opened after user taps on the text
     pub url: Option<String>,
     /// For “text_mention” only, the mentioned user

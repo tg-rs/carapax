@@ -1,4 +1,5 @@
 use crate::types::photo_size::PhotoSize;
+use crate::types::primitive::Integer;
 
 /// This object represents a general file (as opposed to photos, voice messages and audio files).
 #[derive(Debug)]
@@ -12,5 +13,5 @@ pub struct Document {
     /// MIME type of the file as defined by sender
     pub mime_type: Option<String>,
     /// File size
-    pub file_size: Option<i64>,
+    pub file_size: Option<Integer>,
 }

@@ -1,3 +1,4 @@
+use crate::types::primitive::Integer;
 use crate::types::user::User;
 
 /// This object contains information about one member of a chat.
@@ -10,7 +11,7 @@ pub struct ChatMember {
     pub status: String, // TODO: enum
     /// Restricted and kicked only.
     /// Date when restrictions will be lifted for this user, unix time
-    pub until_date: Option<i64>,
+    pub until_date: Option<Integer>,
     /// Administrators only.
     /// True, if the bot is allowed
     /// to edit administrator privileges of that user

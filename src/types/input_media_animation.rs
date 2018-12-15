@@ -1,3 +1,5 @@
+use crate::types::primitive::Integer;
+
 /// Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent.
 #[derive(Debug)]
 pub struct InputMediaAnimation {
@@ -31,9 +33,9 @@ pub struct InputMediaAnimation {
     /// inline URLs in the media caption.
     pub parse_mode: Option<String>, // TODO: enum
     /// Animation width
-    pub width: Option<i64>,
+    pub width: Option<Integer>,
     /// Animation height
-    pub height: Option<i64>,
+    pub height: Option<Integer>,
     /// Animation duration
-    pub duration: Option<i64>,
+    pub duration: Option<Integer>,
 }

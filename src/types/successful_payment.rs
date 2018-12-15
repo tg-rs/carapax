@@ -1,4 +1,5 @@
 use crate::types::order_info::OrderInfo;
+use crate::types::primitive::Integer;
 
 /// This object contains basic information about a successful payment.
 #[derive(Debug)]
@@ -12,7 +13,7 @@ pub struct SuccessfulPayment {
     /// it shows the number of digits past the
     /// decimal point for each currency
     /// (2 for the majority of currencies).
-    pub total_amount: i64,
+    pub total_amount: Integer,
     /// Bot specified invoice payload
     pub invoice_payload: String,
     /// Identifier of the shipping option chosen by the user

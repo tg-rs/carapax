@@ -1,3 +1,5 @@
+use crate::types::primitive::Integer;
+
 /// This object contains basic information about an invoice.
 #[derive(Debug)]
 pub struct Invoice {
@@ -15,5 +17,5 @@ pub struct Invoice {
     /// it shows the number of digits past
     /// the decimal point for each currency
     /// (2 for the majority of currencies).
-    pub total_amount: i64,
+    pub total_amount: Integer,
 }

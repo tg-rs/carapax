@@ -1,3 +1,5 @@
+use crate::types::primitive::Integer;
+
 /// This object represents a phone contact.
 #[derive(Debug)]
 pub struct Contact {
@@ -8,7 +10,7 @@ pub struct Contact {
     /// Contact's last name
     pub last_name: Option<String>,
     /// Contact's user identifier in Telegram
-    pub user_id: Option<i64>,
+    pub user_id: Option<Integer>,
     /// Additional data about the contact in the form of a vCard
     pub vcard: Option<String>,
 }

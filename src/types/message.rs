@@ -8,6 +8,7 @@ use crate::types::invoice::Invoice;
 use crate::types::location::Location;
 use crate::types::message_entity::MessageEntity;
 use crate::types::photo_size::PhotoSize;
+use crate::types::primitive::Integer;
 use crate::types::sticker::Sticker;
 use crate::types::successful_payment::SuccessfulPayment;
 use crate::types::user::User;
@@ -20,11 +21,11 @@ use crate::types::voice::Voice;
 #[derive(Debug)]
 pub struct Message {
     /// Unique message identifier inside this chat
-    pub message_id: i64,
+    pub message_id: Integer,
     /// Sender, empty for messages sent to channels
     pub from: Option<User>,
     /// Date the message was sent in Unix time
-    pub date: i64,
+    pub date: Integer,
     /// Conversation the message belongs to
     pub chat: Chat,
     /// For forwarded messages, sender of the original message
@@ -32,17 +33,17 @@ pub struct Message {
     /// For messages forwarded from channels, information about the original channel
     pub forward_from_chat: Option<Chat>,
     /// For messages forwarded from channels, identifier of the original message in the channel
-    pub forward_from_message_id: Option<i64>,
+    pub forward_from_message_id: Option<Integer>,
     /// For messages forwarded from channels, signature of the post author if present
     pub forward_signature: Option<String>,
     /// For forwarded messages, date the original message was sent in Unix time
-    pub forward_date: Option<i64>,
+    pub forward_date: Option<Integer>,
     /// For replies, the original message.
     /// Note that the Message object in this field will not contain further
     /// reply_to_message fields even if it itself is a reply.
     pub reply_to_message: Option<Box<Message>>,
     /// Date the message was last edited in Unix time
-    pub edit_date: Option<i64>,
+    pub edit_date: Option<Integer>,
     /// The unique identifier of a media message group this message belongs to
     pub media_group_id: Option<String>,
     /// Signature of the post author for messages in channels
@@ -105,9 +106,9 @@ pub struct Message {
     /// It can only be found in reply_to_message if someone replies to a very first message in a channel.
     pub channel_chat_created: Option<bool>,
     /// The group has been migrated to a supergroup with the specified identifier.
-    pub migrate_to_chat_id: Option<i64>,
+    pub migrate_to_chat_id: Option<Integer>,
     /// The supergroup has been migrated from a group with the specified identifier.
-    pub migrate_from_chat_id: Option<i64>,
+    pub migrate_from_chat_id: Option<Integer>,
     /// Specified message was pinned. Note that the Message object in this field will not contain
     /// further reply_to_message fields even if it is itself a reply.
     pub pinned_message: Option<Box<Message>>,
