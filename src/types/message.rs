@@ -120,13 +120,7 @@ pub struct Message {
 #[derive(Debug)]
 pub struct MessageEntity {
     /// Type of the entity.
-    /// Can be mention (@username),
-    /// hashtag, cashtag, bot_command, url, email, phone_number,
-    /// bold (bold text), italic (italic text), code (monowidth string),
-    /// pre (monowidth block),
-    /// text_link (for clickable text URLs),
-    /// text_mention (for users without usernames)
-    pub kind: String, // TODO: enum, type
+    pub kind: MessageEntityKind, // TODO: rename to type
     /// Offset in UTF-16 code units to the start of the entity
     pub offset: Integer,
     /// Length of the entity in UTF-16 code units
@@ -135,4 +129,35 @@ pub struct MessageEntity {
     pub url: Option<String>,
     /// For “text_mention” only, the mentioned user
     pub user: Option<User>,
+}
+
+/// Type of the message entity.
+#[derive(Debug)]
+pub enum MessageEntityKind {
+    /// Bold text (bold)
+    Bold,
+    /// Bot command (bot_command)
+    BotCommand,
+    /// Cashtag (cashtag)
+    Cashtag,
+    /// Monowidth string (code)
+    Code,
+    /// E-Mail (email)
+    Email,
+    /// Hashtag (hashtag)
+    Hashtag,
+    /// Italic text (italic)
+    Italic,
+    /// User mention (e.g. @username) (mention)
+    Mention,
+    /// Phone number (phone_number)
+    PhoneNumber,
+    /// Monowidth block (pre)
+    Pre,
+    /// Clickable text URLs (text_link)
+    TextLink,
+    /// Mention user without username (text_mention)
+    TextMention,
+    /// URL (url)
+    Url,
 }
