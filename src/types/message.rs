@@ -9,7 +9,7 @@ use crate::types::location::Location;
 use crate::types::message_entity::MessageEntity;
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
-use crate::types::sticker::Sticker;
+use crate::types::stickers::Sticker;
 use crate::types::successful_payment::SuccessfulPayment;
 use crate::types::user::User;
 use crate::types::venue::Venue;
