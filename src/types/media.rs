@@ -1,7 +1,7 @@
 use crate::types::location::Location;
 use crate::types::primitive::{Float, Integer};
 
-/// This object represents an animation file (GIF or H.264/MPEG-4 AVC video without sound).
+/// This object represents an animation file (GIF or H.264/MPEG-4 AVC video without sound)
 #[derive(Debug, Deserialize)]
 pub struct Animation {
     /// Unique file identifier
@@ -22,7 +22,7 @@ pub struct Animation {
     pub file_size: Option<Integer>,
 }
 
-/// This object represents an audio file to be treated as music by the Telegram clients.
+/// This object represents an audio file to be treated as music by the Telegram clients
 #[derive(Debug, Deserialize)]
 pub struct Audio {
     /// Unique identifier for this file
@@ -41,7 +41,7 @@ pub struct Audio {
     pub thumb: Option<PhotoSize>,
 }
 
-/// This object represents a general file (as opposed to photos, voice messages and audio files).
+/// This object represents a general file (as opposed to photos, voice messages and audio files)
 #[derive(Debug, Deserialize)]
 pub struct Document {
     /// Unique file identifier
@@ -56,10 +56,10 @@ pub struct Document {
     pub file_size: Option<Integer>,
 }
 
-/// This object represents a file ready to be downloaded.
-/// The file can be downloaded via the link https://api.telegram.org/file/bot<token>/<file_path>.
-/// It is guaranteed that the link will be valid for at least 1 hour.
-/// When the link expires, a new one can be requested by calling getFile.
+/// This object represents a file ready to be downloaded
+/// The file can be downloaded via the link https://api.telegram.org/file/bot<token>/<file_path>
+/// It is guaranteed that the link will be valid for at least 1 hour
+/// When the link expires, a new one can be requested by calling getFile
 /// Maximum file size to download is 20 MB
 #[derive(Debug, Deserialize)]
 pub struct File {
@@ -67,32 +67,32 @@ pub struct File {
     pub file_id: String,
     /// File size, if known
     pub file_size: Option<Integer>,
-    /// File path.
-    /// Use https://api.telegram.org/file/bot<token>/<file_path> to get the file.
+    /// File path
+    /// Use https://api.telegram.org/file/bot<token>/<file_path> to get the file
     pub file_path: Option<String>,
 }
 
-/// This object describes the position on faces where a mask should be placed by default.
+/// This object describes the position on faces where a mask should be placed by default
 #[derive(Debug, Deserialize)]
 pub struct MaskPosition {
     /// The part of the face relative
-    /// to which the mask should be placed.
+    /// to which the mask should be placed
     pub point: MaskPositionPoint,
     /// Shift by X-axis measured in widths
     /// of the mask scaled to the face size,
     /// from left to right.
     /// For example, choosing -1.0
     /// will place mask just
-    /// to the left of the default mask position.
+    /// to the left of the default mask position
     pub x_shift: Float,
     /// Shift by Y-axis measured
     /// in heights of the mask scaled to the face size,
     /// from top to bottom.
     /// For example, 1.0 will place
-    /// the mask just below the default mask position.
+    /// the mask just below the default mask position
     pub y_shift: Float,
     /// Mask scaling coefficient.
-    /// For example, 2.0 means double size.
+    /// For example, 2.0 means double size
     pub scale: Float,
 }
 
@@ -101,16 +101,20 @@ pub struct MaskPosition {
 #[derive(Debug, Deserialize)]
 pub enum MaskPositionPoint {
     /// “forehead”
+    #[serde(rename = "forehead")]
     Forehead,
     /// “eyes”
+    #[serde(rename = "eyes")]
     Eyes,
     /// “mouth”
+    #[serde(rename = "mouth")]
     Mouth,
     /// “chin”
+    #[serde(rename = "chin")]
     Chin,
 }
 
-/// This object represents one size of a photo or a file / sticker thumbnail.
+/// This object represents one size of a photo or a file / sticker thumbnail
 #[derive(Debug, Deserialize)]
 pub struct PhotoSize {
     /// Unique identifier for this file
@@ -123,7 +127,7 @@ pub struct PhotoSize {
     pub file_size: Option<Integer>,
 }
 
-/// This object represents a sticker.
+/// This object represents a sticker
 #[derive(Debug, Deserialize)]
 pub struct Sticker {
     /// Unique identifier for this file
@@ -144,7 +148,7 @@ pub struct Sticker {
     pub file_size: Option<Integer>,
 }
 
-/// This object represents a sticker set.
+/// This object represents a sticker set
 #[derive(Debug, Deserialize)]
 pub struct StickerSet {
     /// Sticker set name
@@ -157,7 +161,7 @@ pub struct StickerSet {
     pub stickers: Vec<Sticker>,
 }
 
-/// This object represents a venue.
+/// This object represents a venue
 #[derive(Debug, Deserialize)]
 pub struct Venue {
     /// Venue location
@@ -168,13 +172,13 @@ pub struct Venue {
     pub address: String,
     /// Foursquare identifier of the venue
     pub foursquare_id: Option<String>,
-    /// Foursquare type of the venue.
+    /// Foursquare type of the venue
     /// For example: “arts_entertainment/default”,
-    /// “arts_entertainment/aquarium” or “food/icecream”.
+    /// “arts_entertainment/aquarium” or “food/icecream”
     pub foursquare_type: Option<String>,
 }
 
-/// This object represents a video file.
+/// This object represents a video file
 #[derive(Debug, Deserialize)]
 pub struct Video {
     /// Unique identifier for this file
@@ -208,7 +212,7 @@ pub struct VideoNote {
     pub file_size: Option<Integer>,
 }
 
-/// This object represents a voice note.
+/// This object represents a voice note
 #[derive(Debug, Deserialize)]
 pub struct Voice {
     /// Unique identifier for this file
