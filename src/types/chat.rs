@@ -57,8 +57,8 @@ impl<'de> Deserialize<'de> for Chat {
             }),
             RawChatKind::Supergroup => Chat::Supergroup(SupergroupChat {
                 id: raw_chat.id,
-                username: required!(username),
                 title: required!(title),
+                username: raw_chat.username,
                 description: raw_chat.description,
                 photo: raw_chat.photo,
                 pinned_message: raw_chat.pinned_message,
@@ -137,7 +137,7 @@ pub struct SupergroupChat {
     /// Title
     pub title: String,
     /// Username of a supergroup
-    pub username: String,
+    pub username: Option<String>,
     /// Photo of a supergroup
     /// Returned only in getChat
     pub photo: Option<ChatPhoto>,
@@ -542,7 +542,7 @@ mod tests {
         if let Chat::Supergroup(chat) = chat {
             assert_eq!(chat.id, 1);
             assert_eq!(chat.title, String::from("supergrouptitle"));
-            assert_eq!(chat.username, String::from("supergroupusername"));
+            assert_eq!(chat.username, Some(String::from("supergroupusername")));
             let photo = chat.photo.unwrap();
             assert_eq!(photo.small_file_id, "smallfileid");
             assert_eq!(photo.big_file_id, "bigfileid");
@@ -569,7 +569,7 @@ mod tests {
         if let Chat::Supergroup(chat) = chat {
             assert_eq!(chat.id, 1);
             assert_eq!(chat.title, String::from("supergrouptitle"));
-            assert_eq!(chat.username, String::from("supergroupusername"));
+            assert_eq!(chat.username, Some(String::from("supergroupusername")));
             assert_eq!(chat.photo.is_none(), true);
             assert_eq!(chat.description.is_none(), true);
             assert_eq!(chat.invite_link.is_none(), true);
