@@ -2,7 +2,7 @@ use crate::types::media::PhotoSize;
 use crate::types::primitive::Integer;
 
 /// This object represents a Telegram user or bot.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, PartialOrd)]
 pub struct User {
     /// Unique identifier for this user or bot
     pub id: Integer,

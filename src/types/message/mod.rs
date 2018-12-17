@@ -1,15 +1,18 @@
-use crate::types::chat::{ChannelChat, Chat, GroupChat, PrivateChat, SupergroupChat};
-use crate::types::contact::Contact;
-use crate::types::games::Game;
-use crate::types::location::Location;
-use crate::types::media::{
-    Animation, Audio, Document, PhotoSize, Sticker, Venue, Video, VideoNote, Voice,
-};
-use crate::types::passport::PassportData;
-use crate::types::payments::{Invoice, SuccessfulPayment};
+use crate::types::chat::Chat;
+use crate::types::message::raw::RawMessage;
 use crate::types::primitive::Integer;
-use crate::types::user::User;
 use serde::de::{Deserialize, Deserializer, Error};
+
+mod data;
+mod forward;
+mod kind;
+mod raw;
+mod text;
+
+pub use self::data::MessageData;
+pub use self::forward::{Forward, ForwardFrom};
+pub use self::kind::MessageKind;
+pub use self::text::{ParseEntitiesError, Text, TextEntity, TextEntityData};
 
 /// This object represents a message
 #[derive(Debug)]
@@ -32,175 +35,6 @@ pub struct Message {
     pub media_group_id: Option<String>,
     /// Contains message data
     pub data: MessageData,
-}
-
-/// Contains chat-specific data
-#[derive(Debug)]
-pub enum MessageKind {
-    /// Channel chat
-    Channel {
-        /// Channel chat
-        chat: ChannelChat,
-        /// Author signature, if exists
-        author_signature: Option<String>,
-    },
-    /// Group chat
-    Group {
-        /// Group chat
-        chat: GroupChat,
-        /// Sender
-        from: User,
-    },
-    /// Private chat
-    Private {
-        /// Private chat
-        chat: PrivateChat,
-        /// Sender
-        from: User,
-    },
-    /// Supergroup chat
-    Supergroup {
-        /// Supergroup chat
-        chat: SupergroupChat,
-        /// Sender
-        from: User,
-    },
-}
-
-/// Contains information about original message
-#[derive(Debug)]
-pub struct Forward {
-    /// Sender of the original message
-    pub from: ForwardFrom,
-    /// Date the original message was sent in Unix time
-    pub date: Integer,
-}
-
-/// Sender of the original message
-#[derive(Debug)]
-pub enum ForwardFrom {
-    /// Information about user
-    User(User),
-    /// Information about channel
-    Channel {
-        /// Information about the original chat
-        chat: ChannelChat,
-        /// Identifier of the original message in the channel
-        message_id: Integer,
-        /// Signature of the post author if present
-        signature: Option<String>,
-    },
-}
-
-/// Contains message data
-#[derive(Debug)]
-pub enum MessageData {
-    /// Message is an animation, information about the animation
-    Animation(Animation),
-    /// Audio message
-    Audio {
-        /// Audio caption
-        caption: Option<Caption>,
-        /// Audio data
-        data: Audio,
-    },
-    /// Service message: the channel has been created.
-    /// This field can‘t be received in a message coming through updates,
-    /// because bot can’t be a member of a channel when it is created.
-    /// It can only be found in reply_to_message if someone replies to a very first message in a channel.
-    ChannelChatCreated,
-    /// The domain name of the website on which the user has logged in
-    ConnectedWebsite(String),
-    /// Message is a shared contact, information about the contact
-    Contact(Contact),
-    /// Service message: the chat photo was deleted
-    DeleteChatPhoto,
-    /// Document message
-    Document {
-        /// Document caption
-        caption: Option<Caption>,
-        /// Document data
-        data: Document,
-    },
-    /// Message is a game, information about the game
-    Game(Game),
-    /// Service message: the group has been created
-    GroupChatCreated,
-    /// Message is an invoice for a payment, information about the invoice
-    Invoice(Invoice),
-    /// A member was removed from the group
-    /// (this member may be the bot itself)
-    LeftChatMember(User),
-    /// Message is a shared location, information about the location
-    Location(Location),
-    /// The supergroup has been migrated from a group with the specified identifier
-    MigrateFromChatId(Integer),
-    /// The group has been migrated to a supergroup with the specified identifier
-    MigrateToChatId(Integer),
-    /// New members that were added to the group or supergroup
-    /// (the bot itself may be one of these members)
-    NewChatMembers(Vec<User>),
-    /// A chat photo was change to this value
-    NewChatPhoto(Vec<PhotoSize>),
-    /// A chat title was changed to this value
-    NewChatTitle(String),
-    /// Telegram Passport data
-    PassportData(PassportData),
-    /// Specified message was pinned
-    /// Note that the Message object in this field will not contain
-    /// further reply_to_message fields even if it is itself a reply
-    PinnedMessage(Box<Message>),
-    /// Message is a photo, available sizes of the photo
-    Photo {
-        /// Photo caption
-        caption: Option<Caption>,
-        /// Photos
-        data: Vec<PhotoSize>,
-    },
-    /// Message is a sticker, information about the sticker
-    Sticker(Sticker),
-    /// Message is a service message about a successful payment, information about the payment
-    SuccessfulPayment(SuccessfulPayment),
-    /// Service message: the supergroup has been created.
-    /// This field can‘t be received in a message coming through updates,
-    /// because bot can’t be a member of a supergroup when it is created.
-    /// It can only be found in reply_to_message if someone replies to a very first message
-    /// in a directly created supergroup.
-    SupergroupChatCreated,
-    /// Text message
-    Text {
-        /// The actual UTF-8 text of the message, 0-4096 characters
-        data: String,
-        /// Special entities like usernames, URLs, bot commands, etc. that appear in the text
-        entities: Option<Vec<MessageEntity>>,
-    },
-    /// Message is a venue, information about the venue
-    Venue(Venue),
-    /// Message is a video, information about the video
-    Video {
-        /// Video caption
-        caption: Option<Caption>,
-        /// Video data
-        data: Video,
-    },
-    /// Message is a video note, information about the video message
-    VideoNote(VideoNote),
-    /// Message is a voice message, information about the file
-    Voice {
-        /// Voice caption
-        caption: Option<Caption>,
-        /// Voice data
-        data: Voice,
-    },
-}
-
-/// Caption for a media
-#[derive(Debug)]
-pub struct Caption {
-    /// Caption for the audio, document, photo, video or voice, 0-1024 characters
-    text: String,
-    /// Special entities like usernames, URLs, bot commands, etc. that appear in the caption
-    entities: Option<Vec<MessageEntity>>,
 }
 
 impl Message {
@@ -259,8 +93,8 @@ impl Message {
         };
 
         let caption = match raw.caption {
-            Some(text) => Some(Caption {
-                text,
+            Some(data) => Some(Text {
+                data,
                 entities: raw.caption_entities,
             }),
             None => None,
@@ -315,10 +149,10 @@ impl Message {
         } else if let Some(_) = raw.supergroup_chat_created {
             MessageData::SupergroupChatCreated
         } else if let Some(data) = raw.text {
-            MessageData::Text {
+            MessageData::Text(Text {
                 data,
                 entities: raw.entities,
-            }
+            })
         } else if let Some(data) = raw.venue {
             MessageData::Venue(data)
         } else if let Some(data) = raw.video {
@@ -359,118 +193,11 @@ impl<'de> Deserialize<'de> for Message {
     }
 }
 
-#[derive(Debug, Deserialize)]
-struct RawMessage {
-    message_id: Integer,
-    from: Option<User>,
-    date: Integer,
-    chat: Chat,
-    forward_from: Option<User>,
-    forward_from_chat: Option<Chat>,
-    forward_from_message_id: Option<Integer>,
-    forward_signature: Option<String>,
-    forward_date: Option<Integer>,
-    reply_to_message: Option<Box<RawMessage>>,
-    edit_date: Option<Integer>,
-    media_group_id: Option<String>,
-    author_signature: Option<String>,
-    text: Option<String>,
-    entities: Option<Vec<MessageEntity>>,
-    caption_entities: Option<Vec<MessageEntity>>,
-    audio: Option<Audio>,
-    animation: Option<Animation>,
-    document: Option<Document>,
-    game: Option<Game>,
-    photo: Option<Vec<PhotoSize>>,
-    sticker: Option<Sticker>,
-    video: Option<Video>,
-    voice: Option<Voice>,
-    video_note: Option<VideoNote>,
-    caption: Option<String>,
-    contact: Option<Contact>,
-    location: Option<Location>,
-    venue: Option<Venue>,
-    new_chat_members: Option<Vec<User>>,
-    left_chat_member: Option<User>,
-    new_chat_title: Option<String>,
-    new_chat_photo: Option<Vec<PhotoSize>>,
-    delete_chat_photo: Option<bool>,
-    group_chat_created: Option<bool>,
-    supergroup_chat_created: Option<bool>,
-    channel_chat_created: Option<bool>,
-    migrate_to_chat_id: Option<Integer>,
-    migrate_from_chat_id: Option<Integer>,
-    pinned_message: Option<Box<RawMessage>>,
-    invoice: Option<Invoice>,
-    successful_payment: Option<SuccessfulPayment>,
-    connected_website: Option<String>,
-    passport_data: Option<PassportData>,
-}
-
-/// This object represents one special entity in a text message
-/// For example, hashtags, usernames, URLs, etc
-#[derive(Debug, Deserialize)]
-pub struct MessageEntity {
-    /// Type of the entity
-    #[serde(rename = "type")]
-    pub kind: MessageEntityKind,
-    /// Offset in UTF-16 code units to the start of the entity
-    pub offset: Integer,
-    /// Length of the entity in UTF-16 code units
-    pub length: Integer,
-    /// For “text_link” only, url that will be opened after user taps on the text
-    pub url: Option<String>,
-    /// For “text_mention” only, the mentioned user
-    pub user: Option<User>,
-}
-
-/// Type of the message entity
-#[derive(Debug, Deserialize)]
-pub enum MessageEntityKind {
-    /// Bold text
-    #[serde(rename = "bold")]
-    Bold,
-    /// Bot command
-    #[serde(rename = "bot_command")]
-    BotCommand,
-    /// Cashtag
-    #[serde(rename = "cashtag")]
-    Cashtag,
-    /// Monowidth string
-    #[serde(rename = "code")]
-    Code,
-    /// E-Mail
-    #[serde(rename = "email")]
-    Email,
-    /// Hashtag
-    #[serde(rename = "hashtag")]
-    Hashtag,
-    /// Italic text
-    #[serde(rename = "italic")]
-    Italic,
-    /// User mention (e.g. @username)
-    #[serde(rename = "mention")]
-    Mention,
-    /// Phone number
-    #[serde(rename = "phone_number")]
-    PhoneNumber,
-    /// Monowidth block
-    #[serde(rename = "pre")]
-    Pre,
-    /// Clickable text URLs
-    #[serde(rename = "text_link")]
-    TextLink,
-    /// Mention user without username
-    #[serde(rename = "text_mention")]
-    TextMention,
-    /// URL
-    #[serde(rename = "url")]
-    Url,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::chat::ChannelChat;
+    use crate::types::user::User;
 
     #[test]
     fn test_deserialize_message_channel() {
@@ -498,7 +225,7 @@ mod tests {
         } else {
             panic!("Unexpected message kind: {:?}", msg.kind);
         }
-        if let MessageData::Text { data, entities } = msg.data {
+        if let MessageData::Text(Text { data, entities }) = msg.data {
             assert_eq!(data, "test");
             assert_eq!(entities.is_none(), true);
         } else {
@@ -537,7 +264,7 @@ mod tests {
         } else {
             panic!("Unexpected message kind: {:?}", msg.kind);
         }
-        if let MessageData::Text { data, entities } = msg.data {
+        if let MessageData::Text(Text { data, entities }) = msg.data {
             assert_eq!(data, "test");
             assert_eq!(entities.is_none(), true);
         } else {
@@ -581,7 +308,7 @@ mod tests {
         } else {
             panic!("Unexpected message kind: {:?}", msg.kind);
         }
-        if let MessageData::Text { data, entities } = msg.data {
+        if let MessageData::Text(Text { data, entities }) = msg.data {
             assert_eq!(data, "test");
             assert_eq!(entities.is_none(), true);
         } else {
@@ -625,7 +352,7 @@ mod tests {
         } else {
             panic!("Unexpected message kind: {:?}", msg.kind);
         }
-        if let MessageData::Text { data, entities } = msg.data {
+        if let MessageData::Text(Text { data, entities }) = msg.data {
             assert_eq!(data, "test");
             assert_eq!(entities.is_none(), true);
         } else {
@@ -757,6 +484,129 @@ mod tests {
             assert_eq!(animation.width, 200);
             assert_eq!(animation.height, 200);
             assert_eq!(animation.duration, 10);
+        } else {
+            panic!("Unexpected message data: {:?}", msg.data)
+        }
+    }
+
+    #[test]
+    fn test_deserialize_message_entities() {
+        let input = r#"{
+            "message_id": 1, "date": 0,
+            "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+            "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+            "text": "bold /botcommand $cashtag code u@h.z #hashtag italic @mention phone pre textlink textmention url",
+            "entities": [
+                {"type": "bold", "offset": 0, "length": 4},
+                {"type": "bot_command", "offset": 5, "length": 11},
+                {"type": "cashtag", "offset": 17, "length": 8},
+                {"type": "code", "offset": 26, "length": 4},
+                {"type": "email", "offset": 31, "length": 5},
+                {"type": "hashtag", "offset": 37, "length": 8},
+                {"type": "italic", "offset": 46, "length": 6},
+                {"type": "mention", "offset": 53, "length": 8},
+                {"type": "phone_number", "offset": 62, "length": 5},
+                {"type": "pre", "offset": 68, "length": 3},
+                {"type": "text_link", "offset": 72, "length": 8, "url": "https://example.com"},
+                {
+                    "type": "text_mention",
+                    "offset": 81,
+                    "length": 11,
+                    "user": {
+                        "id": 1,
+                        "first_name": "test",
+                        "is_bot": false
+                    }
+                },
+                {"type": "url", "offset": 93, "length": 3}
+            ]
+        }"#;
+        let msg: Message = serde_json::from_str(input).unwrap();
+        if let MessageData::Text(text) = msg.data {
+            let entities = text.parse_entities().unwrap();
+            assert_eq!(
+                vec![
+                    TextEntity::Bold(TextEntityData {
+                        data: String::from("bold"),
+                        offset: 0,
+                        length: 4
+                    }),
+                    TextEntity::BotCommand(TextEntityData {
+                        data: String::from("/botcommand"),
+                        offset: 5,
+                        length: 11
+                    }),
+                    TextEntity::Cashtag(TextEntityData {
+                        data: String::from("$cashtag"),
+                        offset: 17,
+                        length: 8
+                    }),
+                    TextEntity::Code(TextEntityData {
+                        data: String::from("code"),
+                        offset: 26,
+                        length: 4
+                    }),
+                    TextEntity::Email(TextEntityData {
+                        data: String::from("u@h.z"),
+                        offset: 31,
+                        length: 5
+                    }),
+                    TextEntity::Hashtag(TextEntityData {
+                        data: String::from("#hashtag"),
+                        offset: 37,
+                        length: 8
+                    }),
+                    TextEntity::Italic(TextEntityData {
+                        data: String::from("italic"),
+                        offset: 46,
+                        length: 6
+                    }),
+                    TextEntity::Mention(TextEntityData {
+                        data: String::from("@mention"),
+                        offset: 53,
+                        length: 8
+                    }),
+                    TextEntity::PhoneNumber(TextEntityData {
+                        data: String::from("phone"),
+                        offset: 62,
+                        length: 5
+                    }),
+                    TextEntity::Pre(TextEntityData {
+                        data: String::from("pre"),
+                        offset: 68,
+                        length: 3
+                    }),
+                    TextEntity::TextLink {
+                        data: TextEntityData {
+                            data: String::from("textlink"),
+                            offset: 72,
+                            length: 8
+                        },
+                        url: String::from("https://example.com")
+                    },
+                    TextEntity::TextMention {
+                        data: TextEntityData {
+                            data: String::from("textmention"),
+                            offset: 81,
+                            length: 11
+                        },
+                        user: User {
+                            id: 1,
+                            is_bot: false,
+                            first_name: String::from("test"),
+                            last_name: None,
+                            username: None,
+                            language_code: None
+                        }
+                    },
+                    TextEntity::Url(TextEntityData {
+                        data: String::from("url"),
+                        offset: 93,
+                        length: 3
+                    })
+                ],
+                entities
+            )
         } else {
             panic!("Unexpected message data: {:?}", msg.data)
         }
