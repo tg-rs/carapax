@@ -12,6 +12,7 @@ mod text;
 pub use self::data::MessageData;
 pub use self::forward::{Forward, ForwardFrom};
 pub use self::kind::MessageKind;
+pub(crate) use self::raw::RawMessageEntity;
 pub use self::text::{ParseEntitiesError, Text, TextEntity, TextEntityData};
 
 /// This object represents a message

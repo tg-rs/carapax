@@ -59,7 +59,7 @@ pub(super) struct RawMessage {
 }
 
 #[derive(Debug, Deserialize)]
-pub(super) struct RawMessageEntity {
+pub(crate) struct RawMessageEntity {
     #[serde(rename = "type")]
     pub kind: RawMessageEntityKind,
     pub offset: Integer,
@@ -69,7 +69,7 @@ pub(super) struct RawMessageEntity {
 }
 
 #[derive(Debug, Deserialize)]
-pub(super) enum RawMessageEntityKind {
+pub(crate) enum RawMessageEntityKind {
     #[serde(rename = "bold")]
     Bold,
     #[serde(rename = "bot_command")]

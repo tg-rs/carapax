@@ -8,7 +8,7 @@ use std::string::FromUtf16Error;
 pub struct Text {
     /// The actual UTF-8 text
     pub data: String,
-    pub(super) entities: Option<Vec<RawMessageEntity>>,
+    pub(crate) entities: Option<Vec<RawMessageEntity>>,
 }
 
 impl Text {
