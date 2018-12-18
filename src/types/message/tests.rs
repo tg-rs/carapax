@@ -416,6 +416,127 @@ fn test_deserialize_message_entities() {
             entities
         )
     } else {
-        panic!("Unexpected message data: {:?}", msg.data)
+        panic!("Unexpected message data: {:?}", msg.data);
+    }
+}
+
+#[test]
+fn test_deserialize_message_bad_entities() {
+    for (input, error) in vec![
+        (
+            r#"{
+                "message_id": 1, "date": 0,
+                "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                "text": "no entities"
+            }"#,
+            "There are no entities",
+        ),
+        (
+            r#"{
+                "message_id": 1, "date": 0,
+                "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                "text": "bad offset",
+                "entities": [
+                    {
+                        "type": "bold",
+                        "offset": -1,
+                        "length": 1
+                    }
+                ]
+            }"#,
+            "Offset \"-1\" is out of text bounds",
+        ),
+        (
+            r#"{
+                "message_id": 1, "date": 0,
+                "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                "text": "bad offset",
+                "entities": [
+                    {
+                        "type": "bold",
+                        "offset": 11,
+                        "length": 1
+                    }
+                ]
+            }"#,
+            "Offset \"11\" is out of text bounds",
+        ),
+        (
+            r#"{
+                "message_id": 1, "date": 0,
+                "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                "text": "bad offset",
+                "entities": [
+                    {
+                        "type": "bold",
+                        "offset": 0,
+                        "length": -1
+                    }
+                ]
+            }"#,
+            "Length \"-1\" is out of text bounds",
+        ),
+        (
+            r#"{
+                "message_id": 1, "date": 0,
+                "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                "text": "bad offset",
+                "entities": [
+                    {
+                        "type": "bold",
+                        "offset": 0,
+                        "length": 11
+                    }
+                ]
+            }"#,
+            "Length \"11\" is out of text bounds",
+        ),
+        (
+            r#"{
+                "message_id": 1, "date": 0,
+                "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                "text": "bad offset",
+                "entities": [
+                    {
+                        "type": "text_link",
+                        "offset": 0,
+                        "length": 2
+                    }
+                ]
+            }"#,
+            "URL is required for text_link entity",
+        ),
+        (
+            r#"{
+                "message_id": 1, "date": 0,
+                "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                "text": "bad offset",
+                "entities": [
+                    {
+                        "type": "text_mention",
+                        "offset": 0,
+                        "length": 2
+                    }
+                ]
+            }"#,
+            "User is required for text_mention entity",
+        ),
+    ] {
+        let msg: Message = serde_json::from_str(input).unwrap();
+        if let MessageData::Text(text) = msg.data {
+            assert_eq!(
+                text.to_parsed().unwrap_err().to_string(),
+                String::from(error)
+            );
+        } else {
+            panic!("Unexpected message data: {:?}", msg.data);
+        }
     }
 }

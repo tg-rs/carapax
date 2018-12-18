@@ -12,6 +12,7 @@ pub struct Text {
 }
 
 /// Text with parsed entities
+#[derive(Debug)]
 pub struct ParsedText {
     /// The actual UTF-8 text
     pub data: String,
@@ -177,10 +178,10 @@ pub enum ParseEntitiesError {
     #[fail(display = "There are no entities")]
     NoData,
     /// Offset is out of text bounds
-    #[fail(display = "Offset {} is out of text bounds", _0)]
+    #[fail(display = "Offset \"{}\" is out of text bounds", _0)]
     BadOffset(Integer),
     /// Length is out of text bounds
-    #[fail(display = "Length {} is out of text bounds", _0)]
+    #[fail(display = "Length \"{}\" is out of text bounds", _0)]
     BadLength(Integer),
     /// URL is required for text_link entity
     #[fail(display = "URL is required for text_link entity")]
