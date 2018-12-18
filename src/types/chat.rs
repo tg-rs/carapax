@@ -398,9 +398,18 @@ mod tests {
                 "big_file_id": "bigfileid"
             },
             "description": "channeldescription",
-            "invite_link": "channelinvitelink"
+            "invite_link": "channelinvitelink",
+            "pinned_message": {
+                "message_id": 1,
+                "date": 0,
+                "chat": {
+                    "id": 1,
+                    "type": "channel",
+                    "title": "channeltitle"
+                },
+                "text": "test"
+            }
         }"#;
-        // TODO: test pinned message
         let chat: Chat = serde_json::from_str(input).unwrap();
         if let Chat::Channel(chat) = chat {
             assert_eq!(chat.id, 1);
@@ -411,6 +420,7 @@ mod tests {
             assert_eq!(photo.big_file_id, String::from("bigfileid"));
             assert_eq!(chat.description, Some(String::from("channeldescription")));
             assert_eq!(chat.invite_link, Some(String::from("channelinvitelink")));
+            assert!(chat.pinned_message.is_some());
         } else {
             panic!("Unexpected chat: {:?}", chat);
         }
@@ -444,9 +454,24 @@ mod tests {
                 "small_file_id": "smallfileid",
                 "big_file_id": "bigfileid"
             },
-            "invite_link": "groupinvitelink"
+            "invite_link": "groupinvitelink",
+            "pinned_message": {
+                "message_id": 1,
+                "date": 0,
+                "chat": {
+                    "id": 1,
+                    "type": "group",
+                    "title": "grouptitle",
+                    "all_members_are_administrators": true
+                },
+                "from": {
+                    "id": 1,
+                    "is_bot": false,
+                    "first_name": "user"
+                },
+                "text": "test"
+            }
         }"#;
-        // TODO: test pinned message
         let chat: Chat = serde_json::from_str(input).unwrap();
         if let Chat::Group(chat) = chat {
             assert_eq!(chat.id, 1);
@@ -456,6 +481,7 @@ mod tests {
             assert_eq!(photo.small_file_id, String::from("smallfileid"));
             assert_eq!(photo.big_file_id, String::from("bigfileid"));
             assert_eq!(chat.invite_link, Some(String::from("groupinvitelink")));
+            assert!(chat.pinned_message.is_some());
         } else {
             panic!("Unexpected chat: {:?}", chat);
         }
@@ -535,9 +561,24 @@ mod tests {
             "description": "supergroupdescription",
             "invite_link": "supergroupinvitelink",
             "sticker_set_name": "supergroupstickersetname",
-            "can_set_sticker_set": true
+            "can_set_sticker_set": true,
+            "pinned_message": {
+                "message_id": 1,
+                "date": 0,
+                "chat": {
+                    "id": 1,
+                    "type": "supergroup",
+                    "title": "supergrouptitle",
+                    "username": "supergroupusername"
+                },
+                "from": {
+                    "id": 1,
+                    "is_bot": false,
+                    "first_name": "user"
+                },
+                "text": "test"
+            }
         }"#;
-        // TODO: test pinned message
         let chat: Chat = serde_json::from_str(input).unwrap();
         if let Chat::Supergroup(chat) = chat {
             assert_eq!(chat.id, 1);
@@ -556,6 +597,7 @@ mod tests {
                 Some(String::from("supergroupstickersetname"))
             );
             assert_eq!(chat.can_set_sticker_set, Some(true));
+            assert!(chat.pinned_message.is_some());
         } else {
             panic!("Unexpected chat: {:?}", chat)
         }
