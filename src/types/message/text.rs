@@ -68,7 +68,20 @@ impl Text {
             };
             result.push(match raw_entity.kind {
                 RawMessageEntityKind::Bold => TextEntity::Bold(data),
-                RawMessageEntityKind::BotCommand => TextEntity::BotCommand(data),
+                RawMessageEntityKind::BotCommand => {
+                    let parts = data.data.as_str().splitn(2, "@").collect::<Vec<&str>>();
+                    let len = parts.len();
+                    assert!(len >= 1);
+                    TextEntity::BotCommand {
+                        command: parts[0].to_string(),
+                        bot_name: if len == 2 {
+                            Some(parts[1].to_string())
+                        } else {
+                            None
+                        },
+                        data,
+                    }
+                }
                 RawMessageEntityKind::Cashtag => TextEntity::Cashtag(data),
                 RawMessageEntityKind::Code => TextEntity::Code(data),
                 RawMessageEntityKind::Email => TextEntity::Email(data),
@@ -104,7 +117,14 @@ pub enum TextEntity {
     /// Bold text
     Bold(TextEntityData),
     /// Bot command
-    BotCommand(TextEntityData),
+    BotCommand {
+        /// Actual command
+        command: String,
+        /// Bot's username
+        bot_name: Option<String>,
+        /// Entity data
+        data: TextEntityData,
+    },
     /// Cashtag
     Cashtag(TextEntityData),
     /// Monowidth string

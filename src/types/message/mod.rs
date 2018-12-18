@@ -533,11 +533,15 @@ mod tests {
                         offset: 0,
                         length: 4
                     }),
-                    TextEntity::BotCommand(TextEntityData {
-                        data: String::from("/botcommand"),
-                        offset: 5,
-                        length: 11
-                    }),
+                    TextEntity::BotCommand {
+                        command: String::from("/botcommand"),
+                        bot_name: None,
+                        data: TextEntityData {
+                            data: String::from("/botcommand"),
+                            offset: 5,
+                            length: 11
+                        }
+                    },
                     TextEntity::Cashtag(TextEntityData {
                         data: String::from("$cashtag"),
                         offset: 17,
