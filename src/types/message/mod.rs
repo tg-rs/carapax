@@ -13,7 +13,7 @@ pub use self::data::MessageData;
 pub use self::forward::{Forward, ForwardFrom};
 pub use self::kind::MessageKind;
 pub(crate) use self::raw::RawMessageEntity;
-pub use self::text::{ParseEntitiesError, Text, TextEntity, TextEntityData};
+pub use self::text::{ParseEntitiesError, ParsedText, Text, TextEntity, TextEntityData};
 
 /// This object represents a message
 #[derive(Debug)]
@@ -524,7 +524,8 @@ mod tests {
         }"#;
         let msg: Message = serde_json::from_str(input).unwrap();
         if let MessageData::Text(text) = msg.data {
-            let entities = text.parse_entities().unwrap();
+            let parsed = text.to_parsed().unwrap();
+            let entities = parsed.entities;
             assert_eq!(
                 vec![
                     TextEntity::Bold(TextEntityData {

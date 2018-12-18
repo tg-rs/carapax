@@ -11,9 +11,30 @@ pub struct Text {
     pub(crate) entities: Option<Vec<RawMessageEntity>>,
 }
 
+/// Text with parsed entities
+pub struct ParsedText {
+    /// The actual UTF-8 text
+    pub data: String,
+    /// Parsed entities
+    pub entities: Vec<TextEntity>,
+}
+
 impl Text {
-    /// Returns parsed entities
-    pub fn parse_entities(&self) -> Result<Vec<TextEntity>, ParseEntitiesError> {
+    /// Whether text contains entities
+    pub fn has_entities(&self) -> bool {
+        self.entities.as_ref().map(|e| e.len() > 0).unwrap_or(false)
+    }
+
+    /// Returns text with parsed entities
+    pub fn to_parsed(self) -> Result<ParsedText, ParseEntitiesError> {
+        let entities = self.parse_entities()?;
+        Ok(ParsedText {
+            data: self.data,
+            entities,
+        })
+    }
+
+    fn parse_entities(&self) -> Result<Vec<TextEntity>, ParseEntitiesError> {
         let raw_entities = match self.entities {
             Some(ref items) => items,
             None => return Err(ParseEntitiesError::NoData),
