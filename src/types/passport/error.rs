@@ -3,7 +3,7 @@ use crate::types::passport::element::EncryptedPassportElementKind;
 /// This object represents an error in the Telegram Passport
 /// element which was submitted that should
 /// be resolved by the user
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct PassportElementError {
     #[serde(flatten)]
     kind: PassportElementErrorKind,
@@ -293,7 +293,7 @@ impl PassportElementError {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(tag = "source")]
 enum PassportElementErrorKind {
     #[serde(rename = "data")]
@@ -363,6 +363,6 @@ enum PassportElementErrorKind {
 }
 
 /// Unexpected encrypted passport element kind
-#[derive(Debug, Fail)]
+#[derive(Clone, Debug, Fail)]
 #[fail(display = "Unexpected element kind: {:?}", _0)]
 pub struct UnexpectedEncryptedPassportElementKind(EncryptedPassportElementKind);

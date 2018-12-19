@@ -11,7 +11,7 @@ pub use self::error::*;
 /// Contains information about
 /// Telegram Passport data
 /// shared with the bot by the user
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PassportData {
     /// Array with information about documents
     /// and other Telegram Passport elements
@@ -24,7 +24,7 @@ pub struct PassportData {
 /// This object represents a file uploaded to Telegram Passport
 /// Currently all Telegram Passport files are in JPEG
 /// format when decrypted and don't exceed 10MB
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PassportFile {
     /// Unique identifier for this file
     pub file_id: String,
@@ -38,7 +38,7 @@ pub struct PassportFile {
 /// and authenticating EncryptedPassportElement
 /// See the Telegram Passport Documentation for a complete description
 /// of the data decryption and authentication processes
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct EncryptedCredentials {
     /// Base64-encoded encrypted JSON-serialized data
     /// with unique user's payload,

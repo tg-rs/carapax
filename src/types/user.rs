@@ -19,7 +19,7 @@ pub struct User {
 }
 
 /// This object represent a user's profile pictures.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct UserProfilePhotos {
     /// Total number of profile pictures the target user has
     pub total_count: Integer,

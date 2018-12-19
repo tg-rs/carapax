@@ -4,7 +4,7 @@ use crate::types::user::User;
 use serde::de::{Deserialize, Deserializer, Error};
 
 /// This object contains information about one member of a chat
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ChatMember {
     /// Chat admin
     Administrator(ChatMemberAdministrator),
@@ -84,7 +84,7 @@ impl<'de> Deserialize<'de> for ChatMember {
 }
 
 /// Chat admin
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ChatMemberAdministrator {
     /// Information about the user
     pub user: User,
@@ -118,7 +118,7 @@ pub struct ChatMemberAdministrator {
 }
 
 /// Kicked user
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ChatMemberKicked {
     /// Information about the user
     pub user: User,
@@ -127,7 +127,7 @@ pub struct ChatMemberKicked {
 }
 
 /// Restricted user
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ChatMemberRestricted {
     /// Information about the user
     pub user: User,

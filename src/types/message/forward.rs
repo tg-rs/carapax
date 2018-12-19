@@ -3,7 +3,7 @@ use crate::types::primitive::Integer;
 use crate::types::user::User;
 
 /// Contains information about original message
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Forward {
     /// Sender of the original message
     pub from: ForwardFrom,
@@ -12,7 +12,7 @@ pub struct Forward {
 }
 
 /// Sender of the original message
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ForwardFrom {
     /// Information about user
     User(User),

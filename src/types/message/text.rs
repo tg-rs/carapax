@@ -4,7 +4,7 @@ use crate::types::user::User;
 use std::string::FromUtf16Error;
 
 /// Text with entities
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Text {
     /// The actual UTF-8 text
     pub data: String,
@@ -12,7 +12,7 @@ pub struct Text {
 }
 
 /// Text with parsed entities
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ParsedText {
     /// The actual UTF-8 text
     pub data: String,
@@ -113,7 +113,7 @@ impl Text {
 }
 
 /// Respresents an entity in a text
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum TextEntity {
     /// Bold text
     Bold(TextEntityData),
@@ -161,7 +161,7 @@ pub enum TextEntity {
 }
 
 /// Actual data of text entity
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct TextEntityData {
     /// Offset in UTF-16 code units to the start of the entity
     pub offset: usize,

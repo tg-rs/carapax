@@ -1,7 +1,7 @@
 use crate::types::primitive::{Integer, ParseMode};
 
 /// This object represents the content of a media message to be sent.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type")]
 pub enum InputMedia {
     /// Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent.

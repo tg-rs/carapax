@@ -4,7 +4,7 @@ use serde::de::{Deserialize, Deserializer, Error};
 /// Contains information about documents
 /// or other Telegram Passport elements
 /// shared with the bot by the user
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum EncryptedPassportElement {
     /// Address
     Address(EncryptedPassportElementAddress),
@@ -146,7 +146,7 @@ impl<'de> Deserialize<'de> for EncryptedPassportElement {
 }
 
 /// Address
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementAddress {
     /// Base64-encoded encrypted
     /// Telegram Passport element data provided by the user
@@ -159,7 +159,7 @@ pub struct EncryptedPassportElementAddress {
 }
 
 /// Bank statement
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementBankStatement {
     /// Array of encrypted files with
     /// documents provided by the user
@@ -177,7 +177,7 @@ pub struct EncryptedPassportElementBankStatement {
 }
 
 /// Driver license
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementDriverLicense {
     /// Base64-encoded encrypted
     /// Telegram Passport element data provided by the user
@@ -210,7 +210,7 @@ pub struct EncryptedPassportElementDriverLicense {
 }
 
 /// E-Mail
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementEmail {
     /// User's verified email address
     pub email: String,
@@ -220,7 +220,7 @@ pub struct EncryptedPassportElementEmail {
 }
 
 /// Identity card
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementIdentityCard {
     /// Base64-encoded encrypted
     /// Telegram Passport element data provided by the user
@@ -253,7 +253,7 @@ pub struct EncryptedPassportElementIdentityCard {
 }
 
 /// Internal passport
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementInternalPassport {
     /// Base64-encoded encrypted
     /// Telegram Passport element data provided by the user
@@ -281,7 +281,7 @@ pub struct EncryptedPassportElementInternalPassport {
 }
 
 /// Passport
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementPassport {
     /// Base64-encoded encrypted
     /// Telegram Passport element data provided by the user
@@ -309,7 +309,7 @@ pub struct EncryptedPassportElementPassport {
 }
 
 /// Passport registration
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementPassportRegistration {
     /// Array of encrypted files with
     /// documents provided by the user
@@ -327,7 +327,7 @@ pub struct EncryptedPassportElementPassportRegistration {
 }
 
 /// Personal details
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementPersonalDetails {
     /// Base64-encoded encrypted
     /// Telegram Passport element data provided by the user
@@ -340,7 +340,7 @@ pub struct EncryptedPassportElementPersonalDetails {
 }
 
 /// Phone number
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementPhoneNumber {
     /// User's verified phone number
     pub phone_number: String,
@@ -350,7 +350,7 @@ pub struct EncryptedPassportElementPhoneNumber {
 }
 
 /// Rental agreement
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementRentalAgreement {
     /// Array of encrypted files with
     /// documents provided by the user
@@ -368,7 +368,7 @@ pub struct EncryptedPassportElementRentalAgreement {
 }
 
 /// Temporary registration
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementTemporaryRegistration {
     /// Array of encrypted files with
     /// documents provided by the user
@@ -386,7 +386,7 @@ pub struct EncryptedPassportElementTemporaryRegistration {
 }
 
 /// Utility bill
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPassportElementUtilityBill {
     /// Array of encrypted files with
     /// documents provided by the user
@@ -419,7 +419,7 @@ struct RawEncryptedPassportElement {
 }
 
 /// Type of encrypted passport element
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum EncryptedPassportElementKind {
     /// Address
     #[serde(rename = "address")]

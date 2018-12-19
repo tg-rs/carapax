@@ -18,7 +18,7 @@ pub(crate) use self::raw::RawMessageEntity;
 pub use self::text::{ParseEntitiesError, ParsedText, Text, TextEntity, TextEntityData};
 
 /// This object represents a message
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Message {
     /// Unique message identifier inside this chat
     pub id: Integer,

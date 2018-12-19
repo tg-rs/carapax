@@ -7,7 +7,7 @@ use serde::de::{Deserialize, Deserializer};
 /// This object represents a game
 /// Use BotFather to create and edit games,
 /// their short names will act as unique identifiers
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Game {
     /// Title of the game
     pub title: String,
@@ -58,7 +58,7 @@ struct RawGame {
 }
 
 /// This object represents one row of the high scores table for a game
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct GameHighScore {
     /// Position in high score table for the game
     pub position: Integer,

@@ -2,7 +2,7 @@ use crate::types::chat::{ChannelChat, GroupChat, PrivateChat, SupergroupChat};
 use crate::types::user::User;
 
 /// Contains chat-specific data
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum MessageKind {
     /// Channel chat
     Channel {

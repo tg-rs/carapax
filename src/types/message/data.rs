@@ -11,7 +11,7 @@ use crate::types::primitive::Integer;
 use crate::types::user::User;
 
 /// Contains message data
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum MessageData {
     /// Message is an animation, information about the animation
     Animation(Animation),

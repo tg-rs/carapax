@@ -8,7 +8,7 @@ use crate::types::user::User;
 /// to a message sent via the bot (in inline mode),
 /// the field inline_message_id will be present.
 /// Exactly one of the fields data or game_short_name will be present.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct CallbackQuery {
     /// Unique identifier for this query
     pub id: String,
@@ -35,7 +35,7 @@ pub struct CallbackQuery {
 }
 
 /// This object represents one button of an inline keyboard. You must use exactly one of the optional fields.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct InlineKeyboardButton {
     /// Label text on the button
     pub text: String,
@@ -68,7 +68,7 @@ pub struct InlineKeyboardButton {
 }
 
 /// This object represents an inline keyboard that appears right next to the message it belongs to.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct InlineKeyboardMarkup {
     /// Array of button rows, each represented by an Array of InlineKeyboardButton objects
     pub inline_keyboard: Vec<Vec<InlineKeyboardButton>>,
@@ -77,7 +77,7 @@ pub struct InlineKeyboardMarkup {
 /// This object represents one button of the reply keyboard.
 /// For simple text buttons String can be used instead of this object to specify text of the button.
 /// Optional fields are mutually exclusive.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct KeyboardButton {
     /// Text of the button.
     /// If none of the optional fields are used,
@@ -93,7 +93,7 @@ pub struct KeyboardButton {
     pub request_location: Option<bool>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 /// This object represents a custom keyboard with reply options
 pub struct ReplyKeyboardMarkup {
     /// Array of button rows, each represented by an Array of KeyboardButton objects
@@ -124,7 +124,7 @@ pub struct ReplyKeyboardMarkup {
 /// By default, custom keyboards are displayed until a new keyboard is sent by a bot.
 /// An exception is made for one-time keyboards that are hidden immediately after
 /// the user presses a button (see ReplyKeyboardMarkup).
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ReplyKeyboardRemove {
     /// Requests clients to remove the custom keyboard
     /// (user will not be able to summon this keyboard;

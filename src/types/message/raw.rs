@@ -58,7 +58,7 @@ pub(super) struct RawMessage {
     pub passport_data: Option<PassportData>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) struct RawMessageEntity {
     #[serde(rename = "type")]
     pub kind: RawMessageEntityKind,
@@ -68,7 +68,7 @@ pub(crate) struct RawMessageEntity {
     pub user: Option<User>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) enum RawMessageEntityKind {
     #[serde(rename = "bold")]
     Bold,

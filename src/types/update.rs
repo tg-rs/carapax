@@ -6,7 +6,7 @@ use crate::types::primitive::Integer;
 use serde::de::{Deserialize, Deserializer, Error};
 
 /// This object represents an incoming update
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Update {
     /// The update‘s unique identifier
     /// Update identifiers start from a certain positive number and increase sequentially
@@ -20,7 +20,7 @@ pub struct Update {
 }
 
 /// Kind of update
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum UpdateKind {
     /// New incoming message of any kind — text, photo, sticker, etc
     Message(Message),

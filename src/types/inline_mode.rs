@@ -6,7 +6,7 @@ use crate::types::user::User;
 
 /// This object represents an incoming inline query.
 /// When the user sends an empty query, your bot could return some default or trending results.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct InlineQuery {
     /// Unique identifier for this query
     pub id: String,
@@ -21,7 +21,7 @@ pub struct InlineQuery {
 }
 
 /// This object represents one result of an inline query
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type")]
 pub enum InlineQueryResult {
     /// Represents a link to an article or web page.
@@ -540,7 +540,7 @@ pub enum InlineQueryResult {
 }
 
 /// This object represents the content of a message to be sent as a result of an inline query.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(untagged)]
 pub enum InputMessageContent {
     /// Represents the content of a text message to be sent as the result of an inline query.
@@ -592,7 +592,7 @@ pub enum InputMessageContent {
 }
 
 /// Represents a result of an inline query that was chosen by the user and sent to their chat partner.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct ChosenInlineResult {
     /// The unique identifier for the result that was chosen
     pub result_id: String,
