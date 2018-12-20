@@ -1,16 +1,16 @@
 use crate::types::primitive::{Float, Integer, ParseMode};
 
-/// This object represents the content of a message to be sent as a result of an inline query
+/// Content of a message to be sent as a result of an inline query
 #[derive(Clone, Debug, Serialize)]
 #[serde(untagged)]
 pub enum InputMessageContent {
-    /// Represents the content of a contact message to be sent as the result of an inline query
+    /// Contact message
     Contact(InputMessageContentContact),
-    /// Represents the content of a location message to be sent as the result of an inline query
+    /// Location message
     Location(InputMessageContentLocation),
-    /// Represents the content of a text message to be sent as the result of an inline query
+    /// Text message
     Text(InputMessageContentText),
-    /// Represents the content of a venue message to be sent as the result of an inline query
+    /// Venue message
     Venue(InputMessageContentVenue),
 }
 
@@ -29,7 +29,7 @@ impl_input_message_content_from!(Location(InputMessageContentLocation));
 impl_input_message_content_from!(Text(InputMessageContentText));
 impl_input_message_content_from!(Venue(InputMessageContentVenue));
 
-/// Represents the content of a contact message to be sent as the result of an inline query
+/// Contact message to be sent as the result of an inline query
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMessageContentContact {
     /// Contact's phone number
@@ -42,7 +42,7 @@ pub struct InputMessageContentContact {
     pub vcard: Option<String>,
 }
 
-/// Represents the content of a location message to be sent as the result of an inline query
+/// Location message to be sent as the result of an inline query
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMessageContentLocation {
     /// Latitude of the location in degrees
@@ -53,7 +53,7 @@ pub struct InputMessageContentLocation {
     pub live_period: Option<Integer>,
 }
 
-/// Represents the content of a text message to be sent as the result of an inline query
+/// Text message to be sent as the result of an inline query
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMessageContentText {
     /// Text of the message to be sent, 1-4096 characters
@@ -64,7 +64,7 @@ pub struct InputMessageContentText {
     pub disable_web_page_preview: Option<bool>,
 }
 
-/// Represents the content of a venue message to be sent as the result of an inline query
+/// Venue message to be sent as the result of an inline query
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMessageContentVenue {
     /// Latitude of the venue in degrees

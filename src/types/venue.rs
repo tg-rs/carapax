@@ -1,6 +1,6 @@
 use crate::types::location::Location;
 
-/// This object represents a venue
+/// Venue
 #[derive(Clone, Debug, Deserialize)]
 pub struct Venue {
     /// Venue location

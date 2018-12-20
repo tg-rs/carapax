@@ -14,7 +14,7 @@ pub use self::member::{
 };
 pub use self::photo::ChatPhoto;
 
-/// This object represents a chat
+/// Chat
 #[derive(Clone, Debug)]
 pub enum Chat {
     /// Channel
@@ -81,7 +81,7 @@ impl<'de> Deserialize<'de> for Chat {
     }
 }
 
-/// This object represents a channel
+/// Channel chat
 #[derive(Clone, Debug)]
 pub struct ChannelChat {
     /// Unique identifier for this chat
@@ -104,7 +104,7 @@ pub struct ChannelChat {
     pub pinned_message: Option<Box<Message>>,
 }
 
-/// This object represents a group
+/// Group chat
 #[derive(Clone, Debug)]
 pub struct GroupChat {
     /// Unique identifier for this chat
@@ -124,7 +124,7 @@ pub struct GroupChat {
     pub pinned_message: Option<Box<Message>>,
 }
 
-/// This object represents a private chat
+/// Private chat
 #[derive(Clone, Debug)]
 pub struct PrivateChat {
     /// Unique identifier for this chat
@@ -140,7 +140,7 @@ pub struct PrivateChat {
     pub photo: Option<ChatPhoto>,
 }
 
-/// This object represents a supergroup
+/// Supergroup chat
 #[derive(Clone, Debug)]
 pub struct SupergroupChat {
     /// Unique identifier for this chat

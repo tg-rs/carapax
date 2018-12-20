@@ -1,6 +1,6 @@
 use crate::types::primitive::Float;
 
-/// This object represents a point on the map.
+/// Point on the map
 #[derive(Clone, Debug, Deserialize)]
 pub struct Location {
     /// Longitude as defined by sender

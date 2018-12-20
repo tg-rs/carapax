@@ -2,7 +2,7 @@ use crate::types::inline_mode::message_content::InputMessageContent;
 use crate::types::primitive::{Float, Integer, ParseMode};
 use crate::types::reply_markup::InlineKeyboardMarkup;
 
-/// This object represents one result of an inline query
+/// Result of an inline query
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type")]
 pub enum InlineQueryResult {
@@ -100,7 +100,7 @@ impl_query_result_from!(Venue(InlineQueryResultVenue));
 impl_query_result_from!(Video(InlineQueryResultVideo));
 impl_query_result_from!(Voice(InlineQueryResultVoice));
 
-/// Represents a link to an article or web page
+/// Link to an article or web page
 #[derive(Clone, Debug, Serialize)]
 pub struct InlineQueryResultArticle {
     /// Unique identifier for this result, 1-64 Bytes
@@ -147,7 +147,8 @@ impl InlineQueryResultArticle {
     }
 }
 
-/// Represents a link to an mp3 audio file
+/// Link to an mp3 audio file
+///
 /// By default, this audio file will be sent by the user
 /// Alternatively, you can use input_message_content to send
 /// a message with the specified content instead of the audio
@@ -190,8 +191,8 @@ impl InlineQueryResultAudio {
     }
 }
 
-/// Represents a link to an mp3 audio file
-/// stored on the Telegram servers
+/// Link to an mp3 audio file stored on the Telegram servers
+///
 /// By default, this audio file will be sent by the user
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the audio
@@ -225,7 +226,8 @@ impl InlineQueryResultCachedAudio {
     }
 }
 
-/// Represents a link to a file stored on the Telegram servers
+/// Link to a file stored on the Telegram servers
+///
 /// By default, this file will be sent by the user with an optional caption
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the file
@@ -265,7 +267,8 @@ impl InlineQueryResultCachedDocument {
     }
 }
 
-/// Represents a link to an animated GIF file stored on the Telegram servers
+/// Link to an animated GIF file stored on the Telegram servers
+///
 /// By default, this animated GIF file will be sent by the user with an optional caption
 /// Alternatively, you can use input_message_content to send
 /// a message with specified content instead of the animation
@@ -302,8 +305,8 @@ impl InlineQueryResultCachedGif {
     }
 }
 
-/// Represents a link to a video animation
-/// (H.264/MPEG-4 AVC video without sound) stored on the Telegram servers
+/// Link to a video animation (H.264/MPEG-4 AVC video without sound) stored on the Telegram servers
+///
 /// By default, this animated MPEG-4 file will be sent by the user with an optional caption
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content
@@ -341,7 +344,8 @@ impl InlineQueryResultCachedMpeg4Gif {
     }
 }
 
-/// Represents a link to a photo stored on the Telegram servers
+/// Link to a photo stored on the Telegram servers
+///
 /// By default, this photo will be sent by the user with an optional caption
 /// Alternatively, you can use input_message_content to send
 /// a message with the specified content instead of the photo
@@ -381,7 +385,8 @@ impl InlineQueryResultCachedPhoto {
     }
 }
 
-/// Represents a link to a sticker stored on the Telegram servers
+/// Link to a sticker stored on the Telegram servers
+///
 /// By default, this sticker will be sent by the user
 /// Alternatively, you can use input_message_content to
 /// send a message with the specified content instead of the sticker
@@ -409,7 +414,8 @@ impl InlineQueryResultCachedSticker {
     }
 }
 
-/// Represents a link to a video file stored on the Telegram servers
+/// Link to a video file stored on the Telegram servers
+///
 /// By default, this video file will be sent by the user with an optional caption
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the video
@@ -449,7 +455,8 @@ impl InlineQueryResultCachedVideo {
     }
 }
 
-/// Represents a link to a voice message stored on the Telegram servers
+/// Link to a voice message stored on the Telegram servers
+///
 /// By default, this voice message will be sent by the user
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the voice message
@@ -486,7 +493,8 @@ impl InlineQueryResultCachedVoice {
     }
 }
 
-/// Represents a contact with a phone number
+/// Contact with a phone number
+///
 /// By default, this contact will be sent by the user
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the contact
@@ -532,7 +540,8 @@ impl InlineQueryResultContact {
     }
 }
 
-/// Represents a link to a file
+/// Link to a file
+///
 /// By default, this file will be sent by the user with an optional caption
 /// Alternatively, you can use input_message_content to send a message
 /// with the specified content instead of the file
@@ -585,7 +594,7 @@ impl InlineQueryResultDocument {
     }
 }
 
-/// Represents a Game
+/// Game
 #[derive(Clone, Debug, Serialize)]
 pub struct InlineQueryResultGame {
     /// Unique identifier for this result, 1-64 bytes
@@ -607,7 +616,8 @@ impl InlineQueryResultGame {
     }
 }
 
-/// Represents a link to an animated GIF file
+/// Link to an animated GIF file
+///
 /// By default, this animated GIF file
 /// will be sent by the user with optional caption
 /// Alternatively, you can use input_message_content
@@ -657,7 +667,8 @@ impl InlineQueryResultGif {
     }
 }
 
-/// Represents a location on a map
+/// Location on a map
+///
 /// By default, the location will be sent by the user
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the location
@@ -705,7 +716,8 @@ impl InlineQueryResultLocation {
     }
 }
 
-/// Represents a link to a video animation (H.264/MPEG-4 AVC video without sound)
+/// Link to a video animation (H.264/MPEG-4 AVC video without sound)
+///
 /// By default, this animated MPEG-4 file will be sent by the user with optional caption
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the animation
@@ -754,7 +766,8 @@ impl InlineQueryResultMpeg4Gif {
     }
 }
 
-/// Represents a link to a photo
+/// Link to a photo
+///
 /// By default, this photo will be sent by the user with optional caption
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the photo
@@ -805,7 +818,8 @@ impl InlineQueryResultPhoto {
     }
 }
 
-/// Represents a venue
+/// Venue
+///
 /// By default, the venue will be sent by the user
 /// Alternatively, you can use input_message_content
 /// to send a message with the specified content instead of the venue
@@ -864,7 +878,8 @@ impl InlineQueryResultVenue {
     }
 }
 
-/// Represents a link to a page containing an embedded video player or a video file
+/// Link to a page containing an embedded video player or a video file
+///
 /// By default, this video file will be sent by the user with an optional caption
 /// Alternatively, you can use input_message_content to send a message with
 /// the specified content instead of the video
@@ -923,7 +938,8 @@ impl InlineQueryResultVideo {
     }
 }
 
-/// Represents a link to a voice recording in an .ogg container encoded with OPUS
+/// Link to a voice recording in an .ogg container encoded with OPUS
+///
 /// By default, this voice recording will be sent by the user
 /// Alternatively, you can use input_message_content to send
 /// a message with the specified content instead of the the voice message

@@ -3,7 +3,7 @@ use crate::types::primitive::Integer;
 use crate::types::user::User;
 use serde::de::{Deserialize, Deserializer, Error};
 
-/// This object contains information about one member of a chat
+/// Information about one member of a chat
 #[derive(Clone, Debug)]
 pub enum ChatMember {
     /// Chat admin

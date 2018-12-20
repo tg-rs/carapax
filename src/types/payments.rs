@@ -1,7 +1,7 @@
 use crate::types::primitive::Integer;
 use crate::types::user::User;
 
-/// This object contains basic information about an invoice.
+/// Basic information about an invoice
 #[derive(Clone, Debug, Deserialize)]
 pub struct Invoice {
     /// Product name
@@ -12,31 +12,28 @@ pub struct Invoice {
     pub start_parameter: String,
     /// Three-letter ISO 4217 currency code
     pub currency: String,
-    /// Total price in the smallest units of the currency (integer, not float/double).
-    /// For example, for a price of US$ 1.45 pass amount = 145.
-    /// See the exp parameter in currencies.json,
-    /// it shows the number of digits past
-    /// the decimal point for each currency
-    /// (2 for the majority of currencies).
+    /// Total price in the smallest units of the currency (integer, not float/double)
+    ///
+    /// For example, for a price of US$ 1.45 pass amount = 145
+    /// See the exp parameter in currencies.json, it shows the number of digits past
+    /// the decimal point for each currency (2 for the majority of currencies)
     pub total_amount: Integer,
 }
 
-/// This object represents a portion of the price for goods or services.
+/// Portion of the price for goods or services
 #[derive(Clone, Debug, Serialize)]
 pub struct LabeledPrice {
     /// Portion label
     pub label: String,
-    /// Price of the product in the smallest units of the currency
-    /// (integer, not float/double).
-    /// For example, for a price of US$ 1.45 pass amount = 145.
-    /// See the exp parameter in currencies.json,
-    /// it shows the number of digits past the
-    /// decimal point for each currency
-    /// (2 for the majority of currencies).
+    /// Price of the product in the smallest units of the currency (integer, not float/double)
+    ///
+    /// For example, for a price of US$ 1.45 pass amount = 145
+    /// See the exp parameter in currencies.json, it shows the number of digits past the
+    /// decimal point for each currency (2 for the majority of currencies)
     pub amount: Integer,
 }
 
-/// This object represents information about an order.
+/// Information about an order
 #[derive(Clone, Debug, Deserialize)]
 pub struct OrderInfo {
     /// User name
@@ -49,7 +46,7 @@ pub struct OrderInfo {
     pub shipping_address: Option<ShippingAddress>,
 }
 
-/// This object contains information about an incoming pre-checkout query.
+/// Information about an incoming pre-checkout query
 #[derive(Clone, Debug, Deserialize)]
 pub struct PreCheckoutQuery {
     /// Unique query identifier
@@ -58,13 +55,11 @@ pub struct PreCheckoutQuery {
     pub from: User,
     /// Three-letter ISO 4217 currency code
     pub currency: String,
-    /// Total price in the smallest units of the currency
-    /// (integer, not float/double).
-    /// For example, for a price of US$ 1.45 pass amount = 145.
-    /// See the exp parameter in currencies.json,
-    /// it shows the number of digits past the
-    /// decimal point for each currency
-    /// (2 for the majority of currencies).
+    /// Total price in the smallest units of the currency (integer, not float/double)
+    ///
+    /// For example, for a price of US$ 1.45 pass amount = 145
+    /// See the exp parameter in currencies.json, it shows the number of digits past the
+    /// decimal point for each currency (2 for the majority of currencies)
     pub total_amount: Integer,
     /// Bot specified invoice payload
     pub invoice_payload: String,
@@ -74,7 +69,7 @@ pub struct PreCheckoutQuery {
     pub order_info: Option<OrderInfo>,
 }
 
-/// This object represents a shipping address.
+/// Shipping address
 #[derive(Clone, Debug, Deserialize)]
 pub struct ShippingAddress {
     /// ISO 3166-1 alpha-2 country code
@@ -91,7 +86,7 @@ pub struct ShippingAddress {
     pub post_code: String,
 }
 
-/// This object represents one shipping option.
+/// Shipping option
 #[derive(Clone, Debug, Serialize)]
 pub struct ShippingOption {
     /// Shipping option identifier
@@ -102,7 +97,7 @@ pub struct ShippingOption {
     pub prices: Vec<LabeledPrice>,
 }
 
-/// This object contains information about an incoming shipping query.
+/// Information about an incoming shipping query
 #[derive(Clone, Debug, Deserialize)]
 pub struct ShippingQuery {
     /// Unique query identifier
@@ -115,18 +110,16 @@ pub struct ShippingQuery {
     pub shipping_address: ShippingAddress,
 }
 
-/// This object contains basic information about a successful payment.
+/// Basic information about a successful payment
 #[derive(Clone, Debug, Deserialize)]
 pub struct SuccessfulPayment {
     /// Three-letter ISO 4217 currency code
     pub currency: String,
-    /// Total price in the smallest units of the currency
-    /// (integer, not float/double).
-    /// For example, for a price of US$ 1.45 pass amount = 145.
-    /// See the exp parameter in currencies.json,
-    /// it shows the number of digits past the
-    /// decimal point for each currency
-    /// (2 for the majority of currencies).
+    /// Total price in the smallest units of the currency (integer, not float/double)
+    ///
+    /// For example, for a price of US$ 1.45 pass amount = 145
+    /// See the exp parameter in currencies.json, it shows the number of digits past the
+    /// decimal point for each currency (2 for the majority of currencies)
     pub total_amount: Integer,
     /// Bot specified invoice payload
     pub invoice_payload: String,

@@ -7,7 +7,8 @@ mod query_result;
 pub use self::message_content::*;
 pub use self::query_result::*;
 
-/// This object represents an incoming inline query
+/// Incoming inline query
+///
 /// When the user sends an empty query, your bot could return some default or trending results
 #[derive(Clone, Debug, Deserialize)]
 pub struct InlineQuery {
@@ -23,7 +24,7 @@ pub struct InlineQuery {
     pub offset: String,
 }
 
-/// Represents a result of an inline query that was chosen by the user and sent to their chat partner
+/// Result of an inline query that was chosen by the user and sent to their chat partner
 #[derive(Clone, Debug, Deserialize)]
 pub struct ChosenInlineResult {
     /// The unique identifier for the result that was chosen

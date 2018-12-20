@@ -1,4 +1,4 @@
-/// This object represents a chat photo
+/// Chat photo
 #[derive(Clone, Debug, Deserialize)]
 pub struct ChatPhoto {
     /// Unique file identifier of small (160x160) chat photo

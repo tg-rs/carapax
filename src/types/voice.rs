@@ -1,6 +1,6 @@
 use crate::types::primitive::Integer;
 
-/// This object represents a voice note
+/// Voice note
 #[derive(Clone, Debug, Deserialize)]
 pub struct Voice {
     /// Unique identifier for this file

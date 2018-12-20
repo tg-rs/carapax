@@ -1,8 +1,6 @@
 use crate::types::passport::element::EncryptedPassportElementKind;
 
-/// This object represents an error in the Telegram Passport
-/// element which was submitted that should
-/// be resolved by the user
+/// Error in the Telegram Passport element which was submitted that should be resolved by the user
 #[derive(Clone, Debug, Serialize)]
 pub struct PassportElementError {
     #[serde(flatten)]

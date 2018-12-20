@@ -5,7 +5,8 @@ use crate::types::primitive::Integer;
 use crate::types::user::User;
 use serde::de::{Deserialize, Deserializer};
 
-/// This object represents a game
+/// Game
+///
 /// Use BotFather to create and edit games,
 /// their short names will act as unique identifiers
 #[derive(Clone, Debug)]
@@ -58,7 +59,7 @@ struct RawGame {
     animation: Option<Animation>,
 }
 
-/// This object represents one row of the high scores table for a game
+/// One row of the high scores table for a game
 #[derive(Clone, Debug, Deserialize)]
 pub struct GameHighScore {
     /// Position in high score table for the game

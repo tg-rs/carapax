@@ -1,7 +1,7 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
 
-/// This object represents an animation file (GIF or H.264/MPEG-4 AVC video without sound)
+/// An animation file (GIF or H.264/MPEG-4 AVC video without sound)
 #[derive(Clone, Debug, Deserialize)]
 pub struct Animation {
     /// Unique file identifier

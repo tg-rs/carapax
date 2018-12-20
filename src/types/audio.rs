@@ -1,7 +1,7 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
 
-/// This object represents an audio file to be treated as music by the Telegram clients
+/// Audio file to be treated as music by the Telegram clients
 #[derive(Clone, Debug, Deserialize)]
 pub struct Audio {
     /// Unique identifier for this file

@@ -1,22 +1,22 @@
 use crate::types::primitive::{Integer, ParseMode};
 
-/// This object represents the content of a media message to be sent
+/// Content of a media message to be sent
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type")]
 pub enum InputMedia {
-    /// Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent
+    /// Animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent
     #[serde(rename = "animation")]
     Animation(InputMediaAnimation),
-    /// Represents an audio file to be treated as music to be sent
+    /// Audio file to be treated as music to be sent
     #[serde(rename = "audio")]
     Audio(InputMediaAudio),
-    /// Represents a general file to be sent
+    /// General file to be sent
     #[serde(rename = "document")]
     Document(InputMediaDocument),
-    /// Represents a photo to be sent
+    /// Photo to be sent
     #[serde(rename = "photo")]
     Photo(InputMediaPhoto),
-    /// Represents a video to be sent
+    /// Video to be sent
     #[serde(rename = "video")]
     Video(InputMediaVideo),
 }
@@ -37,7 +37,7 @@ impl_input_media_from!(Document(InputMediaDocument));
 impl_input_media_from!(Photo(InputMediaPhoto));
 impl_input_media_from!(Video(InputMediaVideo));
 
-/// Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent
+/// Animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaAnimation {
     /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
@@ -80,7 +80,7 @@ impl InputMediaAnimation {
     }
 }
 
-/// Represents an audio file to be treated as music to be sent
+/// Audio file to be treated as music to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaAudio {
     /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
@@ -123,7 +123,7 @@ impl InputMediaAudio {
     }
 }
 
-/// Represents a general file to be sent
+/// General file to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaDocument {
     /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
@@ -156,7 +156,7 @@ impl InputMediaDocument {
     }
 }
 
-/// Represents a photo to be sent
+/// Photo to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaPhoto {
     /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
@@ -181,7 +181,7 @@ impl InputMediaPhoto {
     }
 }
 
-/// Represents a video to be sent
+/// Video to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaVideo {
     /// Pass a file_id to send a file that exists on the Telegram servers (recommended),

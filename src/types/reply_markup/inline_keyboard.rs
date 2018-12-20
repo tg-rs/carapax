@@ -1,4 +1,4 @@
-/// This object represents an inline keyboard that appears right next to the message it belongs to
+/// Inline keyboard that appears right next to the message it belongs to
 #[derive(Clone, Debug, Serialize)]
 pub struct InlineKeyboardMarkup {
     inline_keyboard: Vec<Vec<InlineKeyboardButton>>,
@@ -30,7 +30,8 @@ impl From<Vec<Vec<InlineKeyboardButton>>> for InlineKeyboardMarkup {
     }
 }
 
-/// This object represents one button of an inline keyboard
+/// Button of an inline keyboard
+///
 /// You must use exactly one of the optional fields
 #[derive(Clone, Debug, Serialize)]
 pub struct InlineKeyboardButton {

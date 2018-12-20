@@ -1,7 +1,7 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
 
-/// This object represents a video file
+/// Video file
 #[derive(Clone, Debug, Deserialize)]
 pub struct Video {
     /// Unique identifier for this file

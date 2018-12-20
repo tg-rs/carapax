@@ -1,6 +1,6 @@
 use std::ops::Not;
 
-/// This object represents a custom keyboard with reply options
+/// Custom keyboard with reply options
 #[derive(Clone, Debug, Serialize)]
 pub struct ReplyKeyboardMarkup {
     /// Array of button rows, each represented by an Array of KeyboardButton objects
@@ -77,8 +77,7 @@ impl From<Vec<Vec<KeyboardButton>>> for ReplyKeyboardMarkup {
     }
 }
 
-/// This object represents one button of the reply keyboard
-/// For simple text buttons String can be used instead of this object to specify text of the button
+/// Button of the reply keyboard
 #[derive(Clone, Debug, Serialize)]
 pub struct KeyboardButton {
     text: String,
@@ -120,6 +119,7 @@ impl KeyboardButton {
 }
 
 /// Requests clients to remove the custom keyboard
+///
 /// (user will not be able to summon this keyboard;
 /// if you want to hide the keyboard from sight but keep it accessible,
 /// use one_time_keyboard in ReplyKeyboardMarkup)

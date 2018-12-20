@@ -1,7 +1,7 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
 
-/// This object represents a general file (as opposed to photos, voice messages and audio files)
+/// General file (as opposed to photos, voice messages and audio files)
 #[derive(Clone, Debug, Deserialize)]
 pub struct Document {
     /// Unique file identifier

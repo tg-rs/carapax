@@ -1,6 +1,6 @@
 use crate::types::primitive::Integer;
 
-/// This object represents one size of a photo or a file / sticker thumbnail
+/// Size of a photo or a file / sticker thumbnail
 #[derive(Clone, Debug, Deserialize)]
 pub struct PhotoSize {
     /// Unique identifier for this file

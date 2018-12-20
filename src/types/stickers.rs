@@ -1,8 +1,7 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::{Float, Integer};
 
-/// The part of the face relative
-/// to which the mask should be placed.
+/// The part of the face relative to which the mask should be placed
 #[derive(Clone, Debug, Deserialize)]
 pub enum MaskPositionPoint {
     /// “forehead”
@@ -19,7 +18,7 @@ pub enum MaskPositionPoint {
     Chin,
 }
 
-/// This object describes the position on faces where a mask should be placed by default
+/// Position on faces where a mask should be placed by default
 #[derive(Clone, Debug, Deserialize)]
 pub struct MaskPosition {
     /// The part of the face relative
@@ -43,7 +42,7 @@ pub struct MaskPosition {
     pub scale: Float,
 }
 
-/// This object represents a sticker
+/// Sticker
 #[derive(Clone, Debug, Deserialize)]
 pub struct Sticker {
     /// Unique identifier for this file
@@ -64,7 +63,7 @@ pub struct Sticker {
     pub file_size: Option<Integer>,
 }
 
-/// This object represents a sticker set
+/// Sticker set
 #[derive(Clone, Debug, Deserialize)]
 pub struct StickerSet {
     /// Sticker set name

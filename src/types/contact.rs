@@ -1,6 +1,6 @@
 use crate::types::primitive::Integer;
 
-/// This object represents a phone contact.
+/// Phone contact
 #[derive(Clone, Debug, Deserialize)]
 pub struct Contact {
     /// Contact's phone number
