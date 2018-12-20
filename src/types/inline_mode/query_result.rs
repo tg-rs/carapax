@@ -1,6 +1,6 @@
 use crate::types::inline_mode::message_content::InputMessageContent;
-use crate::types::keyboards::InlineKeyboardMarkup;
 use crate::types::primitive::{Float, Integer, ParseMode};
+use crate::types::reply_markup::InlineKeyboardMarkup;
 
 /// This object represents one result of an inline query
 #[derive(Clone, Debug, Serialize)]
