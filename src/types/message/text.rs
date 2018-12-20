@@ -73,7 +73,7 @@ impl Text {
                     let parts = data.data.as_str().splitn(2, "@").collect::<Vec<&str>>();
                     let len = parts.len();
                     assert!(len >= 1);
-                    TextEntity::BotCommand {
+                    TextEntity::BotCommand(BotCommand {
                         command: parts[0].to_string(),
                         bot_name: if len == 2 {
                             Some(parts[1].to_string())
@@ -81,7 +81,7 @@ impl Text {
                             None
                         },
                         data,
-                    }
+                    })
                 }
                 RawMessageEntityKind::Cashtag => TextEntity::Cashtag(data),
                 RawMessageEntityKind::Code => TextEntity::Code(data),
@@ -92,17 +92,17 @@ impl Text {
                 RawMessageEntityKind::PhoneNumber => TextEntity::PhoneNumber(data),
                 RawMessageEntityKind::Pre => TextEntity::Pre(data),
                 RawMessageEntityKind::TextLink => match raw_entity.url {
-                    Some(ref url) => TextEntity::TextLink {
+                    Some(ref url) => TextEntity::TextLink(TextLink {
                         data,
                         url: url.clone(),
-                    },
+                    }),
                     None => return Err(ParseEntitiesError::NoUrl),
                 },
                 RawMessageEntityKind::TextMention => match raw_entity.user {
-                    Some(ref user) => TextEntity::TextMention {
+                    Some(ref user) => TextEntity::TextMention(TextMention {
                         data,
                         user: user.clone(),
-                    },
+                    }),
                     None => return Err(ParseEntitiesError::NoUser),
                 },
                 RawMessageEntityKind::Url => TextEntity::Url(data),
@@ -118,14 +118,7 @@ pub enum TextEntity {
     /// Bold text
     Bold(TextEntityData),
     /// Bot command
-    BotCommand {
-        /// Actual command
-        command: String,
-        /// Bot's username
-        bot_name: Option<String>,
-        /// Entity data
-        data: TextEntityData,
-    },
+    BotCommand(BotCommand),
     /// Cashtag
     Cashtag(TextEntityData),
     /// Monowidth string
@@ -143,21 +136,40 @@ pub enum TextEntity {
     /// Monowidth block
     Pre(TextEntityData),
     /// Clickable text URLs
-    TextLink {
-        /// Actual data of entity
-        data: TextEntityData,
-        /// URL that will be opened after user taps on the text
-        url: String,
-    },
+    TextLink(TextLink),
     /// Mention user without username
-    TextMention {
-        /// Actual data of text entity
-        data: TextEntityData,
-        /// Mentioned user
-        user: User,
-    },
+    TextMention(TextMention),
     /// URL
     Url(TextEntityData),
+}
+
+/// Bot command
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
+pub struct BotCommand {
+    /// Actual command
+    pub command: String,
+    /// Bot's username
+    pub bot_name: Option<String>,
+    /// Entity data
+    pub data: TextEntityData,
+}
+
+/// Clickable text URLs
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
+pub struct TextLink {
+    /// Actual data of entity
+    pub data: TextEntityData,
+    /// URL that will be opened after user taps on the text
+    pub url: String,
+}
+
+/// Mention user without username
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
+pub struct TextMention {
+    /// Actual data of text entity
+    pub data: TextEntityData,
+    /// Mentioned user
+    pub user: User,
 }
 
 /// Actual data of text entity

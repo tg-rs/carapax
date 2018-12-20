@@ -11,11 +11,11 @@ mod raw;
 mod tests;
 mod text;
 
-pub use self::data::MessageData;
-pub use self::forward::{Forward, ForwardFrom};
-pub use self::kind::MessageKind;
+pub use self::data::*;
+pub use self::forward::*;
+pub use self::kind::*;
 pub(crate) use self::raw::RawMessageEntity;
-pub use self::text::{ParseEntitiesError, ParsedText, Text, TextEntity, TextEntityData};
+pub use self::text::*;
 
 /// This object represents a message
 #[derive(Clone, Debug)]

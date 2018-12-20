@@ -335,7 +335,7 @@ fn test_deserialize_message_entities() {
                     offset: 0,
                     length: 4
                 }),
-                TextEntity::BotCommand {
+                TextEntity::BotCommand(BotCommand {
                     command: String::from("/botcommand"),
                     bot_name: None,
                     data: TextEntityData {
@@ -343,7 +343,7 @@ fn test_deserialize_message_entities() {
                         offset: 5,
                         length: 11
                     }
-                },
+                }),
                 TextEntity::Cashtag(TextEntityData {
                     data: String::from("$cashtag"),
                     offset: 17,
@@ -384,15 +384,15 @@ fn test_deserialize_message_entities() {
                     offset: 68,
                     length: 3
                 }),
-                TextEntity::TextLink {
+                TextEntity::TextLink(TextLink {
                     data: TextEntityData {
                         data: String::from("textlink"),
                         offset: 72,
                         length: 8
                     },
                     url: String::from("https://example.com")
-                },
-                TextEntity::TextMention {
+                }),
+                TextEntity::TextMention(TextMention {
                     data: TextEntityData {
                         data: String::from("textmention"),
                         offset: 81,
@@ -406,7 +406,7 @@ fn test_deserialize_message_entities() {
                         username: None,
                         language_code: None
                     }
-                },
+                }),
                 TextEntity::Url(TextEntityData {
                     data: String::from("url"),
                     offset: 93,
