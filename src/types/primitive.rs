@@ -11,6 +11,7 @@ pub type Float = f32;
 #[derive(Clone, Copy, Debug, Serialize)]
 pub enum ParseMode {
     /// HTML
+    #[serde(rename = "HTML")]
     Html,
     /// Markdown
     Markdown,

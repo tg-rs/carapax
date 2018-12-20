@@ -1,7 +1,7 @@
-use crate::types::media::PhotoSize;
+use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
 
-/// This object represents a Telegram user or bot.
+/// This object represents a Telegram user or bot
 #[derive(Clone, Debug, Deserialize, PartialEq, PartialOrd)]
 pub struct User {
     /// Unique identifier for this user or bot
@@ -18,7 +18,7 @@ pub struct User {
     pub language_code: Option<String>,
 }
 
-/// This object represent a user's profile pictures.
+/// This object represent a user's profile pictures
 #[derive(Clone, Debug, Deserialize)]
 pub struct UserProfilePhotos {
     /// Total number of profile pictures the target user has
