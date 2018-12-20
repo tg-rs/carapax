@@ -10,16 +10,32 @@ pub enum InputMedia {
     /// Represents an audio file to be treated as music to be sent
     #[serde(rename = "audio")]
     Audio(InputMediaAudio),
-    /// Represents a general file to be sent.
+    /// Represents a general file to be sent
     #[serde(rename = "document")]
     Document(InputMediaDocument),
     /// Represents a photo to be sent
     #[serde(rename = "photo")]
     Photo(InputMediaPhoto),
-    /// Represents a video to be sent.
+    /// Represents a video to be sent
     #[serde(rename = "video")]
     Video(InputMediaVideo),
 }
+
+macro_rules! impl_input_media_from {
+    ($to:ident($from:ident)) => {
+        impl From<$from> for InputMedia {
+            fn from(obj: $from) -> InputMedia {
+                InputMedia::$to(obj)
+            }
+        }
+    };
+}
+
+impl_input_media_from!(Animation(InputMediaAnimation));
+impl_input_media_from!(Audio(InputMediaAudio));
+impl_input_media_from!(Document(InputMediaDocument));
+impl_input_media_from!(Photo(InputMediaPhoto));
+impl_input_media_from!(Video(InputMediaVideo));
 
 /// Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent
 #[derive(Clone, Debug, Serialize)]
@@ -47,6 +63,21 @@ pub struct InputMediaAnimation {
     pub height: Option<Integer>,
     /// Animation duration
     pub duration: Option<Integer>,
+}
+
+impl InputMediaAnimation {
+    /// Returns a new InputMedia with with empty optional parameters
+    pub fn new<S: Into<String>>(media: S) -> Self {
+        InputMediaAnimation {
+            media: media.into(),
+            thumb: None,
+            caption: None,
+            parse_mode: None,
+            width: None,
+            height: None,
+            duration: None,
+        }
+    }
 }
 
 /// Represents an audio file to be treated as music to be sent
@@ -77,7 +108,22 @@ pub struct InputMediaAudio {
     pub title: Option<String>,
 }
 
-/// Represents a general file to be sent.
+impl InputMediaAudio {
+    /// Returns a new InputMedia with with empty optional parameters
+    pub fn new<S: Into<String>>(media: S) -> Self {
+        InputMediaAudio {
+            media: media.into(),
+            thumb: None,
+            caption: None,
+            parse_mode: None,
+            duration: None,
+            performer: None,
+            title: None,
+        }
+    }
+}
+
+/// Represents a general file to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaDocument {
     /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
@@ -90,13 +136,24 @@ pub struct InputMediaDocument {
     /// Ignored if the file is not uploaded using multipart/form-data
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>”
-    /// if the thumbnail was uploaded using multipart/form-data
-    /// under <file_attach_name>.
+    /// if the thumbnail was uploaded using multipart/form-data under <file_attach_name>
     pub thumb: Option<String>,
     /// Caption of the document to be sent, 0-1024 characters
     pub caption: Option<String>,
     /// Parse mode
     pub parse_mode: Option<ParseMode>,
+}
+
+impl InputMediaDocument {
+    /// Returns a new InputMedia with with empty optional parameters
+    pub fn new<S: Into<String>>(media: S) -> Self {
+        InputMediaDocument {
+            media: media.into(),
+            thumb: None,
+            caption: None,
+            parse_mode: None,
+        }
+    }
 }
 
 /// Represents a photo to be sent
@@ -105,8 +162,7 @@ pub struct InputMediaPhoto {
     /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
     /// pass an HTTP URL for Telegram to get a file from the Internet,
     /// or pass “attach://<file_attach_name>”
-    /// to upload a new one using multipart/form-data
-    /// under <file_attach_name> name
+    /// to upload a new one using multipart/form-data under <file_attach_name> name
     pub media: String,
     /// Caption of the photo to be sent, 0-1024 characters
     pub caption: Option<String>,
@@ -114,7 +170,18 @@ pub struct InputMediaPhoto {
     pub parse_mode: Option<ParseMode>,
 }
 
-/// Represents a video to be sent.
+impl InputMediaPhoto {
+    /// Returns a new InputMedia with with empty optional parameters
+    pub fn new<S: Into<String>>(media: S) -> Self {
+        InputMediaPhoto {
+            media: media.into(),
+            caption: None,
+            parse_mode: None,
+        }
+    }
+}
+
+/// Represents a video to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaVideo {
     /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
@@ -127,8 +194,7 @@ pub struct InputMediaVideo {
     /// Ignored if the file is not uploaded using multipart/form-data
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>”
-    /// if the thumbnail was uploaded using multipart/form-data
-    /// under <file_attach_name>
+    /// if the thumbnail was uploaded using multipart/form-data under <file_attach_name>
     pub thumb: Option<String>,
     /// Caption of the video to be sent, 0-1024 characters
     pub caption: Option<String>,
@@ -142,4 +208,20 @@ pub struct InputMediaVideo {
     pub duration: Option<Integer>,
     /// Pass True, if the uploaded video is suitable for streaming
     pub supports_streaming: Option<bool>,
+}
+
+impl InputMediaVideo {
+    /// Returns a new InputMedia with with empty optional parameters
+    pub fn new<S: Into<String>>(media: S) -> Self {
+        InputMediaVideo {
+            media: media.into(),
+            thumb: None,
+            caption: None,
+            parse_mode: None,
+            width: None,
+            height: None,
+            duration: None,
+            supports_streaming: None,
+        }
+    }
 }
