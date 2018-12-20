@@ -1,150 +1,104 @@
+use crate::types::inline_mode::message_content::InputMessageContent;
 use crate::types::keyboards::InlineKeyboardMarkup;
-use crate::types::location::Location;
 use crate::types::primitive::{Float, Integer, ParseMode};
-use crate::types::user::User;
-
-/// This object represents an incoming inline query
-/// When the user sends an empty query, your bot could return some default or trending results
-#[derive(Clone, Debug, Deserialize)]
-pub struct InlineQuery {
-    /// Unique identifier for this query
-    pub id: String,
-    /// Sender
-    pub from: User,
-    /// Sender location, only for bots that request user location
-    pub location: Option<Location>,
-    /// Text of the query (up to 512 characters)
-    pub query: String,
-    /// Offset of the results to be returned, can be controlled by the bot
-    pub offset: String,
-}
 
 /// This object represents one result of an inline query
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type")]
 pub enum InlineQueryResult {
-    /// Represents a link to an article or web page
+    /// Link to an article or web page
     #[serde(rename = "article")]
     Article(InlineQueryResultArticle),
-    /// Represents a link to an mp3 audio file
-    /// By default, this audio file will be sent by the user
-    /// Alternatively, you can use input_message_content to send
-    /// a message with the specified content instead of the audio
+    /// Link to an mp3 audio file
     #[serde(rename = "audio")]
     Audio(InlineQueryResultAudio),
-    /// Represents a link to an mp3 audio file
-    /// stored on the Telegram servers
-    /// By default, this audio file will be sent by the user
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the audio
+    /// Link to an mp3 audio file stored on the Telegram servers
     #[serde(rename = "audio")]
     CachedAudio(InlineQueryResultCachedAudio),
-    /// Represents a link to a file stored on the Telegram servers
-    /// By default, this file will be sent by the user with an optional caption
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the file
+    /// Link to a file stored on the Telegram servers
     #[serde(rename = "document")]
     CachedDocument(InlineQueryResultCachedDocument),
-    /// Represents a link to an animated GIF file stored on the Telegram servers
-    /// By default, this animated GIF file will be sent by the user with an optional caption
-    /// Alternatively, you can use input_message_content to send
-    /// a message with specified content instead of the animation
+    /// Link to an animated GIF file stored on the Telegram servers
     #[serde(rename = "gif")]
     CachedGif(InlineQueryResultCachedGif),
-    /// Represents a link to a video animation
+    /// Link to a video animation
     /// (H.264/MPEG-4 AVC video without sound) stored on the Telegram servers
-    /// By default, this animated MPEG-4 file will be sent by the user with an optional caption
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content
-    /// instead of the animation
     #[serde(rename = "mpeg4_gif")]
     CachedMpeg4Gif(InlineQueryResultCachedMpeg4Gif),
-    /// Represents a link to a photo stored on the Telegram servers
-    /// By default, this photo will be sent by the user with an optional caption
-    /// Alternatively, you can use input_message_content to send
-    /// a message with the specified content instead of the photo
+    /// Link to a photo stored on the Telegram servers
     #[serde(rename = "photo")]
     CachedPhoto(InlineQueryResultCachedPhoto),
-    /// Represents a link to a sticker stored on the Telegram servers
-    /// By default, this sticker will be sent by the user
-    /// Alternatively, you can use input_message_content to
-    /// send a message with the specified content instead of the sticker
+    /// Link to a sticker stored on the Telegram servers
     #[serde(rename = "sticker")]
     CachedSticker(InlineQueryResultCachedSticker),
-    /// Represents a link to a video file stored on the Telegram servers
-    /// By default, this video file will be sent by the user with an optional caption
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the video
+    /// Link to a video file stored on the Telegram servers
     #[serde(rename = "video")]
     CachedVideo(InlineQueryResultCachedVideo),
-    /// Represents a link to a voice message stored on the Telegram servers
-    /// By default, this voice message will be sent by the user
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the voice message
+    /// Link to a voice message stored on the Telegram servers
     #[serde(rename = "voice")]
     CachedVoice(InlineQueryResultCachedVoice),
-    /// Represents a contact with a phone number
-    /// By default, this contact will be sent by the user
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the contact
+    /// Contact with a phone number
     #[serde(rename = "contact")]
     Contact(InlineQueryResultContact),
-    /// Represents a link to a file
-    /// By default, this file will be sent by the user with an optional caption
-    /// Alternatively, you can use input_message_content to send a message
-    /// with the specified content instead of the file
-    /// Currently, only .PDF and .ZIP files can be sent using this method
+    /// Link to a file
     #[serde(rename = "document")]
     Document(InlineQueryResultDocument),
-    /// Represents a Game
+    /// Game
     #[serde(rename = "game")]
     Game(InlineQueryResultGame),
-    /// Represents a link to an animated GIF file
-    /// By default, this animated GIF file
-    /// will be sent by the user with optional caption
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the animation
+    /// Link to an animated GIF file
     #[serde(rename = "gif")]
     Gif(InlineQueryResultGif),
-    /// Represents a location on a map
-    /// By default, the location will be sent by the user
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the location
+    /// Location on a map
     #[serde(rename = "location")]
     Location(InlineQueryResultLocation),
-    /// Represents a link to a video animation (H.264/MPEG-4 AVC video without sound)
-    /// By default, this animated MPEG-4 file will be sent by the user with optional caption
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the animation
+    /// Link to a video animation (H.264/MPEG-4 AVC video without sound)
     #[serde(rename = "mpeg4_gif")]
     Mpeg4Gif(InlineQueryResultMpeg4Gif),
-    /// Represents a link to a photo
-    /// By default, this photo will be sent by the user with optional caption
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the photo
+    /// Link to a photo
     #[serde(rename = "photo")]
     Photo(InlineQueryResultPhoto),
-    /// Represents a venue
-    /// By default, the venue will be sent by the user
-    /// Alternatively, you can use input_message_content
-    /// to send a message with the specified content instead of the venue
+    /// Venue
     #[serde(rename = "venue")]
     Venue(InlineQueryResultVenue),
-    /// Represents a link to a page containing an embedded video player or a video file
-    /// By default, this video file will be sent by the user with an optional caption
-    /// Alternatively, you can use input_message_content to send a message with
-    /// the specified content instead of the video
-    /// If an InlineQueryResultVideo message contains an embedded video (e.g., YouTube),
-    /// you must replace its content using input_message_content
+    /// Link to a page containing an embedded video player or a video file
     #[serde(rename = "video")]
     Video(InlineQueryResultVideo),
-    /// Represents a link to a voice recording in an .ogg container encoded with OPUS
-    /// By default, this voice recording will be sent by the user
-    /// Alternatively, you can use input_message_content to send
-    /// a message with the specified content instead of the the voice message
+    /// Link to a voice recording in an .ogg container encoded with OPUS
     #[serde(rename = "voice")]
     Voice(InlineQueryResultVoice),
 }
+
+macro_rules! impl_query_result_from {
+    ($to:ident($from:ident)) => {
+        impl From<$from> for InlineQueryResult {
+            fn from(obj: $from) -> InlineQueryResult {
+                InlineQueryResult::$to(obj)
+            }
+        }
+    };
+}
+
+impl_query_result_from!(Article(InlineQueryResultArticle));
+impl_query_result_from!(Audio(InlineQueryResultAudio));
+impl_query_result_from!(CachedAudio(InlineQueryResultCachedAudio));
+impl_query_result_from!(CachedDocument(InlineQueryResultCachedDocument));
+impl_query_result_from!(CachedGif(InlineQueryResultCachedGif));
+impl_query_result_from!(CachedMpeg4Gif(InlineQueryResultCachedMpeg4Gif));
+impl_query_result_from!(CachedPhoto(InlineQueryResultCachedPhoto));
+impl_query_result_from!(CachedSticker(InlineQueryResultCachedSticker));
+impl_query_result_from!(CachedVideo(InlineQueryResultCachedVideo));
+impl_query_result_from!(CachedVoice(InlineQueryResultCachedVoice));
+impl_query_result_from!(Contact(InlineQueryResultContact));
+impl_query_result_from!(Document(InlineQueryResultDocument));
+impl_query_result_from!(Game(InlineQueryResultGame));
+impl_query_result_from!(Gif(InlineQueryResultGif));
+impl_query_result_from!(Location(InlineQueryResultLocation));
+impl_query_result_from!(Mpeg4Gif(InlineQueryResultMpeg4Gif));
+impl_query_result_from!(Photo(InlineQueryResultPhoto));
+impl_query_result_from!(Venue(InlineQueryResultVenue));
+impl_query_result_from!(Video(InlineQueryResultVideo));
+impl_query_result_from!(Voice(InlineQueryResultVoice));
 
 /// Represents a link to an article or web page
 #[derive(Clone, Debug, Serialize)]
@@ -169,6 +123,28 @@ pub struct InlineQueryResultArticle {
     pub thumb_width: Option<Integer>,
     /// Thumbnail height
     pub thumb_height: Option<Integer>,
+}
+
+impl InlineQueryResultArticle {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(
+        id: S,
+        title: S,
+        input_message_content: InputMessageContent,
+    ) -> Self {
+        InlineQueryResultArticle {
+            id: id.into(),
+            title: title.into(),
+            input_message_content,
+            reply_markup: None,
+            url: None,
+            hide_url: None,
+            description: None,
+            thumb_url: None,
+            thumb_width: None,
+            thumb_height: None,
+        }
+    }
 }
 
 /// Represents a link to an mp3 audio file
@@ -197,6 +173,23 @@ pub struct InlineQueryResultAudio {
     pub input_message_content: Option<InputMessageContent>,
 }
 
+impl InlineQueryResultAudio {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, audio_url: S, title: S) -> Self {
+        InlineQueryResultAudio {
+            id: id.into(),
+            audio_url: audio_url.into(),
+            title: title.into(),
+            caption: None,
+            parse_mode: None,
+            performer: None,
+            audio_duration: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
+}
+
 /// Represents a link to an mp3 audio file
 /// stored on the Telegram servers
 /// By default, this audio file will be sent by the user
@@ -216,6 +209,20 @@ pub struct InlineQueryResultCachedAudio {
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the audio
     pub input_message_content: Option<InputMessageContent>,
+}
+
+impl InlineQueryResultCachedAudio {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, audio_file_id: S) -> Self {
+        InlineQueryResultCachedAudio {
+            id: id.into(),
+            audio_file_id: audio_file_id.into(),
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
 }
 
 /// Represents a link to a file stored on the Telegram servers
@@ -242,6 +249,22 @@ pub struct InlineQueryResultCachedDocument {
     pub input_message_content: Option<InputMessageContent>,
 }
 
+impl InlineQueryResultCachedDocument {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, title: S, document_file_id: S) -> Self {
+        InlineQueryResultCachedDocument {
+            id: id.into(),
+            title: title.into(),
+            document_file_id: document_file_id.into(),
+            description: None,
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
+}
+
 /// Represents a link to an animated GIF file stored on the Telegram servers
 /// By default, this animated GIF file will be sent by the user with an optional caption
 /// Alternatively, you can use input_message_content to send
@@ -262,6 +285,21 @@ pub struct InlineQueryResultCachedGif {
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the GIF animation
     pub input_message_content: Option<InputMessageContent>,
+}
+
+impl InlineQueryResultCachedGif {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, gif_file_id: S) -> Self {
+        InlineQueryResultCachedGif {
+            id: id.into(),
+            gif_file_id: gif_file_id.into(),
+            title: None,
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
 }
 
 /// Represents a link to a video animation
@@ -288,6 +326,21 @@ pub struct InlineQueryResultCachedMpeg4Gif {
     pub input_message_content: Option<InputMessageContent>,
 }
 
+impl InlineQueryResultCachedMpeg4Gif {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, mpeg4_file_id: S) -> Self {
+        InlineQueryResultCachedMpeg4Gif {
+            id: id.into(),
+            mpeg4_file_id: mpeg4_file_id.into(),
+            title: None,
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
+}
+
 /// Represents a link to a photo stored on the Telegram servers
 /// By default, this photo will be sent by the user with an optional caption
 /// Alternatively, you can use input_message_content to send
@@ -312,6 +365,22 @@ pub struct InlineQueryResultCachedPhoto {
     pub input_message_content: Option<InputMessageContent>,
 }
 
+impl InlineQueryResultCachedPhoto {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, photo_file_id: S) -> Self {
+        InlineQueryResultCachedPhoto {
+            id: id.into(),
+            photo_file_id: photo_file_id.into(),
+            title: None,
+            description: None,
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
+}
+
 /// Represents a link to a sticker stored on the Telegram servers
 /// By default, this sticker will be sent by the user
 /// Alternatively, you can use input_message_content to
@@ -326,6 +395,18 @@ pub struct InlineQueryResultCachedSticker {
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the sticker
     pub input_message_content: Option<InputMessageContent>,
+}
+
+impl InlineQueryResultCachedSticker {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, sticker_file_id: S) -> Self {
+        InlineQueryResultCachedSticker {
+            id: id.into(),
+            sticker_file_id: sticker_file_id.into(),
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
 }
 
 /// Represents a link to a video file stored on the Telegram servers
@@ -352,6 +433,22 @@ pub struct InlineQueryResultCachedVideo {
     pub input_message_content: Option<InputMessageContent>,
 }
 
+impl InlineQueryResultCachedVideo {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, video_file_id: S, title: S) -> Self {
+        InlineQueryResultCachedVideo {
+            id: id.into(),
+            video_file_id: video_file_id.into(),
+            title: title.into(),
+            description: None,
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
+}
+
 /// Represents a link to a voice message stored on the Telegram servers
 /// By default, this voice message will be sent by the user
 /// Alternatively, you can use input_message_content
@@ -372,6 +469,21 @@ pub struct InlineQueryResultCachedVoice {
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the voice message
     pub input_message_content: Option<InputMessageContent>,
+}
+
+impl InlineQueryResultCachedVoice {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, voice_file_id: S, title: S) -> Self {
+        InlineQueryResultCachedVoice {
+            id: id.into(),
+            voice_file_id: voice_file_id.into(),
+            title: title.into(),
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
 }
 
 /// Represents a contact with a phone number
@@ -400,6 +512,24 @@ pub struct InlineQueryResultContact {
     pub thumb_width: Option<Integer>,
     /// Thumbnail height
     pub thumb_height: Option<Integer>,
+}
+
+impl InlineQueryResultContact {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, phone_number: S, first_name: S) -> Self {
+        InlineQueryResultContact {
+            id: id.into(),
+            phone_number: phone_number.into(),
+            first_name: first_name.into(),
+            last_name: None,
+            vcard: None,
+            reply_markup: None,
+            input_message_content: None,
+            thumb_url: None,
+            thumb_width: None,
+            thumb_height: None,
+        }
+    }
 }
 
 /// Represents a link to a file
@@ -435,6 +565,26 @@ pub struct InlineQueryResultDocument {
     pub thumb_height: Option<Integer>,
 }
 
+impl InlineQueryResultDocument {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, title: S, document_url: S, mime_type: S) -> Self {
+        InlineQueryResultDocument {
+            id: id.into(),
+            title: title.into(),
+            caption: None,
+            parse_mode: None,
+            document_url: document_url.into(),
+            mime_type: mime_type.into(),
+            description: None,
+            reply_markup: None,
+            input_message_content: None,
+            thumb_url: None,
+            thumb_width: None,
+            thumb_height: None,
+        }
+    }
+}
+
 /// Represents a Game
 #[derive(Clone, Debug, Serialize)]
 pub struct InlineQueryResultGame {
@@ -444,6 +594,17 @@ pub struct InlineQueryResultGame {
     pub game_short_name: String,
     /// Inline keyboard attached to the message
     pub reply_markup: Option<InlineKeyboardMarkup>,
+}
+
+impl InlineQueryResultGame {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, game_short_name: S) -> Self {
+        InlineQueryResultGame {
+            id: id.into(),
+            game_short_name: game_short_name.into(),
+            reply_markup: None,
+        }
+    }
 }
 
 /// Represents a link to an animated GIF file
@@ -477,6 +638,25 @@ pub struct InlineQueryResultGif {
     pub input_message_content: Option<InputMessageContent>,
 }
 
+impl InlineQueryResultGif {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, gif_url: S, thumb_url: S) -> Self {
+        InlineQueryResultGif {
+            id: id.into(),
+            gif_url: gif_url.into(),
+            gif_width: None,
+            gif_height: None,
+            gif_duration: None,
+            thumb_url: thumb_url.into(),
+            title: None,
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
+}
+
 /// Represents a location on a map
 /// By default, the location will be sent by the user
 /// Alternatively, you can use input_message_content
@@ -507,6 +687,24 @@ pub struct InlineQueryResultLocation {
     thumb_height: Option<Integer>,
 }
 
+impl InlineQueryResultLocation {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, latitude: Float, longitude: Float, title: S) -> Self {
+        InlineQueryResultLocation {
+            id: id.into(),
+            latitude,
+            longitude,
+            title: title.into(),
+            live_period: None,
+            reply_markup: None,
+            input_message_content: None,
+            thumb_url: None,
+            thumb_width: None,
+            thumb_height: None,
+        }
+    }
+}
+
 /// Represents a link to a video animation (H.264/MPEG-4 AVC video without sound)
 /// By default, this animated MPEG-4 file will be sent by the user with optional caption
 /// Alternatively, you can use input_message_content
@@ -535,6 +733,25 @@ pub struct InlineQueryResultMpeg4Gif {
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the video animation
     pub input_message_content: Option<InputMessageContent>,
+}
+
+impl InlineQueryResultMpeg4Gif {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, mpeg4_url: S, thumb_url: S) -> Self {
+        InlineQueryResultMpeg4Gif {
+            id: id.into(),
+            mpeg4_url: mpeg4_url.into(),
+            mpeg4_width: None,
+            mpeg4_height: None,
+            mpeg4_duration: None,
+            thumb_url: thumb_url.into(),
+            title: None,
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
 }
 
 /// Represents a link to a photo
@@ -569,6 +786,25 @@ pub struct InlineQueryResultPhoto {
     pub input_message_content: Option<InputMessageContent>,
 }
 
+impl InlineQueryResultPhoto {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, photo_url: S, thumb_url: S) -> Self {
+        InlineQueryResultPhoto {
+            id: id.into(),
+            photo_url: photo_url.into(),
+            thumb_url: thumb_url.into(),
+            photo_width: None,
+            photo_height: None,
+            title: None,
+            description: None,
+            caption: None,
+            parse_mode: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
+}
+
 /// Represents a venue
 /// By default, the venue will be sent by the user
 /// Alternatively, you can use input_message_content
@@ -600,6 +836,32 @@ pub struct InlineQueryResultVenue {
     pub thumb_width: Option<Integer>,
     /// Thumbnail height
     pub thumb_height: Option<Integer>,
+}
+
+impl InlineQueryResultVenue {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(
+        id: S,
+        latitude: Float,
+        longitude: Float,
+        title: S,
+        address: S,
+    ) -> Self {
+        InlineQueryResultVenue {
+            id: id.into(),
+            latitude,
+            longitude,
+            title: title.into(),
+            address: address.into(),
+            foursquare_id: None,
+            foursquare_type: None,
+            reply_markup: None,
+            input_message_content: None,
+            thumb_url: None,
+            thumb_width: None,
+            thumb_height: None,
+        }
+    }
 }
 
 /// Represents a link to a page containing an embedded video player or a video file
@@ -640,6 +902,27 @@ pub struct InlineQueryResultVideo {
     pub input_message_content: Option<InputMessageContent>,
 }
 
+impl InlineQueryResultVideo {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, video_url: S, mime_type: S, thumb_url: S, title: S) -> Self {
+        InlineQueryResultVideo {
+            id: id.into(),
+            video_url: video_url.into(),
+            mime_type: mime_type.into(),
+            thumb_url: thumb_url.into(),
+            title: title.into(),
+            caption: None,
+            parse_mode: None,
+            video_width: None,
+            video_height: None,
+            video_duration: None,
+            description: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
+}
+
 /// Represents a link to a voice recording in an .ogg container encoded with OPUS
 /// By default, this voice recording will be sent by the user
 /// Alternatively, you can use input_message_content to send
@@ -664,87 +947,18 @@ pub struct InlineQueryResultVoice {
     pub input_message_content: Option<InputMessageContent>,
 }
 
-/// This object represents the content of a message to be sent as a result of an inline query
-#[derive(Clone, Debug, Serialize)]
-#[serde(untagged)]
-pub enum InputMessageContent {
-    /// Represents the content of a text message to be sent as the result of an inline query
-    Text(InputMessageContentText),
-    /// Represents the content of a location message to be sent as the result of an inline query
-    Location(InputMessageContentLocation),
-    /// Represents the content of a venue message to be sent as the result of an inline query
-    Venue(InputMessageContentVenue),
-    /// Represents the content of a contact message to be sent as the result of an inline query
-    Contact(InputMessageContentContact),
-}
-
-/// Represents the content of a contact message to be sent as the result of an inline query
-#[derive(Clone, Debug, Serialize)]
-pub struct InputMessageContentContact {
-    /// Contact's phone number
-    pub phone_number: String,
-    /// Contact's first name
-    pub first_name: String,
-    /// Contact's last name
-    pub last_name: Option<String>,
-    /// Additional data about the contact in the form of a vCard, 0-2048 bytes
-    pub vcard: Option<String>,
-}
-
-/// Represents the content of a location message to be sent as the result of an inline query
-#[derive(Clone, Debug, Serialize)]
-pub struct InputMessageContentLocation {
-    /// Latitude of the location in degrees
-    pub latitude: Float,
-    /// Longitude of the location in degrees
-    pub longitude: Float,
-    /// Period in seconds for which the location can be updated, should be between 60 and 86400
-    pub live_period: Option<Integer>,
-}
-
-/// Represents the content of a text message to be sent as the result of an inline query
-#[derive(Clone, Debug, Serialize)]
-pub struct InputMessageContentText {
-    /// Text of the message to be sent, 1-4096 characters
-    pub message_text: String,
-    /// Parse mode
-    pub parse_mode: Option<ParseMode>,
-    /// Disables link previews for links in the sent message
-    pub disable_web_page_preview: Option<bool>,
-}
-
-/// Represents the content of a venue message to be sent as the result of an inline query
-#[derive(Clone, Debug, Serialize)]
-pub struct InputMessageContentVenue {
-    /// Latitude of the venue in degrees
-    pub latitude: Float,
-    /// Longitude of the venue in degrees
-    pub longitude: Float,
-    /// Name of the venue
-    pub title: String,
-    /// Address of the venue
-    pub address: String,
-    /// Foursquare identifier of the venue, if known
-    pub foursquare_id: Option<String>,
-    /// Foursquare type of the venue, if known.
-    /// (For example, “arts_entertainment/default”,
-    /// “arts_entertainment/aquarium” or “food/icecream”.)
-    pub foursquare_type: Option<String>,
-}
-
-/// Represents a result of an inline query that was chosen by the user and sent to their chat partner
-#[derive(Clone, Debug, Deserialize)]
-pub struct ChosenInlineResult {
-    /// The unique identifier for the result that was chosen
-    pub result_id: String,
-    /// The user that chose the result
-    pub from: User,
-    /// Sender location, only for bots that require user location
-    pub location: Option<Location>,
-    /// Identifier of the sent inline message.
-    /// Available only if there is an inline keyboard attached to the message
-    /// Will be also received in callback queries and can be used to edit the message
-    pub inline_message_id: Option<String>,
-    /// The query that was used to obtain the result
-    pub query: String,
+impl InlineQueryResultVoice {
+    /// Returns a new query result with empty optional parameters
+    pub fn new<S: Into<String>>(id: S, voice_url: S, title: S) -> Self {
+        InlineQueryResultVoice {
+            id: id.into(),
+            voice_url: voice_url.into(),
+            title: title.into(),
+            caption: None,
+            parse_mode: None,
+            voice_duration: None,
+            reply_markup: None,
+            input_message_content: None,
+        }
+    }
 }
