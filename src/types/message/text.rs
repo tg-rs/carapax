@@ -23,11 +23,14 @@ pub struct ParsedText {
 impl Text {
     /// Whether text contains entities
     pub fn has_entities(&self) -> bool {
-        self.entities.as_ref().map(|e| e.len() > 0).unwrap_or(false)
+        self.entities
+            .as_ref()
+            .map(|e| !e.is_empty())
+            .unwrap_or(false)
     }
 
     /// Returns text with parsed entities
-    pub fn to_parsed(self) -> Result<ParsedText, ParseEntitiesError> {
+    pub fn parse(self) -> Result<ParsedText, ParseEntitiesError> {
         let entities = self.parse_entities()?;
         Ok(ParsedText {
             data: self.data,
@@ -58,10 +61,10 @@ impl Text {
                     .iter()
                     .skip(offset)
                     .take(length)
-                    .map(|x| *x)
+                    .cloned()
                     .collect::<Vec<u16>>(),
             )
-            .map_err(|e| ParseEntitiesError::FromUtf16(e))?;
+            .map_err(ParseEntitiesError::FromUtf16)?;
             let data = TextEntityData {
                 offset,
                 length,
@@ -70,7 +73,7 @@ impl Text {
             result.push(match raw_entity.kind {
                 RawMessageEntityKind::Bold => TextEntity::Bold(data),
                 RawMessageEntityKind::BotCommand => {
-                    let parts = data.data.as_str().splitn(2, "@").collect::<Vec<&str>>();
+                    let parts = data.data.as_str().splitn(2, '@').collect::<Vec<&str>>();
                     let len = parts.len();
                     assert!(len >= 1);
                     TextEntity::BotCommand(BotCommand {

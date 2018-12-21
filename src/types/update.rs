@@ -22,6 +22,7 @@ pub struct Update {
 
 /// Kind of update
 #[derive(Clone, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum UpdateKind {
     /// New incoming message of any kind — text, photo, sticker, etc
     Message(Message),

@@ -18,6 +18,7 @@ use crate::types::voice::Voice;
 
 /// Contains message data
 #[derive(Clone, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum MessageData {
     /// Message is an animation, information about the animation
     Animation(Animation),

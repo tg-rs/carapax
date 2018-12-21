@@ -103,86 +103,81 @@ impl Message {
             None => None,
         };
 
-        let message_data = if let Some(data) = raw.animation {
-            // Animation must be matched before document
-            MessageData::Animation(data)
-        } else if let Some(data) = raw.audio {
-            MessageData::Audio { caption, data }
-        } else if let Some(_) = raw.channel_chat_created {
-            MessageData::ChannelChatCreated
-        } else if let Some(data) = raw.connected_website {
-            MessageData::ConnectedWebsite(data)
-        } else if let Some(data) = raw.contact {
-            MessageData::Contact(data)
-        } else if let Some(_) = raw.delete_chat_photo {
-            MessageData::DeleteChatPhoto
-        } else if let Some(data) = raw.document {
-            MessageData::Document { caption, data }
-        } else if let Some(data) = raw.game {
-            MessageData::Game(data)
-        } else if let Some(_) = raw.group_chat_created {
-            MessageData::GroupChatCreated
-        } else if let Some(data) = raw.invoice {
-            MessageData::Invoice(data)
-        } else if let Some(data) = raw.left_chat_member {
-            MessageData::LeftChatMember(data)
-        } else if let Some(data) = raw.location {
-            MessageData::Location(data)
-        } else if let Some(data) = raw.migrate_from_chat_id {
-            MessageData::MigrateFromChatId(data)
-        } else if let Some(data) = raw.migrate_to_chat_id {
-            MessageData::MigrateToChatId(data)
-        } else if let Some(data) = raw.new_chat_members {
-            MessageData::NewChatMembers(data)
-        } else if let Some(data) = raw.new_chat_photo {
-            MessageData::NewChatPhoto(data)
-        } else if let Some(data) = raw.new_chat_title {
-            MessageData::NewChatTitle(data)
-        } else if let Some(data) = raw.passport_data {
-            MessageData::PassportData(data)
-        } else if let Some(data) = raw.pinned_message {
-            let data = Message::from_raw(*data)?;
-            MessageData::PinnedMessage(Box::new(data))
-        } else if let Some(data) = raw.photo {
-            MessageData::Photo { caption, data }
-        } else if let Some(data) = raw.sticker {
-            MessageData::Sticker(data)
-        } else if let Some(data) = raw.successful_payment {
-            MessageData::SuccessfulPayment(data)
-        } else if let Some(_) = raw.supergroup_chat_created {
-            MessageData::SupergroupChatCreated
-        } else if let Some(data) = raw.text {
-            MessageData::Text(Text {
-                data,
-                entities: raw.entities,
-            })
-        } else if let Some(data) = raw.venue {
-            MessageData::Venue(data)
-        } else if let Some(data) = raw.video {
-            MessageData::Video { caption, data }
-        } else if let Some(data) = raw.video_note {
-            MessageData::VideoNote(data)
-        } else if let Some(data) = raw.voice {
-            MessageData::Voice { caption, data }
-        } else {
-            return Err(String::from("Can not get message data"));
-        };
-
         let reply_to_message = match raw.reply_to_message {
             Some(x) => Some(Box::new(Message::from_raw(*x)?)),
             None => None,
         };
 
-        Ok(Message {
-            id: raw.message_id,
-            date: raw.date,
-            kind: message_kind,
-            forward: forward_info,
-            reply_to: reply_to_message,
-            edit_date: raw.edit_date,
-            media_group_id: raw.media_group_id,
-            data: message_data,
-        })
+        macro_rules! message_data {
+            ($variant:ident($attr:ident)) => {
+                if let Some(data) = raw.$attr {
+                    message_data!(MessageData::$variant(data));
+                }
+            };
+            ($variant:ident($attr:ident, caption)) => {
+                if let Some(data) = raw.$attr {
+                    message_data!(MessageData::$variant { caption, data });
+                }
+            };
+            ($variant:ident($attr:ident, flag)) => {
+                if raw.$attr.unwrap_or(false) {
+                    message_data!(MessageData::$variant);
+                }
+            };
+            ($data:expr) => {
+                return Ok(Message {
+                    id: raw.message_id,
+                    date: raw.date,
+                    kind: message_kind,
+                    forward: forward_info,
+                    reply_to: reply_to_message,
+                    edit_date: raw.edit_date,
+                    media_group_id: raw.media_group_id,
+                    data: $data,
+                });
+            };
+        };
+
+        message_data!(Animation(animation));
+        message_data!(Audio(audio, caption));
+        message_data!(ChannelChatCreated(channel_chat_created, flag));
+        message_data!(ConnectedWebsite(connected_website));
+        message_data!(Contact(contact));
+        message_data!(DeleteChatPhoto(delete_chat_photo, flag));
+        message_data!(Document(document, caption));
+        message_data!(Game(game));
+        message_data!(GroupChatCreated(group_chat_created, flag));
+        message_data!(Invoice(invoice));
+        message_data!(LeftChatMember(left_chat_member));
+        message_data!(Location(location));
+        message_data!(MigrateFromChatId(migrate_from_chat_id));
+        message_data!(MigrateToChatId(migrate_to_chat_id));
+        message_data!(NewChatMembers(new_chat_members));
+        message_data!(NewChatPhoto(new_chat_photo));
+        message_data!(NewChatTitle(new_chat_title));
+        message_data!(PassportData(passport_data));
+        message_data!(Photo(photo, caption));
+        message_data!(Sticker(sticker));
+        message_data!(SuccessfulPayment(successful_payment));
+        message_data!(SupergroupChatCreated(supergroup_chat_created, flag));
+        message_data!(Venue(venue));
+        message_data!(Video(video, caption));
+        message_data!(VideoNote(video_note));
+        message_data!(Voice(voice, caption));
+
+        if let Some(data) = raw.pinned_message {
+            let data = Message::from_raw(*data)?;
+            message_data!(MessageData::PinnedMessage(Box::new(data)));
+        }
+
+        if let Some(data) = raw.text {
+            message_data!(MessageData::Text(Text {
+                data,
+                entities: raw.entities,
+            }));
+        }
+
+        Err(String::from("Can not get message data"))
     }
 }
 
@@ -192,6 +187,6 @@ impl<'de> Deserialize<'de> for Message {
         D: Deserializer<'de>,
     {
         let raw_msg: RawMessage = Deserialize::deserialize(deserializer)?;
-        Message::from_raw(raw_msg).map_err(|e| D::Error::custom(e))
+        Message::from_raw(raw_msg).map_err(D::Error::custom)
     }
 }

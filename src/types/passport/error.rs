@@ -36,7 +36,7 @@ impl PassportElementError {
                     message: message.into(),
                 },
             }),
-            _ => return Err(UnexpectedEncryptedPassportElementKind(kind)),
+            _ => Err(UnexpectedEncryptedPassportElementKind(kind)),
         }
     }
 

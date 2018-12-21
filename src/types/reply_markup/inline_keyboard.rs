@@ -1,17 +1,10 @@
 /// Inline keyboard that appears right next to the message it belongs to
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct InlineKeyboardMarkup {
     inline_keyboard: Vec<Vec<InlineKeyboardButton>>,
 }
 
 impl InlineKeyboardMarkup {
-    /// Returns an empty KeyboardMarkup
-    pub fn new() -> Self {
-        InlineKeyboardMarkup {
-            inline_keyboard: Vec::new(),
-        }
-    }
-
     /// Returns a KeyboardMarkup with given keyboard
     pub fn with_keyboard(inline_keyboard: Vec<Vec<InlineKeyboardButton>>) -> Self {
         InlineKeyboardMarkup { inline_keyboard }

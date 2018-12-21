@@ -13,9 +13,9 @@ pub struct ReplyKeyboardMarkup {
     selective: bool,
 }
 
-impl ReplyKeyboardMarkup {
+impl Default for ReplyKeyboardMarkup {
     /// Returns an empty KeyboardMarkup
-    pub fn new() -> Self {
+    fn default() -> ReplyKeyboardMarkup {
         ReplyKeyboardMarkup {
             keyboard: Vec::new(),
             resize_keyboard: false,
@@ -23,7 +23,9 @@ impl ReplyKeyboardMarkup {
             selective: false,
         }
     }
+}
 
+impl ReplyKeyboardMarkup {
     /// Returns a KeyboardMarkup with given keyboard
     pub fn with_keyboard(keyboard: Vec<Vec<KeyboardButton>>) -> Self {
         ReplyKeyboardMarkup {
@@ -130,15 +132,17 @@ pub struct ReplyKeyboardRemove {
     selective: Option<bool>,
 }
 
-impl ReplyKeyboardRemove {
+impl Default for ReplyKeyboardRemove {
     /// Returns an new keyboard
-    pub fn new() -> Self {
+    fn default() -> ReplyKeyboardRemove {
         ReplyKeyboardRemove {
             remove_keyboard: true,
             selective: None,
         }
     }
+}
 
+impl ReplyKeyboardRemove {
     /// Use this parameter if you want to remove the keyboard for specific users only
     /// Targets:
     /// 1) users that are @mentioned in the text of the Message object;

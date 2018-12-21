@@ -326,7 +326,7 @@ fn test_deserialize_message_entities() {
     }"#;
     let msg: Message = serde_json::from_str(input).unwrap();
     if let MessageData::Text(text) = msg.data {
-        let parsed = text.to_parsed().unwrap();
+        let parsed = text.parse().unwrap();
         let entities = parsed.entities;
         assert_eq!(
             vec![
@@ -531,10 +531,7 @@ fn test_deserialize_message_bad_entities() {
     ] {
         let msg: Message = serde_json::from_str(input).unwrap();
         if let MessageData::Text(text) = msg.data {
-            assert_eq!(
-                text.to_parsed().unwrap_err().to_string(),
-                String::from(error)
-            );
+            assert_eq!(text.parse().unwrap_err().to_string(), String::from(error));
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
         }

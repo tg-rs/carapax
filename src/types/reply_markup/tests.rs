@@ -37,13 +37,13 @@ fn test_serialize() {
     let j = serde_json::to_string(&markup).unwrap();
     assert_eq!(j, serialized_kb);
 
-    let mut kb = ReplyKeyboardMarkup::new();
+    let mut kb = ReplyKeyboardMarkup::default();
     kb.add_row(row);
     let markup: ReplyMarkup = kb.into();
     let j = serde_json::to_string(&markup).unwrap();
     assert_eq!(j, serialized_kb);
 
-    let markup: ReplyMarkup = ReplyKeyboardRemove::new().with_selective(true).into();
+    let markup: ReplyMarkup = ReplyKeyboardRemove::default().with_selective(true).into();
     let j = serde_json::to_string(&markup).unwrap();
     assert_eq!(j, r#"{"remove_keyboard":true,"selective":true}"#);
 }

@@ -5,6 +5,7 @@ use crate::types::reply_markup::InlineKeyboardMarkup;
 /// Result of an inline query
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type")]
+#[allow(clippy::large_enum_variant)]
 pub enum InlineQueryResult {
     /// Link to an article or web page
     #[serde(rename = "article")]
