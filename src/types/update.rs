@@ -80,6 +80,58 @@ impl<'de> Deserialize<'de> for Update {
     }
 }
 
+/// Information about the current status of a webhook
+#[derive(Clone, Debug, Deserialize)]
+pub struct WebhookInfo {
+    /// Webhook URL, may be empty if webhook is not set up
+    pub url: String,
+    /// True, if a custom certificate was provided for webhook certificate checks
+    pub has_custom_certificate: bool,
+    /// Number of updates awaiting delivery
+    pub pending_update_count: Integer,
+    ///  Unix time for the most recent error that happened when trying to deliver an update via webhook
+    pub last_error_date: Option<Integer>,
+    /// Error message in human-readable format for the most recent error that happened when trying to deliver an update via webhook
+    pub last_error_message: Option<String>,
+    /// Maximum allowed number of simultaneous HTTPS connections to the webhook for update delivery
+    pub max_connections: Option<Integer>,
+    /// A list of update types the bot is subscribed to
+    /// Defaults to all update types
+    pub allowed_updates: Vec<AllowedUpdate>,
+}
+
+/// Type of update to receive
+#[derive(Debug, Deserialize, Eq, Clone, Copy, Hash, PartialEq, PartialOrd, Serialize)]
+pub enum AllowedUpdate {
+    /// Message
+    #[serde(rename = "message")]
+    Message,
+    /// Edited message
+    #[serde(rename = "edited_message")]
+    EditedMessage,
+    /// Channel post
+    #[serde(rename = "channel_post")]
+    ChannelPost,
+    /// Edited channel post
+    #[serde(rename = "edited_channel_post")]
+    EditedChannelPost,
+    /// Inline query
+    #[serde(rename = "inline_query")]
+    InlineQuery,
+    /// Chosen inline result
+    #[serde(rename = "chosen_inline_result")]
+    ChosenInlineResult,
+    /// Callback query
+    #[serde(rename = "callback_query")]
+    CallbackQuery,
+    /// Shipping query
+    #[serde(rename = "shipping_query")]
+    ShippingQuery,
+    /// Pre checkout query
+    #[serde(rename = "pre_checkout_query")]
+    PreCheckoutQuery,
+}
+
 #[derive(Debug, Deserialize)]
 struct RawUpdate {
     update_id: Integer,
