@@ -1,5 +1,16 @@
 use crate::types::primitive::{Integer, ParseMode};
 
+/// Photo or video to be sent in a media group
+#[derive(Clone, Debug, Serialize)]
+pub enum MediaGroupItem {
+    /// Photo to be sent
+    #[serde(rename = "photo")]
+    Photo(InputMediaPhoto),
+    /// Video to be sent
+    #[serde(rename = "video")]
+    Video(InputMediaVideo),
+}
+
 /// Content of a media message to be sent
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type")]
