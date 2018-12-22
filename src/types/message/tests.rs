@@ -422,7 +422,7 @@ fn test_deserialize_message_entities() {
 
 #[test]
 fn test_deserialize_message_bad_entities() {
-    for (input, error) in vec![
+    for (input, error) in &[
         (
             r#"{
                 "message_id": 1, "date": 0,
@@ -531,7 +531,7 @@ fn test_deserialize_message_bad_entities() {
     ] {
         let msg: Message = serde_json::from_str(input).unwrap();
         if let MessageData::Text(text) = msg.data {
-            assert_eq!(text.parse().unwrap_err().to_string(), String::from(error));
+            assert_eq!(text.parse().unwrap_err().to_string(), error.to_string());
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
         }
