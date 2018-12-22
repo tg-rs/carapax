@@ -11,6 +11,8 @@ pub struct ForceReply {
 }
 
 impl ForceReply {
+    /// Creates a new ForceReply
+    ///
     /// # Arguments
     ///
     /// * force_reply - Shows reply interface to the user,
@@ -24,10 +26,12 @@ impl ForceReply {
     }
 
     /// Use this parameter if you want to force reply from specific users only
+    ///
     /// Targets:
-    /// 1) users that are @mentioned in the text of the Message object
-    /// 2) if the bot's message is a reply (has reply_to_message_id), sender of the original message
-    pub fn with_selective(mut self, selective: bool) -> Self {
+    ///
+    /// 1. users that are @mentioned in the text of the Message object
+    /// 2. if the bot's message is a reply (has reply_to_message_id), sender of the original message
+    pub fn selective(mut self, selective: bool) -> Self {
         self.selective = Some(selective);
         self
     }

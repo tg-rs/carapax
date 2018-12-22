@@ -23,10 +23,10 @@ pub enum ReplyMarkup {
 }
 
 macro_rules! impl_reply_markup_from {
-    ($to:ident($from:ident)) => {
+    ($to:ident($from:ty)) => {
         impl From<$from> for ReplyMarkup {
             fn from(obj: $from) -> ReplyMarkup {
-                ReplyMarkup::$to(obj)
+                ReplyMarkup::$to(obj.into())
             }
         }
     };
@@ -34,5 +34,7 @@ macro_rules! impl_reply_markup_from {
 
 impl_reply_markup_from!(ForceReply(ForceReply));
 impl_reply_markup_from!(InlineKeyboardMarkup(InlineKeyboardMarkup));
+impl_reply_markup_from!(InlineKeyboardMarkup(Vec<Vec<InlineKeyboardButton>>));
 impl_reply_markup_from!(ReplyKeyboardMarkup(ReplyKeyboardMarkup));
+impl_reply_markup_from!(ReplyKeyboardMarkup(Vec<Vec<KeyboardButton>>));
 impl_reply_markup_from!(ReplyKeyboardRemove(ReplyKeyboardRemove));

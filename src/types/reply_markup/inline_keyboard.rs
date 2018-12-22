@@ -6,12 +6,12 @@ pub struct InlineKeyboardMarkup {
 
 impl InlineKeyboardMarkup {
     /// Returns a KeyboardMarkup with given keyboard
-    pub fn with_keyboard(inline_keyboard: Vec<Vec<InlineKeyboardButton>>) -> Self {
+    pub fn from_vec(inline_keyboard: Vec<Vec<InlineKeyboardButton>>) -> Self {
         InlineKeyboardMarkup { inline_keyboard }
     }
 
     /// Adds a row to keyboard
-    pub fn add_row(&mut self, row: Vec<InlineKeyboardButton>) -> &mut Self {
+    pub fn row(mut self, row: Vec<InlineKeyboardButton>) -> Self {
         self.inline_keyboard.push(row);
         self
     }
@@ -19,7 +19,7 @@ impl InlineKeyboardMarkup {
 
 impl From<Vec<Vec<InlineKeyboardButton>>> for InlineKeyboardMarkup {
     fn from(keyboard: Vec<Vec<InlineKeyboardButton>>) -> InlineKeyboardMarkup {
-        InlineKeyboardMarkup::with_keyboard(keyboard)
+        InlineKeyboardMarkup::from_vec(keyboard)
     }
 }
 
@@ -86,9 +86,12 @@ impl InlineKeyboardButton {
     /// Pressing the button will prompt the user to select one of their chats,
     /// open that chat and insert the bot‘s username and
     /// the specified inline query in the input field
+    ///
     /// Can be empty, in which case just the bot’s username will be inserted
+    ///
     /// Note: This offers an easy way for users to start using your bot
     /// in inline mode when they are currently in a private chat with it
+    ///
     /// Especially useful when combined with switch_pm… actions – in this case the user
     /// will be automatically returned to the chat they switched from,
     /// skipping the chat selection screen
@@ -106,6 +109,7 @@ impl InlineKeyboardButton {
 
     /// If set, pressing the button will insert the bot‘s username and
     /// the specified inline query in the current chat's input field
+    ///
     /// Can be empty, in which case only the bot’s username will be inserted
     /// This offers a quick way for the user to open your bot in
     /// inline mode in the same chat – good for selecting something from multiple options
@@ -125,6 +129,7 @@ impl InlineKeyboardButton {
     }
 
     /// Description of the game that will be launched when the user presses the button
+    ///
     /// NOTE: This type of button must always be the first button in the first row
     pub fn with_callback_game<S: Into<String>>(text: S) -> Self {
         InlineKeyboardButton {
@@ -139,6 +144,7 @@ impl InlineKeyboardButton {
     }
 
     /// Send a Pay button
+    ///
     /// NOTE: This type of button must always be the first button in the first row
     pub fn with_pay<S: Into<String>>(text: S) -> Self {
         InlineKeyboardButton {
