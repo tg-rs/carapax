@@ -11,6 +11,19 @@ pub enum MediaGroupItem {
     Video(InputMediaVideo),
 }
 
+macro_rules! impl_media_group_item_from {
+    ($to:ident($from:ident)) => {
+        impl From<$from> for MediaGroupItem {
+            fn from(obj: $from) -> MediaGroupItem {
+                MediaGroupItem::$to(obj)
+            }
+        }
+    };
+}
+
+impl_media_group_item_from!(Photo(InputMediaPhoto));
+impl_media_group_item_from!(Video(InputMediaVideo));
+
 /// Content of a media message to be sent
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type")]
@@ -51,39 +64,30 @@ impl_input_media_from!(Video(InputMediaVideo));
 /// Animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaAnimation {
-    /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
-    /// pass an HTTP URL for Telegram to get a file from the Internet,
-    /// or pass “attach://<file_attach_name>” to upload a new one using multipart/form-data
-    /// under <file_attach_name> name
-    pub media: String,
-    /// The thumbnail should be in JPEG format and less than 200 kB in size
-    /// A thumbnail‘s width and height should not exceed 90
-    /// Ignored if the file is not uploaded using multipart/form-data
-    /// Thumbnails can’t be reused and can be only uploaded
-    /// as a new file, so you can pass “attach://<file_attach_name>”
-    /// if the thumbnail was uploaded using multipart/form-data
-    /// under <file_attach_name>
+    media: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub thumb: Option<String>,
-    /// Caption of the animation to be sent, 0-1024 characters
+    thumb: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub caption: Option<String>,
-    /// Parse mode
+    caption: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub parse_mode: Option<ParseMode>,
-    /// Animation width
+    parse_mode: Option<ParseMode>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub width: Option<Integer>,
-    /// Animation height
+    width: Option<Integer>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub height: Option<Integer>,
-    /// Animation duration
+    height: Option<Integer>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub duration: Option<Integer>,
+    duration: Option<Integer>,
 }
 
 impl InputMediaAnimation {
-    /// Returns a new InputMedia with with empty optional parameters
+    /// Creates a new InputMediaAnimation with empty optional parameters
+    ///
+    /// # Arguments
+    ///
+    /// * media - Pass a file_id to send a file that exists on the Telegram servers (recommended),
+    ///           pass an HTTP URL for Telegram to get a file from the Internet,
+    ///           or pass “attach://<file_attach_name>” to upload a new one using multipart/form-data
+    ///           under <file_attach_name> name
     pub fn new<S: Into<String>>(media: S) -> Self {
         InputMediaAnimation {
             media: media.into(),
@@ -95,44 +99,79 @@ impl InputMediaAnimation {
             duration: None,
         }
     }
+
+    /// Set a thumbnail
+    ///
+    /// The thumbnail should be in JPEG format and less than 200 kB in size
+    /// A thumbnail‘s width and height should not exceed 90
+    /// Ignored if the file is not uploaded using multipart/form-data
+    /// Thumbnails can’t be reused and can be only uploaded
+    /// as a new file, so you can pass “attach://<file_attach_name>”
+    /// if the thumbnail was uploaded using multipart/form-data
+    /// under <file_attach_name>
+    pub fn thumb<S: Into<String>>(&mut self, thumb: S) -> &mut Self {
+        self.thumb = Some(thumb.into());
+        self
+    }
+
+    /// Caption of the animation to be sent, 0-1024 characters
+    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+        self.caption = Some(caption.into());
+        self
+    }
+
+    /// Set parse mode
+    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+        self.parse_mode = Some(parse_mode);
+        self
+    }
+
+    /// Set width
+    pub fn width(&mut self, width: Integer) -> &mut Self {
+        self.width = Some(width);
+        self
+    }
+
+    /// Set height
+    pub fn height(&mut self, height: Integer) -> &mut Self {
+        self.height = Some(height);
+        self
+    }
+
+    /// Set duration
+    pub fn duration(&mut self, duration: Integer) -> &mut Self {
+        self.duration = Some(duration);
+        self
+    }
 }
 
 /// Audio file to be treated as music to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaAudio {
-    /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
-    /// pass an HTTP URL for Telegram to get a file from the Internet,
-    /// or pass “attach://<file_attach_name>” to upload a new one using multipart/form-data
-    /// under <file_attach_name> name.
-    pub media: String,
-    /// The thumbnail should be in JPEG format and less than 200 kB in size
-    /// A thumbnail‘s width and height should not exceed 90
-    /// Ignored if the file is not uploaded using multipart/form-data
-    /// Thumbnails can’t be reused and can be only uploaded as a new file,
-    /// so you can pass “attach://<file_attach_name>”
-    /// if the thumbnail was uploaded using multipart/form-data
-    /// under <file_attach_name>
+    media: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub thumb: Option<String>,
-    /// Caption of the audio to be sent, 0-1024 characters
+    thumb: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub caption: Option<String>,
-    /// Parse mode
+    caption: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub parse_mode: Option<ParseMode>,
-    /// Duration of the audio in seconds
+    parse_mode: Option<ParseMode>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub duration: Option<Integer>,
-    /// Performer of the audio
+    duration: Option<Integer>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub performer: Option<String>,
-    /// Title of the audio
+    performer: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
+    title: Option<String>,
 }
 
 impl InputMediaAudio {
-    /// Returns a new InputMedia with with empty optional parameters
+    /// Creates a new InputMediaAudio with empty optional parameters
+    ///
+    /// # Arguments
+    ///
+    /// * media - Pass a file_id to send a file that exists on the Telegram servers (recommended),
+    ///           pass an HTTP URL for Telegram to get a file from the Internet,
+    ///           or pass “attach://<file_attach_name>” to upload a new one using multipart/form-data
+    ///           under <file_attach_name> name
     pub fn new<S: Into<String>>(media: S) -> Self {
         InputMediaAudio {
             media: media.into(),
@@ -144,34 +183,73 @@ impl InputMediaAudio {
             title: None,
         }
     }
+
+    /// Set a thumbnail
+    ///
+    /// The thumbnail should be in JPEG format and less than 200 kB in size
+    /// A thumbnail‘s width and height should not exceed 90
+    /// Ignored if the file is not uploaded using multipart/form-data
+    /// Thumbnails can’t be reused and can be only uploaded
+    /// as a new file, so you can pass “attach://<file_attach_name>”
+    /// if the thumbnail was uploaded using multipart/form-data
+    /// under <file_attach_name>
+    pub fn thumb<S: Into<String>>(&mut self, thumb: S) -> &mut Self {
+        self.thumb = Some(thumb.into());
+        self
+    }
+
+    /// Caption of the audio to be sent, 0-1024 characters
+    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+        self.caption = Some(caption.into());
+        self
+    }
+
+    /// Set parse mode
+    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+        self.parse_mode = Some(parse_mode);
+        self
+    }
+
+    /// Set duration
+    pub fn duration(&mut self, duration: Integer) -> &mut Self {
+        self.duration = Some(duration);
+        self
+    }
+
+    /// Performer of the audio
+    pub fn performer<S: Into<String>>(&mut self, performer: S) -> &mut Self {
+        self.performer = Some(performer.into());
+        self
+    }
+
+    /// Title of the audio
+    pub fn title<S: Into<String>>(&mut self, title: S) -> &mut Self {
+        self.title = Some(title.into());
+        self
+    }
 }
 
 /// General file to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaDocument {
-    /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
-    /// pass an HTTP URL for Telegram to get a file from the Internet,
-    /// or pass “attach://<file_attach_name>” to upload a new one using multipart/form-data
-    /// under <file_attach_name> name
-    pub media: String,
-    /// The thumbnail should be in JPEG format and less than 200 kB in size
-    /// A thumbnail‘s width and height should not exceed 90
-    /// Ignored if the file is not uploaded using multipart/form-data
-    /// Thumbnails can’t be reused and can be only uploaded as a new file,
-    /// so you can pass “attach://<file_attach_name>”
-    /// if the thumbnail was uploaded using multipart/form-data under <file_attach_name>
+    media: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub thumb: Option<String>,
-    /// Caption of the document to be sent, 0-1024 characters
+    thumb: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub caption: Option<String>,
-    /// Parse mode
+    caption: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub parse_mode: Option<ParseMode>,
+    parse_mode: Option<ParseMode>,
 }
 
 impl InputMediaDocument {
-    /// Returns a new InputMedia with with empty optional parameters
+    /// Creates a new InputMediaDocument with empty optional parameters
+    ///
+    /// # Arguments
+    ///
+    /// * media - Pass a file_id to send a file that exists on the Telegram servers (recommended),
+    ///           pass an HTTP URL for Telegram to get a file from the Internet,
+    ///           or pass “attach://<file_attach_name>” to upload a new one using multipart/form-data
+    ///           under <file_attach_name> name
     pub fn new<S: Into<String>>(media: S) -> Self {
         InputMediaDocument {
             media: media.into(),
@@ -180,26 +258,53 @@ impl InputMediaDocument {
             parse_mode: None,
         }
     }
+
+    /// Set a thumbnail
+    ///
+    /// The thumbnail should be in JPEG format and less than 200 kB in size
+    /// A thumbnail‘s width and height should not exceed 90
+    /// Ignored if the file is not uploaded using multipart/form-data
+    /// Thumbnails can’t be reused and can be only uploaded
+    /// as a new file, so you can pass “attach://<file_attach_name>”
+    /// if the thumbnail was uploaded using multipart/form-data
+    /// under <file_attach_name>
+    pub fn thumb<S: Into<String>>(&mut self, thumb: S) -> &mut Self {
+        self.thumb = Some(thumb.into());
+        self
+    }
+
+    /// Caption of the document to be sent, 0-1024 characters
+    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+        self.caption = Some(caption.into());
+        self
+    }
+
+    /// Set parse mode
+    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+        self.parse_mode = Some(parse_mode);
+        self
+    }
 }
 
 /// Photo to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaPhoto {
-    /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
-    /// pass an HTTP URL for Telegram to get a file from the Internet,
-    /// or pass “attach://<file_attach_name>”
-    /// to upload a new one using multipart/form-data under <file_attach_name> name
-    pub media: String,
-    /// Caption of the photo to be sent, 0-1024 characters
+    media: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub caption: Option<String>,
-    /// Parse mode
+    caption: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub parse_mode: Option<ParseMode>,
+    parse_mode: Option<ParseMode>,
 }
 
 impl InputMediaPhoto {
-    /// Returns a new InputMedia with with empty optional parameters
+    /// Creates a new InputMediaPhoto with empty optional parameters
+    ///
+    /// # Arguments
+    ///
+    /// * media - Pass a file_id to send a file that exists on the Telegram servers (recommended),
+    ///           pass an HTTP URL for Telegram to get a file from the Internet,
+    ///           or pass “attach://<file_attach_name>” to upload a new one using multipart/form-data
+    ///           under <file_attach_name> name
     pub fn new<S: Into<String>>(media: S) -> Self {
         InputMediaPhoto {
             media: media.into(),
@@ -207,46 +312,49 @@ impl InputMediaPhoto {
             parse_mode: None,
         }
     }
+
+    /// Caption of the photo to be sent, 0-1024 characters
+    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+        self.caption = Some(caption.into());
+        self
+    }
+
+    /// Set parse mode
+    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+        self.parse_mode = Some(parse_mode);
+        self
+    }
 }
 
 /// Video to be sent
 #[derive(Clone, Debug, Serialize)]
 pub struct InputMediaVideo {
-    /// Pass a file_id to send a file that exists on the Telegram servers (recommended),
-    /// pass an HTTP URL for Telegram to get a file from the Internet,
-    /// or pass “attach://<file_attach_name>”
-    /// to upload a new one using multipart/form-data under <file_attach_name> name
-    pub media: String,
-    /// The thumbnail should be in JPEG format and less than 200 kB in size
-    /// A thumbnail‘s width and height should not exceed 90
-    /// Ignored if the file is not uploaded using multipart/form-data
-    /// Thumbnails can’t be reused and can be only uploaded as a new file,
-    /// so you can pass “attach://<file_attach_name>”
-    /// if the thumbnail was uploaded using multipart/form-data under <file_attach_name>
+    media: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub thumb: Option<String>,
-    /// Caption of the video to be sent, 0-1024 characters
+    thumb: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub caption: Option<String>,
-    /// Parse mode
+    caption: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub parse_mode: Option<ParseMode>,
-    /// Video width
+    parse_mode: Option<ParseMode>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub width: Option<Integer>,
-    /// Video height
+    width: Option<Integer>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub height: Option<Integer>,
-    /// Video duration
+    height: Option<Integer>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub duration: Option<Integer>,
-    /// Pass True, if the uploaded video is suitable for streaming
+    duration: Option<Integer>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_streaming: Option<bool>,
+    supports_streaming: Option<bool>,
 }
 
 impl InputMediaVideo {
-    /// Returns a new InputMedia with with empty optional parameters
+    /// Creates a new InputMediaVideo with empty optional parameters
+    ///
+    /// # Arguments
+    ///
+    /// * media - Pass a file_id to send a file that exists on the Telegram servers (recommended),
+    ///           pass an HTTP URL for Telegram to get a file from the Internet,
+    ///           or pass “attach://<file_attach_name>” to upload a new one using multipart/form-data
+    ///           under <file_attach_name> name
     pub fn new<S: Into<String>>(media: S) -> Self {
         InputMediaVideo {
             media: media.into(),
@@ -258,5 +366,55 @@ impl InputMediaVideo {
             duration: None,
             supports_streaming: None,
         }
+    }
+
+    /// Set a thumbnail
+    ///
+    /// The thumbnail should be in JPEG format and less than 200 kB in size
+    /// A thumbnail‘s width and height should not exceed 90
+    /// Ignored if the file is not uploaded using multipart/form-data
+    /// Thumbnails can’t be reused and can be only uploaded
+    /// as a new file, so you can pass “attach://<file_attach_name>”
+    /// if the thumbnail was uploaded using multipart/form-data
+    /// under <file_attach_name>
+    pub fn thumb<S: Into<String>>(&mut self, thumb: S) -> &mut Self {
+        self.thumb = Some(thumb.into());
+        self
+    }
+
+    /// Caption of the video to be sent, 0-1024 characters
+    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+        self.caption = Some(caption.into());
+        self
+    }
+
+    /// Set parse mode
+    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+        self.parse_mode = Some(parse_mode);
+        self
+    }
+
+    /// Set width
+    pub fn width(&mut self, width: Integer) -> &mut Self {
+        self.width = Some(width);
+        self
+    }
+
+    /// Set height
+    pub fn height(&mut self, height: Integer) -> &mut Self {
+        self.height = Some(height);
+        self
+    }
+
+    /// Set duration
+    pub fn duration(&mut self, duration: Integer) -> &mut Self {
+        self.duration = Some(duration);
+        self
+    }
+
+    /// Pass True, if the uploaded video is suitable for streaming
+    pub fn supports_streaming(&mut self, supports_streaming: bool) -> &mut Self {
+        self.supports_streaming = Some(supports_streaming);
+        self
     }
 }
