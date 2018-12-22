@@ -70,8 +70,8 @@ impl InlineQueryResultCachedPhoto {
     }
 
     /// Inline keyboard attached to the message
-    pub fn reply_markup(&mut self, reply_markup: InlineKeyboardMarkup) -> &mut Self {
-        self.reply_markup = Some(reply_markup);
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+        self.reply_markup = Some(reply_markup.into());
         self
     }
 
