@@ -111,18 +111,25 @@ pub struct InlineQueryResultArticle {
     /// Content of the message to be sent
     pub input_message_content: InputMessageContent,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// URL of the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     /// Pass True, if you don't want the URL to be shown in the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub hide_url: Option<bool>,
     /// Short description of the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     /// Url of the thumbnail for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_url: Option<String>,
     /// Thumbnail width
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_width: Option<Integer>,
     /// Thumbnail height
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_height: Option<Integer>,
 }
 
@@ -162,16 +169,22 @@ pub struct InlineQueryResultAudio {
     /// Title
     pub title: String,
     /// Caption, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Performer
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub performer: Option<String>,
     /// Audio duration in seconds
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub audio_duration: Option<Integer>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the audio
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -206,10 +219,13 @@ pub struct InlineQueryResultCachedAudio {
     /// Caption, 0-1024 characters
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the audio
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -241,14 +257,19 @@ pub struct InlineQueryResultCachedDocument {
     /// A valid file identifier for the file
     pub document_file_id: String,
     /// Short description of the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     /// Caption of the document to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the file
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -280,14 +301,19 @@ pub struct InlineQueryResultCachedGif {
     /// A valid file identifier for the GIF file
     pub gif_file_id: String,
     /// Title for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     /// Caption of the GIF file to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the GIF animation
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -319,14 +345,19 @@ pub struct InlineQueryResultCachedMpeg4Gif {
     /// A valid file identifier for the MP4 file
     pub mpeg4_file_id: String,
     /// Title for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     /// Caption of the MPEG-4 file to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the video animation
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -357,16 +388,22 @@ pub struct InlineQueryResultCachedPhoto {
     /// A valid file identifier of the photo
     pub photo_file_id: String,
     /// Title for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     /// Short description of the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     /// Caption of the photo to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the photo
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -398,8 +435,10 @@ pub struct InlineQueryResultCachedSticker {
     /// A valid file identifier of the sticker
     pub sticker_file_id: String,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the sticker
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -429,14 +468,19 @@ pub struct InlineQueryResultCachedVideo {
     /// Title for the result
     pub title: String,
     /// Short description of the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     /// Caption of the video to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the video
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -470,12 +514,16 @@ pub struct InlineQueryResultCachedVoice {
     /// Voice message title
     pub title: String,
     /// Caption, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the voice message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -508,18 +556,25 @@ pub struct InlineQueryResultContact {
     /// Contact's first name
     pub first_name: String,
     /// Contact's last name
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_name: Option<String>,
     /// Additional data about the contact in the form of a vCard, 0-2048 bytes
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub vcard: Option<String>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the contact
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
     /// Url of the thumbnail for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_url: Option<String>,
     /// Thumbnail width
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_width: Option<Integer>,
     /// Thumbnail height
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_height: Option<Integer>,
 }
 
@@ -554,24 +609,32 @@ pub struct InlineQueryResultDocument {
     /// Title for the result
     pub title: String,
     /// Caption of the document to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// A valid URL for the file
     pub document_url: String,
     /// Mime type of the content of the file, either “application/pdf” or “application/zip”
     pub mime_type: String,
     /// Short description of the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the file
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
     /// URL of the thumbnail (jpeg only) for the file
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_url: Option<String>,
     /// Thumbnail width
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_width: Option<Integer>,
     /// Thumbnail height
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_height: Option<Integer>,
 }
 
@@ -603,6 +666,7 @@ pub struct InlineQueryResultGame {
     /// Short name of the game
     pub game_short_name: String,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
 }
 
@@ -630,22 +694,30 @@ pub struct InlineQueryResultGif {
     /// A valid URL for the GIF file. File size must not exceed 1MB
     pub gif_url: String,
     /// Width of the GIF
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub gif_width: Option<Integer>,
     /// Height of the GIF
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub gif_height: Option<Integer>,
     /// Duration of the GIF
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub gif_duration: Option<Integer>,
     /// URL of the static thumbnail for the result (jpeg or gif)
     pub thumb_url: String,
     /// Title for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     /// Caption of the GIF file to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the GIF animation
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -686,16 +758,22 @@ pub struct InlineQueryResultLocation {
     /// Period in seconds for
     /// which the location can be updated,
     /// should be between 60 and 86400.
+    #[serde(skip_serializing_if = "Option::is_none")]
     live_period: Option<Integer>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the location
+    #[serde(skip_serializing_if = "Option::is_none")]
     input_message_content: Option<InputMessageContent>,
     /// Url of the thumbnail for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     thumb_url: Option<String>,
     /// Thumbnail width
+    #[serde(skip_serializing_if = "Option::is_none")]
     thumb_width: Option<Integer>,
     /// Thumbnail height
+    #[serde(skip_serializing_if = "Option::is_none")]
     thumb_height: Option<Integer>,
 }
 
@@ -729,22 +807,30 @@ pub struct InlineQueryResultMpeg4Gif {
     /// A valid URL for the MP4 file. File size must not exceed 1MB
     pub mpeg4_url: String,
     /// Video width
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mpeg4_width: Option<Integer>,
     /// Video height
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mpeg4_height: Option<Integer>,
     /// Video duration
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mpeg4_duration: Option<Integer>,
     /// URL of the static thumbnail (jpeg or gif) for the result
     pub thumb_url: String,
     /// Title for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     /// Caption of the MPEG-4 file to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the video animation
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -783,20 +869,28 @@ pub struct InlineQueryResultPhoto {
     /// URL of the thumbnail for the photo
     pub thumb_url: String,
     ///  Width of the photo
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub photo_width: Option<Integer>,
     /// Height of the photo
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub photo_height: Option<Integer>,
     /// Title for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     /// Short description of the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     /// Caption of the photo to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the photo
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -837,19 +931,26 @@ pub struct InlineQueryResultVenue {
     /// Address of the venue
     pub address: String,
     /// Foursquare identifier of the venue if known
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub foursquare_id: Option<String>,
     /// Foursquare type of the venue, if known.
     /// (For example, “arts_entertainment/default”, “arts_entertainment/aquarium” or “food/icecream”.)
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub foursquare_type: Option<String>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the venue
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
     /// Url of the thumbnail for the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_url: Option<String>,
     /// Thumbnail width
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_width: Option<Integer>,
     /// Thumbnail height
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb_height: Option<Integer>,
 }
 
@@ -899,22 +1000,30 @@ pub struct InlineQueryResultVideo {
     /// Title for the result
     pub title: String,
     /// Caption of the video to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Video width
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub video_width: Option<Integer>,
     /// Video height
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub video_height: Option<Integer>,
     /// Video duration in seconds
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub video_duration: Option<Integer>,
     /// Short description of the result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the video.
     /// This field is required if InlineQueryResultVideo
     /// is used to send an HTML-page as a result (e.g., a YouTube video).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 
@@ -953,14 +1062,19 @@ pub struct InlineQueryResultVoice {
     /// Recording title
     pub title: String,
     /// Caption, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Recording duration in seconds
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub voice_duration: Option<Integer>,
     /// Inline keyboard attached to the message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reply_markup: Option<InlineKeyboardMarkup>,
     /// Content of the message to be sent instead of the voice recording
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub input_message_content: Option<InputMessageContent>,
 }
 

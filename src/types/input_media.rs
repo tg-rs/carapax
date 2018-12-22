@@ -63,16 +63,22 @@ pub struct InputMediaAnimation {
     /// as a new file, so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb: Option<String>,
     /// Caption of the animation to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Animation width
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<Integer>,
     /// Animation height
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub height: Option<Integer>,
     /// Animation duration
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<Integer>,
 }
 
@@ -106,16 +112,22 @@ pub struct InputMediaAudio {
     /// so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb: Option<String>,
     /// Caption of the audio to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Duration of the audio in seconds
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<Integer>,
     /// Performer of the audio
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub performer: Option<String>,
     /// Title of the audio
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
 }
 
@@ -148,10 +160,13 @@ pub struct InputMediaDocument {
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data under <file_attach_name>
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb: Option<String>,
     /// Caption of the document to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
 }
 
@@ -176,8 +191,10 @@ pub struct InputMediaPhoto {
     /// to upload a new one using multipart/form-data under <file_attach_name> name
     pub media: String,
     /// Caption of the photo to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
 }
 
@@ -206,18 +223,25 @@ pub struct InputMediaVideo {
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data under <file_attach_name>
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumb: Option<String>,
     /// Caption of the video to be sent, 0-1024 characters
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Video width
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<Integer>,
     /// Video height
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub height: Option<Integer>,
     /// Video duration
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<Integer>,
     /// Pass True, if the uploaded video is suitable for streaming
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub supports_streaming: Option<bool>,
 }
 

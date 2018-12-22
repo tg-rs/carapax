@@ -37,8 +37,10 @@ pub struct InputMessageContentContact {
     /// Contact's first name
     pub first_name: String,
     /// Contact's last name
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_name: Option<String>,
     /// Additional data about the contact in the form of a vCard, 0-2048 bytes
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub vcard: Option<String>,
 }
 
@@ -50,6 +52,7 @@ pub struct InputMessageContentLocation {
     /// Longitude of the location in degrees
     pub longitude: Float,
     /// Period in seconds for which the location can be updated, should be between 60 and 86400
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub live_period: Option<Integer>,
 }
 
@@ -59,8 +62,10 @@ pub struct InputMessageContentText {
     /// Text of the message to be sent, 1-4096 characters
     pub message_text: String,
     /// Parse mode
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parse_mode: Option<ParseMode>,
     /// Disables link previews for links in the sent message
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_web_page_preview: Option<bool>,
 }
 
@@ -76,9 +81,11 @@ pub struct InputMessageContentVenue {
     /// Address of the venue
     pub address: String,
     /// Foursquare identifier of the venue, if known
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub foursquare_id: Option<String>,
     /// Foursquare type of the venue, if known.
     /// (For example, “arts_entertainment/default”,
     /// “arts_entertainment/aquarium” or “food/icecream”.)
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub foursquare_type: Option<String>,
 }
