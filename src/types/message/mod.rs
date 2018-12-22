@@ -190,3 +190,13 @@ impl<'de> Deserialize<'de> for Message {
         Message::from_raw(raw_msg).map_err(D::Error::custom)
     }
 }
+
+/// Result of editMessage* requests
+#[derive(Clone, Debug, Deserialize)]
+#[allow(clippy::large_enum_variant)]
+pub enum EditMessageResult {
+    /// Returned if edited message is sent by the bot
+    Message(Message),
+    /// Returned if edited message is NOT sent by the bot
+    Bool(bool),
+}
