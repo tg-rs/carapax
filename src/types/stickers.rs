@@ -2,7 +2,7 @@ use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::{Float, Integer};
 
 /// The part of the face relative to which the mask should be placed
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum MaskPositionPoint {
     /// “forehead”
     #[serde(rename = "forehead")]
@@ -19,7 +19,7 @@ pub enum MaskPositionPoint {
 }
 
 /// Position on faces where a mask should be placed by default
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct MaskPosition {
     /// The part of the face relative
     /// to which the mask should be placed
