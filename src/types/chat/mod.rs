@@ -2,6 +2,7 @@ use crate::types::chat::raw::{RawChat, RawChatKind};
 use crate::types::message::Message;
 use crate::types::primitive::Integer;
 use serde::de::{Deserialize, Deserializer, Error};
+use serde::ser::{Serialize, Serializer};
 
 mod member;
 mod photo;
@@ -167,4 +168,72 @@ pub struct SupergroupChat {
     /// True, if the bot can change the group sticker set
     /// Returned only in getChat
     pub can_set_sticker_set: Option<bool>,
+}
+
+/// Chat ID or username
+#[derive(Clone, Debug)]
+pub enum ChatId {
+    /// @username of a chat
+    Username(String),
+    /// ID of a chat
+    Id(Integer),
+}
+
+impl Serialize for ChatId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            ChatId::Username(username) => serializer.serialize_str(username),
+            ChatId::Id(id) => serializer.serialize_i64(*id),
+        }
+    }
+}
+
+impl From<&str> for ChatId {
+    fn from(username: &str) -> ChatId {
+        ChatId::Username(String::from(username))
+    }
+}
+
+impl From<Integer> for ChatId {
+    fn from(id: Integer) -> ChatId {
+        ChatId::Id(id)
+    }
+}
+
+/// Type of action to tell the user that some is happening on the bot's side
+#[derive(Clone, Copy, Debug, Serialize)]
+pub enum ChatAction {
+    /// For location data
+    #[serde(rename = "find_location")]
+    FindLocation,
+    /// For audio files
+    #[serde(rename = "record_audio")]
+    RecordAudio,
+    /// For videos
+    #[serde(rename = "record_video")]
+    RecordVideo,
+    /// For video notes
+    #[serde(rename = "record_video_note")]
+    RecordVideoNote,
+    /// For text messages
+    #[serde(rename = "typing")]
+    Typing,
+    /// For audio files
+    #[serde(rename = "upload_audio")]
+    UploadAudio,
+    /// For general files
+    #[serde(rename = "upload_document")]
+    UploadDocument,
+    /// For photos
+    #[serde(rename = "upload_photo")]
+    UploadPhoto,
+    /// For videos
+    #[serde(rename = "upload_video")]
+    UploadVideo,
+    /// For video notes
+    #[serde(rename = "upload_video_note")]
+    UploadVideoNote,
 }
