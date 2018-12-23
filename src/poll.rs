@@ -97,7 +97,6 @@ impl<'a> Iterator for UpdatesIter<'a> {
                     }
                 }
                 Err(err) => {
-                    // TODO: sleep from response params if exists
                     error!("An error has occurred while getting updates: {:?}", err);
                     sleep(match err {
                         ClientError::Telegram(ResponseError {
