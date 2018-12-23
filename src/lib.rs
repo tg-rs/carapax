@@ -6,8 +6,12 @@ extern crate failure;
 #[macro_use]
 extern crate serde_derive;
 
+mod client;
+
 /// Methods available in the Bot API
 pub mod methods;
 
 /// Types available in the Bot API
 pub mod types;
+
+pub use self::client::Client;
