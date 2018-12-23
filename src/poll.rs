@@ -1,6 +1,7 @@
 use crate::client::Client;
 use crate::methods::GetUpdates;
 use crate::types::{AllowedUpdate, Integer, Update};
+use log::{debug, error};
 use std::collections::HashSet;
 use std::thread::sleep;
 use std::time::Duration;
@@ -76,6 +77,10 @@ impl<'a> Iterator for UpdatesIter<'a> {
             return self.items.pop();
         }
         loop {
+            debug!(
+                "Getting updates: offset={} limit={} timeout={} allowed_updates={:?}",
+                self.offset, self.limit, self.poll_timeout, self.allowed_updates
+            );
             let updates = self.client.execute(
                 GetUpdates::default()
                     .offset(self.offset)
@@ -92,8 +97,8 @@ impl<'a> Iterator for UpdatesIter<'a> {
                     }
                 }
                 Err(err) => {
-                    // TODO: log
-                    println!("{:?}", err);
+                    // TODO: sleep from response params if exists
+                    error!("An error has occurred while getting updates: {:?}", err);
                     sleep(self.error_timeout);
                 }
             };

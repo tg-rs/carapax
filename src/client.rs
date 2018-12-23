@@ -5,6 +5,7 @@ use curl::{
     easy::{Easy, List},
     Error as CurlError,
 };
+use log::{debug, log_enabled, Level::Debug};
 use serde::de::DeserializeOwned;
 use serde_json::Error as JsonError;
 use std::cell::RefCell;
@@ -33,6 +34,7 @@ impl Client {
     ///
     /// By default this option is not set and corresponds to CURLOPT_PROXY
     pub fn proxy(&mut self, url: &str) -> Result<&mut Self, ClientError> {
+        debug!("Setting proxy: {}", url);
         self.curl.borrow_mut().proxy(url)?;
         Ok(self)
     }
@@ -57,6 +59,7 @@ impl Client {
 
     fn request(&self, request: Request) -> Result<Vec<u8>, ClientError> {
         let url = request.url.build(&self.token);
+        debug!("Sending request: {:?}", request);
         let mut curl = self.curl.borrow_mut();
         curl.url(&url)?;
         match request.method {
@@ -64,8 +67,11 @@ impl Client {
             RequestMethod::Post => curl.post(true)?,
         }
         match request.body {
-            RequestBody::Json(data) => {
-                curl.post_fields_copy(&data)?;
+            RequestBody::Json(ref data) => {
+                if log_enabled!(Debug) {
+                    debug!("Post JSON data: {}", String::from_utf8_lossy(data));
+                }
+                curl.post_fields_copy(data)?;
                 let mut headers = List::new();
                 headers.append("Content-Type: application/json")?;
                 curl.http_headers(headers)?;
@@ -82,6 +88,13 @@ impl Client {
                 Ok(data.len())
             })?;
             transfer.perform()?;
+        }
+        if log_enabled!(Debug) {
+            debug!(
+                "Got response: {} for request: {:?}",
+                String::from_utf8_lossy(&out),
+                request
+            );
         }
         Ok(out)
     }
