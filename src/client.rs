@@ -100,14 +100,19 @@ impl Client {
     }
 }
 
+/// Client error
 #[derive(Debug, Fail)]
 pub enum ClientError {
+    /// Curl error
     #[fail(display = "Curl error: {}", _0)]
     Curl(#[fail(cause)] CurlError),
+    /// JSON error
     #[fail(display = "JSON error: {}", _0)]
     Json(#[fail(cause)] JsonError),
+    /// Can not create request
     #[fail(display = "Request error: {}", _0)]
     Request(#[fail(cause)] RequestError),
+    /// Telegram API respond with a error
     #[fail(display = "Telegram error: {:?}", _0)]
     Telegram(ResponseError),
 }

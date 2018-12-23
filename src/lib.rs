@@ -15,5 +15,5 @@ pub mod methods;
 /// Types available in the Bot API
 pub mod types;
 
-pub use self::client::Client;
+pub use self::client::{Client, ClientError};
 pub use self::poll::UpdatesIter;
