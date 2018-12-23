@@ -1,6 +1,6 @@
-use crate::client::Client;
+use crate::client::{Client, ClientError};
 use crate::methods::GetUpdates;
-use crate::types::{AllowedUpdate, Integer, Update};
+use crate::types::{AllowedUpdate, Integer, ResponseError, ResponseParameters, Update};
 use log::{debug, error};
 use std::collections::HashSet;
 use std::thread::sleep;
@@ -99,7 +99,17 @@ impl<'a> Iterator for UpdatesIter<'a> {
                 Err(err) => {
                     // TODO: sleep from response params if exists
                     error!("An error has occurred while getting updates: {:?}", err);
-                    sleep(self.error_timeout);
+                    sleep(match err {
+                        ClientError::Telegram(ResponseError {
+                            parameters:
+                                Some(ResponseParameters {
+                                    retry_after: Some(retry_after),
+                                    ..
+                                }),
+                            ..
+                        }) => Duration::from_secs(retry_after as u64),
+                        _ => self.error_timeout,
+                    });
                 }
             };
         }
