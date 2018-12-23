@@ -1,0 +1,27 @@
+mod delete_photo;
+mod delete_sticker_set;
+mod export_invite_link;
+mod get;
+mod get_administrators;
+mod get_members_count;
+mod leave;
+mod pin_message;
+mod set_description;
+mod set_photo;
+mod set_sticker_set;
+mod set_title;
+mod unpin_message;
+
+pub use self::delete_photo::*;
+pub use self::delete_sticker_set::*;
+pub use self::export_invite_link::*;
+pub use self::get::*;
+pub use self::get_administrators::*;
+pub use self::get_members_count::*;
+pub use self::leave::*;
+pub use self::pin_message::*;
+pub use self::set_description::*;
+pub use self::set_photo::*;
+pub use self::set_sticker_set::*;
+pub use self::set_title::*;
+pub use self::unpin_message::*;

@@ -1,0 +1,27 @@
+mod animation;
+mod audio;
+mod chat_action;
+mod contact;
+mod document;
+mod invoice;
+mod location;
+mod media_group;
+mod photo;
+mod venue;
+mod video;
+mod video_note;
+mod voice;
+
+pub use self::animation::*;
+pub use self::audio::*;
+pub use self::chat_action::*;
+pub use self::contact::*;
+pub use self::document::*;
+pub use self::invoice::*;
+pub use self::location::*;
+pub use self::media_group::*;
+pub use self::photo::*;
+pub use self::venue::*;
+pub use self::video::*;
+pub use self::video_note::*;
+pub use self::voice::*;

@@ -1,0 +1,25 @@
+mod answer;
+mod chat;
+mod chat_member;
+mod game;
+mod get_file;
+mod message;
+mod method;
+mod passport;
+mod send;
+mod sticker;
+mod updates;
+mod user;
+
+pub use self::answer::*;
+pub use self::chat::*;
+pub use self::chat_member::*;
+pub use self::game::*;
+pub use self::get_file::*;
+pub use self::message::*;
+pub use self::method::*;
+pub use self::passport::*;
+pub use self::send::*;
+pub use self::sticker::*;
+pub use self::updates::*;
+pub use self::user::*;
