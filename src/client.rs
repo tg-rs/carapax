@@ -1,4 +1,5 @@
 use crate::methods::{Method, Request, RequestBody, RequestError, RequestMethod};
+use crate::poll::UpdatesIter;
 use crate::types::{Response, ResponseError};
 use curl::{
     easy::{Easy, List},
@@ -6,11 +7,12 @@ use curl::{
 };
 use serde::de::DeserializeOwned;
 use serde_json::Error as JsonError;
+use std::cell::RefCell;
 
 /// Telegram Bot API client
 #[derive(Debug)]
 pub struct Client {
-    curl: Easy,
+    curl: RefCell<Easy>,
     token: String,
 }
 
@@ -22,7 +24,7 @@ impl Client {
     /// * token - Bot token
     pub fn new<S: Into<String>>(token: S) -> Self {
         Client {
-            curl: Easy::new(),
+            curl: RefCell::new(Easy::new()),
             token: token.into(),
         }
     }
@@ -31,12 +33,12 @@ impl Client {
     ///
     /// By default this option is not set and corresponds to CURLOPT_PROXY
     pub fn proxy(&mut self, url: &str) -> Result<&mut Self, ClientError> {
-        self.curl.proxy(url)?;
+        self.curl.borrow_mut().proxy(url)?;
         Ok(self)
     }
 
     /// Executes a method
-    pub fn execute<M: Method>(&mut self, method: &M) -> Result<M::Response, ClientError>
+    pub fn execute<M: Method>(&self, method: &M) -> Result<M::Response, ClientError>
     where
         M::Response: DeserializeOwned,
     {
@@ -48,19 +50,25 @@ impl Client {
         }
     }
 
-    fn request(&mut self, request: Request) -> Result<Vec<u8>, ClientError> {
+    /// Returns an iterator over updates
+    pub fn get_updates(&self) -> UpdatesIter {
+        UpdatesIter::new(self)
+    }
+
+    fn request(&self, request: Request) -> Result<Vec<u8>, ClientError> {
         let url = request.url.build(&self.token);
-        self.curl.url(&url)?;
+        let mut curl = self.curl.borrow_mut();
+        curl.url(&url)?;
         match request.method {
-            RequestMethod::Get => self.curl.get(true)?,
-            RequestMethod::Post => self.curl.post(true)?,
+            RequestMethod::Get => curl.get(true)?,
+            RequestMethod::Post => curl.post(true)?,
         }
         match request.body {
             RequestBody::Json(data) => {
-                self.curl.post_fields_copy(&data)?;
+                curl.post_fields_copy(&data)?;
                 let mut headers = List::new();
                 headers.append("Content-Type: application/json")?;
-                self.curl.http_headers(headers)?;
+                curl.http_headers(headers)?;
             }
             RequestBody::Empty => {
                 // no op
@@ -68,7 +76,7 @@ impl Client {
         }
         let mut out = Vec::new();
         {
-            let mut transfer = self.curl.transfer();
+            let mut transfer = curl.transfer();
             transfer.write_function(|data| {
                 out.extend_from_slice(data);
                 Ok(data.len())

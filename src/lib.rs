@@ -7,6 +7,7 @@ extern crate failure;
 extern crate serde_derive;
 
 mod client;
+mod poll;
 
 /// Methods available in the Bot API
 pub mod methods;
@@ -15,3 +16,4 @@ pub mod methods;
 pub mod types;
 
 pub use self::client::Client;
+pub use self::poll::UpdatesIter;
