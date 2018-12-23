@@ -44,7 +44,7 @@ impl Client {
     where
         M::Response: DeserializeOwned,
     {
-        let data = self.request(method.get_request()?)?;
+        let data = self.request(&method.get_request()?)?;
         let rep: Response<M::Response> = serde_json::from_slice(&data)?;
         match rep {
             Response::Success(obj) => Ok(obj),
@@ -57,7 +57,7 @@ impl Client {
         UpdatesIter::new(self)
     }
 
-    fn request(&self, request: Request) -> Result<Vec<u8>, ClientError> {
+    fn request(&self, request: &Request) -> Result<Vec<u8>, ClientError> {
         let url = request.url.build(&self.token);
         debug!("Sending request: {:?}", request);
         let mut curl = self.curl.borrow_mut();
