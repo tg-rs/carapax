@@ -1,4 +1,5 @@
 use crate::types::primitive::{Integer, ParseMode};
+use serde::Serialize;
 
 /// Photo or video to be sent in a media group
 #[derive(Clone, Debug, Serialize)]

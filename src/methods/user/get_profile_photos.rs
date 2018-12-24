@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{Integer, UserProfilePhotos};
+use serde::Serialize;
 
 /// Get a list of profile pictures for a user
 #[derive(Clone, Debug, Serialize)]

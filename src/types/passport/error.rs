@@ -1,4 +1,5 @@
 use crate::types::passport::element::EncryptedPassportElementKind;
+use serde::Serialize;
 
 /// Error in the Telegram Passport element which was submitted that should be resolved by the user
 #[derive(Clone, Debug, Serialize)]

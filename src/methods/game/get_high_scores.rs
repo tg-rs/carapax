@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{GameHighScore, Integer};
+use serde::Serialize;
 
 /// Get data for high score tables
 ///

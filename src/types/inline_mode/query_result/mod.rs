@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 mod article;
 mod audio;
 mod cached;

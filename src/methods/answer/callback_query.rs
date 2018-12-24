@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::Integer;
+use serde::Serialize;
 
 /// Send answer to callback query sent from inline keyboard
 ///

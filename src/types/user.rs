@@ -1,5 +1,6 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 /// Telegram user or bot
 #[derive(Clone, Debug, Deserialize, PartialEq, PartialOrd)]

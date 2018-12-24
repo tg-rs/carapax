@@ -3,7 +3,7 @@ use crate::types::message::{RawMessageEntity, Text};
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
 use crate::types::user::User;
-use serde::de::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer};
 
 /// Game
 ///

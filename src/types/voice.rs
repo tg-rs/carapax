@@ -1,4 +1,5 @@
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 /// Voice note
 #[derive(Clone, Debug, Deserialize)]

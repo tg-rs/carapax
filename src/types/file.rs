@@ -1,4 +1,5 @@
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 /// File ready to be downloaded
 ///

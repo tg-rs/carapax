@@ -1,8 +1,7 @@
 use crate::types::chat::raw::{RawChat, RawChatKind};
 use crate::types::message::Message;
 use crate::types::primitive::Integer;
-use serde::de::{Deserialize, Deserializer, Error};
-use serde::ser::{Serialize, Serializer};
+use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 
 mod member;
 mod photo;

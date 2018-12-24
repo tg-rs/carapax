@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{EditMessageResult, Integer};
+use serde::Serialize;
 
 /// Set the score of the specified user in a game
 ///

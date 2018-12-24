@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{File, Integer};
+use serde::Serialize;
 
 /// Upload a .png file with a sticker for later use in createNewStickerSet and addStickerToSet methods
 #[derive(Clone, Debug, Serialize)]

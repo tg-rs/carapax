@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, MediaGroupItem, Message};
+use serde::Serialize;
 
 /// Send a group of photos or videos as an album
 #[derive(Clone, Debug, Serialize)]

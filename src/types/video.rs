@@ -1,5 +1,6 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 /// Video file
 #[derive(Clone, Debug, Deserialize)]

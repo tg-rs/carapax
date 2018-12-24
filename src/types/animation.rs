@@ -1,5 +1,6 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 /// An animation file (GIF or H.264/MPEG-4 AVC video without sound)
 #[derive(Clone, Debug, Deserialize)]

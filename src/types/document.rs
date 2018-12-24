@@ -1,5 +1,6 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 /// General file (as opposed to photos, voice messages and audio files)
 #[derive(Clone, Debug, Deserialize)]

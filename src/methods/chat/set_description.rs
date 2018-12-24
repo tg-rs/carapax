@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use serde::Serialize;
 
 /// Change the description of a supergroup or a channel
 ///

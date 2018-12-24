@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use serde::Serialize;
 
 /// Generate a new invite link for a chat
 ///

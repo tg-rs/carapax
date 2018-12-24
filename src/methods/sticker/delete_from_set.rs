@@ -1,4 +1,5 @@
 use crate::methods::method::*;
+use serde::Serialize;
 
 /// Delete a sticker from a set created by the bot
 #[derive(Clone, Debug, Serialize)]

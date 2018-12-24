@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{InlineKeyboardMarkup, Integer, LabeledPrice, Message};
+use serde::Serialize;
 
 /// Send invoice
 #[derive(Clone, Debug, Serialize)]

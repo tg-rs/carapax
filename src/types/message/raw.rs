@@ -15,6 +15,7 @@ use crate::types::venue::Venue;
 use crate::types::video::Video;
 use crate::types::video_note::VideoNote;
 use crate::types::voice::Voice;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub(super) struct RawMessage {

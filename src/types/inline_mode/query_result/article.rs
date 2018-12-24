@@ -1,6 +1,7 @@
 use crate::types::inline_mode::message_content::InputMessageContent;
 use crate::types::primitive::Integer;
 use crate::types::reply_markup::InlineKeyboardMarkup;
+use serde::Serialize;
 
 /// Link to an article or web page
 #[derive(Clone, Debug, Serialize)]

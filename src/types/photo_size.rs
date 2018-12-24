@@ -1,4 +1,5 @@
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 /// Size of a photo or a file / sticker thumbnail
 #[derive(Clone, Debug, Deserialize)]

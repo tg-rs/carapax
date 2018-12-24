@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer};
+use serde::Serialize;
 
 /// Delete a message, including service messages
 ///

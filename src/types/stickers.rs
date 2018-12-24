@@ -1,5 +1,6 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::{Float, Integer};
+use serde::{Deserialize, Serialize};
 
 /// The part of the face relative to which the mask should be placed
 #[derive(Clone, Debug, Deserialize, Serialize)]

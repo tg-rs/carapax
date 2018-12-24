@@ -1,4 +1,5 @@
 use crate::types::reply_markup::InlineKeyboardMarkup;
+use serde::Serialize;
 
 /// Game
 #[derive(Clone, Debug, Serialize)]

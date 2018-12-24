@@ -1,4 +1,5 @@
 use crate::types::primitive::Float;
+use serde::Deserialize;
 
 /// Point on the map
 #[derive(Clone, Debug, Deserialize)]

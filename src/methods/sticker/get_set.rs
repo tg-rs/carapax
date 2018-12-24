@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::StickerSet;
+use serde::Serialize;
 
 /// Get a sticker set
 #[derive(Clone, Debug, Serialize)]

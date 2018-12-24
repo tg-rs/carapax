@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use serde::Serialize;
 
 /// Delete a group sticker set from a supergroup
 ///

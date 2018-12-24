@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message, ReplyMarkup};
+use serde::Serialize;
 
 /// Send video message
 ///

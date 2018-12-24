@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message, ParseMode, ReplyMarkup};
+use serde::Serialize;
 
 /// Send photo
 #[derive(Clone, Debug, Serialize)]

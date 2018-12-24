@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::Integer;
+use serde::Serialize;
 
 /// Move a sticker in a set created by the bot to a specific position
 #[derive(Clone, Debug, Serialize)]

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use serde::Serialize;
 
 /// Set a new profile photo for the chat
 ///

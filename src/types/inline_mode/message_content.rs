@@ -1,4 +1,5 @@
 use crate::types::primitive::{Float, Integer, ParseMode};
+use serde::Serialize;
 
 /// Content of a message to be sent as a result of an inline query
 #[derive(Clone, Debug, Serialize)]

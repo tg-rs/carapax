@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, EditMessageResult, InlineKeyboardMarkup, Integer};
+use serde::Serialize;
 
 /// Edit only the reply markup of messages sent by the bot or via the bot (for inline bots)
 #[derive(Clone, Debug, Serialize)]

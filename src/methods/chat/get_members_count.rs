@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer};
+use serde::Serialize;
 
 /// Get the number of members in a chat
 #[derive(Clone, Debug, Serialize)]

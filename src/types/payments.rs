@@ -1,5 +1,6 @@
 use crate::types::primitive::Integer;
 use crate::types::user::User;
+use serde::{Deserialize, Serialize};
 
 /// Basic information about an invoice
 #[derive(Clone, Debug, Deserialize)]

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, EditMessageResult, Float, InlineKeyboardMarkup, Integer};
+use serde::Serialize;
 
 /// Edit live location messages sent by the bot or via the bot (for inline bots)
 ///

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Float, Integer, Message, ReplyMarkup};
+use serde::Serialize;
 
 /// Send point on the map
 #[derive(Clone, Debug, Serialize)]

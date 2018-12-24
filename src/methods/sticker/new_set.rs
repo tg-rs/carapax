@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{Integer, MaskPosition};
+use serde::Serialize;
 
 /// Create new sticker set owned by a user
 ///

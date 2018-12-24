@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer};
+use serde::Serialize;
 
 /// Promote or demote a user in a supergroup or a channel
 ///

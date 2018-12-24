@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{InlineQueryResult, Integer};
+use serde::Serialize;
 
 /// Use this method to send answers to an inline query
 ///

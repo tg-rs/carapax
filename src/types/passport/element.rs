@@ -1,5 +1,5 @@
 use crate::types::passport::PassportFile;
-use serde::de::{Deserialize, Deserializer, Error};
+use serde::{de::Error, Deserialize, Deserializer, Serialize};
 
 /// Information about documents or other Telegram Passport elements shared with the bot by the user
 #[derive(Clone, Debug)]

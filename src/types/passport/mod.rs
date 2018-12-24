@@ -1,4 +1,5 @@
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 mod element;
 mod error;

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{Integer, PassportElementError};
+use serde::Serialize;
 
 /// Informs a user that some of the Telegram Passport elements they provided contains errors
 ///

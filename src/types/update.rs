@@ -3,7 +3,7 @@ use crate::types::inline_mode::{ChosenInlineResult, InlineQuery};
 use crate::types::message::Message;
 use crate::types::payments::{PreCheckoutQuery, ShippingQuery};
 use crate::types::primitive::Integer;
-use serde::de::{Deserialize, Deserializer, Error};
+use serde::{de::Error, Deserialize, Deserializer, Serialize};
 
 /// Incoming update
 #[derive(Clone, Debug)]

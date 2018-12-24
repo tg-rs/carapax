@@ -1,5 +1,6 @@
 use crate::types::location::Location;
 use crate::types::user::User;
+use serde::Deserialize;
 
 mod message_content;
 mod query_result;

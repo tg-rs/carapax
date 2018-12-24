@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer};
+use serde::Serialize;
 
 /// Restrict a user in a supergroup
 ///

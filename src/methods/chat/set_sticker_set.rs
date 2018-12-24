@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use serde::Serialize;
 
 /// Set a new group sticker set for a supergroup
 ///

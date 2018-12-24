@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message, ParseMode, ReplyMarkup};
+use serde::Serialize;
 
 /// Send animation files (GIF or H.264/MPEG-4 AVC video without sound)
 ///

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{Chat, ChatId};
+use serde::Serialize;
 
 /// Get up to date information about the chat
 #[derive(Clone, Debug, Serialize)]

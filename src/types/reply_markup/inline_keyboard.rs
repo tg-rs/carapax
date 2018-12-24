@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 /// Inline keyboard that appears right next to the message it belongs to
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct InlineKeyboardMarkup {

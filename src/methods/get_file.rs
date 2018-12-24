@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::File;
+use serde::Serialize;
 
 /// Get basic info about a file and prepare it for downloading
 ///

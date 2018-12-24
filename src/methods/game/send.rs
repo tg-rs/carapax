@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{InlineKeyboardMarkup, Integer, Message};
+use serde::Serialize;
 
 /// Use this method to send a game
 #[derive(Clone, Debug, Serialize)]

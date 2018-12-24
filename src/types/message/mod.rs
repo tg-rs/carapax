@@ -1,7 +1,7 @@
 use crate::types::chat::Chat;
 use crate::types::message::raw::RawMessage;
 use crate::types::primitive::Integer;
-use serde::de::{Deserialize, Deserializer, Error};
+use serde::{de::Error, Deserialize, Deserializer};
 
 mod data;
 mod forward;

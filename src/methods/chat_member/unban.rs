@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer};
+use serde::Serialize;
 
 /// Unban a previously kicked user in a supergroup or channel
 ///

@@ -1,6 +1,7 @@
 use crate::types::inline_mode::message_content::InputMessageContent;
 use crate::types::primitive::Integer;
 use crate::types::reply_markup::InlineKeyboardMarkup;
+use serde::Serialize;
 
 /// Contact with a phone number
 ///

@@ -1,4 +1,5 @@
 use crate::types::location::Location;
+use serde::Deserialize;
 
 /// Venue
 #[derive(Clone, Debug, Deserialize)]

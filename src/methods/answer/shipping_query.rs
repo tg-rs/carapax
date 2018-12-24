@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ShippingOption;
+use serde::Serialize;
 
 /// Reply to shipping query
 ///

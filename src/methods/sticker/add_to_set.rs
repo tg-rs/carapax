@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{Integer, MaskPosition};
+use serde::Serialize;
 
 /// Add a new sticker to a set created by the bot
 #[derive(Clone, Debug, Serialize)]

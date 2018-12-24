@@ -1,3 +1,5 @@
+use serde::Deserialize;
+
 /// Chat photo
 #[derive(Clone, Debug, Deserialize)]
 pub struct ChatPhoto {

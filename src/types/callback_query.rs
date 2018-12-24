@@ -1,5 +1,6 @@
 use crate::types::message::Message;
 use crate::types::user::User;
+use serde::Deserialize;
 
 /// Incoming callback query from a callback button in an inline keyboard
 ///

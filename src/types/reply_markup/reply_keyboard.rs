@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::ops::Not;
 
 /// Custom keyboard with reply options

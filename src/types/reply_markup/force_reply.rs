@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 /// Display a reply interface to the user
 ///
 /// (act as if the user has selected the bot‘s message and tapped ’Reply')

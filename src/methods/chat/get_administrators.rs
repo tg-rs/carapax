@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, ChatMember};
+use serde::Serialize;
 
 /// Get a list of administrators in a chat
 ///

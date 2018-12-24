@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 /// Telegram Integer type
 pub type Integer = i64;
 

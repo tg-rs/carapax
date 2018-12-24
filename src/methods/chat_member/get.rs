@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, ChatMember, Integer};
+use serde::Serialize;
 
 /// Get information about a member of a chat
 #[derive(Clone, Debug, Serialize)]

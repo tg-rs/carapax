@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, EditMessageResult, InlineKeyboardMarkup, Integer, ParseMode};
+use serde::Serialize;
 
 /// Edit caption of message sent by the bot or via the bot (for inline bots)
 #[derive(Clone, Debug, Serialize)]

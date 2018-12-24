@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 mod force_reply;
 mod inline_keyboard;
 mod reply_keyboard;

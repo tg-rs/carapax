@@ -1,6 +1,7 @@
 use crate::types::inline_mode::message_content::InputMessageContent;
 use crate::types::primitive::{Float, Integer};
 use crate::types::reply_markup::InlineKeyboardMarkup;
+use serde::Serialize;
 
 /// Location on a map
 ///

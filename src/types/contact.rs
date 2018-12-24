@@ -1,4 +1,5 @@
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 /// Phone contact
 #[derive(Clone, Debug, Deserialize)]

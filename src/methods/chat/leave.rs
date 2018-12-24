@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use serde::Serialize;
 
 /// Leave a group, supergroup or channel
 #[derive(Clone, Debug, Serialize)]

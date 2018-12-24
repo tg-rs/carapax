@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message, ParseMode, ReplyMarkup};
+use serde::Serialize;
 
 /// Send audio files, if you want Telegram clients to display the file as a playable voice message
 ///

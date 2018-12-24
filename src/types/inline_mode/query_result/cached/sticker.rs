@@ -1,5 +1,6 @@
 use crate::types::inline_mode::message_content::InputMessageContent;
 use crate::types::reply_markup::InlineKeyboardMarkup;
+use serde::Serialize;
 
 /// Link to a sticker stored on the Telegram servers
 ///

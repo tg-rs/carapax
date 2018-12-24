@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{AllowedUpdate, Integer, Update, WebhookInfo};
+use serde::Serialize;
 use std::collections::HashSet;
 
 /// Receive incoming updates using long polling

@@ -1,4 +1,5 @@
 use crate::methods::method::*;
+use serde::Serialize;
 
 /// Respond to pre-checkout query
 ///

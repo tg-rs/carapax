@@ -1,5 +1,6 @@
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
+use serde::Deserialize;
 
 /// Audio file to be treated as music by the Telegram clients
 #[derive(Clone, Debug, Deserialize)]

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message};
+use serde::Serialize;
 
 /// Forward message of any kind
 #[derive(Clone, Debug, Serialize)]

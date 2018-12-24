@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, EditMessageResult, InlineKeyboardMarkup, InputMedia, Integer};
+use serde::Serialize;
 
 /// Edit audio, document, photo, or video messages
 ///

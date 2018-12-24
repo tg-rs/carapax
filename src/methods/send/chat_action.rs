@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatAction, ChatId};
+use serde::Serialize;
 
 /// Tell the user that something is happening on the bot's side
 ///
