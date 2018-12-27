@@ -56,11 +56,7 @@ impl SendGame {
 impl Method for SendGame {
     type Response = Message;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("sendGame"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("sendGame", &self)
     }
 }

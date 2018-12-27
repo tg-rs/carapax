@@ -81,11 +81,7 @@ impl SendContact {
 impl Method for SendContact {
     type Response = Message;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("sendContact"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("sendContact", &self)
     }
 }

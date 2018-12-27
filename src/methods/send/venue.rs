@@ -91,11 +91,7 @@ impl SendVenue {
 impl Method for SendVenue {
     type Response = Message;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("sendVenue"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("sendVenue", &self)
     }
 }

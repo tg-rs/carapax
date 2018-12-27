@@ -35,11 +35,7 @@ impl DeleteMessage {
 impl Method for DeleteMessage {
     type Response = bool;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("deleteMessage"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("deleteMessage", &self)
     }
 }

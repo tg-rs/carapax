@@ -29,11 +29,7 @@ impl GetChatAdministrators {
 impl Method for GetChatAdministrators {
     type Response = Vec<ChatMember>;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("getChatAdministrators"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("getChatAdministrators", &self)
     }
 }

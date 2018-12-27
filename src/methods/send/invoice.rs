@@ -206,11 +206,7 @@ impl SendInvoice {
 impl Method for SendInvoice {
     type Response = Message;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("sendInvoice"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("sendInvoice", &self)
     }
 }

@@ -8,11 +8,7 @@ pub struct GetMe;
 impl Method for GetMe {
     type Response = User;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Get,
-            url: RequestUrl::new("getMe"),
-            body: RequestBody::Empty,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::empty("getMe")
     }
 }

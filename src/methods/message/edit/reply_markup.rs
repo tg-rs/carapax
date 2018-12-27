@@ -55,11 +55,7 @@ impl EditMessageReplyMarkup {
 impl Method for EditMessageReplyMarkup {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("editMessageReplyMarkup"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("editMessageReplyMarkup", &self)
     }
 }

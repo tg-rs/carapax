@@ -21,12 +21,8 @@ pub struct GetUpdates {
 impl Method for GetUpdates {
     type Response = Vec<Update>;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("getUpdates"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("getUpdates", &self)
     }
 }
 
@@ -173,12 +169,8 @@ impl SetWebhook {
 impl Method for SetWebhook {
     type Response = bool;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("setWebhook"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("setWebhook", &self)
     }
 }
 
@@ -191,12 +183,8 @@ pub struct DeleteWebhook;
 impl Method for DeleteWebhook {
     type Response = bool;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("deleteWebhook"),
-            body: RequestBody::Empty,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::empty("deleteWebhook")
     }
 }
 
@@ -207,12 +195,8 @@ pub struct GetWebhookInfo;
 impl Method for GetWebhookInfo {
     type Response = WebhookInfo;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Get,
-            url: RequestUrl::new("getWebhookInfo"),
-            body: RequestBody::Empty,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::empty("getWebhookInfo")
     }
 }
 
@@ -223,10 +207,10 @@ mod tests {
 
     #[test]
     fn test_serialize_get_updates() {
-        let req = GetUpdates::default().get_request().unwrap();
+        let req = GetUpdates::default().get_request().unwrap().build("token");
         assert_eq!(req.method, RequestMethod::Post);
         assert_eq!(
-            req.url.build("token"),
+            req.url,
             String::from("https://api.telegram.org/bottoken/getUpdates")
         );
         match req.body {
@@ -252,7 +236,8 @@ mod tests {
             .add_allowed_update(AllowedUpdate::PreCheckoutQuery)
             .add_allowed_update(AllowedUpdate::ShippingQuery)
             .get_request()
-            .unwrap();
+            .unwrap()
+            .build("token");
         match req.body {
             RequestBody::Json(data) => {
                 let data: Value = serde_json::from_slice(&data).unwrap();;
@@ -286,10 +271,10 @@ mod tests {
 
     #[test]
     fn test_serialize_set_webhook() {
-        let req = SetWebhook::new("url").get_request().unwrap();
+        let req = SetWebhook::new("url").get_request().unwrap().build("token");
         assert_eq!(req.method, RequestMethod::Post);
         assert_eq!(
-            req.url.build("token"),
+            req.url,
             String::from("https://api.telegram.org/bottoken/setWebhook")
         );
         match req.body {
@@ -305,10 +290,10 @@ mod tests {
 
     #[test]
     fn test_serialize_delete_webhook() {
-        let req = DeleteWebhook.get_request().unwrap();
-        assert_eq!(req.method, RequestMethod::Post);
+        let req = DeleteWebhook.get_request().unwrap().build("token");
+        assert_eq!(req.method, RequestMethod::Get);
         assert_eq!(
-            req.url.build("token"),
+            req.url,
             String::from("https://api.telegram.org/bottoken/deleteWebhook")
         );
         match req.body {
@@ -319,10 +304,10 @@ mod tests {
 
     #[test]
     fn test_serialize_get_webhook_info() {
-        let req = GetWebhookInfo.get_request().unwrap();
+        let req = GetWebhookInfo.get_request().unwrap().build("token");
         assert_eq!(req.method, RequestMethod::Get);
         assert_eq!(
-            req.url.build("token"),
+            req.url,
             String::from("https://api.telegram.org/bottoken/getWebhookInfo")
         );
         match req.body {

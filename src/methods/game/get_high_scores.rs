@@ -56,11 +56,7 @@ impl GetGameHighScores {
 impl Method for GetGameHighScores {
     type Response = Vec<GameHighScore>;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("getGameHighScores"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("getGameHighScores", &self)
     }
 }

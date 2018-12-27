@@ -68,11 +68,7 @@ impl EditMessageMedia {
 impl Method for EditMessageMedia {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("editMessageMedia"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("editMessageMedia", &self)
     }
 }

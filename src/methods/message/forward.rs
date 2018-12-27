@@ -41,11 +41,7 @@ impl ForwardMessage {
 impl Method for ForwardMessage {
     type Response = Message;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("forwardMessage"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("forwardMessage", &self)
     }
 }

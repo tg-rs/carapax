@@ -24,11 +24,7 @@ impl GetChatMembersCount {
 impl Method for GetChatMembersCount {
     type Response = Integer;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("getChatMembersCount"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("getChatMembersCount", &self)
     }
 }

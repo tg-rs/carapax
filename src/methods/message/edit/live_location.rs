@@ -77,12 +77,8 @@ impl EditMessageLiveLocation {
 impl Method for EditMessageLiveLocation {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("editMessageLiveLocation"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("editMessageLiveLocation", &self)
     }
 }
 
@@ -137,11 +133,7 @@ impl StopMessageLiveLocation {
 impl Method for StopMessageLiveLocation {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("stopMessageLiveLocation"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("stopMessageLiveLocation", &self)
     }
 }

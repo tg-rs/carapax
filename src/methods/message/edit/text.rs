@@ -80,11 +80,7 @@ impl EditMessageText {
 impl Method for EditMessageText {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("editMessageText"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("editMessageText", &self)
     }
 }

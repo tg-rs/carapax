@@ -51,11 +51,7 @@ impl KickChatMember {
 impl Method for KickChatMember {
     type Response = bool;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("kickChatMember"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("kickChatMember", &self)
     }
 }

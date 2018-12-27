@@ -7,17 +7,54 @@ const BASE_URL: &str = "https://api.telegram.org";
 /// Represents an API method
 pub trait Method {
     /// Type of successful result in API response
-    type Response;
+    type Response: 'static;
 
     /// Returns information about HTTP request
-    fn get_request(&self) -> Result<Request, RequestError>;
+    fn get_request(&self) -> Result<RequestBuilder, RequestError>;
+}
+
+/// A request builder
+#[derive(Clone, Debug)]
+pub struct RequestBuilder {
+    method: RequestMethod,
+    url: RequestUrl,
+    body: RequestBody,
+}
+
+impl RequestBuilder {
+    pub(crate) fn json(
+        path: &'static str,
+        s: &impl Serialize,
+    ) -> Result<RequestBuilder, RequestError> {
+        Ok(RequestBuilder {
+            method: RequestMethod::Post,
+            body: RequestBody::Json(serde_json::to_vec(s).map_err(RequestError::Json)?),
+            url: RequestUrl(path),
+        })
+    }
+
+    pub(crate) fn empty(path: &'static str) -> Result<RequestBuilder, RequestError> {
+        Ok(RequestBuilder {
+            method: RequestMethod::Get,
+            body: RequestBody::Empty,
+            url: RequestUrl(path),
+        })
+    }
+
+    pub(crate) fn build(self, token: &str) -> Request {
+        Request {
+            method: self.method,
+            url: self.url.build(token),
+            body: self.body,
+        }
+    }
 }
 
 /// Information about HTTP request
 #[derive(Clone, Debug)]
-pub struct Request {
+pub(crate) struct Request {
     pub(crate) method: RequestMethod,
-    pub(crate) url: RequestUrl,
+    pub(crate) url: String,
     pub(crate) body: RequestBody,
 }
 
@@ -27,15 +64,11 @@ pub(crate) enum RequestMethod {
     Post,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-pub(crate) struct RequestUrl(&'static str);
+#[derive(Clone, Debug)]
+struct RequestUrl(&'static str);
 
 impl RequestUrl {
-    pub fn new(path: &'static str) -> Self {
-        RequestUrl(path)
-    }
-
-    pub fn build(&self, token: impl Display) -> String {
+    fn build(&self, token: impl Display) -> String {
         format!("{}/bot{}/{}", BASE_URL, token, self.0)
     }
 }
@@ -44,14 +77,6 @@ impl RequestUrl {
 pub(crate) enum RequestBody {
     Json(Vec<u8>),
     Empty,
-}
-
-impl RequestBody {
-    pub fn json(s: &impl Serialize) -> Result<RequestBody, RequestError> {
-        Ok(RequestBody::Json(
-            serde_json::to_vec(s).map_err(RequestError::Json)?,
-        ))
-    }
 }
 
 /// Request error

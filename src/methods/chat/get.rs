@@ -24,11 +24,7 @@ impl GetChat {
 impl Method for GetChat {
     type Response = Chat;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("getChat"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("getChat", &self)
     }
 }

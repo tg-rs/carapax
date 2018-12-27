@@ -28,11 +28,7 @@ impl UploadStickerFile {
 impl Method for UploadStickerFile {
     type Response = File;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("uploadStickerFile"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("uploadStickerFile", &self)
     }
 }

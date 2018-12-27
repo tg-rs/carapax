@@ -36,11 +36,7 @@ impl SetChatDescription {
 impl Method for SetChatDescription {
     type Response = bool;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("setChatDescription"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("setChatDescription", &self)
     }
 }

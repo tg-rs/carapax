@@ -72,11 +72,7 @@ impl CreateNewStickerSet {
 impl Method for CreateNewStickerSet {
     type Response = bool;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("createNewStickerSet"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("createNewStickerSet", &self)
     }
 }

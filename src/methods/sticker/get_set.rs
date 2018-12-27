@@ -22,11 +22,7 @@ impl GetStickerSet {
 impl Method for GetStickerSet {
     type Response = StickerSet;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("getStickerSet"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("getStickerSet", &self)
     }
 }

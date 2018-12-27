@@ -94,11 +94,7 @@ impl AnswerInlineQuery {
 impl Method for AnswerInlineQuery {
     type Response = bool;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("answerInlineQuery"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("answerInlineQuery", &self)
     }
 }

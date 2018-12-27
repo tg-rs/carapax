@@ -75,11 +75,7 @@ impl EditMessageCaption {
 impl Method for EditMessageCaption {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("editMessageCaption"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("editMessageCaption", &self)
     }
 }

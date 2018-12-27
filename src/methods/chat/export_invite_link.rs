@@ -28,11 +28,7 @@ impl ExportChatInviteLink {
 impl Method for ExportChatInviteLink {
     type Response = String;
 
-    fn get_request(&self) -> Result<Request, RequestError> {
-        Ok(Request {
-            method: RequestMethod::Post,
-            url: RequestUrl::new("exportChatInviteLink"),
-            body: RequestBody::json(&self)?,
-        })
+    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+        RequestBuilder::json("exportChatInviteLink", &self)
     }
 }
