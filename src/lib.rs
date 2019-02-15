@@ -4,7 +4,8 @@
 #[macro_use]
 extern crate failure;
 
-mod client;
+mod api;
+mod executor;
 mod poll;
 
 /// Methods available in the Bot API
@@ -13,5 +14,5 @@ pub mod methods;
 /// Types available in the Bot API
 pub mod types;
 
-pub use self::client::{Client, ClientError};
-pub use self::poll::UpdatesIter;
+pub use self::api::{Api, ApiError, ApiFuture};
+pub use self::poll::UpdatesStream;

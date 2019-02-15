@@ -1,37 +1,41 @@
-use crate::client::{Client, ClientError};
+use crate::api::{Api, ApiError};
 use crate::methods::GetUpdates;
-use crate::types::{AllowedUpdate, Integer, ResponseError, ResponseParameters, Update};
-use log::{debug, error};
-use std::collections::HashSet;
-use std::thread::sleep;
+use crate::types::{AllowedUpdate, Integer, Update};
+use futures::{Async, Future, Poll, Stream};
+use log::error;
+use std::cmp::max;
+use std::collections::{HashSet, VecDeque};
 use std::time::Duration;
+use tokio_timer::sleep;
 
 const DEFAULT_LIMIT: Integer = 100;
 const DEFAULT_POLL_TIMEOUT: Integer = 10;
 const DEFAULT_ERROR_TIMEOUT: u64 = 5;
 
-/// Updates iterator used for long polling
-pub struct UpdatesIter<'a> {
-    client: &'a Client,
-    items: Vec<Update>,
+/// Updates stream used for long polling
+pub struct UpdatesStream {
+    api: Api,
     offset: Integer,
     limit: Integer,
     poll_timeout: Integer,
     error_timeout: Duration,
     allowed_updates: HashSet<AllowedUpdate>,
+    items: VecDeque<Update>,
+    request: Option<Box<Future<Item = Option<Vec<Update>>, Error = ApiError>>>,
 }
 
-impl<'a> UpdatesIter<'a> {
-    /// Creates a new updates iterator
-    pub fn new(client: &'a Client) -> Self {
-        UpdatesIter {
-            client,
-            items: Vec::new(),
+impl UpdatesStream {
+    /// Creates a new updates stream
+    pub fn new(api: Api) -> Self {
+        UpdatesStream {
+            api,
             offset: 0,
             limit: DEFAULT_LIMIT,
             poll_timeout: DEFAULT_POLL_TIMEOUT,
             error_timeout: Duration::from_secs(DEFAULT_ERROR_TIMEOUT),
             allowed_updates: HashSet::new(),
+            items: VecDeque::new(),
+            request: None,
         }
     }
 
@@ -69,48 +73,53 @@ impl<'a> UpdatesIter<'a> {
     }
 }
 
-impl<'a> Iterator for UpdatesIter<'a> {
+impl Stream for UpdatesStream {
     type Item = Update;
+    type Error = ApiError;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if !self.items.is_empty() {
-            return self.items.pop();
+    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
+        if let Some(update) = self.items.pop_front() {
+            return Ok(Async::Ready(Some(update)));
         }
-        loop {
-            debug!(
-                "Getting updates: offset={} limit={} timeout={} allowed_updates={:?}",
-                self.offset, self.limit, self.poll_timeout, self.allowed_updates
-            );
-            let updates = self.client.execute(
-                GetUpdates::default()
-                    .offset(self.offset)
-                    .limit(self.limit)
-                    .timeout(self.poll_timeout)
-                    .allowed_updates(self.allowed_updates.clone()),
-            );
-            match updates {
-                Ok(items) => {
-                    self.items = items;
-                    if let Some(update) = self.items.pop() {
-                        self.offset = update.id + 1;
-                        return Some(update);
+
+        let should_request = match self.request {
+            Some(ref mut request) => match request.poll() {
+                Ok(Async::Ready(Some(items))) => {
+                    for i in items {
+                        self.offset = max(self.offset, i.id);
+                        self.items.push_back(i);
                     }
+                    Ok(())
                 }
-                Err(err) => {
-                    error!("An error has occurred while getting updates: {:?}", err);
-                    sleep(match err {
-                        ClientError::Telegram(ResponseError {
-                            parameters:
-                                Some(ResponseParameters {
-                                    retry_after: Some(retry_after),
-                                    ..
-                                }),
-                            ..
-                        }) => Duration::from_secs(retry_after as u64),
-                        _ => self.error_timeout,
-                    });
-                }
-            };
-        }
+                Ok(Async::Ready(None)) => Ok(()),
+                Ok(Async::NotReady) => return Ok(Async::NotReady),
+                Err(err) => Err(err),
+            },
+            None => Ok(()),
+        };
+
+        match should_request {
+            Ok(()) => {
+                self.request = Some(Box::new(
+                    self.api
+                        .execute(
+                            GetUpdates::default()
+                                .offset(self.offset + 1)
+                                .limit(self.limit)
+                                .timeout(self.poll_timeout)
+                                .allowed_updates(self.allowed_updates.clone()),
+                        )
+                        .map(Some),
+                ));
+            }
+            Err(err) => {
+                error!("An error has occurred while getting updates: {:?}", err);
+                self.request = Some(Box::new(
+                    sleep(self.error_timeout).from_err().map(|()| None),
+                ));
+            }
+        };
+
+        Ok(Async::NotReady)
     }
 }

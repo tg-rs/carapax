@@ -13,8 +13,22 @@ repository = "https://github.com/rossnomann/tgbot"
 travis-ci = { repository = "rossnomann/tgbot", branch = "master" }
 
 [dependencies]
-curl = "0.4"
 failure = "0.1"
+futures = "0.1"
+http = "0.1"
+hyper = "0.12"
+hyper-proxy = "0.5"
+hyper-socks2 = "0.1"
+hyper-tls = "0.3"
 log = "0.4"
+native-tls = "0.2"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
+tokio-timer = "0.2"
+typed-headers = "0.1"
+url = "1.7"
+
+[dev-dependencies]
+dotenv = "0.13"
+env_logger = "0.6"
+tokio = "0.1"
