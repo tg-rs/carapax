@@ -1,3 +1,4 @@
+use crate::macros::impl_enum_from;
 use serde::Serialize;
 
 mod article;
@@ -96,33 +97,27 @@ pub enum InlineQueryResult {
     Voice(InlineQueryResultVoice),
 }
 
-macro_rules! impl_query_result_from {
-    ($to:ident($from:ident)) => {
-        impl From<$from> for InlineQueryResult {
-            fn from(obj: $from) -> InlineQueryResult {
-                InlineQueryResult::$to(obj)
-            }
-        }
-    };
-}
-
-impl_query_result_from!(Article(InlineQueryResultArticle));
-impl_query_result_from!(Audio(InlineQueryResultAudio));
-impl_query_result_from!(CachedAudio(InlineQueryResultCachedAudio));
-impl_query_result_from!(CachedDocument(InlineQueryResultCachedDocument));
-impl_query_result_from!(CachedGif(InlineQueryResultCachedGif));
-impl_query_result_from!(CachedMpeg4Gif(InlineQueryResultCachedMpeg4Gif));
-impl_query_result_from!(CachedPhoto(InlineQueryResultCachedPhoto));
-impl_query_result_from!(CachedSticker(InlineQueryResultCachedSticker));
-impl_query_result_from!(CachedVideo(InlineQueryResultCachedVideo));
-impl_query_result_from!(CachedVoice(InlineQueryResultCachedVoice));
-impl_query_result_from!(Contact(InlineQueryResultContact));
-impl_query_result_from!(Document(InlineQueryResultDocument));
-impl_query_result_from!(Game(InlineQueryResultGame));
-impl_query_result_from!(Gif(InlineQueryResultGif));
-impl_query_result_from!(Location(InlineQueryResultLocation));
-impl_query_result_from!(Mpeg4Gif(InlineQueryResultMpeg4Gif));
-impl_query_result_from!(Photo(InlineQueryResultPhoto));
-impl_query_result_from!(Venue(InlineQueryResultVenue));
-impl_query_result_from!(Video(InlineQueryResultVideo));
-impl_query_result_from!(Voice(InlineQueryResultVoice));
+impl_enum_from!(
+    InlineQueryResult {
+        Article(InlineQueryResultArticle),
+        Audio(InlineQueryResultAudio),
+        CachedAudio(InlineQueryResultCachedAudio),
+        CachedDocument(InlineQueryResultCachedDocument),
+        CachedGif(InlineQueryResultCachedGif),
+        CachedMpeg4Gif(InlineQueryResultCachedMpeg4Gif),
+        CachedPhoto(InlineQueryResultCachedPhoto),
+        CachedSticker(InlineQueryResultCachedSticker),
+        CachedVideo(InlineQueryResultCachedVideo),
+        CachedVoice(InlineQueryResultCachedVoice),
+        Contact(InlineQueryResultContact),
+        Document(InlineQueryResultDocument),
+        Game(InlineQueryResultGame),
+        Gif(InlineQueryResultGif),
+        Location(InlineQueryResultLocation),
+        Mpeg4Gif(InlineQueryResultMpeg4Gif),
+        Photo(InlineQueryResultPhoto),
+        Venue(InlineQueryResultVenue),
+        Video(InlineQueryResultVideo),
+        Voice(InlineQueryResultVoice)
+    }
+);

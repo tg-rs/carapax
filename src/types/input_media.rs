@@ -1,3 +1,4 @@
+use crate::macros::impl_enum_from;
 use crate::types::primitive::{Integer, ParseMode};
 use serde::Serialize;
 
@@ -12,18 +13,12 @@ pub enum MediaGroupItem {
     Video(InputMediaVideo),
 }
 
-macro_rules! impl_media_group_item_from {
-    ($to:ident($from:ident)) => {
-        impl From<$from> for MediaGroupItem {
-            fn from(obj: $from) -> MediaGroupItem {
-                MediaGroupItem::$to(obj)
-            }
-        }
-    };
-}
-
-impl_media_group_item_from!(Photo(InputMediaPhoto));
-impl_media_group_item_from!(Video(InputMediaVideo));
+impl_enum_from!(
+    MediaGroupItem {
+        Photo(InputMediaPhoto),
+        Video(InputMediaVideo)
+    }
+);
 
 /// Content of a media message to be sent
 #[derive(Clone, Debug, Serialize)]
@@ -46,21 +41,15 @@ pub enum InputMedia {
     Video(InputMediaVideo),
 }
 
-macro_rules! impl_input_media_from {
-    ($to:ident($from:ident)) => {
-        impl From<$from> for InputMedia {
-            fn from(obj: $from) -> InputMedia {
-                InputMedia::$to(obj)
-            }
-        }
-    };
-}
-
-impl_input_media_from!(Animation(InputMediaAnimation));
-impl_input_media_from!(Audio(InputMediaAudio));
-impl_input_media_from!(Document(InputMediaDocument));
-impl_input_media_from!(Photo(InputMediaPhoto));
-impl_input_media_from!(Video(InputMediaVideo));
+impl_enum_from!(
+    InputMedia {
+        Animation(InputMediaAnimation),
+        Audio(InputMediaAudio),
+        Document(InputMediaDocument),
+        Photo(InputMediaPhoto),
+        Video(InputMediaVideo)
+    }
+);
 
 /// Animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent
 #[derive(Clone, Debug, Serialize)]

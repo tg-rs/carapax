@@ -6,6 +6,7 @@ extern crate failure;
 
 mod api;
 mod executor;
+mod macros;
 mod poll;
 
 /// Methods available in the Bot API

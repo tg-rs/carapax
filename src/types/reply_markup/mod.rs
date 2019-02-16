@@ -1,3 +1,4 @@
+use crate::macros::impl_enum_from;
 use serde::Serialize;
 
 mod force_reply;
@@ -24,19 +25,13 @@ pub enum ReplyMarkup {
     ReplyKeyboardRemove(ReplyKeyboardRemove),
 }
 
-macro_rules! impl_reply_markup_from {
-    ($to:ident($from:ty)) => {
-        impl From<$from> for ReplyMarkup {
-            fn from(obj: $from) -> ReplyMarkup {
-                ReplyMarkup::$to(obj.into())
-            }
-        }
-    };
-}
-
-impl_reply_markup_from!(ForceReply(ForceReply));
-impl_reply_markup_from!(InlineKeyboardMarkup(InlineKeyboardMarkup));
-impl_reply_markup_from!(InlineKeyboardMarkup(Vec<Vec<InlineKeyboardButton>>));
-impl_reply_markup_from!(ReplyKeyboardMarkup(ReplyKeyboardMarkup));
-impl_reply_markup_from!(ReplyKeyboardMarkup(Vec<Vec<KeyboardButton>>));
-impl_reply_markup_from!(ReplyKeyboardRemove(ReplyKeyboardRemove));
+impl_enum_from!(
+    ReplyMarkup {
+        ForceReply(ForceReply),
+        InlineKeyboardMarkup(InlineKeyboardMarkup),
+        InlineKeyboardMarkup(Vec<Vec<InlineKeyboardButton>>),
+        ReplyKeyboardMarkup(ReplyKeyboardMarkup),
+        ReplyKeyboardMarkup(Vec<Vec<KeyboardButton>>),
+        ReplyKeyboardRemove(ReplyKeyboardRemove)
+    }
+);
