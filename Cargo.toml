@@ -15,7 +15,6 @@ travis-ci = { repository = "rossnomann/tgbot", branch = "master" }
 [dependencies]
 failure = "0.1"
 futures = "0.1"
-http = "0.1"
 hyper = "0.12"
 hyper-proxy = "0.5"
 hyper-socks2 = "0.2"
