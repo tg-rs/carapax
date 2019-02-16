@@ -1,9 +1,8 @@
-use crate::macros::impl_enum_from;
 use crate::types::primitive::{Float, Integer, ParseMode};
 use serde::Serialize;
 
 /// Content of a message to be sent as a result of an inline query
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, From, Serialize)]
 #[serde(untagged)]
 pub enum InputMessageContent {
     /// Contact message
@@ -15,15 +14,6 @@ pub enum InputMessageContent {
     /// Venue message
     Venue(InputMessageContentVenue),
 }
-
-impl_enum_from!(
-    InputMessageContent {
-        Contact(InputMessageContentContact),
-        Location(InputMessageContentLocation),
-        Text(InputMessageContentText),
-        Venue(InputMessageContentVenue)
-    }
-);
 
 /// Contact message to be sent as the result of an inline query
 #[derive(Clone, Debug, Serialize)]

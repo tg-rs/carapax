@@ -13,6 +13,7 @@ repository = "https://github.com/rossnomann/tgbot"
 travis-ci = { repository = "rossnomann/tgbot", branch = "master" }
 
 [dependencies]
+derive_more = "0.14"
 failure = "0.1"
 futures = "0.1"
 hyper = "0.12"

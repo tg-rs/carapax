@@ -1,4 +1,3 @@
-use crate::macros::impl_enum_from;
 use serde::Serialize;
 
 mod force_reply;
@@ -12,7 +11,7 @@ pub use self::inline_keyboard::*;
 pub use self::reply_keyboard::*;
 
 /// Reply markup
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, From, Serialize)]
 #[serde(untagged)]
 pub enum ReplyMarkup {
     /// Force reply
@@ -25,13 +24,14 @@ pub enum ReplyMarkup {
     ReplyKeyboardRemove(ReplyKeyboardRemove),
 }
 
-impl_enum_from!(
-    ReplyMarkup {
-        ForceReply(ForceReply),
-        InlineKeyboardMarkup(InlineKeyboardMarkup),
-        InlineKeyboardMarkup(Vec<Vec<InlineKeyboardButton>>),
-        ReplyKeyboardMarkup(ReplyKeyboardMarkup),
-        ReplyKeyboardMarkup(Vec<Vec<KeyboardButton>>),
-        ReplyKeyboardRemove(ReplyKeyboardRemove)
+impl From<Vec<Vec<InlineKeyboardButton>>> for ReplyMarkup {
+    fn from(markup: Vec<Vec<InlineKeyboardButton>>) -> ReplyMarkup {
+        ReplyMarkup::InlineKeyboardMarkup(markup.into())
     }
-);
+}
+
+impl From<Vec<Vec<KeyboardButton>>> for ReplyMarkup {
+    fn from(markup: Vec<Vec<KeyboardButton>>) -> ReplyMarkup {
+        ReplyMarkup::ReplyKeyboardMarkup(markup.into())
+    }
+}

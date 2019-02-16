@@ -1,4 +1,3 @@
-use crate::macros::impl_enum_from;
 use serde::Serialize;
 
 mod article;
@@ -30,7 +29,7 @@ pub use self::video::*;
 pub use self::voice::*;
 
 /// Result of an inline query
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, From, Serialize)]
 #[serde(tag = "type")]
 #[allow(clippy::large_enum_variant)]
 pub enum InlineQueryResult {
@@ -96,28 +95,3 @@ pub enum InlineQueryResult {
     #[serde(rename = "voice")]
     Voice(InlineQueryResultVoice),
 }
-
-impl_enum_from!(
-    InlineQueryResult {
-        Article(InlineQueryResultArticle),
-        Audio(InlineQueryResultAudio),
-        CachedAudio(InlineQueryResultCachedAudio),
-        CachedDocument(InlineQueryResultCachedDocument),
-        CachedGif(InlineQueryResultCachedGif),
-        CachedMpeg4Gif(InlineQueryResultCachedMpeg4Gif),
-        CachedPhoto(InlineQueryResultCachedPhoto),
-        CachedSticker(InlineQueryResultCachedSticker),
-        CachedVideo(InlineQueryResultCachedVideo),
-        CachedVoice(InlineQueryResultCachedVoice),
-        Contact(InlineQueryResultContact),
-        Document(InlineQueryResultDocument),
-        Game(InlineQueryResultGame),
-        Gif(InlineQueryResultGif),
-        Location(InlineQueryResultLocation),
-        Mpeg4Gif(InlineQueryResultMpeg4Gif),
-        Photo(InlineQueryResultPhoto),
-        Venue(InlineQueryResultVenue),
-        Video(InlineQueryResultVideo),
-        Voice(InlineQueryResultVoice)
-    }
-);
