@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Float, Integer, Message, ReplyMarkup};
+use failure::Error;
 use serde::Serialize;
 
 /// Send information about a venue
@@ -91,7 +92,7 @@ impl SendVenue {
 impl Method for SendVenue {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendVenue", &self)
     }
 }

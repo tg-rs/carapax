@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use failure::Error;
 use serde::Serialize;
 
 /// Delete a group sticker set from a supergroup
@@ -29,7 +30,7 @@ impl DeleteChatStickerSet {
 impl Method for DeleteChatStickerSet {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("deleteChatStickerSet", &self)
     }
 }

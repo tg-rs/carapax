@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatAction, ChatId};
+use failure::Error;
 use serde::Serialize;
 
 /// Tell the user that something is happening on the bot's side
@@ -37,7 +38,7 @@ impl SendChatAction {
 impl Method for SendChatAction {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendChatAction", &self)
     }
 }

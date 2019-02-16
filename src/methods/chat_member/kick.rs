@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Kick a user from a group, a supergroup or a channel
@@ -51,7 +52,7 @@ impl KickChatMember {
 impl Method for KickChatMember {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("kickChatMember", &self)
     }
 }

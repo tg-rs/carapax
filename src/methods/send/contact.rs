@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message, ReplyMarkup};
+use failure::Error;
 use serde::Serialize;
 
 /// Send phone contacts
@@ -81,7 +82,7 @@ impl SendContact {
 impl Method for SendContact {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendContact", &self)
     }
 }

@@ -40,7 +40,11 @@ where
 }
 
 /// Response error
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Fail)]
+#[fail(
+    display = "A telegram error has occurred: code={:?} message={}",
+    error_code, description
+)]
 pub struct ResponseError {
     /// Human-readable description
     pub description: String,

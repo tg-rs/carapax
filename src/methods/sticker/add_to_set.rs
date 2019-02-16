@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{Integer, MaskPosition};
+use failure::Error;
 use serde::Serialize;
 
 /// Add a new sticker to a set created by the bot
@@ -47,7 +48,7 @@ impl AddStickerToSet {
 impl Method for AddStickerToSet {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("addStickerToSet", &self)
     }
 }

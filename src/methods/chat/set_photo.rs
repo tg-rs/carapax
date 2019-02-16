@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use failure::Error;
 use serde::Serialize;
 
 /// Set a new profile photo for the chat
@@ -34,7 +35,7 @@ impl SetChatPhoto {
 impl Method for SetChatPhoto {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("setChatPhoto", &self)
     }
 }

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use failure::Error;
 use serde::Serialize;
 
 /// Change the title of a chat
@@ -34,7 +35,7 @@ impl SetChatTitle {
 impl Method for SetChatTitle {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("setChatTitle", &self)
     }
 }

@@ -1,5 +1,5 @@
+use failure::Error;
 use serde::ser::Serialize;
-use serde_json::Error as JsonError;
 use std::fmt::Display;
 
 const BASE_URL: &str = "https://api.telegram.org";
@@ -10,7 +10,7 @@ pub trait Method {
     type Response: 'static;
 
     /// Returns information about HTTP request
-    fn get_request(&self) -> Result<RequestBuilder, RequestError>;
+    fn get_request(&self) -> Result<RequestBuilder, Error>;
 }
 
 /// A request builder
@@ -22,18 +22,15 @@ pub struct RequestBuilder {
 }
 
 impl RequestBuilder {
-    pub(crate) fn json(
-        path: &'static str,
-        s: &impl Serialize,
-    ) -> Result<RequestBuilder, RequestError> {
+    pub(crate) fn json(path: &'static str, s: &impl Serialize) -> Result<RequestBuilder, Error> {
         Ok(RequestBuilder {
             method: RequestMethod::Post,
-            body: RequestBody::Json(serde_json::to_vec(s).map_err(RequestError::Json)?),
+            body: RequestBody::Json(serde_json::to_vec(s)?),
             url: RequestUrl(path),
         })
     }
 
-    pub(crate) fn empty(path: &'static str) -> Result<RequestBuilder, RequestError> {
+    pub(crate) fn empty(path: &'static str) -> Result<RequestBuilder, Error> {
         Ok(RequestBuilder {
             method: RequestMethod::Get,
             body: RequestBody::Empty,
@@ -77,12 +74,4 @@ impl RequestUrl {
 pub(crate) enum RequestBody {
     Json(Vec<u8>),
     Empty,
-}
-
-/// Request error
-#[derive(Debug, Fail)]
-pub enum RequestError {
-    /// Can not serialize JSON
-    #[fail(display = "Can not serialize request to JSON: {}", _0)]
-    Json(#[cause] JsonError),
 }

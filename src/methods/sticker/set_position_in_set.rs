@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::Integer;
+use failure::Error;
 use serde::Serialize;
 
 /// Move a sticker in a set created by the bot to a specific position
@@ -27,7 +28,7 @@ impl SetStickerPositionInSet {
 impl Method for SetStickerPositionInSet {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("setStickerPositionInSet", &self)
     }
 }

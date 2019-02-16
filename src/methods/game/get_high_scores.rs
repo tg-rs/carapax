@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{GameHighScore, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Get data for high score tables
@@ -56,7 +57,7 @@ impl GetGameHighScores {
 impl Method for GetGameHighScores {
     type Response = Vec<GameHighScore>;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getGameHighScores", &self)
     }
 }

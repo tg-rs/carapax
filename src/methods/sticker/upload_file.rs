@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{File, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Upload a .png file with a sticker for later use in createNewStickerSet and addStickerToSet methods
@@ -28,7 +29,7 @@ impl UploadStickerFile {
 impl Method for UploadStickerFile {
     type Response = File;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("uploadStickerFile", &self)
     }
 }

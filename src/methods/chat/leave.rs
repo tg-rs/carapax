@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use failure::Error;
 use serde::Serialize;
 
 /// Leave a group, supergroup or channel
@@ -24,7 +25,7 @@ impl LeaveChat {
 impl Method for LeaveChat {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("leaveChat", &self)
     }
 }

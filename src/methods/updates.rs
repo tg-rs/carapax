@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{AllowedUpdate, Integer, Update, WebhookInfo};
+use failure::Error;
 use serde::Serialize;
 use std::collections::HashSet;
 
@@ -21,7 +22,7 @@ pub struct GetUpdates {
 impl Method for GetUpdates {
     type Response = Vec<Update>;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getUpdates", &self)
     }
 }
@@ -169,7 +170,7 @@ impl SetWebhook {
 impl Method for SetWebhook {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("setWebhook", &self)
     }
 }
@@ -183,7 +184,7 @@ pub struct DeleteWebhook;
 impl Method for DeleteWebhook {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::empty("deleteWebhook")
     }
 }
@@ -195,7 +196,7 @@ pub struct GetWebhookInfo;
 impl Method for GetWebhookInfo {
     type Response = WebhookInfo;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::empty("getWebhookInfo")
     }
 }

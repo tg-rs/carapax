@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ShippingOption;
+use failure::Error;
 use serde::Serialize;
 
 /// Reply to shipping query
@@ -54,7 +55,7 @@ impl AnswerShippingQuery {
 impl Method for AnswerShippingQuery {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("answerShippingQuery", &self)
     }
 }

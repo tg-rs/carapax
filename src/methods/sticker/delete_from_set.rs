@@ -1,4 +1,5 @@
 use crate::methods::method::*;
+use failure::Error;
 use serde::Serialize;
 
 /// Delete a sticker from a set created by the bot
@@ -23,7 +24,7 @@ impl DeleteStickerFromSet {
 impl Method for DeleteStickerFromSet {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("deleteStickerFromSet", &self)
     }
 }

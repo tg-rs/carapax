@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, EditMessageResult, InlineKeyboardMarkup, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Edit only the reply markup of messages sent by the bot or via the bot (for inline bots)
@@ -55,7 +56,7 @@ impl EditMessageReplyMarkup {
 impl Method for EditMessageReplyMarkup {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("editMessageReplyMarkup", &self)
     }
 }

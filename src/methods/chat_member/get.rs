@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, ChatMember, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Get information about a member of a chat
@@ -27,7 +28,7 @@ impl GetChatMember {
 impl Method for GetChatMember {
     type Response = ChatMember;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getChatMember", &self)
     }
 }

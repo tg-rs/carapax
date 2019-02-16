@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{InlineQueryResult, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Use this method to send answers to an inline query
@@ -94,7 +95,7 @@ impl AnswerInlineQuery {
 impl Method for AnswerInlineQuery {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("answerInlineQuery", &self)
     }
 }

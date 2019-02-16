@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, EditMessageResult, Float, InlineKeyboardMarkup, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Edit live location messages sent by the bot or via the bot (for inline bots)
@@ -77,7 +78,7 @@ impl EditMessageLiveLocation {
 impl Method for EditMessageLiveLocation {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("editMessageLiveLocation", &self)
     }
 }
@@ -133,7 +134,7 @@ impl StopMessageLiveLocation {
 impl Method for StopMessageLiveLocation {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("stopMessageLiveLocation", &self)
     }
 }

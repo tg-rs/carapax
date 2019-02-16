@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, EditMessageResult, InlineKeyboardMarkup, InputMedia, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Edit audio, document, photo, or video messages
@@ -68,7 +69,7 @@ impl EditMessageMedia {
 impl Method for EditMessageMedia {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("editMessageMedia", &self)
     }
 }

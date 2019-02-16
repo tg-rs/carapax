@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Get the number of members in a chat
@@ -24,7 +25,7 @@ impl GetChatMembersCount {
 impl Method for GetChatMembersCount {
     type Response = Integer;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getChatMembersCount", &self)
     }
 }

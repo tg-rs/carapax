@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, EditMessageResult, InlineKeyboardMarkup, Integer, ParseMode};
+use failure::Error;
 use serde::Serialize;
 
 /// Edit caption of message sent by the bot or via the bot (for inline bots)
@@ -75,7 +76,7 @@ impl EditMessageCaption {
 impl Method for EditMessageCaption {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("editMessageCaption", &self)
     }
 }

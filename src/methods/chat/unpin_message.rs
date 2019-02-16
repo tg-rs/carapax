@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::ChatId;
+use failure::Error;
 use serde::Serialize;
 
 /// Unpin a message in a supergroup or a channel
@@ -29,7 +30,7 @@ impl UnpinChatMessage {
 impl Method for UnpinChatMessage {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("unpinChatMessage", &self)
     }
 }

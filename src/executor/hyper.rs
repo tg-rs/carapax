@@ -1,5 +1,6 @@
-use crate::executor::{Executor, ExecutorError};
+use crate::executor::Executor;
 use crate::methods::{Request, RequestBody, RequestMethod};
+use failure::Error;
 use futures::{future, Future, Stream};
 use hyper::{
     client::{connect::Connect, Client, HttpConnector},
@@ -32,7 +33,7 @@ impl<C> HyperExecutor<C> {
 }
 
 impl<C: Connect + 'static> Executor for HyperExecutor<C> {
-    fn execute(&self, req: Request) -> Box<Future<Item = Vec<u8>, Error = ExecutorError>> {
+    fn execute(&self, req: Request) -> Box<Future<Item = Vec<u8>, Error = Error>> {
         let mut builder = match req.method {
             RequestMethod::Get => HttpRequest::get(req.url),
             RequestMethod::Post => HttpRequest::post(req.url),
@@ -49,13 +50,13 @@ impl<C: Connect + 'static> Executor for HyperExecutor<C> {
                 }
                 RequestBody::Empty => builder.body(Body::empty()),
             })
-            .map_err(ExecutorError::from)
-            .and_then(move |http_req| client.request(http_req).map_err(ExecutorError::from))
+            .map_err(Error::from)
+            .and_then(move |http_req| client.request(http_req).map_err(Error::from))
             .and_then(|rep| {
                 Stream::fold(
                     rep.into_body().from_err(),
                     Vec::new(),
-                    |mut out, chunk| -> Result<Vec<u8>, ExecutorError> {
+                    |mut out, chunk| -> Result<Vec<u8>, Error> {
                         out.extend_from_slice(&chunk);
                         Ok(out)
                     },
@@ -71,33 +72,37 @@ impl<C: Connect + 'static> Executor for HyperExecutor<C> {
     }
 }
 
-fn https_connector() -> Result<HttpsConnector<HttpConnector>, ExecutorError> {
+fn https_connector() -> Result<HttpsConnector<HttpConnector>, Error> {
     Ok(HttpsConnector::new(DEFAULT_HTTPS_DNS_WORKER_THREADS)?)
 }
 
-pub(crate) fn default_executor() -> Result<Box<Executor>, ExecutorError> {
+pub(crate) fn default_executor() -> Result<Box<Executor>, Error> {
     let connector = https_connector()?;
     let client = Client::builder().build(connector);
     Ok(Box::new(HyperExecutor::new(client)))
 }
 
-fn socks_proxy_executor(proxy: SocksProxy<SocketAddr>) -> Result<Box<Executor>, ExecutorError> {
+fn socks_proxy_executor(proxy: SocksProxy<SocketAddr>) -> Result<Box<Executor>, Error> {
     let connector = proxy.with_tls()?;
     let client = Client::builder().build(connector);
     Ok(Box::new(HyperExecutor::new(client)))
 }
 
-fn http_proxy_executor(proxy: HttpProxy) -> Result<Box<Executor>, ExecutorError> {
+fn http_proxy_executor(proxy: HttpProxy) -> Result<Box<Executor>, Error> {
     let connector = https_connector()?;
     let proxy_connector = HttpProxyConnector::from_proxy(connector, proxy)?;
     let client = Client::builder().build(proxy_connector);
     Ok(Box::new(HyperExecutor::new(client)))
 }
 
-pub(crate) fn proxy_executor(dsn: &str) -> Result<Box<Executor>, ExecutorError> {
+#[derive(Debug, Fail)]
+#[fail(display = "Unexpected proxy: {}", _0)]
+struct UnexpectedProxyError(String);
+
+pub(crate) fn proxy_executor(dsn: &str) -> Result<Box<Executor>, Error> {
     macro_rules! unexpected_proxy {
         () => {
-            return Err(ExecutorError::UnexpectedProxy(dsn.to_string()));
+            return Err(UnexpectedProxyError(dsn.to_string()).into());
         };
     }
     let parsed_dsn = Url::parse(dsn)?;

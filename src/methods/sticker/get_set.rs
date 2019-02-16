@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::StickerSet;
+use failure::Error;
 use serde::Serialize;
 
 /// Get a sticker set
@@ -22,7 +23,7 @@ impl GetStickerSet {
 impl Method for GetStickerSet {
     type Response = StickerSet;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getStickerSet", &self)
     }
 }

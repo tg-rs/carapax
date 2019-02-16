@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{EditMessageResult, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Set the score of the specified user in a game
@@ -85,7 +86,7 @@ impl SetGameScore {
 impl Method for SetGameScore {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("setGameScore", &self)
     }
 }

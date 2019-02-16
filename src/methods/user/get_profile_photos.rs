@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{Integer, UserProfilePhotos};
+use failure::Error;
 use serde::Serialize;
 
 /// Get a list of profile pictures for a user
@@ -47,7 +48,7 @@ impl GetUserProfilePhotos {
 impl Method for GetUserProfilePhotos {
     type Response = UserProfilePhotos;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getUserProfilePhotos", &self)
     }
 }

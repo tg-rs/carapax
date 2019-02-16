@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{InlineKeyboardMarkup, Integer, LabeledPrice, Message};
+use failure::Error;
 use serde::Serialize;
 
 /// Send invoice
@@ -206,7 +207,7 @@ impl SendInvoice {
 impl Method for SendInvoice {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendInvoice", &self)
     }
 }

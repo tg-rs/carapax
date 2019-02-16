@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{InlineKeyboardMarkup, Integer, Message};
+use failure::Error;
 use serde::Serialize;
 
 /// Use this method to send a game
@@ -56,7 +57,7 @@ impl SendGame {
 impl Method for SendGame {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendGame", &self)
     }
 }

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, EditMessageResult, InlineKeyboardMarkup, Integer, ParseMode};
+use failure::Error;
 use serde::Serialize;
 
 /// Edit text and game messages sent by the bot or via the bot (for inline bots)
@@ -80,7 +81,7 @@ impl EditMessageText {
 impl Method for EditMessageText {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("editMessageText", &self)
     }
 }

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message, ParseMode, ReplyMarkup};
+use failure::Error;
 use serde::Serialize;
 
 /// Send video file
@@ -135,7 +136,7 @@ impl SendVideo {
 impl Method for SendVideo {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendVideo", &self)
     }
 }

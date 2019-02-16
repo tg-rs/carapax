@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::File;
+use failure::Error;
 use serde::Serialize;
 
 /// Get basic info about a file and prepare it for downloading
@@ -36,7 +37,7 @@ impl GetFile {
 impl Method for GetFile {
     type Response = File;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getFile", &self)
     }
 }

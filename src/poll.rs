@@ -1,6 +1,7 @@
-use crate::api::{Api, ApiError};
+use crate::api::Api;
 use crate::methods::GetUpdates;
 use crate::types::{AllowedUpdate, Integer, Update};
+use failure::Error;
 use futures::{Async, Future, Poll, Stream};
 use log::error;
 use std::cmp::max;
@@ -21,7 +22,7 @@ pub struct UpdatesStream {
     error_timeout: Duration,
     allowed_updates: HashSet<AllowedUpdate>,
     items: VecDeque<Update>,
-    request: Option<Box<Future<Item = Option<Vec<Update>>, Error = ApiError>>>,
+    request: Option<Box<Future<Item = Option<Vec<Update>>, Error = Error>>>,
 }
 
 impl UpdatesStream {
@@ -75,7 +76,7 @@ impl UpdatesStream {
 
 impl Stream for UpdatesStream {
     type Item = Update;
-    type Error = ApiError;
+    type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         if let Some(update) = self.items.pop_front() {

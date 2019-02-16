@@ -14,5 +14,5 @@ pub mod methods;
 /// Types available in the Bot API
 pub mod types;
 
-pub use self::api::{Api, ApiError, ApiFuture};
+pub use self::api::{Api, ApiFuture};
 pub use self::poll::UpdatesStream;

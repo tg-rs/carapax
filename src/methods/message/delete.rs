@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Delete a message, including service messages
@@ -35,7 +36,7 @@ impl DeleteMessage {
 impl Method for DeleteMessage {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("deleteMessage", &self)
     }
 }

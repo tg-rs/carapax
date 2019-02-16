@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, MediaGroupItem, Message};
+use failure::Error;
 use serde::Serialize;
 
 /// Send a group of photos or videos as an album
@@ -45,7 +46,7 @@ impl SendMediaGroup {
 impl Method for SendMediaGroup {
     type Response = Vec<Message>;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendMediaGroup", &self)
     }
 }

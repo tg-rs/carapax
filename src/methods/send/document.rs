@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message, ParseMode, ReplyMarkup};
+use failure::Error;
 use serde::Serialize;
 
 /// Send general files
@@ -99,7 +100,7 @@ impl SendDocument {
 impl Method for SendDocument {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendDocument", &self)
     }
 }

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message, ParseMode, ReplyMarkup};
+use failure::Error;
 use serde::Serialize;
 
 /// Send photo
@@ -80,7 +81,7 @@ impl SendPhoto {
 impl Method for SendPhoto {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendPhoto", &self)
     }
 }

@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{Integer, PassportElementError};
+use failure::Error;
 use serde::Serialize;
 
 /// Informs a user that some of the Telegram Passport elements they provided contains errors
@@ -35,7 +36,7 @@ impl SetPassportDataErrors {
 impl Method for SetPassportDataErrors {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("setPassportDataErrors", &self)
     }
 }

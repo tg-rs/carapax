@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::Integer;
+use failure::Error;
 use serde::Serialize;
 
 /// Send answer to callback query sent from inline keyboard
@@ -78,7 +79,7 @@ impl AnswerCallbackQuery {
 impl Method for AnswerCallbackQuery {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("answerCallbackQuery", &self)
     }
 }

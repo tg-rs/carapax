@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{Integer, MaskPosition};
+use failure::Error;
 use serde::Serialize;
 
 /// Create new sticker set owned by a user
@@ -72,7 +73,7 @@ impl CreateNewStickerSet {
 impl Method for CreateNewStickerSet {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("createNewStickerSet", &self)
     }
 }

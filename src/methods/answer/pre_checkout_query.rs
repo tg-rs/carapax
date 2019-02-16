@@ -1,4 +1,5 @@
 use crate::methods::method::*;
+use failure::Error;
 use serde::Serialize;
 
 /// Respond to pre-checkout query
@@ -47,7 +48,7 @@ impl AnswerPreCheckoutQuery {
 impl Method for AnswerPreCheckoutQuery {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("answerPreCheckoutQuery", &self)
     }
 }

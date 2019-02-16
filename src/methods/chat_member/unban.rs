@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer};
+use failure::Error;
 use serde::Serialize;
 
 /// Unban a previously kicked user in a supergroup or channel
@@ -32,7 +33,7 @@ impl UnbanChatMember {
 impl Method for UnbanChatMember {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("unbanChatMember", &self)
     }
 }

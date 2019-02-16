@@ -1,5 +1,6 @@
 use crate::methods::method::*;
 use crate::types::{ChatId, Integer, Message};
+use failure::Error;
 use serde::Serialize;
 
 /// Forward message of any kind
@@ -41,7 +42,7 @@ impl ForwardMessage {
 impl Method for ForwardMessage {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, RequestError> {
+    fn get_request(&self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("forwardMessage", &self)
     }
 }
