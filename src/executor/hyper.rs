@@ -8,10 +8,9 @@ use hyper::{
 use hyper_proxy::{
     Intercept as HttpProxyIntercept, Proxy as HttpProxy, ProxyConnector as HttpProxyConnector,
 };
-use hyper_socks2::{Auth as SocksAuth, Connector as SocksProxyConnector, Proxy as SocksProxy};
+use hyper_socks2::{Auth as SocksAuth, Proxy as SocksProxy};
 use hyper_tls::HttpsConnector;
 use log::{debug, log_enabled, Level::Debug};
-use native_tls::TlsConnector;
 use std::net::SocketAddr;
 use std::rc::Rc;
 use typed_headers::Credentials as HttpProxyCredentials;
@@ -83,7 +82,7 @@ pub(crate) fn default_executor() -> Result<Box<Executor>, ExecutorError> {
 }
 
 fn socks_proxy_executor(proxy: SocksProxy<SocketAddr>) -> Result<Box<Executor>, ExecutorError> {
-    let connector = HttpsConnector::from((SocksProxyConnector::new(proxy), TlsConnector::new()?));
+    let connector = proxy.with_tls()?;
     let client = Client::builder().build(connector);
     Ok(Box::new(HyperExecutor::new(client)))
 }
