@@ -2,7 +2,7 @@ use crate::api::Api;
 use crate::methods::GetUpdates;
 use crate::types::{AllowedUpdate, Integer, Update};
 use failure::Error;
-use futures::{Async, Future, Poll, Stream};
+use futures::{task, Async, Future, Poll, Stream};
 use log::error;
 use std::cmp::max;
 use std::collections::{HashSet, VecDeque};
@@ -22,7 +22,7 @@ pub struct UpdatesStream {
     error_timeout: Duration,
     allowed_updates: HashSet<AllowedUpdate>,
     items: VecDeque<Update>,
-    request: Option<Box<Future<Item = Option<Vec<Update>>, Error = Error>>>,
+    request: Option<Box<Future<Item = Option<Vec<Update>>, Error = Error> + Send>>,
 }
 
 impl UpdatesStream {
@@ -120,6 +120,8 @@ impl Stream for UpdatesStream {
                 ));
             }
         };
+
+        task::current().notify();
 
         Ok(Async::NotReady)
     }

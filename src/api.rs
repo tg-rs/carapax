@@ -5,12 +5,13 @@ use crate::types::Response;
 use failure::Error;
 use futures::{future, Future, Poll};
 use serde::de::DeserializeOwned;
-use std::rc::Rc;
+use std::fmt::Debug;
+use std::sync::Arc;
 
 /// Telegram Bot API client
 #[derive(Clone)]
 pub struct Api {
-    executor: Rc<Box<Executor>>,
+    executor: Arc<Box<Executor>>,
     token: String,
 }
 
@@ -18,7 +19,7 @@ impl Api {
     /// Creates a client
     pub fn create<S: Into<String>>(token: S) -> Result<Self, Error> {
         Ok(Api {
-            executor: Rc::new(default_executor()?),
+            executor: Arc::new(default_executor()?),
             token: token.into(),
         })
     }
@@ -32,7 +33,7 @@ impl Api {
     /// * socks5://[user:password]@host:port
     pub fn with_proxy<S: Into<String>>(token: S, url: &str) -> Result<Self, Error> {
         Ok(Api {
-            executor: Rc::new(proxy_executor(url)?),
+            executor: Arc::new(proxy_executor(url)?),
             token: token.into(),
         })
     }
@@ -40,7 +41,7 @@ impl Api {
     /// Executes a method
     pub fn execute<M: Method>(&self, method: &M) -> ApiFuture<M::Response>
     where
-        M::Response: DeserializeOwned,
+        M::Response: DeserializeOwned + Send + 'static,
     {
         let executor = self.executor.clone();
         ApiFuture {
@@ -69,12 +70,25 @@ impl Api {
     pub fn get_updates(&self) -> UpdatesStream {
         UpdatesStream::new(self.clone())
     }
+
+    /// Spawns a future on the default executor.
+    pub fn spawn<F, T, E: Debug>(&self, f: F)
+    where
+        F: Future<Item = T, Error = E> + 'static + Send,
+    {
+        tokio::spawn(f.then(|r| {
+            if let Err(e) = r {
+                log::error!("An error has occurred: {:?}", e)
+            }
+            Ok(())
+        }));
+    }
 }
 
 /// An API future
 #[must_use = "futures do nothing unless polled"]
 pub struct ApiFuture<T> {
-    inner: Box<Future<Item = T, Error = Error>>,
+    inner: Box<Future<Item = T, Error = Error> + Send>,
 }
 
 impl<T> Future for ApiFuture<T> {

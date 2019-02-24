@@ -10,6 +10,9 @@ mod api;
 mod executor;
 mod poll;
 
+/// Updates dispatcher
+pub mod dispatcher;
+
 /// Methods available in the Bot API
 pub mod methods;
 

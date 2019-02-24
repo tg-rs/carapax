@@ -3,7 +3,7 @@ use crate::types::message::{RawMessageEntity, Text};
 use crate::types::photo_size::PhotoSize;
 use crate::types::primitive::Integer;
 use crate::types::user::User;
-use serde::{Deserialize, Deserializer};
+use serde::{de::Error, Deserialize, Deserializer};
 
 /// Game
 ///
@@ -38,10 +38,9 @@ impl<'de> Deserialize<'de> for Game {
             description: raw_game.description,
             photo: raw_game.photo,
             text: match raw_game.text {
-                Some(data) => Some(Text {
-                    data,
-                    entities: raw_game.text_entities,
-                }),
+                Some(data) => {
+                    Some(Text::parse(data, raw_game.text_entities).map_err(D::Error::custom)?)
+                }
                 None => None,
             },
             animation: raw_game.animation,
