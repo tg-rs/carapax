@@ -22,7 +22,7 @@ pub struct UpdatesStream {
     error_timeout: Duration,
     allowed_updates: HashSet<AllowedUpdate>,
     items: VecDeque<Update>,
-    request: Option<Box<Future<Item = Option<Vec<Update>>, Error = Error>>>,
+    request: Option<Box<Future<Item = Option<Vec<Update>>, Error = Error> + Send>>,
 }
 
 impl UpdatesStream {

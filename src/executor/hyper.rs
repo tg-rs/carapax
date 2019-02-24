@@ -13,7 +13,7 @@ use hyper_socks2::{Auth as SocksAuth, Proxy as SocksProxy};
 use hyper_tls::HttpsConnector;
 use log::{debug, log_enabled, Level::Debug};
 use std::net::SocketAddr;
-use std::rc::Rc;
+use std::sync::Arc;
 use typed_headers::Credentials as HttpProxyCredentials;
 use url::percent_encoding::percent_decode;
 use url::Url;
@@ -21,19 +21,19 @@ use url::Url;
 const DEFAULT_HTTPS_DNS_WORKER_THREADS: usize = 1;
 
 struct HyperExecutor<C> {
-    client: Rc<Client<C>>,
+    client: Arc<Client<C>>,
 }
 
 impl<C> HyperExecutor<C> {
     fn new(client: Client<C>) -> Self {
         HyperExecutor {
-            client: Rc::new(client),
+            client: Arc::new(client),
         }
     }
 }
 
 impl<C: Connect + 'static> Executor for HyperExecutor<C> {
-    fn execute(&self, req: Request) -> Box<Future<Item = Vec<u8>, Error = Error>> {
+    fn execute(&self, req: Request) -> Box<Future<Item = Vec<u8>, Error = Error> + Send> {
         let mut builder = match req.method {
             RequestMethod::Get => HttpRequest::get(req.url),
             RequestMethod::Post => HttpRequest::post(req.url),

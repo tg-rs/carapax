@@ -39,16 +39,14 @@ fn main() {
     }
     .expect("Failed to create API");
 
-    let mut rt =
-        tokio::runtime::current_thread::Runtime::new().expect("Failed to create tokio runtime");
-
-    rt.block_on(lazy(|| {
+    tokio::run(lazy(move || {
         let mut dispatcher = Dispatcher::new(api.clone());
         dispatcher.add_message_handler(Handler);
-        api.get_updates().for_each(move |update| {
-            tokio::executor::current_thread::spawn(dispatcher.dispatch(&update).then(|_| Ok(())));
-            Ok(())
-        })
-    }))
-    .unwrap();
+        api.get_updates()
+            .for_each(move |update| {
+                tokio::spawn(dispatcher.dispatch(&update).then(|_| Ok(())));
+                Ok(())
+            })
+            .then(|_| Ok(()))
+    }));
 }

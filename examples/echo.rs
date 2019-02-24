@@ -20,30 +20,28 @@ fn main() {
     }
     .expect("Failed to create API");
 
-    let mut rt =
-        tokio::runtime::current_thread::Runtime::new().expect("Failed to create tokio runtime");
-
-    rt.block_on(lazy(|| {
-        tokio::executor::current_thread::spawn(api.execute(&GetMe).then(|x| {
+    tokio::run(lazy(|| {
+        tokio::spawn(api.execute(&GetMe).then(|x| {
             log::info!("getMe result: {:?}\n", x);
             Ok(())
         }));
 
-        api.get_updates().for_each(move |update| {
-            if let UpdateKind::Message(msg) = update.kind {
-                log::info!("GOT A MESSAGE: {:?}\n", msg);
-                if let MessageKind::Private { ref chat, .. } = msg.kind {
-                    if let MessageData::Text(text) = msg.data {
-                        let method = SendMessage::new(chat.id, text.data);
-                        tokio::executor::current_thread::spawn(api.execute(&method).then(|x| {
-                            log::info!("sendMessage result: {:?}\n", x);
-                            Ok(())
-                        }));
+        api.get_updates()
+            .for_each(move |update| {
+                if let UpdateKind::Message(msg) = update.kind {
+                    log::info!("GOT A MESSAGE: {:?}\n", msg);
+                    if let MessageKind::Private { ref chat, .. } = msg.kind {
+                        if let MessageData::Text(text) = msg.data {
+                            let method = SendMessage::new(chat.id, text.data);
+                            tokio::spawn(api.execute(&method).then(|x| {
+                                log::info!("sendMessage result: {:?}\n", x);
+                                Ok(())
+                            }));
+                        }
                     }
                 }
-            }
-            Ok(())
-        })
-    }))
-    .unwrap();
+                Ok(())
+            })
+            .then(|_| Ok(()))
+    }));
 }

@@ -22,14 +22,14 @@ pub enum HandlerResult {
 /// A handler future
 #[must_use = "futures do nothing unless polled"]
 pub struct HandlerFuture {
-    inner: Box<Future<Item = HandlerResult, Error = Error>>,
+    inner: Box<Future<Item = HandlerResult, Error = Error> + Send>,
 }
 
 impl HandlerFuture {
     /// Creates a new handler future
     pub fn new<F>(f: F) -> HandlerFuture
     where
-        F: Future<Item = HandlerResult, Error = Error> + 'static,
+        F: Future<Item = HandlerResult, Error = Error> + 'static + Send,
     {
         HandlerFuture { inner: Box::new(f) }
     }
@@ -59,7 +59,7 @@ pub trait MessageHandler {
 /// A command handler
 pub struct CommandHandler {
     name: String,
-    handler: Box<MessageHandler>,
+    handler: Box<MessageHandler + Send>,
 }
 
 impl CommandHandler {
@@ -69,7 +69,7 @@ impl CommandHandler {
     ///
     /// - name - command name (starts with /)
     /// - handler - a message handler
-    pub fn new<S: Into<String>, H: MessageHandler + 'static>(name: S, handler: H) -> Self {
+    pub fn new<S: Into<String>, H: MessageHandler + 'static + Send>(name: S, handler: H) -> Self {
         CommandHandler {
             name: name.into(),
             handler: Box::new(handler),

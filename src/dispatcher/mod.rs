@@ -12,13 +12,13 @@ pub use self::handler::*;
 /// Dispatcher
 pub struct Dispatcher {
     api: Api,
-    message: Vec<Box<MessageHandler>>,
+    message: Vec<Box<MessageHandler + Send>>,
     command: Vec<CommandHandler>,
-    inline_query: Vec<Box<InlineQueryHandler>>,
-    chosen_inline_result: Vec<Box<ChosenInlineResultHandler>>,
-    callback_query: Vec<Box<CallbackQueryHandler>>,
-    shipping_query: Vec<Box<ShippingQueryHandler>>,
-    pre_checkout_query: Vec<Box<PreCheckoutQueryHandler>>,
+    inline_query: Vec<Box<InlineQueryHandler + Send>>,
+    chosen_inline_result: Vec<Box<ChosenInlineResultHandler + Send>>,
+    callback_query: Vec<Box<CallbackQueryHandler + Send>>,
+    shipping_query: Vec<Box<ShippingQueryHandler + Send>>,
+    pre_checkout_query: Vec<Box<PreCheckoutQueryHandler + Send>>,
 }
 
 impl Dispatcher {
@@ -37,7 +37,10 @@ impl Dispatcher {
     }
 
     /// Add message handler
-    pub fn add_message_handler<H: MessageHandler + 'static>(&mut self, handler: H) -> &mut Self {
+    pub fn add_message_handler<H: MessageHandler + 'static + Send>(
+        &mut self,
+        handler: H,
+    ) -> &mut Self {
         self.message.push(Box::new(handler));
         self
     }
@@ -49,7 +52,7 @@ impl Dispatcher {
     }
 
     /// Add inline query handler
-    pub fn add_inline_query_handler<H: InlineQueryHandler + 'static>(
+    pub fn add_inline_query_handler<H: InlineQueryHandler + 'static + Send>(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -58,7 +61,7 @@ impl Dispatcher {
     }
 
     /// Add chosen inline result handler
-    pub fn add_chosen_inline_result_handler<H: ChosenInlineResultHandler + 'static>(
+    pub fn add_chosen_inline_result_handler<H: ChosenInlineResultHandler + 'static + Send>(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -67,7 +70,7 @@ impl Dispatcher {
     }
 
     /// Add callback query handler
-    pub fn add_callback_query_handler<H: CallbackQueryHandler + 'static>(
+    pub fn add_callback_query_handler<H: CallbackQueryHandler + 'static + Send>(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -76,7 +79,7 @@ impl Dispatcher {
     }
 
     /// Add shipping query handler
-    pub fn add_shipping_query_handler<H: ShippingQueryHandler + 'static>(
+    pub fn add_shipping_query_handler<H: ShippingQueryHandler + 'static + Send>(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -85,7 +88,7 @@ impl Dispatcher {
     }
 
     /// Add pre checkout query handler
-    pub fn add_pre_checkout_query_handler<H: PreCheckoutQueryHandler + 'static>(
+    pub fn add_pre_checkout_query_handler<H: PreCheckoutQueryHandler + 'static + Send>(
         &mut self,
         handler: H,
     ) -> &mut Self {
