@@ -8,110 +8,55 @@ use std::string::FromUtf16Error;
 pub struct Text {
     /// The actual UTF-8 text
     pub data: String,
-    pub(crate) entities: Option<Vec<RawMessageEntity>>,
-}
-
-/// Text with parsed entities
-#[derive(Clone, Debug)]
-pub struct ParsedText {
-    /// The actual UTF-8 text
-    pub data: String,
-    /// Parsed entities
-    pub entities: Vec<TextEntity>,
+    /// Text entities
+    pub entities: Option<Vec<TextEntity>>,
 }
 
 impl Text {
-    /// Whether text contains entities
-    pub fn has_entities(&self) -> bool {
-        self.entities
-            .as_ref()
-            .map(|e| !e.is_empty())
-            .unwrap_or(false)
-    }
-
-    /// Returns text with parsed entities
-    pub fn parse(self) -> Result<ParsedText, ParseEntitiesError> {
-        let entities = self.parse_entities()?;
-        Ok(ParsedText {
-            data: self.data,
-            entities,
-        })
-    }
-
-    fn parse_entities(&self) -> Result<Vec<TextEntity>, ParseEntitiesError> {
-        let raw_entities = match self.entities {
-            Some(ref items) => items,
-            None => return Err(ParseEntitiesError::NoData),
-        };
-        let text: Vec<u16> = self.data.encode_utf16().collect();
-        let len = text.len() as i64;
-        let mut result = Vec::new();
-        for raw_entity in raw_entities {
-            let (offset, length) = (raw_entity.offset, raw_entity.length);
-            if offset > len || offset < 0 {
-                return Err(ParseEntitiesError::BadOffset(offset));
-            }
-            let limit = offset + length;
-            if limit > len || limit < 0 {
-                return Err(ParseEntitiesError::BadLength(length));
-            }
-            let (offset, length) = (offset as usize, length as usize);
-            let data = String::from_utf16(
-                &text
-                    .iter()
-                    .skip(offset)
-                    .take(length)
-                    .cloned()
-                    .collect::<Vec<u16>>(),
-            )
-            .map_err(ParseEntitiesError::FromUtf16)?;
-            let data = TextEntityData {
-                offset,
-                length,
-                data,
-            };
-            result.push(match raw_entity.kind {
-                RawMessageEntityKind::Bold => TextEntity::Bold(data),
-                RawMessageEntityKind::BotCommand => {
-                    let parts = data.data.as_str().splitn(2, '@').collect::<Vec<&str>>();
-                    let len = parts.len();
-                    assert!(len >= 1);
-                    TextEntity::BotCommand(BotCommand {
-                        command: parts[0].to_string(),
-                        bot_name: if len == 2 {
-                            Some(parts[1].to_string())
-                        } else {
-                            None
-                        },
+    pub(crate) fn parse<S: Into<String>>(
+        data: S,
+        entities: Option<Vec<RawMessageEntity>>,
+    ) -> Result<Text, ParseTextError> {
+        let data = data.into();
+        let entities = if let Some(entities) = entities {
+            if entities.is_empty() {
+                None
+            } else {
+                let text: Vec<u16> = data.encode_utf16().collect();
+                let len = text.len() as i64;
+                let mut result = Vec::new();
+                for entity in entities {
+                    let (offset, length) = (entity.offset, entity.length);
+                    if offset > len || offset < 0 {
+                        return Err(ParseTextError::BadOffset(offset));
+                    }
+                    let limit = offset + length;
+                    if limit > len || limit < 0 {
+                        return Err(ParseTextError::BadLength(length));
+                    }
+                    let (offset, length) = (offset as usize, length as usize);
+                    let data = String::from_utf16(
+                        &text
+                            .iter()
+                            .skip(offset)
+                            .take(length)
+                            .cloned()
+                            .collect::<Vec<u16>>(),
+                    )
+                    .map_err(ParseTextError::FromUtf16)?;
+                    let data = TextEntityData {
+                        offset,
+                        length,
                         data,
-                    })
+                    };
+                    result.push(TextEntity::from_raw(entity, data)?)
                 }
-                RawMessageEntityKind::Cashtag => TextEntity::Cashtag(data),
-                RawMessageEntityKind::Code => TextEntity::Code(data),
-                RawMessageEntityKind::Email => TextEntity::Email(data),
-                RawMessageEntityKind::Hashtag => TextEntity::Hashtag(data),
-                RawMessageEntityKind::Italic => TextEntity::Italic(data),
-                RawMessageEntityKind::Mention => TextEntity::Mention(data),
-                RawMessageEntityKind::PhoneNumber => TextEntity::PhoneNumber(data),
-                RawMessageEntityKind::Pre => TextEntity::Pre(data),
-                RawMessageEntityKind::TextLink => match raw_entity.url {
-                    Some(ref url) => TextEntity::TextLink(TextLink {
-                        data,
-                        url: url.clone(),
-                    }),
-                    None => return Err(ParseEntitiesError::NoUrl),
-                },
-                RawMessageEntityKind::TextMention => match raw_entity.user {
-                    Some(ref user) => TextEntity::TextMention(TextMention {
-                        data,
-                        user: user.clone(),
-                    }),
-                    None => return Err(ParseEntitiesError::NoUser),
-                },
-                RawMessageEntityKind::Url => TextEntity::Url(data),
-            })
-        }
-        Ok(result)
+                Some(result)
+            }
+        } else {
+            None
+        };
+        Ok(Text { data, entities })
     }
 }
 
@@ -144,6 +89,45 @@ pub enum TextEntity {
     TextMention(TextMention),
     /// URL
     Url(TextEntityData),
+}
+
+impl TextEntity {
+    fn from_raw(entity: RawMessageEntity, data: TextEntityData) -> Result<TextEntity, ParseTextError> {
+        Ok(match entity.kind {
+            RawMessageEntityKind::Bold => TextEntity::Bold(data),
+            RawMessageEntityKind::BotCommand => {
+                let parts = data.data.as_str().splitn(2, '@').collect::<Vec<&str>>();
+                let len = parts.len();
+                assert!(len >= 1);
+                TextEntity::BotCommand(BotCommand {
+                    command: parts[0].to_string(),
+                    bot_name: if len == 2 {
+                        Some(parts[1].to_string())
+                    } else {
+                        None
+                    },
+                    data,
+                })
+            }
+            RawMessageEntityKind::Cashtag => TextEntity::Cashtag(data),
+            RawMessageEntityKind::Code => TextEntity::Code(data),
+            RawMessageEntityKind::Email => TextEntity::Email(data),
+            RawMessageEntityKind::Hashtag => TextEntity::Hashtag(data),
+            RawMessageEntityKind::Italic => TextEntity::Italic(data),
+            RawMessageEntityKind::Mention => TextEntity::Mention(data),
+            RawMessageEntityKind::PhoneNumber => TextEntity::PhoneNumber(data),
+            RawMessageEntityKind::Pre => TextEntity::Pre(data),
+            RawMessageEntityKind::TextLink => match entity.url {
+                Some(url) => TextEntity::TextLink(TextLink { data, url }),
+                None => return Err(ParseTextError::NoUrl),
+            },
+            RawMessageEntityKind::TextMention => match entity.user {
+                Some(user) => TextEntity::TextMention(TextMention { data, user }),
+                None => return Err(ParseTextError::NoUser),
+            },
+            RawMessageEntityKind::Url => TextEntity::Url(data),
+        })
+    }
 }
 
 /// Bot command
@@ -188,10 +172,7 @@ pub struct TextEntityData {
 
 /// An error when parsing entities
 #[derive(Debug, Fail)]
-pub enum ParseEntitiesError {
-    /// Trying to parse empty entities
-    #[fail(display = "There are no entities")]
-    NoData,
+pub(crate) enum ParseTextError {
     /// Offset is out of text bounds
     #[fail(display = "Offset \"{}\" is out of text bounds", _0)]
     BadOffset(Integer),

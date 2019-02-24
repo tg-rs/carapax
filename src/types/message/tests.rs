@@ -30,7 +30,7 @@ fn test_deserialize_message_channel() {
     }
     if let MessageData::Text(Text { data, entities }) = msg.data {
         assert_eq!(data, "test");
-        assert_eq!(entities.is_none(), true);
+        assert!(entities.is_none());
     } else {
         panic!("Unexpected message data: {:?}", msg.data);
     }
@@ -69,7 +69,7 @@ fn test_deserialize_message_group() {
     }
     if let MessageData::Text(Text { data, entities }) = msg.data {
         assert_eq!(data, "test");
-        assert_eq!(entities.is_none(), true);
+        assert!(entities.is_none());
     } else {
         panic!("Unexpected message data: {:?}", msg.data);
     }
@@ -113,7 +113,7 @@ fn test_deserialize_message_private() {
     }
     if let MessageData::Text(Text { data, entities }) = msg.data {
         assert_eq!(data, "test");
-        assert_eq!(entities.is_none(), true);
+        assert!(entities.is_none());
     } else {
         panic!("Unexpected message data: {:?}", msg.data);
     }
@@ -157,7 +157,7 @@ fn test_deserialize_message_supergroup() {
     }
     if let MessageData::Text(Text { data, entities }) = msg.data {
         assert_eq!(data, "test");
-        assert_eq!(entities.is_none(), true);
+        assert!(entities.is_none());
     } else {
         panic!("Unexpected message data: {:?}", msg.data);
     }
@@ -325,9 +325,9 @@ fn test_deserialize_message_entities() {
         ]
     }"#;
     let msg: Message = serde_json::from_str(input).unwrap();
+    assert_eq!(msg.get_commands().unwrap().len(), 1);
     if let MessageData::Text(text) = msg.data {
-        let parsed = text.parse().unwrap();
-        let entities = parsed.entities;
+        let entities = text.entities.unwrap();
         assert_eq!(
             vec![
                 TextEntity::Bold(TextEntityData {
@@ -414,7 +414,7 @@ fn test_deserialize_message_entities() {
                 })
             ],
             entities
-        )
+        );
     } else {
         panic!("Unexpected message data: {:?}", msg.data);
     }
@@ -423,15 +423,6 @@ fn test_deserialize_message_entities() {
 #[test]
 fn test_deserialize_message_bad_entities() {
     for (input, error) in &[
-        (
-            r#"{
-                "message_id": 1, "date": 0,
-                "from": {"id": 1, "first_name": "firstname", "is_bot": false},
-                "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
-                "text": "no entities"
-            }"#,
-            "There are no entities",
-        ),
         (
             r#"{
                 "message_id": 1, "date": 0,
@@ -446,7 +437,7 @@ fn test_deserialize_message_bad_entities() {
                     }
                 ]
             }"#,
-            "Offset \"-1\" is out of text bounds",
+            "Failed to parse text: Offset \"-1\" is out of text bounds",
         ),
         (
             r#"{
@@ -462,7 +453,7 @@ fn test_deserialize_message_bad_entities() {
                     }
                 ]
             }"#,
-            "Offset \"11\" is out of text bounds",
+            "Failed to parse text: Offset \"11\" is out of text bounds",
         ),
         (
             r#"{
@@ -478,7 +469,7 @@ fn test_deserialize_message_bad_entities() {
                     }
                 ]
             }"#,
-            "Length \"-1\" is out of text bounds",
+            "Failed to parse text: Length \"-1\" is out of text bounds",
         ),
         (
             r#"{
@@ -494,7 +485,7 @@ fn test_deserialize_message_bad_entities() {
                     }
                 ]
             }"#,
-            "Length \"11\" is out of text bounds",
+            "Failed to parse text: Length \"11\" is out of text bounds",
         ),
         (
             r#"{
@@ -510,7 +501,7 @@ fn test_deserialize_message_bad_entities() {
                     }
                 ]
             }"#,
-            "URL is required for text_link entity",
+            "Failed to parse text: URL is required for text_link entity",
         ),
         (
             r#"{
@@ -526,14 +517,10 @@ fn test_deserialize_message_bad_entities() {
                     }
                 ]
             }"#,
-            "User is required for text_mention entity",
+            "Failed to parse text: User is required for text_mention entity",
         ),
     ] {
-        let msg: Message = serde_json::from_str(input).unwrap();
-        if let MessageData::Text(text) = msg.data {
-            assert_eq!(text.parse().unwrap_err().to_string(), error.to_string());
-        } else {
-            panic!("Unexpected message data: {:?}", msg.data);
-        }
+        let err = serde_json::from_str::<Message>(input).unwrap_err();
+        assert_eq!(err.to_string(), error.to_string());
     }
 }

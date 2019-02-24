@@ -41,12 +41,60 @@ pub struct Message {
 }
 
 impl Message {
-    fn from_raw(raw: RawMessage) -> Result<Message, String> {
+    /// Returns a list of commands in the message
+    pub fn get_commands(&self) -> Option<Vec<BotCommand>> {
+        match self.data {
+            MessageData::Text(ref text)
+            | MessageData::Audio {
+                caption: Some(ref text),
+                ..
+            }
+            | MessageData::Document {
+                caption: Some(ref text),
+                ..
+            }
+            | MessageData::Photo {
+                caption: Some(ref text),
+                ..
+            }
+            | MessageData::Video {
+                caption: Some(ref text),
+                ..
+            }
+            | MessageData::Voice {
+                caption: Some(ref text),
+                ..
+            } => {
+                if let Some(ref entities) = text.entities {
+                    let commands = entities
+                        .iter()
+                        .filter_map(|entity| {
+                            if let TextEntity::BotCommand(command) = entity {
+                                Some(command.clone())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<BotCommand>>();
+                    if commands.is_empty() {
+                        None
+                    } else {
+                        Some(commands)
+                    }
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    fn from_raw(raw: RawMessage) -> Result<Message, ParseError> {
         macro_rules! required {
             ($name:ident) => {{
                 match raw.$name {
                     Some(val) => val,
-                    None => return Err(format!("\"{}\" field is missing", stringify!($name))),
+                    None => return Err(ParseError::MissingField(stringify!($name))),
                 }
             }};
         };
@@ -73,7 +121,7 @@ impl Message {
                 })
             }
             (None, None, None, None, None) => None,
-            _ => return Err(String::from("Unexpected forward_* fields combination")),
+            _ => return Err(ParseError::BadForward),
         };
 
         let message_kind = match raw.chat {
@@ -96,10 +144,7 @@ impl Message {
         };
 
         let caption = match raw.caption {
-            Some(data) => Some(Text {
-                data,
-                entities: raw.caption_entities,
-            }),
+            Some(data) => Some(Text::parse(data, raw.caption_entities)?),
             None => None,
         };
 
@@ -171,13 +216,10 @@ impl Message {
         }
 
         if let Some(data) = raw.text {
-            message_data!(MessageData::Text(Text {
-                data,
-                entities: raw.entities,
-            }));
+            message_data!(MessageData::Text(Text::parse(data, raw.entities)?));
         }
 
-        Err(String::from("Can not get message data"))
+        Err(ParseError::NoData)
     }
 }
 
@@ -199,4 +241,16 @@ pub enum EditMessageResult {
     Message(Message),
     /// Returned if edited message is NOT sent by the bot
     Bool(bool),
+}
+
+#[derive(Debug, Fail, From)]
+enum ParseError {
+    #[fail(display = "Unexpected forward_* fields combination")]
+    BadForward,
+    #[fail(display = "Failed to parse text: {}", _0)]
+    BadText(#[cause] ParseTextError),
+    #[fail(display = "\"{}\" field is missing", _0)]
+    MissingField(&'static str),
+    #[fail(display = "Can not get message data")]
+    NoData,
 }
