@@ -17,6 +17,8 @@ fn test_deserialize_message_channel() {
     let msg: Message = serde_json::from_str(input).unwrap();
     assert_eq!(msg.id, 1);
     assert_eq!(msg.date, 0);
+    assert_eq!(msg.get_chat_id(), 1);
+    assert!(msg.get_user().is_none());
     if let MessageKind::Channel {
         chat: ChannelChat { id, title, .. },
         author_signature,
@@ -57,6 +59,9 @@ fn test_deserialize_message_group() {
     let msg: Message = serde_json::from_str(input).unwrap();
     assert_eq!(msg.id, 1);
     assert_eq!(msg.date, 0);
+    assert_eq!(msg.get_chat_id(), 1);
+    assert_eq!(msg.get_user().map(|u| u.id), Some(1));
+    assert_eq!(msg.get_text().map(|t| t.data.as_str()), Some("test"));
     if let MessageKind::Group { chat, from } = msg.kind {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, "grouptitle");
@@ -102,6 +107,9 @@ fn test_deserialize_message_private() {
     let msg: Message = serde_json::from_str(input).unwrap();
     assert_eq!(msg.id, 1);
     assert_eq!(msg.date, 0);
+    assert_eq!(msg.get_chat_id(), 1);
+    assert_eq!(msg.get_user().map(|u| u.id), Some(1));
+    assert_eq!(msg.get_text().map(|t| t.data.as_str()), Some("test"));
     if let MessageKind::Private { chat, from } = msg.kind {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.first_name, "firstname");
@@ -146,6 +154,9 @@ fn test_deserialize_message_supergroup() {
     let msg: Message = serde_json::from_str(input).unwrap();
     assert_eq!(msg.id, 1);
     assert_eq!(msg.date, 0);
+    assert_eq!(msg.get_chat_id(), 1);
+    assert_eq!(msg.get_user().map(|u| u.id), Some(1));
+    assert_eq!(msg.get_text().map(|t| t.data.as_str()), Some("test"));
     if let MessageKind::Supergroup { chat, from } = msg.kind {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, "supergrouptitle");

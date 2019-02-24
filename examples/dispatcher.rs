@@ -5,7 +5,7 @@ use log;
 use std::env;
 use tgbot::dispatcher::{Dispatcher, HandlerFuture, HandlerResult, MessageHandler};
 use tgbot::methods::SendMessage;
-use tgbot::types::{Message, MessageData, MessageKind};
+use tgbot::types::Message;
 use tgbot::Api;
 
 struct Handler;
@@ -13,14 +13,13 @@ struct Handler;
 impl MessageHandler for Handler {
     fn handle(&self, api: &Api, message: &Message) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
-        if let MessageKind::Private { ref chat, .. } = message.kind {
-            if let MessageData::Text(ref text) = message.data {
-                let method = SendMessage::new(chat.id, text.data.clone());
-                return HandlerFuture::new(api.execute(&method).then(|x| {
-                    log::info!("sendMessage result: {:?}\n", x);
-                    Ok(HandlerResult::Continue)
-                }));
-            }
+        if let Some(text) = message.get_text() {
+            let chat_id = message.get_chat_id();
+            let method = SendMessage::new(chat_id, text.data.clone());
+            return HandlerFuture::new(api.execute(&method).then(|x| {
+                log::info!("sendMessage result: {:?}\n", x);
+                Ok(HandlerResult::Continue)
+            }));
         }
         HandlerResult::Continue.into()
     }

@@ -1,6 +1,7 @@
 use crate::types::chat::Chat;
 use crate::types::message::raw::RawMessage;
 use crate::types::primitive::Integer;
+use crate::types::user::User;
 use serde::{de::Error, Deserialize, Deserializer};
 
 mod data;
@@ -41,8 +42,28 @@ pub struct Message {
 }
 
 impl Message {
-    /// Returns a list of commands in the message
-    pub fn get_commands(&self) -> Option<Vec<BotCommand>> {
+    /// Returns ID of the chat
+    pub fn get_chat_id(&self) -> Integer {
+        match self.kind {
+            MessageKind::Private { ref chat, .. } => chat.id,
+            MessageKind::Channel { ref chat, .. } => chat.id,
+            MessageKind::Group { ref chat, .. } => chat.id,
+            MessageKind::Supergroup { ref chat, .. } => chat.id,
+        }
+    }
+
+    /// Returns author of the message
+    pub fn get_user(&self) -> Option<&User> {
+        match self.kind {
+            MessageKind::Channel { .. } => None,
+            MessageKind::Private { ref from, .. }
+            | MessageKind::Group { ref from, .. }
+            | MessageKind::Supergroup { ref from, .. } => Some(from),
+        }
+    }
+
+    /// Returns text of the message (includes caption)
+    pub fn get_text(&self) -> Option<&Text> {
         match self.data {
             MessageData::Text(ref text)
             | MessageData::Audio {
@@ -64,28 +85,35 @@ impl Message {
             | MessageData::Voice {
                 caption: Some(ref text),
                 ..
-            } => {
-                if let Some(ref entities) = text.entities {
-                    let commands = entities
-                        .iter()
-                        .filter_map(|entity| {
-                            if let TextEntity::BotCommand(command) = entity {
-                                Some(command.clone())
-                            } else {
-                                None
-                            }
-                        })
-                        .collect::<Vec<BotCommand>>();
-                    if commands.is_empty() {
-                        None
-                    } else {
-                        Some(commands)
-                    }
-                } else {
-                    None
-                }
-            }
+            } => Some(text),
             _ => None,
+        }
+    }
+
+    /// Returns a list of commands in the message
+    pub fn get_commands(&self) -> Option<Vec<BotCommand>> {
+        if let Some(Text {
+            entities: Some(ref entities),
+            ..
+        }) = self.get_text()
+        {
+            let commands = entities
+                .iter()
+                .filter_map(|entity| {
+                    if let TextEntity::BotCommand(command) = entity {
+                        Some(command.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<BotCommand>>();
+            if commands.is_empty() {
+                None
+            } else {
+                Some(commands)
+            }
+        } else {
+            None
         }
     }
 
