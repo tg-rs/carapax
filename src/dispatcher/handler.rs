@@ -59,7 +59,7 @@ pub trait MessageHandler {
 /// A command handler
 pub struct CommandHandler {
     name: String,
-    handler: Box<MessageHandler + Send>,
+    handler: Box<MessageHandler + Send + Sync>,
 }
 
 impl CommandHandler {
@@ -69,7 +69,10 @@ impl CommandHandler {
     ///
     /// - name - command name (starts with /)
     /// - handler - a message handler
-    pub fn new<S: Into<String>, H: MessageHandler + 'static + Send>(name: S, handler: H) -> Self {
+    pub fn new<S: Into<String>, H: MessageHandler + 'static + Send + Sync>(
+        name: S,
+        handler: H,
+    ) -> Self {
         CommandHandler {
             name: name.into(),
             handler: Box::new(handler),

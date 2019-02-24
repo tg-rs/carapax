@@ -5,6 +5,7 @@ use crate::types::Response;
 use failure::Error;
 use futures::{future, Future, Poll};
 use serde::de::DeserializeOwned;
+use std::fmt::Debug;
 use std::sync::Arc;
 
 /// Telegram Bot API client
@@ -68,6 +69,19 @@ impl Api {
     /// Returns an updates stream used for long polling
     pub fn get_updates(&self) -> UpdatesStream {
         UpdatesStream::new(self.clone())
+    }
+
+    /// Spawns a future on the default executor.
+    pub fn spawn<F, T, E: Debug>(&self, f: F)
+    where
+        F: Future<Item = T, Error = E> + 'static + Send,
+    {
+        tokio::spawn(f.then(|r| {
+            if let Err(e) = r {
+                log::error!("An error has occurred: {:?}", e)
+            }
+            Ok(())
+        }));
     }
 }
 

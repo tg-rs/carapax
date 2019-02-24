@@ -21,9 +21,9 @@ fn main() {
     .expect("Failed to create API");
 
     tokio::run(lazy(|| {
-        tokio::spawn(api.execute(&GetMe).then(|x| {
+        api.spawn(api.execute(&GetMe).then(|x| {
             log::info!("getMe result: {:?}\n", x);
-            Ok(())
+            Ok::<(), ()>(())
         }));
 
         api.get_updates()
@@ -33,10 +33,7 @@ fn main() {
                     if let MessageKind::Private { ref chat, .. } = msg.kind {
                         if let MessageData::Text(text) = msg.data {
                             let method = SendMessage::new(chat.id, text.data);
-                            tokio::spawn(api.execute(&method).then(|x| {
-                                log::info!("sendMessage result: {:?}\n", x);
-                                Ok(())
-                            }));
+                            api.spawn(api.execute(&method));
                         }
                     }
                 }

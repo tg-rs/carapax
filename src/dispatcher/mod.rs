@@ -1,7 +1,7 @@
 use crate::api::Api;
 use crate::types::{Update, UpdateKind};
 use failure::Error;
-use futures::{Async, Future, Poll};
+use futures::{Async, Future, Poll, Stream};
 
 mod handler;
 #[cfg(test)]
@@ -12,13 +12,13 @@ pub use self::handler::*;
 /// Dispatcher
 pub struct Dispatcher {
     api: Api,
-    message: Vec<Box<MessageHandler + Send>>,
+    message: Vec<Box<MessageHandler + Send + Sync>>,
     command: Vec<CommandHandler>,
-    inline_query: Vec<Box<InlineQueryHandler + Send>>,
-    chosen_inline_result: Vec<Box<ChosenInlineResultHandler + Send>>,
-    callback_query: Vec<Box<CallbackQueryHandler + Send>>,
-    shipping_query: Vec<Box<ShippingQueryHandler + Send>>,
-    pre_checkout_query: Vec<Box<PreCheckoutQueryHandler + Send>>,
+    inline_query: Vec<Box<InlineQueryHandler + Send + Sync>>,
+    chosen_inline_result: Vec<Box<ChosenInlineResultHandler + Send + Sync>>,
+    callback_query: Vec<Box<CallbackQueryHandler + Send + Sync>>,
+    shipping_query: Vec<Box<ShippingQueryHandler + Send + Sync>>,
+    pre_checkout_query: Vec<Box<PreCheckoutQueryHandler + Send + Sync>>,
 }
 
 impl Dispatcher {
@@ -37,7 +37,7 @@ impl Dispatcher {
     }
 
     /// Add message handler
-    pub fn add_message_handler<H: MessageHandler + 'static + Send>(
+    pub fn add_message_handler<H: MessageHandler + 'static + Send + Sync>(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -52,7 +52,7 @@ impl Dispatcher {
     }
 
     /// Add inline query handler
-    pub fn add_inline_query_handler<H: InlineQueryHandler + 'static + Send>(
+    pub fn add_inline_query_handler<H: InlineQueryHandler + 'static + Send + Sync>(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -61,7 +61,9 @@ impl Dispatcher {
     }
 
     /// Add chosen inline result handler
-    pub fn add_chosen_inline_result_handler<H: ChosenInlineResultHandler + 'static + Send>(
+    pub fn add_chosen_inline_result_handler<
+        H: ChosenInlineResultHandler + 'static + Send + Sync,
+    >(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -70,7 +72,7 @@ impl Dispatcher {
     }
 
     /// Add callback query handler
-    pub fn add_callback_query_handler<H: CallbackQueryHandler + 'static + Send>(
+    pub fn add_callback_query_handler<H: CallbackQueryHandler + 'static + Send + Sync>(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -79,7 +81,7 @@ impl Dispatcher {
     }
 
     /// Add shipping query handler
-    pub fn add_shipping_query_handler<H: ShippingQueryHandler + 'static + Send>(
+    pub fn add_shipping_query_handler<H: ShippingQueryHandler + 'static + Send + Sync>(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -88,7 +90,7 @@ impl Dispatcher {
     }
 
     /// Add pre checkout query handler
-    pub fn add_pre_checkout_query_handler<H: PreCheckoutQueryHandler + 'static + Send>(
+    pub fn add_pre_checkout_query_handler<H: PreCheckoutQueryHandler + 'static + Send + Sync>(
         &mut self,
         handler: H,
     ) -> &mut Self {
@@ -147,6 +149,24 @@ impl Dispatcher {
                 .map(|h| h.handle(&self.api, pre_checkout_query))
                 .collect(),
         })
+    }
+
+    /// Spawns a polling stream
+    pub fn start_polling(self) {
+        tokio::run(futures::future::lazy(move || {
+            self.api
+                .get_updates()
+                .for_each(move |update| {
+                    self.api.spawn(self.dispatch(&update));
+                    Ok(())
+                })
+                .then(|r| {
+                    if let Err(e) = r {
+                        log::error!("Polling error: {:?}", e)
+                    }
+                    Ok(())
+                })
+        }));
     }
 }
 

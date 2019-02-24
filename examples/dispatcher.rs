@@ -1,7 +1,6 @@
 use dotenv::dotenv;
 use env_logger;
-use futures::future::lazy;
-use futures::{Future, Stream};
+use futures::Future;
 use log;
 use std::env;
 use tgbot::dispatcher::{Dispatcher, HandlerFuture, HandlerResult, MessageHandler};
@@ -38,15 +37,7 @@ fn main() {
         None => Api::create(token),
     }
     .expect("Failed to create API");
-
-    tokio::run(lazy(move || {
-        let mut dispatcher = Dispatcher::new(api.clone());
-        dispatcher.add_message_handler(Handler);
-        api.get_updates()
-            .for_each(move |update| {
-                tokio::spawn(dispatcher.dispatch(&update).then(|_| Ok(())));
-                Ok(())
-            })
-            .then(|_| Ok(()))
-    }));
+    let mut dispatcher = Dispatcher::new(api.clone());
+    dispatcher.add_message_handler(Handler);
+    dispatcher.start_polling();
 }
