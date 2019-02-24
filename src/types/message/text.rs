@@ -92,7 +92,10 @@ pub enum TextEntity {
 }
 
 impl TextEntity {
-    fn from_raw(entity: RawMessageEntity, data: TextEntityData) -> Result<TextEntity, ParseTextError> {
+    fn from_raw(
+        entity: RawMessageEntity,
+        data: TextEntityData,
+    ) -> Result<TextEntity, ParseTextError> {
         Ok(match entity.kind {
             RawMessageEntityKind::Bold => TextEntity::Bold(data),
             RawMessageEntityKind::BotCommand => {

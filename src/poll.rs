@@ -2,7 +2,7 @@ use crate::api::Api;
 use crate::methods::GetUpdates;
 use crate::types::{AllowedUpdate, Integer, Update};
 use failure::Error;
-use futures::{Async, Future, Poll, Stream, task};
+use futures::{task, Async, Future, Poll, Stream};
 use log::error;
 use std::cmp::max;
 use std::collections::{HashSet, VecDeque};

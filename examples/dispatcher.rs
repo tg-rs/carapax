@@ -4,9 +4,9 @@ use futures::future::lazy;
 use futures::{Future, Stream};
 use log;
 use std::env;
+use tgbot::dispatcher::{Dispatcher, HandlerFuture, HandlerResult, MessageHandler};
 use tgbot::methods::SendMessage;
 use tgbot::types::{Message, MessageData, MessageKind};
-use tgbot::dispatcher::{Dispatcher, MessageHandler, HandlerFuture, HandlerResult};
 use tgbot::Api;
 
 struct Handler;
@@ -20,7 +20,7 @@ impl MessageHandler for Handler {
                 return HandlerFuture::new(api.execute(&method).then(|x| {
                     log::info!("sendMessage result: {:?}\n", x);
                     Ok(HandlerResult::Continue)
-                }))
+                }));
             }
         }
         HandlerResult::Continue.into()
