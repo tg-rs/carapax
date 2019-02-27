@@ -12,12 +12,24 @@ A Telegram Bot library
 
 ```toml
 [dependencies]
-tgbot = "0.1"
+tgbot = "0.2"
 ```
 
 # Example
 
 See examples directory.
+
+# Changelog
+
+## 0.2.0 (27.02.2019)
+
+- Migrated from curl to hyper.
+- Added dispatcher.
+- Added webhooks support.
+
+## 0.1.0 (23.12.2018)
+
+- First release.
 
 # LICENSE
 
