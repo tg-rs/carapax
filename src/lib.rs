@@ -19,5 +19,8 @@ pub mod methods;
 /// Types available in the Bot API
 pub mod types;
 
+/// Webhook support
+pub mod webhook;
+
 pub use self::api::{Api, ApiFuture};
 pub use self::poll::UpdatesStream;
