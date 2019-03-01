@@ -1,17 +1,20 @@
 use crate::api::Api;
 use crate::types::{Update, UpdateKind};
 use failure::Error;
-use futures::{Async, Future, Poll, Stream};
+use futures::{future, Async, Future, Poll, Stream};
 
 mod handler;
+mod middleware;
 #[cfg(test)]
 mod tests;
 
 pub use self::handler::*;
+pub use self::middleware::*;
 
 /// Dispatcher
 pub struct Dispatcher {
     api: Api,
+    middleware: Vec<Box<Middleware + Send + Sync>>,
     message: Vec<Box<MessageHandler + Send + Sync>>,
     command: Vec<CommandHandler>,
     inline_query: Vec<Box<InlineQueryHandler + Send + Sync>>,
@@ -26,6 +29,7 @@ impl Dispatcher {
     pub fn new(api: Api) -> Self {
         Dispatcher {
             api,
+            middleware: vec![],
             message: vec![],
             command: vec![],
             inline_query: vec![],
@@ -34,6 +38,15 @@ impl Dispatcher {
             shipping_query: vec![],
             pre_checkout_query: vec![],
         }
+    }
+
+    /// Add middleware handler
+    pub fn add_middleware<H>(&mut self, handler: H) -> &mut Self
+    where
+        H: Middleware + 'static + Send + Sync,
+    {
+        self.middleware.push(Box::new(handler));
+        self
     }
 
     /// Add message handler
@@ -100,7 +113,13 @@ impl Dispatcher {
 
     /// Dispatch an update
     pub fn dispatch(&self, update: &Update) -> DispatcherFuture {
-        DispatcherFuture::new(match update.kind {
+        let before = IterMiddlewareFuture::new(
+            self.middleware
+                .iter()
+                .map(|h| h.before(&self.api, &update))
+                .collect(),
+        );
+        let main = IterHandlerFuture::new(match update.kind {
             UpdateKind::Message(ref msg)
             | UpdateKind::EditedMessage(ref msg)
             | UpdateKind::ChannelPost(ref msg)
@@ -148,12 +167,19 @@ impl Dispatcher {
                 .iter()
                 .map(|h| h.handle(&self.api, pre_checkout_query))
                 .collect(),
-        })
+        });
+        let after = IterMiddlewareFuture::new(
+            self.middleware
+                .iter()
+                .map(|h| h.after(&self.api, &update))
+                .collect(),
+        );
+        DispatcherFuture::new(before, main, after)
     }
 
     /// Spawns a polling stream
     pub fn start_polling(self) {
-        tokio::run(futures::future::lazy(move || {
+        tokio::run(future::lazy(move || {
             self.api
                 .get_updates()
                 .for_each(move |update| {
@@ -171,36 +197,76 @@ impl Dispatcher {
 }
 
 /// Dispatcher future
+///
+/// Returns number of executed handlers on success
+/// (including middlewares, before and after separately)
 #[must_use = "futures do nothing unless polled"]
 pub struct DispatcherFuture {
-    items: Vec<HandlerFuture>,
-    current: usize,
+    before: IterMiddlewareFuture,
+    main: IterHandlerFuture,
+    after: IterMiddlewareFuture,
+    state: DispatcherFutureState,
 }
 
 impl DispatcherFuture {
-    fn new(items: Vec<HandlerFuture>) -> DispatcherFuture {
-        DispatcherFuture { items, current: 0 }
+    fn new(
+        before: IterMiddlewareFuture,
+        main: IterHandlerFuture,
+        after: IterMiddlewareFuture,
+    ) -> DispatcherFuture {
+        DispatcherFuture {
+            before,
+            main,
+            after,
+            state: Default::default(),
+        }
     }
 }
 
 impl Future for DispatcherFuture {
-    type Item = ();
+    type Item = usize;
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let items_len = self.items.len();
-        if items_len == 0 || self.current > items_len {
-            return Ok(Async::Ready(()));
+        use self::DispatcherFutureState::*;
+        match self.state {
+            Before => match self.before.poll() {
+                Ok(Async::Ready((MiddlewareResult::Continue, num))) => {
+                    self.state = Main(num);
+                    Ok(Async::NotReady)
+                }
+                Ok(Async::Ready((MiddlewareResult::Stop, num))) => {
+                    self.state = After(num);
+                    Ok(Async::NotReady)
+                }
+                Ok(Async::NotReady) => Ok(Async::NotReady),
+                Err(err) => Err(err),
+            },
+            Main(before_num) => match self.main.poll() {
+                Ok(Async::Ready(num)) => {
+                    self.state = After(before_num + num);
+                    Ok(Async::NotReady)
+                }
+                Ok(Async::NotReady) => Ok(Async::NotReady),
+                Err(err) => Err(err),
+            },
+            After(total_num) => match self.after.poll() {
+                Ok(Async::Ready((_, num))) => Ok(Async::Ready(total_num + num)),
+                Ok(Async::NotReady) => Ok(Async::NotReady),
+                Err(err) => Err(err),
+            },
         }
-        let f = &mut self.items[self.current];
-        match f.poll() {
-            Ok(Async::Ready(HandlerResult::Continue)) => {
-                self.current += 1;
-                Ok(Async::NotReady)
-            }
-            Ok(Async::Ready(HandlerResult::Stop)) => Ok(Async::Ready(())),
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(err) => Err(err),
-        }
+    }
+}
+
+enum DispatcherFutureState {
+    Before,
+    Main(usize),
+    After(usize),
+}
+
+impl Default for DispatcherFutureState {
+    fn default() -> Self {
+        DispatcherFutureState::Before
     }
 }
