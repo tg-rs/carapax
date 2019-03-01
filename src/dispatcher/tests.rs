@@ -72,7 +72,7 @@ fn get_dispatch_result(mut f: DispatcherFuture) -> usize {
     }
 }
 
-/*#[test]
+#[test]
 fn test_dispatch_message() {
     let mut dispatcher = create_dispatcher();
     dispatcher.add_message_handler(MockHandler::default());
@@ -339,7 +339,7 @@ fn test_stop_handler() {
         assert_eq!(get_dispatch_result(f), *executed_num);
     }
 }
-*/
+
 struct MockMiddleware {
     before_result: MiddlewareResult,
     after_result: MiddlewareResult,
