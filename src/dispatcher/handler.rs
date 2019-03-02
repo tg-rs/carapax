@@ -4,7 +4,7 @@ use crate::types::{
     ShippingQuery,
 };
 use failure::Error;
-use futures::{Future, Poll};
+use futures::{future, Async, Future, Poll};
 
 /// Result of a handler
 #[derive(Copy, Clone, Debug)]
@@ -37,7 +37,7 @@ impl HandlerFuture {
 
 impl From<HandlerResult> for HandlerFuture {
     fn from(result: HandlerResult) -> HandlerFuture {
-        HandlerFuture::new(futures::future::ok(result))
+        HandlerFuture::new(future::ok(result))
     }
 }
 
@@ -47,6 +47,43 @@ impl Future for HandlerFuture {
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.inner.poll()
+    }
+}
+
+#[must_use = "futures do nothing unless polled"]
+pub(super) struct IterHandlerFuture {
+    items: Vec<HandlerFuture>,
+    current: usize,
+}
+
+impl IterHandlerFuture {
+    pub(super) fn new(items: Vec<HandlerFuture>) -> IterHandlerFuture {
+        IterHandlerFuture { items, current: 0 }
+    }
+}
+
+impl Future for IterHandlerFuture {
+    type Item = usize;
+    type Error = Error;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        let items_len = self.items.len();
+        if items_len == 0 {
+            return Ok(Async::Ready(0));
+        }
+        if self.current >= items_len {
+            return Ok(Async::Ready(self.current));
+        }
+        let f = &mut self.items[self.current];
+        match f.poll() {
+            Ok(Async::Ready(HandlerResult::Continue)) => {
+                self.current += 1;
+                Ok(Async::NotReady)
+            }
+            Ok(Async::Ready(HandlerResult::Stop)) => Ok(Async::Ready(self.current + 1)),
+            Ok(Async::NotReady) => Ok(Async::NotReady),
+            Err(err) => Err(err),
+        }
     }
 }
 
