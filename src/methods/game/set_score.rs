@@ -70,14 +70,14 @@ impl SetGameScore {
     /// Pass True, if the high score is allowed to decrease
     ///
     /// This can be useful when fixing mistakes or banning cheaters
-    pub fn force(&mut self, force: bool) -> &mut Self {
+    pub fn force(mut self, force: bool) -> Self {
         self.force = Some(force);
         self
     }
 
     /// Pass True, if the game message should not be automatically
     /// edited to include the current scoreboard
-    pub fn disable_edit_message(&mut self, disable_edit_message: bool) -> &mut Self {
+    pub fn disable_edit_message(mut self, disable_edit_message: bool) -> Self {
         self.disable_edit_message = Some(disable_edit_message);
         self
     }

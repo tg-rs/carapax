@@ -28,7 +28,7 @@ impl SetChatDescription {
     }
 
     /// New chat description, 0-255 characters
-    pub fn description<S: Into<String>>(&mut self, description: S) -> &mut Self {
+    pub fn description<S: Into<String>>(mut self, description: S) -> Self {
         self.description = Some(description.into());
         self
     }

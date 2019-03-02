@@ -61,19 +61,19 @@ impl SendVideo {
     }
 
     /// Duration of sent video in seconds
-    pub fn duration(&mut self, duration: Integer) -> &mut Self {
+    pub fn duration(mut self, duration: Integer) -> Self {
         self.duration = Some(duration);
         self
     }
 
     /// Video width
-    pub fn width(&mut self, width: Integer) -> &mut Self {
+    pub fn width(mut self, width: Integer) -> Self {
         self.width = Some(width);
         self
     }
 
     /// Video height
-    pub fn height(&mut self, height: Integer) -> &mut Self {
+    pub fn height(mut self, height: Integer) -> Self {
         self.height = Some(height);
         self
     }
@@ -86,7 +86,7 @@ impl SendVideo {
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>” if the thumbnail was
     /// uploaded using multipart/form-data under <file_attach_name>
-    pub fn thumb<S: Into<String>>(&mut self, thumb: S) -> &mut Self {
+    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
         self.thumb = Some(thumb.into());
         self
     }
@@ -95,19 +95,19 @@ impl SendVideo {
     ///
     /// May also be used when resending videos by file_id
     /// 0-1024 characters
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Sets a parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Pass True, if the uploaded video is suitable for streaming
-    pub fn supports_streaming(&mut self, supports_streaming: bool) -> &mut Self {
+    pub fn supports_streaming(mut self, supports_streaming: bool) -> Self {
         self.supports_streaming = Some(supports_streaming);
         self
     }
@@ -115,19 +115,19 @@ impl SendVideo {
     // Sends the message silently
     ///
     /// Users will receive a notification with no sound
-    pub fn disable_notification(&mut self, disable_notification: bool) -> &mut Self {
+    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
         self.disable_notification = Some(disable_notification);
         self
     }
 
     /// If the message is a reply, ID of the original message
-    pub fn reply_to_message_id(&mut self, reply_to_message_id: Integer) -> &mut Self {
+    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
         self.reply_to_message_id = Some(reply_to_message_id);
         self
     }
 
     /// Additional interface options
-    pub fn reply_markup<R: Into<ReplyMarkup>>(&mut self, reply_markup: R) -> &mut Self {
+    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, reply_markup: R) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }

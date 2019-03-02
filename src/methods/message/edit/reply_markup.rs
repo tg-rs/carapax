@@ -47,7 +47,7 @@ impl EditMessageReplyMarkup {
     }
 
     /// Inline keyboard
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }

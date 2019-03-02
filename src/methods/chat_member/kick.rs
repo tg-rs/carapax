@@ -43,7 +43,7 @@ impl KickChatMember {
     ///
     /// If user is banned for more than 366 days or less than 30 seconds
     /// from the current time they are considered to be banned forever
-    pub fn until_date(&mut self, until_date: Integer) -> &mut Self {
+    pub fn until_date(mut self, until_date: Integer) -> Self {
         self.until_date = Some(until_date);
         self
     }

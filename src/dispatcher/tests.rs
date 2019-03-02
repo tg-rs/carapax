@@ -74,8 +74,7 @@ fn get_dispatch_result(mut f: DispatcherFuture) -> usize {
 
 #[test]
 fn test_dispatch_message() {
-    let mut dispatcher = create_dispatcher();
-    dispatcher.add_message_handler(MockHandler::default());
+    let dispatcher = create_dispatcher().add_message_handler(MockHandler::default());
     for data in &[
         r#"{
             "update_id": 1,
@@ -126,9 +125,8 @@ fn test_dispatch_message() {
 
 #[test]
 fn test_dispatch_command() {
-    let mut dispatcher = create_dispatcher();
     let handler = CommandHandler::new("/testcommand", MockHandler::default());
-    dispatcher.add_command_handler(handler);
+    let dispatcher = create_dispatcher().add_command_handler(handler);
     for data in &[
         r#"{
             "update_id": 1,
@@ -209,8 +207,7 @@ fn test_dispatch_command() {
 
 #[test]
 fn test_dispatch_inline_query() {
-    let mut dispatcher = create_dispatcher();
-    dispatcher.add_inline_query_handler(MockHandler::default());
+    let dispatcher = create_dispatcher().add_inline_query_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -229,8 +226,7 @@ fn test_dispatch_inline_query() {
 
 #[test]
 fn test_dispatch_chosen_inline_result() {
-    let mut dispatcher = create_dispatcher();
-    dispatcher.add_chosen_inline_result_handler(MockHandler::default());
+    let dispatcher = create_dispatcher().add_chosen_inline_result_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -248,8 +244,7 @@ fn test_dispatch_chosen_inline_result() {
 
 #[test]
 fn test_dispatch_callback_query() {
-    let mut dispatcher = create_dispatcher();
-    dispatcher.add_callback_query_handler(MockHandler::default());
+    let dispatcher = create_dispatcher().add_callback_query_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -266,8 +261,7 @@ fn test_dispatch_callback_query() {
 
 #[test]
 fn test_dispatch_shipping_query() {
-    let mut dispatcher = create_dispatcher();
-    dispatcher.add_shipping_query_handler(MockHandler::default());
+    let dispatcher = create_dispatcher().add_shipping_query_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -293,8 +287,7 @@ fn test_dispatch_shipping_query() {
 
 #[test]
 fn test_dispatch_pre_checkout_query() {
-    let mut dispatcher = create_dispatcher();
-    dispatcher.add_pre_checkout_query_handler(MockHandler::default());
+    let dispatcher = create_dispatcher().add_pre_checkout_query_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -322,7 +315,7 @@ fn test_stop_handler() {
     ] {
         let mut dispatcher = create_dispatcher();
         for result in *results {
-            dispatcher.add_message_handler(MockHandler { result: *result });
+            dispatcher = dispatcher.add_message_handler(MockHandler { result: *result });
         }
         let f = dispatcher.dispatch(&parse_update(
             r#"{
@@ -370,44 +363,44 @@ fn test_middleware() {
         }"#,
     );
 
-    let mut dispatcher = create_dispatcher();
-    dispatcher.add_middleware(MockMiddleware {
-        before_result: MiddlewareResult::Continue,
-        after_result: MiddlewareResult::Continue,
-    });
-    dispatcher.add_middleware(MockMiddleware {
-        before_result: MiddlewareResult::Stop,
-        after_result: MiddlewareResult::Continue,
-    });
-    dispatcher.add_middleware(MockMiddleware {
-        before_result: MiddlewareResult::Continue,
-        after_result: MiddlewareResult::Stop,
-    });
-    dispatcher.add_middleware(MockMiddleware {
-        before_result: MiddlewareResult::Continue,
-        after_result: MiddlewareResult::Continue,
-    });
-    dispatcher.add_message_handler(MockHandler {
-        result: HandlerResult::Continue,
-    });
+    let dispatcher = create_dispatcher()
+        .add_middleware(MockMiddleware {
+            before_result: MiddlewareResult::Continue,
+            after_result: MiddlewareResult::Continue,
+        })
+        .add_middleware(MockMiddleware {
+            before_result: MiddlewareResult::Stop,
+            after_result: MiddlewareResult::Continue,
+        })
+        .add_middleware(MockMiddleware {
+            before_result: MiddlewareResult::Continue,
+            after_result: MiddlewareResult::Stop,
+        })
+        .add_middleware(MockMiddleware {
+            before_result: MiddlewareResult::Continue,
+            after_result: MiddlewareResult::Continue,
+        })
+        .add_message_handler(MockHandler {
+            result: HandlerResult::Continue,
+        });
     let f = dispatcher.dispatch(&update);
     assert_eq!(get_dispatch_result(f), 5);
 
-    let mut dispatcher = create_dispatcher();
-    dispatcher.add_middleware(MockMiddleware {
-        before_result: MiddlewareResult::Continue,
-        after_result: MiddlewareResult::Stop,
-    });
-    dispatcher.add_middleware(MockMiddleware {
-        before_result: MiddlewareResult::Continue,
-        after_result: MiddlewareResult::Continue,
-    });
-    dispatcher.add_message_handler(MockHandler {
-        result: HandlerResult::Stop,
-    });
-    dispatcher.add_message_handler(MockHandler {
-        result: HandlerResult::Continue,
-    });
+    let dispatcher = create_dispatcher()
+        .add_middleware(MockMiddleware {
+            before_result: MiddlewareResult::Continue,
+            after_result: MiddlewareResult::Stop,
+        })
+        .add_middleware(MockMiddleware {
+            before_result: MiddlewareResult::Continue,
+            after_result: MiddlewareResult::Continue,
+        })
+        .add_message_handler(MockHandler {
+            result: HandlerResult::Stop,
+        })
+        .add_message_handler(MockHandler {
+            result: HandlerResult::Continue,
+        });
     let f = dispatcher.dispatch(&update);
     assert_eq!(get_dispatch_result(f), 4);
 }

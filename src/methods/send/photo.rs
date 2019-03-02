@@ -46,13 +46,13 @@ impl SendPhoto {
     ///
     /// May also be used when resending photos by file_id
     /// 0-1024 characters
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Sets a parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
@@ -60,19 +60,19 @@ impl SendPhoto {
     /// Sends the message silently
     ///
     /// Users will receive a notification with no sound
-    pub fn disable_notification(&mut self, disable_notification: bool) -> &mut Self {
+    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
         self.disable_notification = Some(disable_notification);
         self
     }
 
     /// If the message is a reply, ID of the original message
-    pub fn reply_to_message_id(&mut self, reply_to_message_id: Integer) -> &mut Self {
+    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
         self.reply_to_message_id = Some(reply_to_message_id);
         self
     }
 
     /// Additional interface options
-    pub fn reply_markup<R: Into<ReplyMarkup>>(&mut self, reply_markup: R) -> &mut Self {
+    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, reply_markup: R) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }

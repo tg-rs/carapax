@@ -34,16 +34,13 @@ impl InlineQueryResultCachedSticker {
     }
 
     /// Inline keyboard attached to the message
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }
 
     /// Content of the message to be sent instead of the photo
-    pub fn input_message_content(
-        &mut self,
-        input_message_content: InputMessageContent,
-    ) -> &mut Self {
+    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
         self.input_message_content = Some(input_message_content);
         self
     }

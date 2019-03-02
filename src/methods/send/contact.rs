@@ -47,13 +47,13 @@ impl SendContact {
     }
 
     /// Contact's last name
-    pub fn last_name<S: Into<String>>(&mut self, last_name: S) -> &mut Self {
+    pub fn last_name<S: Into<String>>(mut self, last_name: S) -> Self {
         self.last_name = Some(last_name.into());
         self
     }
 
     /// Additional data about the contact in the form of a vCard, 0-2048 bytes
-    pub fn vcard<S: Into<String>>(&mut self, vcard: S) -> &mut Self {
+    pub fn vcard<S: Into<String>>(mut self, vcard: S) -> Self {
         self.vcard = Some(vcard.into());
         self
     }
@@ -61,19 +61,19 @@ impl SendContact {
     /// Sends the message silently
     ///
     /// Users will receive a notification with no sound
-    pub fn disable_notification(&mut self, disable_notification: bool) -> &mut Self {
+    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
         self.disable_notification = Some(disable_notification);
         self
     }
 
     /// If the message is a reply, ID of the original message
-    pub fn reply_to_message_id(&mut self, reply_to_message_id: Integer) -> &mut Self {
+    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
         self.reply_to_message_id = Some(reply_to_message_id);
         self
     }
 
     /// Additional interface options
-    pub fn reply_markup<R: Into<ReplyMarkup>>(&mut self, reply_markup: R) -> &mut Self {
+    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, reply_markup: R) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }

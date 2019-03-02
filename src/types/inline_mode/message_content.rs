@@ -43,13 +43,13 @@ impl InputMessageContentContact {
     }
 
     /// Contact's last name
-    pub fn last_name<S: Into<String>>(&mut self, last_name: S) -> &mut Self {
+    pub fn last_name<S: Into<String>>(mut self, last_name: S) -> Self {
         self.last_name = Some(last_name.into());
         self
     }
 
     /// Additional data about the contact in the form of a vCard, 0-2048 bytes
-    pub fn vcard<S: Into<String>>(&mut self, vcard: S) -> &mut Self {
+    pub fn vcard<S: Into<String>>(mut self, vcard: S) -> Self {
         self.vcard = Some(vcard.into());
         self
     }
@@ -80,7 +80,7 @@ impl InputMessageContentLocation {
     }
 
     /// Period in seconds for which the location can be updated, should be between 60 and 86400
-    pub fn live_period(&mut self, live_period: Integer) -> &mut Self {
+    pub fn live_period(mut self, live_period: Integer) -> Self {
         self.live_period = Some(live_period);
         self
     }
@@ -111,13 +111,13 @@ impl InputMessageContentText {
     }
 
     /// Parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Disables link previews for links in the sent message
-    pub fn disable_web_page_preview(&mut self, disable_web_page_preview: bool) -> &mut Self {
+    pub fn disable_web_page_preview(mut self, disable_web_page_preview: bool) -> Self {
         self.disable_web_page_preview = Some(disable_web_page_preview);
         self
     }
@@ -157,7 +157,7 @@ impl InputMessageContentVenue {
     }
 
     /// Foursquare identifier of the venue, if known
-    pub fn foursquare_id<S: Into<String>>(&mut self, foursquare_id: S) -> &mut Self {
+    pub fn foursquare_id<S: Into<String>>(mut self, foursquare_id: S) -> Self {
         self.foursquare_id = Some(foursquare_id.into());
         self
     }
@@ -166,7 +166,7 @@ impl InputMessageContentVenue {
     ///
     /// For example, “arts_entertainment/default”,
     /// “arts_entertainment/aquarium” or “food/icecream”
-    pub fn foursquare_type<S: Into<String>>(&mut self, foursquare_type: S) -> &mut Self {
+    pub fn foursquare_type<S: Into<String>>(mut self, foursquare_type: S) -> Self {
         self.foursquare_type = Some(foursquare_type.into());
         self
     }

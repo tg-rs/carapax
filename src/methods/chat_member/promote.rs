@@ -53,7 +53,7 @@ impl PromoteChatMember {
     }
 
     /// Promote all privileges
-    pub fn promote_all(&mut self) -> &mut Self {
+    pub fn promote_all(mut self) -> Self {
         self.can_change_info = Some(true);
         self.can_post_messages = Some(true);
         self.can_edit_messages = Some(true);
@@ -66,7 +66,7 @@ impl PromoteChatMember {
     }
 
     /// Demote all privileges
-    pub fn demote_all(&mut self) -> &mut Self {
+    pub fn demote_all(mut self) -> Self {
         self.can_change_info = Some(false);
         self.can_post_messages = Some(false);
         self.can_edit_messages = Some(false);
@@ -79,50 +79,50 @@ impl PromoteChatMember {
     }
 
     /// Administrator can change chat title, photo and other settings
-    pub fn can_change_info(&mut self, can_change_info: bool) -> &mut Self {
+    pub fn can_change_info(mut self, can_change_info: bool) -> Self {
         self.can_change_info = Some(can_change_info);
         self
     }
 
     /// Administrator can create channel posts, channels only
-    pub fn can_post_messages(&mut self, can_post_messages: bool) -> &mut Self {
+    pub fn can_post_messages(mut self, can_post_messages: bool) -> Self {
         self.can_post_messages = Some(can_post_messages);
         self
     }
 
     /// Administrator can edit messages of other users and can pin messages, channels only
-    pub fn can_edit_messages(&mut self, can_edit_messages: bool) -> &mut Self {
+    pub fn can_edit_messages(mut self, can_edit_messages: bool) -> Self {
         self.can_edit_messages = Some(can_edit_messages);
         self
     }
 
     /// Administrator can delete messages of other users
-    pub fn can_delete_messages(&mut self, can_delete_messages: bool) -> &mut Self {
+    pub fn can_delete_messages(mut self, can_delete_messages: bool) -> Self {
         self.can_delete_messages = Some(can_delete_messages);
         self
     }
 
     /// Administrator can invite new users to the chat
-    pub fn can_invite_users(&mut self, can_invite_users: bool) -> &mut Self {
+    pub fn can_invite_users(mut self, can_invite_users: bool) -> Self {
         self.can_invite_users = Some(can_invite_users);
         self
     }
 
     /// Administrator can restrict, ban or unban chat members
-    pub fn can_restrict_members(&mut self, can_restrict_members: bool) -> &mut Self {
+    pub fn can_restrict_members(mut self, can_restrict_members: bool) -> Self {
         self.can_restrict_members = Some(can_restrict_members);
         self
     }
 
     /// Administrator can pin messages, supergroups only
-    pub fn can_pin_messages(&mut self, can_pin_messages: bool) -> &mut Self {
+    pub fn can_pin_messages(mut self, can_pin_messages: bool) -> Self {
         self.can_pin_messages = Some(can_pin_messages);
         self
     }
 
     /// Administrator can add new administrators with a subset of his own privileges or demote administrators
     /// that he has promoted, directly or indirectly (promoted by administrators that were appointed by him)
-    pub fn can_promote_members(&mut self, can_promote_members: bool) -> &mut Self {
+    pub fn can_promote_members(mut self, can_promote_members: bool) -> Self {
         self.can_promote_members = Some(can_promote_members);
         self
     }

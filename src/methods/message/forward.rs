@@ -33,7 +33,7 @@ impl ForwardMessage {
     /// Sends the message silently
     ///
     /// Users will receive a notification with no sound
-    pub fn disable_notification(&mut self, disable_notification: bool) -> &mut Self {
+    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
         self.disable_notification = Some(disable_notification);
         self
     }
