@@ -3,6 +3,7 @@ use crate::types::inline_mode::{ChosenInlineResult, InlineQuery};
 use crate::types::message::Message;
 use crate::types::payments::{PreCheckoutQuery, ShippingQuery};
 use crate::types::primitive::Integer;
+use crate::types::user::User;
 use serde::{de::Error, Deserialize, Deserializer, Serialize};
 
 /// Incoming update
@@ -18,6 +19,34 @@ pub struct Update {
     pub id: Integer,
     /// Kind of update
     pub kind: UpdateKind,
+}
+
+impl Update {
+    /// Returns a chat ID from update
+    pub fn get_chat_id(&self) -> Option<Integer> {
+        match self.kind {
+            UpdateKind::Message(ref msg)
+            | UpdateKind::EditedMessage(ref msg)
+            | UpdateKind::ChannelPost(ref msg)
+            | UpdateKind::EditedChannelPost(ref msg) => Some(msg.get_chat_id()),
+            _ => None,
+        }
+    }
+
+    /// Returns a user ID from update
+    pub fn get_user(&self) -> Option<&User> {
+        Some(match self.kind {
+            UpdateKind::Message(ref msg)
+            | UpdateKind::EditedMessage(ref msg)
+            | UpdateKind::ChannelPost(ref msg)
+            | UpdateKind::EditedChannelPost(ref msg) => return msg.get_user(),
+            UpdateKind::InlineQuery(ref query) => &query.from,
+            UpdateKind::ChosenInlineResult(ref result) => &result.from,
+            UpdateKind::CallbackQuery(ref query) => &query.from,
+            UpdateKind::ShippingQuery(ref query) => &query.from,
+            UpdateKind::PreCheckoutQuery(ref query) => &query.from,
+        })
+    }
 }
 
 /// Kind of update
@@ -171,6 +200,8 @@ mod tests {
             }
         }"#;
         let update: Update = serde_json::from_str(input).unwrap();
+        assert_eq!(update.get_chat_id(), Some(1));
+        assert_eq!(update.get_user().map(|u| u.id), Some(1));
         if let Update {
             id,
             kind: UpdateKind::Message(msg),
