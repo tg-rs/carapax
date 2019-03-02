@@ -160,10 +160,7 @@ impl SendInvoice {
     }
 
     /// Pass True, if user's phone number should be sent to provider
-    pub fn send_phone_number_to_provider(
-        mut self,
-        send_phone_number_to_provider: bool,
-    ) -> Self {
+    pub fn send_phone_number_to_provider(mut self, send_phone_number_to_provider: bool) -> Self {
         self.send_phone_number_to_provider = Some(send_phone_number_to_provider);
         self
     }

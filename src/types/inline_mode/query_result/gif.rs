@@ -99,10 +99,7 @@ impl InlineQueryResultGif {
     }
 
     /// Content of the message to be sent instead of the GIF animation
-    pub fn input_message_content(
-        mut self,
-        input_message_content: InputMessageContent,
-    ) -> Self {
+    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
         self.input_message_content = Some(input_message_content);
         self
     }

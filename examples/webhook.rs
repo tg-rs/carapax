@@ -27,8 +27,7 @@ fn main() {
         None => Api::create(token),
     }
     .expect("Failed to create API");
-    let mut dispatcher = Dispatcher::new(api.clone());
-    dispatcher.add_message_handler(Handler);
+    let dispatcher = Dispatcher::new(api.clone()).add_message_handler(Handler);
     let update_handler = WebhookDispatcher::new(dispatcher);
     webhook::run_server(([127, 0, 0, 1], 8080), "/", update_handler);
 }

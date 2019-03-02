@@ -109,10 +109,7 @@ impl InlineQueryResultVideo {
     ///
     /// This field is required if InlineQueryResultVideo is used
     /// to send an HTML-page as a result (e.g., a YouTube video)
-    pub fn input_message_content(
-        mut self,
-        input_message_content: InputMessageContent,
-    ) -> Self {
+    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
         self.input_message_content = Some(input_message_content);
         self
     }

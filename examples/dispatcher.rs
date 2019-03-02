@@ -36,7 +36,7 @@ fn main() {
         None => Api::create(token),
     }
     .expect("Failed to create API");
-    let mut dispatcher = Dispatcher::new(api.clone());
-    dispatcher.add_message_handler(Handler);
-    dispatcher.start_polling();
+    Dispatcher::new(api.clone())
+        .add_message_handler(Handler)
+        .start_polling();
 }

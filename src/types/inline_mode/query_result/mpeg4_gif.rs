@@ -98,10 +98,7 @@ impl InlineQueryResultMpeg4Gif {
     }
 
     /// Content of the message to be sent instead of the video animation
-    pub fn input_message_content(
-        mut self,
-        input_message_content: InputMessageContent,
-    ) -> Self {
+    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
         self.input_message_content = Some(input_message_content);
         self
     }
