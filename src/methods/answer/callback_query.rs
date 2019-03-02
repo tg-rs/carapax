@@ -41,7 +41,7 @@ impl AnswerCallbackQuery {
     /// Text of the notification
     ///
     /// If not specified, nothing will be shown to the user, 0-200 characters
-    pub fn text<S: Into<String>>(&mut self, text: S) -> &mut Self {
+    pub fn text<S: Into<String>>(mut self, text: S) -> Self {
         self.text = Some(text.into());
         self
     }
@@ -49,7 +49,7 @@ impl AnswerCallbackQuery {
     /// An alert will be shown by the client instead of a notification at the top of the chat screen
     ///
     /// Defaults to false
-    pub fn show_alert(&mut self, show_alert: bool) -> &mut Self {
+    pub fn show_alert(mut self, show_alert: bool) -> Self {
         self.show_alert = Some(show_alert);
         self
     }
@@ -61,7 +61,7 @@ impl AnswerCallbackQuery {
     /// if the query comes from a callback_game button
     ///
     /// Otherwise, you may use links like t.me/your_bot?start=XXXX that open your bot with a parameter
-    pub fn url<S: Into<String>>(&mut self, url: S) -> &mut Self {
+    pub fn url<S: Into<String>>(mut self, url: S) -> Self {
         self.url = Some(url.into());
         self
     }
@@ -70,7 +70,7 @@ impl AnswerCallbackQuery {
     ///
     /// Telegram apps will support caching starting in version 3.14
     /// Defaults to 0
-    pub fn cache_time(&mut self, cache_time: Integer) -> &mut Self {
+    pub fn cache_time(mut self, cache_time: Integer) -> Self {
         self.cache_time = Some(cache_time);
         self
     }

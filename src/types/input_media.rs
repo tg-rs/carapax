@@ -81,37 +81,37 @@ impl InputMediaAnimation {
     /// as a new file, so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>
-    pub fn thumb<S: Into<String>>(&mut self, thumb: S) -> &mut Self {
+    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
         self.thumb = Some(thumb.into());
         self
     }
 
     /// Caption of the animation to be sent, 0-1024 characters
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Set parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Set width
-    pub fn width(&mut self, width: Integer) -> &mut Self {
+    pub fn width(mut self, width: Integer) -> Self {
         self.width = Some(width);
         self
     }
 
     /// Set height
-    pub fn height(&mut self, height: Integer) -> &mut Self {
+    pub fn height(mut self, height: Integer) -> Self {
         self.height = Some(height);
         self
     }
 
     /// Set duration
-    pub fn duration(&mut self, duration: Integer) -> &mut Self {
+    pub fn duration(mut self, duration: Integer) -> Self {
         self.duration = Some(duration);
         self
     }
@@ -165,37 +165,37 @@ impl InputMediaAudio {
     /// as a new file, so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>
-    pub fn thumb<S: Into<String>>(&mut self, thumb: S) -> &mut Self {
+    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
         self.thumb = Some(thumb.into());
         self
     }
 
     /// Caption of the audio to be sent, 0-1024 characters
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Set parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Set duration
-    pub fn duration(&mut self, duration: Integer) -> &mut Self {
+    pub fn duration(mut self, duration: Integer) -> Self {
         self.duration = Some(duration);
         self
     }
 
     /// Performer of the audio
-    pub fn performer<S: Into<String>>(&mut self, performer: S) -> &mut Self {
+    pub fn performer<S: Into<String>>(mut self, performer: S) -> Self {
         self.performer = Some(performer.into());
         self
     }
 
     /// Title of the audio
-    pub fn title<S: Into<String>>(&mut self, title: S) -> &mut Self {
+    pub fn title<S: Into<String>>(mut self, title: S) -> Self {
         self.title = Some(title.into());
         self
     }
@@ -240,19 +240,19 @@ impl InputMediaDocument {
     /// as a new file, so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>
-    pub fn thumb<S: Into<String>>(&mut self, thumb: S) -> &mut Self {
+    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
         self.thumb = Some(thumb.into());
         self
     }
 
     /// Caption of the document to be sent, 0-1024 characters
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Set parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
@@ -286,13 +286,13 @@ impl InputMediaPhoto {
     }
 
     /// Caption of the photo to be sent, 0-1024 characters
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Set parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
@@ -349,43 +349,43 @@ impl InputMediaVideo {
     /// as a new file, so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data
     /// under <file_attach_name>
-    pub fn thumb<S: Into<String>>(&mut self, thumb: S) -> &mut Self {
+    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
         self.thumb = Some(thumb.into());
         self
     }
 
     /// Caption of the video to be sent, 0-1024 characters
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Set parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Set width
-    pub fn width(&mut self, width: Integer) -> &mut Self {
+    pub fn width(mut self, width: Integer) -> Self {
         self.width = Some(width);
         self
     }
 
     /// Set height
-    pub fn height(&mut self, height: Integer) -> &mut Self {
+    pub fn height(mut self, height: Integer) -> Self {
         self.height = Some(height);
         self
     }
 
     /// Set duration
-    pub fn duration(&mut self, duration: Integer) -> &mut Self {
+    pub fn duration(mut self, duration: Integer) -> Self {
         self.duration = Some(duration);
         self
     }
 
     /// Pass True, if the uploaded video is suitable for streaming
-    pub fn supports_streaming(&mut self, supports_streaming: bool) -> &mut Self {
+    pub fn supports_streaming(mut self, supports_streaming: bool) -> Self {
         self.supports_streaming = Some(supports_streaming);
         self
     }

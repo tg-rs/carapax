@@ -44,7 +44,7 @@ impl AnswerInlineQuery {
     /// Maximum amount of time in seconds that the result of the inline query may be cached on the server
     ///
     /// Defaults to 300
-    pub fn cache_time(&mut self, cache_time: Integer) -> &mut Self {
+    pub fn cache_time(mut self, cache_time: Integer) -> Self {
         self.cache_time = Some(cache_time);
         self
     }
@@ -52,7 +52,7 @@ impl AnswerInlineQuery {
     /// Cache results on the server side only for the user that sent the query
     ///
     /// By default, results may be returned to any user who sends the same query
-    pub fn personal(&mut self, is_personal: bool) -> &mut Self {
+    pub fn personal(mut self, is_personal: bool) -> Self {
         self.is_personal = Some(is_personal);
         self
     }
@@ -61,7 +61,7 @@ impl AnswerInlineQuery {
     ///
     /// Pass an empty string if there are no more results or if you don‘t support pagination
     /// Offset length can’t exceed 64 bytes
-    pub fn next_offset<S: Into<String>>(&mut self, next_offset: S) -> &mut Self {
+    pub fn next_offset<S: Into<String>>(mut self, next_offset: S) -> Self {
         self.next_offset = Some(next_offset.into());
         self
     }
@@ -69,7 +69,7 @@ impl AnswerInlineQuery {
     /// Clients will display a button with specified text that switches the user
     /// to a private chat with the bot and sends the bot a
     /// start message with the parameter switch_pm_parameter
-    pub fn switch_pm_text<S: Into<String>>(&mut self, switch_pm_text: S) -> &mut Self {
+    pub fn switch_pm_text<S: Into<String>>(mut self, switch_pm_text: S) -> Self {
         self.switch_pm_text = Some(switch_pm_text.into());
         self
     }
@@ -86,7 +86,7 @@ impl AnswerInlineQuery {
     /// passes a start parameter that instructs the bot to return an oauth link
     /// Once done, the bot can offer a switch_inline button so that the user can easily
     /// return to the chat where they wanted to use the bot's inline capabilities
-    pub fn switch_pm_parameter<S: Into<String>>(&mut self, switch_pm_parameter: S) -> &mut Self {
+    pub fn switch_pm_parameter<S: Into<String>>(mut self, switch_pm_parameter: S) -> Self {
         self.switch_pm_parameter = Some(switch_pm_parameter.into());
         self
     }

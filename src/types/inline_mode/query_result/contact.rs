@@ -53,46 +53,46 @@ impl InlineQueryResultContact {
     }
 
     /// Contact's last name
-    pub fn last_name<S: Into<String>>(&mut self, last_name: S) -> &mut Self {
+    pub fn last_name<S: Into<String>>(mut self, last_name: S) -> Self {
         self.last_name = Some(last_name.into());
         self
     }
 
     /// Additional data about the contact in the form of a vCard, 0-2048 bytes
-    pub fn vcard<S: Into<String>>(&mut self, vcard: S) -> &mut Self {
+    pub fn vcard<S: Into<String>>(mut self, vcard: S) -> Self {
         self.vcard = Some(vcard.into());
         self
     }
 
     /// Inline keyboard attached to the message
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }
 
     /// Content of the message to be sent instead of the contact
     pub fn input_message_content(
-        &mut self,
+        mut self,
         input_message_content: InputMessageContent,
-    ) -> &mut Self {
+    ) -> Self {
         self.input_message_content = Some(input_message_content);
         self
     }
 
     /// Url of the thumbnail for the result
-    pub fn thumb_url<S: Into<String>>(&mut self, thumb_url: S) -> &mut Self {
+    pub fn thumb_url<S: Into<String>>(mut self, thumb_url: S) -> Self {
         self.thumb_url = Some(thumb_url.into());
         self
     }
 
     /// Thumbnail width
-    pub fn thumb_width(&mut self, thumb_width: Integer) -> &mut Self {
+    pub fn thumb_width(mut self, thumb_width: Integer) -> Self {
         self.thumb_width = Some(thumb_width);
         self
     }
 
     /// Thumbnail height
-    pub fn thumb_height(&mut self, thumb_height: Integer) -> &mut Self {
+    pub fn thumb_height(mut self, thumb_height: Integer) -> Self {
         self.thumb_height = Some(thumb_height);
         self
     }

@@ -34,7 +34,7 @@ impl PinChatMessage {
     /// Pass True, if it is not necessary to send a notification to all chat members about the new pinned message
     ///
     /// Notifications are always disabled in channels
-    pub fn disable_notification(&mut self, disable_notification: bool) -> &mut Self {
+    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
         self.disable_notification = Some(disable_notification);
         self
     }

@@ -55,19 +55,19 @@ impl EditMessageCaption {
     }
 
     /// New caption of the message
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Inline keyboard
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }

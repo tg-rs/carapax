@@ -39,7 +39,7 @@ impl AddStickerToSet {
     }
 
     /// Position where the mask should be placed on faces
-    pub fn mask_position(&mut self, mask_position: MaskPosition) -> &mut Self {
+    pub fn mask_position(mut self, mask_position: MaskPosition) -> Self {
         self.mask_position = Some(mask_position);
         self
     }

@@ -65,7 +65,7 @@ impl InlineQueryResultVenue {
     }
 
     /// Foursquare identifier of the venue if known
-    pub fn foursquare_id<S: Into<String>>(&mut self, foursquare_id: S) -> &mut Self {
+    pub fn foursquare_id<S: Into<String>>(mut self, foursquare_id: S) -> Self {
         self.foursquare_id = Some(foursquare_id.into());
         self
     }
@@ -73,40 +73,40 @@ impl InlineQueryResultVenue {
     /// Foursquare type of the venue, if known
     ///
     /// For example, “arts_entertainment/default”, “arts_entertainment/aquarium” or “food/icecream”
-    pub fn foursquare_type<S: Into<String>>(&mut self, foursquare_type: S) -> &mut Self {
+    pub fn foursquare_type<S: Into<String>>(mut self, foursquare_type: S) -> Self {
         self.foursquare_type = Some(foursquare_type.into());
         self
     }
 
     /// Inline keyboard attached to the message
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }
 
     /// Content of the message to be sent instead of the venue
     pub fn input_message_content(
-        &mut self,
+        mut self,
         input_message_content: InputMessageContent,
-    ) -> &mut Self {
+    ) -> Self {
         self.input_message_content = Some(input_message_content);
         self
     }
 
     /// URL of the thumbnail for the result
-    pub fn thumb_url<S: Into<String>>(&mut self, thumb_url: S) -> &mut Self {
+    pub fn thumb_url<S: Into<String>>(mut self, thumb_url: S) -> Self {
         self.thumb_url = Some(thumb_url.into());
         self
     }
 
     /// Thumbnail width
-    pub fn thumb_width(&mut self, thumb_width: Integer) -> &mut Self {
+    pub fn thumb_width(mut self, thumb_width: Integer) -> Self {
         self.thumb_width = Some(thumb_width);
         self
     }
 
     /// Thumbnail height
-    pub fn thumb_height(&mut self, thumb_height: Integer) -> &mut Self {
+    pub fn thumb_height(mut self, thumb_height: Integer) -> Self {
         self.thumb_height = Some(thumb_height);
         self
     }

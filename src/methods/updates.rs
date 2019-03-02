@@ -35,7 +35,7 @@ impl GetUpdates {
     /// An update is considered confirmed as soon as getUpdates is called with an offset higher than its update_id
     /// The negative offset can be specified to retrieve updates starting from -offset update from the end of the updates queue
     /// All previous updates will forgotten
-    pub fn offset(&mut self, offset: Integer) -> &mut Self {
+    pub fn offset(mut self, offset: Integer) -> Self {
         self.offset = Some(offset);
         self
     }
@@ -44,7 +44,7 @@ impl GetUpdates {
     ///
     /// Values between 1—100 are accepted
     /// Defaults to 100
-    pub fn limit(&mut self, limit: Integer) -> &mut Self {
+    pub fn limit(mut self, limit: Integer) -> Self {
         self.limit = Some(limit);
         self
     }
@@ -53,7 +53,7 @@ impl GetUpdates {
     ///
     /// Defaults to 0, i.e. usual short polling
     /// Should be positive, short polling should be used for testing purposes only
-    pub fn timeout(&mut self, timeout: Integer) -> &mut Self {
+    pub fn timeout(mut self, timeout: Integer) -> Self {
         self.timeout = Some(timeout);
         self
     }
@@ -65,13 +65,13 @@ impl GetUpdates {
     /// If not specified, the previous setting will be used
     /// Please note that this parameter doesn't affect updates created before the call to the getUpdates,
     /// so unwanted updates may be received for a short period of time
-    pub fn allowed_updates(&mut self, allowed_updates: HashSet<AllowedUpdate>) -> &mut Self {
+    pub fn allowed_updates(mut self, allowed_updates: HashSet<AllowedUpdate>) -> Self {
         self.allowed_updates = Some(allowed_updates);
         self
     }
 
     /// Adds a type of updates you want your bot to receive
-    pub fn add_allowed_update(&mut self, allowed_update: AllowedUpdate) -> &mut Self {
+    pub fn add_allowed_update(mut self, allowed_update: AllowedUpdate) -> Self {
         match self.allowed_updates {
             Some(ref mut updates) => {
                 updates.insert(allowed_update);
@@ -123,7 +123,7 @@ impl SetWebhook {
     }
 
     /// Upload your public key certificate so that the root certificate in use can be checked
-    pub fn certificate(&mut self, certificate: String) -> &mut Self {
+    pub fn certificate(mut self, certificate: String) -> Self {
         self.certificate = Some(certificate);
         self
     }
@@ -132,7 +132,7 @@ impl SetWebhook {
     ///
     /// Defaults to 40
     /// Use lower values to limit the load on your bot‘s server, and higher values to increase your bot’s throughput
-    pub fn max_connections(&mut self, max_connections: Integer) -> &mut Self {
+    pub fn max_connections(mut self, max_connections: Integer) -> Self {
         self.max_connections = Some(max_connections);
         self
     }
@@ -146,13 +146,13 @@ impl SetWebhook {
     /// If not specified, the previous setting will be used
     /// Please note that this parameter doesn't affect updates created before the call to the setWebhook,
     /// so unwanted updates may be received for a short period of time
-    pub fn allowed_updates(&mut self, allowed_updates: HashSet<AllowedUpdate>) -> &mut Self {
+    pub fn allowed_updates(mut self, allowed_updates: HashSet<AllowedUpdate>) -> Self {
         self.allowed_updates = Some(allowed_updates);
         self
     }
 
     /// Adds a type of updates you want your bot to receive
-    pub fn add_allowed_update(&mut self, allowed_update: AllowedUpdate) -> &mut Self {
+    pub fn add_allowed_update(mut self, allowed_update: AllowedUpdate) -> Self {
         match self.allowed_updates {
             Some(ref mut updates) => {
                 updates.insert(allowed_update);

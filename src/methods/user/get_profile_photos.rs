@@ -30,7 +30,7 @@ impl GetUserProfilePhotos {
     /// Sequential number of the first photo to be returned
     ///
     /// By default, all photos are returned
-    pub fn offset(&mut self, offset: Integer) -> &mut Self {
+    pub fn offset(mut self, offset: Integer) -> Self {
         self.offset = Some(offset);
         self
     }
@@ -39,7 +39,7 @@ impl GetUserProfilePhotos {
     ///
     /// Values between 1—100 are accepted
     /// Defaults to 100
-    pub fn limit(&mut self, limit: Integer) -> &mut Self {
+    pub fn limit(mut self, limit: Integer) -> Self {
         self.limit = Some(limit);
         self
     }

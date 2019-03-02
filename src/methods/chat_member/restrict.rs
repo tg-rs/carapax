@@ -45,7 +45,7 @@ impl RestrictChatMember {
     }
 
     /// Restrict everything
-    pub fn restrict_all(&mut self) -> &mut Self {
+    pub fn restrict_all(mut self) -> Self {
         self.can_send_messages = Some(false);
         self.can_send_media_messages = Some(false);
         self.can_send_other_messages = Some(false);
@@ -54,7 +54,7 @@ impl RestrictChatMember {
     }
 
     /// Allow everything
-    pub fn allow_all(&mut self) -> &mut Self {
+    pub fn allow_all(mut self) -> Self {
         self.can_send_messages = Some(true);
         self.can_send_media_messages = Some(true);
         self.can_send_other_messages = Some(true);
@@ -66,34 +66,34 @@ impl RestrictChatMember {
     ///
     /// If user is restricted for more than 366 days or less than 30 seconds
     /// from the current time, they are considered to be restricted forever
-    pub fn until_date(&mut self, until_date: Integer) -> &mut Self {
+    pub fn until_date(mut self, until_date: Integer) -> Self {
         self.until_date = Some(until_date);
         self
     }
 
     /// Pass True, if the user can send text messages, contacts, locations and venues
-    pub fn can_send_messages(&mut self, can_send_messages: bool) -> &mut Self {
+    pub fn can_send_messages(mut self, can_send_messages: bool) -> Self {
         self.can_send_messages = Some(can_send_messages);
         self
     }
 
     /// Pass True, if the user can send audios, documents, photos,
     /// videos, video notes and voice notes, implies can_send_messages
-    pub fn can_send_media_messages(&mut self, can_send_media_messages: bool) -> &mut Self {
+    pub fn can_send_media_messages(mut self, can_send_media_messages: bool) -> Self {
         self.can_send_media_messages = Some(can_send_media_messages);
         self
     }
 
     /// Pass True, if the user can send animations, games, stickers and
     /// use inline bots, implies can_send_media_messages
-    pub fn can_send_other_messages(&mut self, can_send_other_messages: bool) -> &mut Self {
+    pub fn can_send_other_messages(mut self, can_send_other_messages: bool) -> Self {
         self.can_send_other_messages = Some(can_send_other_messages);
         self
     }
 
     /// Pass True, if the user may add web page previews to their messages,
     /// implies can_send_media_messages
-    pub fn can_add_web_page_previews(&mut self, can_add_web_page_previews: bool) -> &mut Self {
+    pub fn can_add_web_page_previews(mut self, can_add_web_page_previews: bool) -> Self {
         self.can_add_web_page_previews = Some(can_add_web_page_previews);
         self
     }

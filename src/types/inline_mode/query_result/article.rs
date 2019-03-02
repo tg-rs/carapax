@@ -53,43 +53,43 @@ impl InlineQueryResultArticle {
     }
 
     /// Inline keyboard attached to the message
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }
 
     /// URL of the result
-    pub fn url<S: Into<String>>(&mut self, url: S) -> &mut Self {
+    pub fn url<S: Into<String>>(mut self, url: S) -> Self {
         self.url = Some(url.into());
         self
     }
 
     /// Pass True, if you don't want the URL to be shown in the message
-    pub fn hide_url(&mut self, hide_url: bool) -> &mut Self {
+    pub fn hide_url(mut self, hide_url: bool) -> Self {
         self.hide_url = Some(hide_url);
         self
     }
 
     /// Short description of the result
-    pub fn description<S: Into<String>>(&mut self, description: S) -> &mut Self {
+    pub fn description<S: Into<String>>(mut self, description: S) -> Self {
         self.description = Some(description.into());
         self
     }
 
     /// Url of the thumbnail for the result
-    pub fn thumb_url<S: Into<String>>(&mut self, thumb_url: S) -> &mut Self {
+    pub fn thumb_url<S: Into<String>>(mut self, thumb_url: S) -> Self {
         self.thumb_url = Some(thumb_url.into());
         self
     }
 
     /// Thumbnail width
-    pub fn thumb_width(&mut self, thumb_width: Integer) -> &mut Self {
+    pub fn thumb_width(mut self, thumb_width: Integer) -> Self {
         self.thumb_width = Some(thumb_width);
         self
     }
 
     /// Thumbnail height
-    pub fn thumb_height(&mut self, thumb_height: Integer) -> &mut Self {
+    pub fn thumb_height(mut self, thumb_height: Integer) -> Self {
         self.thumb_height = Some(thumb_height);
         self
     }

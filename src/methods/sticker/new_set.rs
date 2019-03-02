@@ -58,13 +58,13 @@ impl CreateNewStickerSet {
     }
 
     /// Pass True, if a set of mask stickers should be created
-    pub fn contains_masks(&mut self, contains_masks: bool) -> &mut Self {
+    pub fn contains_masks(mut self, contains_masks: bool) -> Self {
         self.contains_masks = Some(contains_masks);
         self
     }
 
     /// Position where the mask should be placed on faces
-    pub fn mask_position(&mut self, mask_position: MaskPosition) -> &mut Self {
+    pub fn mask_position(mut self, mask_position: MaskPosition) -> Self {
         self.mask_position = Some(mask_position);
         self
     }

@@ -38,24 +38,24 @@ impl Dispatcher {
 
     /// Add message handler
     pub fn add_message_handler<H: MessageHandler + 'static + Send + Sync>(
-        &mut self,
+        mut self,
         handler: H,
-    ) -> &mut Self {
+    ) -> Self {
         self.message.push(Box::new(handler));
         self
     }
 
     /// Add command handler
-    pub fn add_command_handler(&mut self, handler: CommandHandler) -> &mut Self {
+    pub fn add_command_handler(mut self, handler: CommandHandler) -> Self {
         self.command.push(handler);
         self
     }
 
     /// Add inline query handler
     pub fn add_inline_query_handler<H: InlineQueryHandler + 'static + Send + Sync>(
-        &mut self,
+        mut self,
         handler: H,
-    ) -> &mut Self {
+    ) -> Self {
         self.inline_query.push(Box::new(handler));
         self
     }
@@ -64,36 +64,36 @@ impl Dispatcher {
     pub fn add_chosen_inline_result_handler<
         H: ChosenInlineResultHandler + 'static + Send + Sync,
     >(
-        &mut self,
+        mut self,
         handler: H,
-    ) -> &mut Self {
+    ) -> Self {
         self.chosen_inline_result.push(Box::new(handler));
         self
     }
 
     /// Add callback query handler
     pub fn add_callback_query_handler<H: CallbackQueryHandler + 'static + Send + Sync>(
-        &mut self,
+        mut self,
         handler: H,
-    ) -> &mut Self {
+    ) -> Self {
         self.callback_query.push(Box::new(handler));
         self
     }
 
     /// Add shipping query handler
     pub fn add_shipping_query_handler<H: ShippingQueryHandler + 'static + Send + Sync>(
-        &mut self,
+        mut self,
         handler: H,
-    ) -> &mut Self {
+    ) -> Self {
         self.shipping_query.push(Box::new(handler));
         self
     }
 
     /// Add pre checkout query handler
     pub fn add_pre_checkout_query_handler<H: PreCheckoutQueryHandler + 'static + Send + Sync>(
-        &mut self,
+        mut self,
         handler: H,
-    ) -> &mut Self {
+    ) -> Self {
         self.pre_checkout_query.push(Box::new(handler));
         self
     }

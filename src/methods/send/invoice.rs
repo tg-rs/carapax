@@ -103,7 +103,7 @@ impl SendInvoice {
     /// JSON-encoded data about the invoice, which will be shared with the payment provider
     ///
     /// A detailed description of required fields should be provided by the payment provider
-    pub fn provider_data<S: Into<String>>(&mut self, provider_data: S) -> &mut Self {
+    pub fn provider_data<S: Into<String>>(mut self, provider_data: S) -> Self {
         self.provider_data = Some(provider_data.into());
         self
     }
@@ -112,70 +112,70 @@ impl SendInvoice {
     ///
     /// Can be a photo of the goods or a marketing image for a service
     /// People like it better when they see what they are paying for
-    pub fn photo_url<S: Into<String>>(&mut self, photo_url: S) -> &mut Self {
+    pub fn photo_url<S: Into<String>>(mut self, photo_url: S) -> Self {
         self.photo_url = Some(photo_url.into());
         self
     }
 
     /// Photo size
-    pub fn photo_size(&mut self, photo_size: Integer) -> &mut Self {
+    pub fn photo_size(mut self, photo_size: Integer) -> Self {
         self.photo_size = Some(photo_size);
         self
     }
 
     /// Photo width
-    pub fn photo_width(&mut self, photo_width: Integer) -> &mut Self {
+    pub fn photo_width(mut self, photo_width: Integer) -> Self {
         self.photo_width = Some(photo_width);
         self
     }
 
     /// Photo height
-    pub fn photo_height(&mut self, photo_height: Integer) -> &mut Self {
+    pub fn photo_height(mut self, photo_height: Integer) -> Self {
         self.photo_height = Some(photo_height);
         self
     }
 
     /// Pass True, if you require the user's full name to complete the order
-    pub fn need_name(&mut self, need_name: bool) -> &mut Self {
+    pub fn need_name(mut self, need_name: bool) -> Self {
         self.need_name = Some(need_name);
         self
     }
 
     /// Pass True, if you require the user's phone number to complete the order
-    pub fn need_phone_number(&mut self, need_phone_number: bool) -> &mut Self {
+    pub fn need_phone_number(mut self, need_phone_number: bool) -> Self {
         self.need_phone_number = Some(need_phone_number);
         self
     }
 
     /// Pass True, if you require the user's email address to complete the order
-    pub fn need_email(&mut self, need_email: bool) -> &mut Self {
+    pub fn need_email(mut self, need_email: bool) -> Self {
         self.need_email = Some(need_email);
         self
     }
 
     /// Pass True, if you require the user's shipping address to complete the order
-    pub fn need_shipping_address(&mut self, need_shipping_address: bool) -> &mut Self {
+    pub fn need_shipping_address(mut self, need_shipping_address: bool) -> Self {
         self.need_shipping_address = Some(need_shipping_address);
         self
     }
 
     /// Pass True, if user's phone number should be sent to provider
     pub fn send_phone_number_to_provider(
-        &mut self,
+        mut self,
         send_phone_number_to_provider: bool,
-    ) -> &mut Self {
+    ) -> Self {
         self.send_phone_number_to_provider = Some(send_phone_number_to_provider);
         self
     }
 
     /// Pass True, if user's email address should be sent to provider
-    pub fn send_email_to_provider(&mut self, send_email_to_provider: bool) -> &mut Self {
+    pub fn send_email_to_provider(mut self, send_email_to_provider: bool) -> Self {
         self.send_email_to_provider = Some(send_email_to_provider);
         self
     }
 
     /// Pass True, if the final price depends on the shipping method
-    pub fn flexible(&mut self, is_flexible: bool) -> &mut Self {
+    pub fn flexible(mut self, is_flexible: bool) -> Self {
         self.is_flexible = Some(is_flexible);
         self
     }
@@ -183,13 +183,13 @@ impl SendInvoice {
     /// Sends the message silently
     ///
     /// Users will receive a notification with no sound
-    pub fn disable_notification(&mut self, disable_notification: bool) -> &mut Self {
+    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
         self.disable_notification = Some(disable_notification);
         self
     }
 
     /// If the message is a reply, ID of the original message
-    pub fn reply_to_message_id(&mut self, reply_to_message_id: Integer) -> &mut Self {
+    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
         self.reply_to_message_id = Some(reply_to_message_id);
         self
     }
@@ -198,7 +198,7 @@ impl SendInvoice {
     ///
     /// If empty, one 'Pay total price' button will be shown
     /// If not empty, the first button must be a Pay button
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }

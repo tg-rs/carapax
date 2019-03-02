@@ -57,52 +57,52 @@ impl InlineQueryResultGif {
     }
 
     /// Width of the GIF
-    pub fn gif_width(&mut self, gif_width: Integer) -> &mut Self {
+    pub fn gif_width(mut self, gif_width: Integer) -> Self {
         self.gif_width = Some(gif_width);
         self
     }
 
     /// Height of the GIF
-    pub fn gif_height(&mut self, gif_height: Integer) -> &mut Self {
+    pub fn gif_height(mut self, gif_height: Integer) -> Self {
         self.gif_height = Some(gif_height);
         self
     }
 
     /// Duration of the GIF
-    pub fn gif_duration(&mut self, gif_duration: Integer) -> &mut Self {
+    pub fn gif_duration(mut self, gif_duration: Integer) -> Self {
         self.gif_duration = Some(gif_duration);
         self
     }
 
     /// Title for the result
-    pub fn title<S: Into<String>>(&mut self, title: S) -> &mut Self {
+    pub fn title<S: Into<String>>(mut self, title: S) -> Self {
         self.title = Some(title.into());
         self
     }
 
     /// Caption of the GIF file to be sent, 0-1024 characters
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Inline keyboard attached to the message
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }
 
     /// Content of the message to be sent instead of the GIF animation
     pub fn input_message_content(
-        &mut self,
+        mut self,
         input_message_content: InputMessageContent,
-    ) -> &mut Self {
+    ) -> Self {
         self.input_message_content = Some(input_message_content);
         self
     }

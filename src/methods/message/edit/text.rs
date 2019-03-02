@@ -60,19 +60,19 @@ impl EditMessageText {
     }
 
     /// Parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Disables link previews for links in this message
-    pub fn disable_web_page_preview(&mut self, disable_web_page_preview: bool) -> &mut Self {
+    pub fn disable_web_page_preview(mut self, disable_web_page_preview: bool) -> Self {
         self.disable_web_page_preview = Some(disable_web_page_preview);
         self
     }
 
     /// Inline keyboard
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }

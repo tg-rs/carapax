@@ -40,13 +40,13 @@ impl SendMessage {
     }
 
     /// Sets parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Disables link previews for links in this message
-    pub fn disable_web_page_preview(&mut self, disable_web_page_preview: bool) -> &mut Self {
+    pub fn disable_web_page_preview(mut self, disable_web_page_preview: bool) -> Self {
         self.disable_web_page_preview = Some(disable_web_page_preview);
         self
     }
@@ -54,19 +54,19 @@ impl SendMessage {
     /// Sends the message silently
     ///
     /// Users will receive a notification with no sound
-    pub fn disable_notification(&mut self, disable_notification: bool) -> &mut Self {
+    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
         self.disable_notification = Some(disable_notification);
         self
     }
 
     /// If the message is a reply, ID of the original message
-    pub fn reply_to_message_id(&mut self, reply_to_message_id: Integer) -> &mut Self {
+    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
         self.reply_to_message_id = Some(reply_to_message_id);
         self
     }
 
     /// Additional interface options
-    pub fn reply_markup<R: Into<ReplyMarkup>>(&mut self, reply_markup: R) -> &mut Self {
+    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, reply_markup: R) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }

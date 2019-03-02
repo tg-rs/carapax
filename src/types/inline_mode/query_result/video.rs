@@ -64,43 +64,43 @@ impl InlineQueryResultVideo {
     }
 
     /// Caption of the video to be sent, 0-1024 characters
-    pub fn caption<S: Into<String>>(&mut self, caption: S) -> &mut Self {
+    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
         self
     }
 
     /// Parse mode
-    pub fn parse_mode(&mut self, parse_mode: ParseMode) -> &mut Self {
+    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
         self.parse_mode = Some(parse_mode);
         self
     }
 
     /// Video width
-    pub fn video_width(&mut self, video_width: Integer) -> &mut Self {
+    pub fn video_width(mut self, video_width: Integer) -> Self {
         self.video_width = Some(video_width);
         self
     }
 
     /// Video height
-    pub fn video_height(&mut self, video_height: Integer) -> &mut Self {
+    pub fn video_height(mut self, video_height: Integer) -> Self {
         self.video_height = Some(video_height);
         self
     }
 
     /// Video duration in seconds
-    pub fn video_duration(&mut self, video_duration: Integer) -> &mut Self {
+    pub fn video_duration(mut self, video_duration: Integer) -> Self {
         self.video_duration = Some(video_duration);
         self
     }
 
     /// Short description of the result
-    pub fn description<S: Into<String>>(&mut self, description: S) -> &mut Self {
+    pub fn description<S: Into<String>>(mut self, description: S) -> Self {
         self.description = Some(description.into());
         self
     }
 
     /// Inline keyboard attached to the message
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }
@@ -110,9 +110,9 @@ impl InlineQueryResultVideo {
     /// This field is required if InlineQueryResultVideo is used
     /// to send an HTML-page as a result (e.g., a YouTube video)
     pub fn input_message_content(
-        &mut self,
+        mut self,
         input_message_content: InputMessageContent,
-    ) -> &mut Self {
+    ) -> Self {
         self.input_message_content = Some(input_message_content);
         self
     }

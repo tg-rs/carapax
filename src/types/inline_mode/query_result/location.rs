@@ -53,40 +53,40 @@ impl InlineQueryResultLocation {
     }
 
     /// Period in seconds for which the location can be updated, should be between 60 and 86400
-    pub fn live_period(&mut self, live_period: Integer) -> &mut Self {
+    pub fn live_period(mut self, live_period: Integer) -> Self {
         self.live_period = Some(live_period);
         self
     }
 
     /// Inline keyboard attached to the message
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(&mut self, reply_markup: I) -> &mut Self {
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
         self.reply_markup = Some(reply_markup.into());
         self
     }
 
     /// Content of the message to be sent instead of the location
     pub fn input_message_content(
-        &mut self,
+        mut self,
         input_message_content: InputMessageContent,
-    ) -> &mut Self {
+    ) -> Self {
         self.input_message_content = Some(input_message_content);
         self
     }
 
     /// Url of the thumbnail for the result
-    pub fn thumb_url<S: Into<String>>(&mut self, thumb_url: S) -> &mut Self {
+    pub fn thumb_url<S: Into<String>>(mut self, thumb_url: S) -> Self {
         self.thumb_url = Some(thumb_url.into());
         self
     }
 
     /// Thumbnail width
-    pub fn thumb_width(&mut self, thumb_width: Integer) -> &mut Self {
+    pub fn thumb_width(mut self, thumb_width: Integer) -> Self {
         self.thumb_width = Some(thumb_width);
         self
     }
 
     /// Thumbnail height
-    pub fn thumb_height(&mut self, thumb_height: Integer) -> &mut Self {
+    pub fn thumb_height(mut self, thumb_height: Integer) -> Self {
         self.thumb_height = Some(thumb_height);
         self
     }

@@ -44,7 +44,7 @@ impl UpdatesStream {
     ///
     /// Values between 1—100 are accepted
     /// Defaults to 100
-    pub fn limit(&mut self, limit: Integer) -> &mut Self {
+    pub fn limit(mut self, limit: Integer) -> Self {
         self.limit = limit;
         self
     }
@@ -54,7 +54,7 @@ impl UpdatesStream {
     /// 0 - usual short polling
     /// Defaults to 10
     /// Should be positive, short polling should be used for testing purposes only
-    pub fn poll_timeout(&mut self, poll_timeout: Integer) -> &mut Self {
+    pub fn poll_timeout(mut self, poll_timeout: Integer) -> Self {
         self.poll_timeout = poll_timeout;
         self
     }
@@ -62,13 +62,13 @@ impl UpdatesStream {
     /// Timeout in seconds when an error has occurred
     ///
     /// Defaults to 5
-    pub fn error_timeout(&mut self, error_timeout: u64) -> &mut Self {
+    pub fn error_timeout(mut self, error_timeout: u64) -> Self {
         self.error_timeout = Duration::from_secs(error_timeout);
         self
     }
 
     /// Adds a type of updates you want your bot to receive
-    pub fn allowed_update(&mut self, allowed_update: AllowedUpdate) -> &mut Self {
+    pub fn allowed_update(mut self, allowed_update: AllowedUpdate) -> Self {
         self.allowed_updates.insert(allowed_update);
         self
     }
@@ -104,7 +104,7 @@ impl Stream for UpdatesStream {
                 self.request = Some(Box::new(
                     self.api
                         .execute(
-                            GetUpdates::default()
+                            &GetUpdates::default()
                                 .offset(self.offset + 1)
                                 .limit(self.limit)
                                 .timeout(self.poll_timeout)
