@@ -50,10 +50,10 @@ impl Dispatcher {
     }
 
     /// Add message handler
-    pub fn add_message_handler<H: MessageHandler + 'static + Send + Sync>(
-        mut self,
-        handler: H,
-    ) -> Self {
+    pub fn add_message_handler<H>(mut self, handler: H) -> Self
+    where
+        H: MessageHandler + 'static + Send + Sync,
+    {
         self.message.push(Box::new(handler));
         self
     }
@@ -65,48 +65,46 @@ impl Dispatcher {
     }
 
     /// Add inline query handler
-    pub fn add_inline_query_handler<H: InlineQueryHandler + 'static + Send + Sync>(
-        mut self,
-        handler: H,
-    ) -> Self {
+    pub fn add_inline_query_handler<H>(mut self, handler: H) -> Self
+    where
+        H: InlineQueryHandler + 'static + Send + Sync,
+    {
         self.inline_query.push(Box::new(handler));
         self
     }
 
     /// Add chosen inline result handler
-    pub fn add_chosen_inline_result_handler<
+    pub fn add_chosen_inline_result_handler<H>(mut self, handler: H) -> Self
+    where
         H: ChosenInlineResultHandler + 'static + Send + Sync,
-    >(
-        mut self,
-        handler: H,
-    ) -> Self {
+    {
         self.chosen_inline_result.push(Box::new(handler));
         self
     }
 
     /// Add callback query handler
-    pub fn add_callback_query_handler<H: CallbackQueryHandler + 'static + Send + Sync>(
-        mut self,
-        handler: H,
-    ) -> Self {
+    pub fn add_callback_query_handler<H>(mut self, handler: H) -> Self
+    where
+        H: CallbackQueryHandler + 'static + Send + Sync,
+    {
         self.callback_query.push(Box::new(handler));
         self
     }
 
     /// Add shipping query handler
-    pub fn add_shipping_query_handler<H: ShippingQueryHandler + 'static + Send + Sync>(
-        mut self,
-        handler: H,
-    ) -> Self {
+    pub fn add_shipping_query_handler<H>(mut self, handler: H) -> Self
+    where
+        H: ShippingQueryHandler + 'static + Send + Sync,
+    {
         self.shipping_query.push(Box::new(handler));
         self
     }
 
     /// Add pre checkout query handler
-    pub fn add_pre_checkout_query_handler<H: PreCheckoutQueryHandler + 'static + Send + Sync>(
-        mut self,
-        handler: H,
-    ) -> Self {
+    pub fn add_pre_checkout_query_handler<H>(mut self, handler: H) -> Self
+    where
+        H: PreCheckoutQueryHandler + 'static + Send + Sync,
+    {
         self.pre_checkout_query.push(Box::new(handler));
         self
     }

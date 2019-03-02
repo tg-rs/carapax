@@ -106,10 +106,11 @@ impl CommandHandler {
     ///
     /// - name - command name (starts with /)
     /// - handler - a message handler
-    pub fn new<S: Into<String>, H: MessageHandler + 'static + Send + Sync>(
-        name: S,
-        handler: H,
-    ) -> Self {
+    pub fn new<S, H>(name: S, handler: H) -> Self
+    where
+        S: Into<String>,
+        H: MessageHandler + 'static + Send + Sync,
+    {
         CommandHandler {
             name: name.into(),
             handler: Box::new(handler),
