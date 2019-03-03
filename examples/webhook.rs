@@ -4,7 +4,7 @@ use log;
 use std::env;
 use tgbot::dispatcher::{Dispatcher, HandlerFuture, HandlerResult, MessageHandler};
 use tgbot::types::Message;
-use tgbot::webhook::{self, WebhookDispatcher};
+use tgbot::webhook;
 use tgbot::Api;
 
 struct Handler;
@@ -28,6 +28,5 @@ fn main() {
     }
     .expect("Failed to create API");
     let dispatcher = Dispatcher::new(api.clone()).add_message_handler(Handler);
-    let update_handler = WebhookDispatcher::new(dispatcher);
-    webhook::run_server(([127, 0, 0, 1], 8080), "/", update_handler);
+    webhook::run_server(([127, 0, 0, 1], 8080), "/", dispatcher);
 }

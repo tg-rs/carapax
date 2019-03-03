@@ -9,22 +9,18 @@ use hyper::{
 use std::error::Error as StdError;
 use std::fmt;
 use std::net::SocketAddr;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 struct WebhookServiceFactory {
     path: String,
-    update_handler: Arc<Mutex<Box<UpdateHandler + Send + Sync>>>,
+    dispatcher: Arc<Mutex<Dispatcher>>,
 }
 
 impl WebhookServiceFactory {
-    fn new<S: Into<String>>(
-        path: S,
-        update_handler: Box<UpdateHandler + Send + Sync>,
-    ) -> WebhookServiceFactory {
+    fn new<S: Into<String>>(path: S, dispatcher: Dispatcher) -> WebhookServiceFactory {
         WebhookServiceFactory {
             path: path.into(),
-            update_handler: Arc::new(Mutex::new(update_handler)),
+            dispatcher: Arc::new(Mutex::new(dispatcher)),
         }
     }
 }
@@ -51,14 +47,14 @@ impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
     fn make_service(&mut self, _ctx: Ctx) -> Self::Future {
         Box::new(ok(WebhookService {
             path: self.path.clone(),
-            update_handler: self.update_handler.clone(),
+            dispatcher: self.dispatcher.clone(),
         }))
     }
 }
 
 struct WebhookService {
     path: String,
-    update_handler: Arc<Mutex<Box<UpdateHandler + Send + Sync>>>,
+    dispatcher: Arc<Mutex<Dispatcher>>,
 }
 
 impl Service for WebhookService {
@@ -71,11 +67,16 @@ impl Service for WebhookService {
         let mut rep = Response::new(Body::empty());
         if let Method::POST = *req.method() {
             if req.uri().path() == self.path {
-                let update_handler = self.update_handler.clone();
+                let dispatcher = self.dispatcher.clone();
                 return Box::new(req.into_body().concat2().map(move |body| {
                     match serde_json::from_slice::<Update>(&body) {
                         Ok(update) => {
-                            update_handler.lock().unwrap().handle(update);
+                            tokio::spawn(dispatcher.lock().unwrap().dispatch(&update).then(|r| {
+                                if let Err(e) = r {
+                                    log::error!("Failed to dispatch update: {:?}", e)
+                                }
+                                Ok(())
+                            }));
                         }
                         Err(err) => {
                             *rep.status_mut() = StatusCode::BAD_REQUEST;
@@ -96,50 +97,20 @@ impl Service for WebhookService {
     }
 }
 
-/// A webhook update handler
-pub trait UpdateHandler {
-    /// Handles an update
-    fn handle(&mut self, update: Update);
-}
-
-/// Handles update from webhook using dispatcher
-pub struct WebhookDispatcher {
-    dispatcher: Dispatcher,
-}
-
-impl WebhookDispatcher {
-    /// Creates a handler
-    pub fn new(dispatcher: Dispatcher) -> WebhookDispatcher {
-        WebhookDispatcher { dispatcher }
-    }
-}
-
-impl UpdateHandler for WebhookDispatcher {
-    fn handle(&mut self, update: Update) {
-        tokio::spawn(self.dispatcher.dispatch(&update).then(|r| {
-            if let Err(e) = r {
-                log::error!("Failed to dispatch update: {:?}", e)
-            }
-            Ok(())
-        }));
-    }
-}
-
 /// Starts a HTTP server for webhooks
 ///
 /// # Arguments
 ///
 /// - addr - Bind address
 /// - path - URL path for webhook
-/// - update_handler - An Update handler
-pub fn run_server<A, S, H>(addr: A, path: S, update_handler: H)
+/// - dispatcher - A dispatcher
+pub fn run_server<A, S>(addr: A, path: S, dispatcher: Dispatcher)
 where
     A: Into<SocketAddr>,
     S: Into<String>,
-    H: UpdateHandler + Send + Sync + 'static,
 {
     let server = Server::bind(&addr.into())
-        .serve(WebhookServiceFactory::new(path, Box::new(update_handler)))
+        .serve(WebhookServiceFactory::new(path, dispatcher))
         .map_err(|e| log::error!("Server error: {}", e));
     tokio::run(server)
 }
