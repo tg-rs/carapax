@@ -10,7 +10,7 @@ use tgbot::Api;
 struct Handler;
 
 impl MessageHandler for Handler {
-    fn handle(&self, _api: &Api, message: &Message) -> HandlerFuture {
+    fn handle(&mut self, _api: &Api, message: &Message) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
         HandlerResult::Continue.into()
     }

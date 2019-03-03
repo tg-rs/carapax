@@ -10,10 +10,11 @@ use std::error::Error as StdError;
 use std::fmt;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 struct WebhookServiceFactory {
     path: String,
-    update_handler: Arc<Box<UpdateHandler + Send + Sync>>,
+    update_handler: Arc<Mutex<Box<UpdateHandler + Send + Sync>>>,
 }
 
 impl WebhookServiceFactory {
@@ -23,7 +24,7 @@ impl WebhookServiceFactory {
     ) -> WebhookServiceFactory {
         WebhookServiceFactory {
             path: path.into(),
-            update_handler: Arc::new(update_handler),
+            update_handler: Arc::new(Mutex::new(update_handler)),
         }
     }
 }
@@ -57,7 +58,7 @@ impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
 
 struct WebhookService {
     path: String,
-    update_handler: Arc<Box<UpdateHandler + Send + Sync>>,
+    update_handler: Arc<Mutex<Box<UpdateHandler + Send + Sync>>>,
 }
 
 impl Service for WebhookService {
@@ -74,7 +75,7 @@ impl Service for WebhookService {
                 return Box::new(req.into_body().concat2().map(move |body| {
                     match serde_json::from_slice::<Update>(&body) {
                         Ok(update) => {
-                            update_handler.handle(update);
+                            update_handler.lock().unwrap().handle(update);
                         }
                         Err(err) => {
                             *rep.status_mut() = StatusCode::BAD_REQUEST;
@@ -98,7 +99,7 @@ impl Service for WebhookService {
 /// A webhook update handler
 pub trait UpdateHandler {
     /// Handles an update
-    fn handle(&self, update: Update);
+    fn handle(&mut self, update: Update);
 }
 
 /// Handles update from webhook using dispatcher
@@ -114,7 +115,7 @@ impl WebhookDispatcher {
 }
 
 impl UpdateHandler for WebhookDispatcher {
-    fn handle(&self, update: Update) {
+    fn handle(&mut self, update: Update) {
         tokio::spawn(self.dispatcher.dispatch(&update).then(|r| {
             if let Err(e) = r {
                 log::error!("Failed to dispatch update: {:?}", e)

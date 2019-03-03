@@ -90,7 +90,7 @@ impl Future for IterHandlerFuture {
 /// A regular message handler
 pub trait MessageHandler {
     /// Handles a message
-    fn handle(&self, api: &Api, message: &Message) -> HandlerFuture;
+    fn handle(&mut self, api: &Api, message: &Message) -> HandlerFuture;
 }
 
 /// A command handler
@@ -123,7 +123,7 @@ impl CommandHandler {
 }
 
 impl MessageHandler for CommandHandler {
-    fn handle(&self, api: &Api, message: &Message) -> HandlerFuture {
+    fn handle(&mut self, api: &Api, message: &Message) -> HandlerFuture {
         self.handler.handle(api, message)
     }
 }
@@ -131,29 +131,29 @@ impl MessageHandler for CommandHandler {
 /// An inline query handler
 pub trait InlineQueryHandler {
     /// Handles a query
-    fn handle(&self, api: &Api, query: &InlineQuery) -> HandlerFuture;
+    fn handle(&mut self, api: &Api, query: &InlineQuery) -> HandlerFuture;
 }
 
 /// A chosen inline result handler
 pub trait ChosenInlineResultHandler {
     /// Handles a result
-    fn handle(&self, api: &Api, result: &ChosenInlineResult) -> HandlerFuture;
+    fn handle(&mut self, api: &Api, result: &ChosenInlineResult) -> HandlerFuture;
 }
 
 /// A callback query handler
 pub trait CallbackQueryHandler {
     /// Handles a query
-    fn handle(&self, api: &Api, query: &CallbackQuery) -> HandlerFuture;
+    fn handle(&mut self, api: &Api, query: &CallbackQuery) -> HandlerFuture;
 }
 
 /// A shipping query handler
 pub trait ShippingQueryHandler {
     /// Handles a query
-    fn handle(&self, api: &Api, query: &ShippingQuery) -> HandlerFuture;
+    fn handle(&mut self, api: &Api, query: &ShippingQuery) -> HandlerFuture;
 }
 
 /// A pre checkout query handler
 pub trait PreCheckoutQueryHandler {
     /// Handles a query
-    fn handle(&self, api: &Api, query: &PreCheckoutQuery) -> HandlerFuture;
+    fn handle(&mut self, api: &Api, query: &PreCheckoutQuery) -> HandlerFuture;
 }

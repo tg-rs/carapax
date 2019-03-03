@@ -110,78 +110,63 @@ impl Dispatcher {
     }
 
     /// Dispatch an update
-    pub fn dispatch(&self, update: &Update) -> DispatcherFuture {
-        let before = IterMiddlewareFuture::new(
-            self.middleware
-                .iter()
-                .map(|h| h.before(&self.api, &update))
-                .collect(),
-        );
+    pub fn dispatch(&mut self, update: &Update) -> DispatcherFuture {
+        // Use 'for' loop instead of iterators to avoid "cannot borrow self as mutable twice"
+        macro_rules! collect {
+            ($vec:ident, $func:ident, $var:expr) => {{
+                let mut futures = vec![];
+                for h in &mut self.$vec {
+                    futures.push(h.$func(&self.api, $var))
+                }
+                futures
+            }};
+            ($vec:ident, $data:expr) => {
+                collect!($vec, handle, $data)
+            };
+            ($name:ident) => {
+                collect!($name, $name)
+            };
+        }
+
+        let before = IterMiddlewareFuture::new(collect!(middleware, before, &update));
         let main = IterHandlerFuture::new(match update.kind {
             UpdateKind::Message(ref msg)
             | UpdateKind::EditedMessage(ref msg)
             | UpdateKind::ChannelPost(ref msg)
             | UpdateKind::EditedChannelPost(ref msg) => match msg.get_commands() {
-                Some(commands) => self
-                    .command
-                    .iter()
-                    .filter_map(|h| {
+                Some(commands) => {
+                    let mut futures = vec![];
+                    for handler in &mut self.command {
                         for command in &commands {
-                            if h.accepts(command) {
-                                return Some(h.handle(&self.api, &msg));
+                            if handler.accepts(command) {
+                                futures.push(handler.handle(&self.api, &msg));
                             }
                         }
-                        None
-                    })
-                    .collect(),
-                None => self
-                    .message
-                    .iter()
-                    .map(|h| h.handle(&self.api, &msg))
-                    .collect(),
+                    }
+                    futures
+                }
+                None => collect!(message, &msg),
             },
-            UpdateKind::InlineQuery(ref inline_query) => self
-                .inline_query
-                .iter()
-                .map(|h| h.handle(&self.api, inline_query))
-                .collect(),
-            UpdateKind::ChosenInlineResult(ref chosen_inline_result) => self
-                .chosen_inline_result
-                .iter()
-                .map(|h| h.handle(&self.api, chosen_inline_result))
-                .collect(),
-            UpdateKind::CallbackQuery(ref callback_query) => self
-                .callback_query
-                .iter()
-                .map(|h| h.handle(&self.api, callback_query))
-                .collect(),
-            UpdateKind::ShippingQuery(ref shipping_query) => self
-                .shipping_query
-                .iter()
-                .map(|h| h.handle(&self.api, shipping_query))
-                .collect(),
-            UpdateKind::PreCheckoutQuery(ref pre_checkout_query) => self
-                .pre_checkout_query
-                .iter()
-                .map(|h| h.handle(&self.api, pre_checkout_query))
-                .collect(),
+            UpdateKind::InlineQuery(ref inline_query) => collect!(inline_query),
+            UpdateKind::ChosenInlineResult(ref chosen_inline_result) => {
+                collect!(chosen_inline_result)
+            }
+            UpdateKind::CallbackQuery(ref callback_query) => collect!(callback_query),
+            UpdateKind::ShippingQuery(ref shipping_query) => collect!(shipping_query),
+            UpdateKind::PreCheckoutQuery(ref pre_checkout_query) => collect!(pre_checkout_query),
         });
-        let after = IterMiddlewareFuture::new(
-            self.middleware
-                .iter()
-                .map(|h| h.after(&self.api, &update))
-                .collect(),
-        );
+        let after = IterMiddlewareFuture::new(collect!(middleware, after, &update));
         DispatcherFuture::new(before, main, after)
     }
 
     /// Spawns a polling stream
-    pub fn start_polling(self) {
+    pub fn start_polling(mut self) {
         tokio::run(future::lazy(move || {
             self.api
                 .get_updates()
                 .for_each(move |update| {
-                    self.api.spawn(self.dispatch(&update));
+                    let fut = self.dispatch(&update);
+                    self.api.spawn(fut);
                     Ok(())
                 })
                 .then(|r| {
