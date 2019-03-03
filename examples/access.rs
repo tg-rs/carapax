@@ -3,6 +3,7 @@ use env_logger;
 use futures::Future;
 use log;
 use std::env;
+use tgbot::access::{AccessRule, InMemoryAccessPolicy, Principal};
 use tgbot::dispatcher::middleware::AccessMiddleware;
 use tgbot::dispatcher::{Dispatcher, HandlerFuture, HandlerResult, MessageHandler};
 use tgbot::methods::SendMessage;
@@ -32,16 +33,20 @@ fn main() {
 
     let token = env::var("TGBOT_TOKEN").expect("TGBOT_TOKEN is not set");
     let proxy = env::var("TGBOT_PROXY").ok();
-    let allowed_user_id =
+    let allowed_username =
         env::var("TGBOT_ALLOWED_USERNAME").expect("TGBOT_ALLOWED_USERNAME is not set");
     let api = match proxy {
         Some(proxy) => Api::with_proxy(token, &proxy),
         None => Api::create(token),
     }
     .expect("Failed to create API");
+
+    // Deny from all except for allowed_username
+    let rule = AccessRule::allow(Principal::username(allowed_username));
+    let policy = InMemoryAccessPolicy::default().push_rule(rule);
+
     Dispatcher::new(api.clone())
-        // Deny from all except for allowed_user_id
-        .add_middleware(AccessMiddleware::default().allow_username(allowed_user_id))
+        .add_middleware(AccessMiddleware::new(policy))
         .add_message_handler(Handler)
         .start_polling();
 }

@@ -10,6 +10,9 @@ mod api;
 mod executor;
 mod poll;
 
+/// Access rules and policies
+pub mod access;
+
 /// Updates dispatcher
 pub mod dispatcher;
 
