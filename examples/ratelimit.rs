@@ -13,7 +13,7 @@ use tgbot::{nonzero, Api};
 struct Handler;
 
 impl MessageHandler for Handler {
-    fn handle(&self, api: &Api, message: &Message) -> HandlerFuture {
+    fn handle(&mut self, api: &Api, message: &Message) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
         if let Some(text) = message.get_text() {
             let chat_id = message.get_chat_id();

@@ -93,12 +93,12 @@ impl Future for IterMiddlewareFuture {
 /// Middleware handler
 pub trait Middleware {
     /// Called before all handlers
-    fn before(&self, _api: &Api, _update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _api: &Api, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 
     /// Called after all handlers
-    fn after(&self, _api: &Api, _update: &Update) -> MiddlewareFuture {
+    fn after(&mut self, _api: &Api, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 }
@@ -145,7 +145,7 @@ impl RateLimitMiddleware {
 }
 
 impl Middleware for RateLimitMiddleware {
-    fn before(&self, _api: &Api, update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _api: &Api, update: &Update) -> MiddlewareFuture {
         let should_pass = match *self.rate_limiter.lock().unwrap() {
             RateLimiter::Direct(ref mut limiter) => limiter.check().is_ok(),
             RateLimiter::Keyed {

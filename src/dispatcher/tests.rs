@@ -19,37 +19,37 @@ impl Default for MockHandler {
 }
 
 impl MessageHandler for MockHandler {
-    fn handle(&self, _api: &Api, _message: &Message) -> HandlerFuture {
+    fn handle(&mut self, _api: &Api, _message: &Message) -> HandlerFuture {
         self.result.into()
     }
 }
 
 impl InlineQueryHandler for MockHandler {
-    fn handle(&self, _api: &Api, _query: &InlineQuery) -> HandlerFuture {
+    fn handle(&mut self, _api: &Api, _query: &InlineQuery) -> HandlerFuture {
         self.result.into()
     }
 }
 
 impl ChosenInlineResultHandler for MockHandler {
-    fn handle(&self, _api: &Api, _result: &ChosenInlineResult) -> HandlerFuture {
+    fn handle(&mut self, _api: &Api, _result: &ChosenInlineResult) -> HandlerFuture {
         self.result.into()
     }
 }
 
 impl CallbackQueryHandler for MockHandler {
-    fn handle(&self, _api: &Api, _query: &CallbackQuery) -> HandlerFuture {
+    fn handle(&mut self, _api: &Api, _query: &CallbackQuery) -> HandlerFuture {
         self.result.into()
     }
 }
 
 impl ShippingQueryHandler for MockHandler {
-    fn handle(&self, _api: &Api, _query: &ShippingQuery) -> HandlerFuture {
+    fn handle(&mut self, _api: &Api, _query: &ShippingQuery) -> HandlerFuture {
         self.result.into()
     }
 }
 
 impl PreCheckoutQueryHandler for MockHandler {
-    fn handle(&self, _api: &Api, _query: &PreCheckoutQuery) -> HandlerFuture {
+    fn handle(&mut self, _api: &Api, _query: &PreCheckoutQuery) -> HandlerFuture {
         self.result.into()
     }
 }
@@ -68,7 +68,7 @@ fn get_dispatch_result(f: DispatcherFuture) -> usize {
 
 #[test]
 fn test_dispatch_message() {
-    let dispatcher = create_dispatcher().add_message_handler(MockHandler::default());
+    let mut dispatcher = create_dispatcher().add_message_handler(MockHandler::default());
     for data in &[
         r#"{
             "update_id": 1,
@@ -120,7 +120,7 @@ fn test_dispatch_message() {
 #[test]
 fn test_dispatch_command() {
     let handler = CommandHandler::new("/testcommand", MockHandler::default());
-    let dispatcher = create_dispatcher().add_command_handler(handler);
+    let mut dispatcher = create_dispatcher().add_command_handler(handler);
     for data in &[
         r#"{
             "update_id": 1,
@@ -201,7 +201,7 @@ fn test_dispatch_command() {
 
 #[test]
 fn test_dispatch_inline_query() {
-    let dispatcher = create_dispatcher().add_inline_query_handler(MockHandler::default());
+    let mut dispatcher = create_dispatcher().add_inline_query_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -220,7 +220,8 @@ fn test_dispatch_inline_query() {
 
 #[test]
 fn test_dispatch_chosen_inline_result() {
-    let dispatcher = create_dispatcher().add_chosen_inline_result_handler(MockHandler::default());
+    let mut dispatcher =
+        create_dispatcher().add_chosen_inline_result_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -238,7 +239,7 @@ fn test_dispatch_chosen_inline_result() {
 
 #[test]
 fn test_dispatch_callback_query() {
-    let dispatcher = create_dispatcher().add_callback_query_handler(MockHandler::default());
+    let mut dispatcher = create_dispatcher().add_callback_query_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -255,7 +256,7 @@ fn test_dispatch_callback_query() {
 
 #[test]
 fn test_dispatch_shipping_query() {
-    let dispatcher = create_dispatcher().add_shipping_query_handler(MockHandler::default());
+    let mut dispatcher = create_dispatcher().add_shipping_query_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -281,7 +282,7 @@ fn test_dispatch_shipping_query() {
 
 #[test]
 fn test_dispatch_pre_checkout_query() {
-    let dispatcher = create_dispatcher().add_pre_checkout_query_handler(MockHandler::default());
+    let mut dispatcher = create_dispatcher().add_pre_checkout_query_handler(MockHandler::default());
     let update = parse_update(
         r#"
         {
@@ -333,11 +334,11 @@ struct MockMiddleware {
 }
 
 impl Middleware for MockMiddleware {
-    fn before(&self, _api: &Api, _update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _api: &Api, _update: &Update) -> MiddlewareFuture {
         self.before_result.into()
     }
 
-    fn after(&self, _api: &Api, _update: &Update) -> MiddlewareFuture {
+    fn after(&mut self, _api: &Api, _update: &Update) -> MiddlewareFuture {
         self.after_result.into()
     }
 }
@@ -357,7 +358,7 @@ fn test_middleware() {
         }"#,
     );
 
-    let dispatcher = create_dispatcher()
+    let mut dispatcher = create_dispatcher()
         .add_middleware(MockMiddleware {
             before_result: MiddlewareResult::Continue,
             after_result: MiddlewareResult::Continue,
@@ -380,7 +381,7 @@ fn test_middleware() {
     let f = dispatcher.dispatch(&update);
     assert_eq!(get_dispatch_result(f), 5);
 
-    let dispatcher = create_dispatcher()
+    let mut dispatcher = create_dispatcher()
         .add_middleware(MockMiddleware {
             before_result: MiddlewareResult::Continue,
             after_result: MiddlewareResult::Stop,
