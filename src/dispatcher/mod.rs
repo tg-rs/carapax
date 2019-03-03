@@ -1,7 +1,7 @@
 use crate::api::Api;
 use crate::types::{Update, UpdateKind};
 use failure::Error;
-use futures::{future, Async, Future, Poll, Stream};
+use futures::{future, task, Async, Future, Poll, Stream};
 
 mod handler;
 mod middleware;
@@ -231,32 +231,45 @@ impl Future for DispatcherFuture {
             Before => match self.before.poll() {
                 Ok(Async::Ready((MiddlewareResult::Continue, num))) => {
                     self.state = Main(num);
+                    task::current().notify();
                     Ok(Async::NotReady)
                 }
                 Ok(Async::Ready((MiddlewareResult::Stop, num))) => {
                     self.state = After(num);
+                    task::current().notify();
                     Ok(Async::NotReady)
                 }
-                Ok(Async::NotReady) => Ok(Async::NotReady),
+                Ok(Async::NotReady) => {
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
                 Err(err) => Err(err),
             },
             Main(before_num) => match self.main.poll() {
                 Ok(Async::Ready(num)) => {
                     self.state = After(before_num + num);
+                    task::current().notify();
                     Ok(Async::NotReady)
                 }
-                Ok(Async::NotReady) => Ok(Async::NotReady),
+                Ok(Async::NotReady) => {
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
                 Err(err) => Err(err),
             },
             After(total_num) => match self.after.poll() {
                 Ok(Async::Ready((_, num))) => Ok(Async::Ready(total_num + num)),
-                Ok(Async::NotReady) => Ok(Async::NotReady),
+                Ok(Async::NotReady) => {
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
                 Err(err) => Err(err),
             },
         }
     }
 }
 
+#[derive(Debug)]
 enum DispatcherFutureState {
     Before,
     Main(usize),

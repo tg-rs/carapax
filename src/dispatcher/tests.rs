@@ -4,7 +4,7 @@ use crate::types::{
     CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery,
     Update,
 };
-use futures::Future;
+use tokio::runtime::current_thread::block_on_all;
 
 struct MockHandler {
     result: HandlerResult,
@@ -62,14 +62,8 @@ fn parse_update(data: &str) -> Update {
     serde_json::from_str(data).unwrap()
 }
 
-fn get_dispatch_result(mut f: DispatcherFuture) -> usize {
-    loop {
-        match f.poll() {
-            Ok(Async::NotReady) => continue,
-            Ok(Async::Ready(num)) => return num,
-            Err(err) => panic!("Got a error in dispatcher future: {:?}", err),
-        }
-    }
+fn get_dispatch_result(f: DispatcherFuture) -> usize {
+    block_on_all(f).unwrap()
 }
 
 #[test]
