@@ -42,6 +42,11 @@ pub struct Message {
 }
 
 impl Message {
+    /// Returns true if message has edited and false otherwise
+    pub fn has_edited(&self) -> bool {
+        self.edit_date.is_some()
+    }
+
     /// Returns ID of the chat
     pub fn get_chat_id(&self) -> Integer {
         match self.kind {

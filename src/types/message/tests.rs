@@ -19,6 +19,7 @@ fn test_deserialize_message_channel() {
     assert_eq!(msg.date, 0);
     assert_eq!(msg.get_chat_id(), 1);
     assert!(msg.get_user().is_none());
+    assert!(!msg.has_edited());
     if let MessageKind::Channel {
         chat: ChannelChat { id, title, .. },
         author_signature,
@@ -54,7 +55,8 @@ fn test_deserialize_message_group() {
             "title": "grouptitle",
             "all_members_are_administrators": true
         },
-        "text": "test"
+        "text": "test",
+        "edit_date": 1
     }"#;
     let msg: Message = serde_json::from_str(input).unwrap();
     assert_eq!(msg.id, 1);
@@ -62,6 +64,7 @@ fn test_deserialize_message_group() {
     assert_eq!(msg.get_chat_id(), 1);
     assert_eq!(msg.get_user().map(|u| u.id), Some(1));
     assert_eq!(msg.get_text().map(|t| t.data.as_str()), Some("test"));
+    assert!(msg.has_edited());
     if let MessageKind::Group { chat, from } = msg.kind {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, "grouptitle");
