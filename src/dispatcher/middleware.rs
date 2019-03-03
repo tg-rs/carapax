@@ -105,7 +105,7 @@ pub trait Middleware {
 
 /// Limits number of updates per time
 pub struct RateLimitMiddleware {
-    rate_limiter: Arc<Mutex<RateLimiter>>,
+    rate_limiter: RateLimiter,
 }
 
 impl RateLimitMiddleware {
@@ -117,10 +117,10 @@ impl RateLimitMiddleware {
     /// - seconds - Duration in seconds
     pub fn direct(capacity: NonZeroU32, seconds: u64) -> Self {
         RateLimitMiddleware {
-            rate_limiter: Arc::new(Mutex::new(RateLimiter::Direct(DirectRateLimiter::new(
+            rate_limiter: RateLimiter::Direct(DirectRateLimiter::new(
                 capacity,
                 Duration::from_secs(seconds),
-            )))),
+            )),
         }
     }
 
@@ -135,24 +135,28 @@ impl RateLimitMiddleware {
     ///                (got an update from channel or inline query, etc...)
     pub fn keyed(key: RateLimitKey, capacity: NonZeroU32, seconds: u64, on_missing: bool) -> Self {
         RateLimitMiddleware {
-            rate_limiter: Arc::new(Mutex::new(RateLimiter::Keyed {
-                limiter: KeyedRateLimiter::new(capacity, Duration::from_secs(seconds)),
+            rate_limiter: RateLimiter::Keyed {
+                limiter: Arc::new(Mutex::new(KeyedRateLimiter::new(
+                    capacity,
+                    Duration::from_secs(seconds),
+                ))),
                 on_missing,
                 key,
-            })),
+            },
         }
     }
 }
 
 impl Middleware for RateLimitMiddleware {
     fn before(&mut self, _api: &Api, update: &Update) -> MiddlewareFuture {
-        let should_pass = match *self.rate_limiter.lock().unwrap() {
+        let should_pass = match self.rate_limiter {
             RateLimiter::Direct(ref mut limiter) => limiter.check().is_ok(),
             RateLimiter::Keyed {
-                ref mut limiter,
+                ref limiter,
                 key,
                 on_missing,
             } => {
+                let mut limiter = limiter.lock().unwrap();
                 let val = match key {
                     RateLimitKey::Chat => update.get_chat_id(),
                     RateLimitKey::User => update.get_user().map(|u| u.id),
@@ -176,7 +180,7 @@ impl Middleware for RateLimitMiddleware {
 enum RateLimiter {
     Direct(DirectRateLimiter<GCRA>),
     Keyed {
-        limiter: KeyedRateLimiter<Integer, GCRA>,
+        limiter: Arc<Mutex<KeyedRateLimiter<Integer, GCRA>>>,
         key: RateLimitKey,
         on_missing: bool,
     },
