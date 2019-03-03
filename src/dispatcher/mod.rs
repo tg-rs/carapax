@@ -1,15 +1,18 @@
+use self::middleware::{IterMiddlewareFuture, Middleware, MiddlewareResult};
 use crate::api::Api;
 use crate::types::{Update, UpdateKind};
 use failure::Error;
 use futures::{future, task, Async, Future, Poll, Stream};
 
 mod handler;
-mod middleware;
+
+/// Dispatcher middlewares
+pub mod middleware;
+
 #[cfg(test)]
 mod tests;
 
 pub use self::handler::*;
-pub use self::middleware::*;
 
 /// Dispatcher
 pub struct Dispatcher {

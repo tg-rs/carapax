@@ -3,9 +3,8 @@ use env_logger;
 use futures::Future;
 use log;
 use std::env;
-use tgbot::dispatcher::{
-    AccessMiddleware, Dispatcher, HandlerFuture, HandlerResult, MessageHandler,
-};
+use tgbot::dispatcher::middleware::AccessMiddleware;
+use tgbot::dispatcher::{Dispatcher, HandlerFuture, HandlerResult, MessageHandler};
 use tgbot::methods::SendMessage;
 use tgbot::types::Message;
 use tgbot::Api;
