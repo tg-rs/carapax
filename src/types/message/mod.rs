@@ -57,6 +57,20 @@ impl Message {
         }
     }
 
+    /// Returns username of the chat
+    pub fn get_chat_username(&self) -> Option<&str> {
+        if let Some(ref username) = match self.kind {
+            MessageKind::Private { ref chat, .. } => &chat.username,
+            MessageKind::Channel { ref chat, .. } => &chat.username,
+            MessageKind::Supergroup { ref chat, .. } => &chat.username,
+            _ => &None,
+        } {
+            Some(username.as_str())
+        } else {
+            None
+        }
+    }
+
     /// Returns author of the message
     pub fn get_user(&self) -> Option<&User> {
         match self.kind {

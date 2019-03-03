@@ -150,7 +150,8 @@ fn test_deserialize_message_supergroup() {
         "chat": {
             "id": 1,
             "type": "supergroup",
-            "title": "supergrouptitle"
+            "title": "supergrouptitle",
+            "username": "supergroupusername"
         },
         "text": "test"
     }"#;
@@ -158,6 +159,7 @@ fn test_deserialize_message_supergroup() {
     assert_eq!(msg.id, 1);
     assert_eq!(msg.date, 0);
     assert_eq!(msg.get_chat_id(), 1);
+    assert_eq!(msg.get_chat_username().unwrap(), "supergroupusername");
     assert_eq!(msg.get_user().map(|u| u.id), Some(1));
     assert_eq!(msg.get_text().map(|t| t.data.as_str()), Some("test"));
     if let MessageKind::Supergroup { chat, from } = msg.kind {

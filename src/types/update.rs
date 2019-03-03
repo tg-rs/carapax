@@ -33,6 +33,17 @@ impl Update {
         }
     }
 
+    /// Returns a chat username from update
+    pub fn get_chat_username(&self) -> Option<&str> {
+        match self.kind {
+            UpdateKind::Message(ref msg)
+            | UpdateKind::EditedMessage(ref msg)
+            | UpdateKind::ChannelPost(ref msg)
+            | UpdateKind::EditedChannelPost(ref msg) => msg.get_chat_username(),
+            _ => None,
+        }
+    }
+
     /// Returns a user ID from update
     pub fn get_user(&self) -> Option<&User> {
         Some(match self.kind {
