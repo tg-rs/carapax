@@ -5,14 +5,13 @@ use failure::Error;
 use futures::{future, task, Async, Future, Poll, Stream};
 
 mod handler;
-
-/// Dispatcher middlewares
-pub mod middleware;
+mod middleware;
 
 #[cfg(test)]
 mod tests;
 
 pub use self::handler::*;
+pub use self::middleware::*;
 
 /// Dispatcher
 pub struct Dispatcher {
