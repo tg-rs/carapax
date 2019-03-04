@@ -7,10 +7,10 @@ edition = "2018"
 readme = "README.md"
 license = "MIT"
 documentation = "https://docs.rs/tgbot"
-repository = "https://github.com/rossnomann/tgbot"
+repository = "https://github.com/tg-rs/tgbot"
 
 [badges]
-travis-ci = { repository = "rossnomann/tgbot", branch = "master" }
+travis-ci = { repository = "tg-rs/tgbot", branch = "master" }
 
 [dependencies]
 derive_more = "0.14"

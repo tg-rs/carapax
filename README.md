@@ -2,7 +2,7 @@
 
 A Telegram Bot library
 
-[![Travis](https://img.shields.io/travis/rossnomann/tgbot.svg?style=flat-square)](https://travis-ci.org/rossnomann/tgbot)
+[![Travis](https://img.shields.io/travis/tg-rs/tgbot.svg?style=flat-square)](https://travis-ci.org/tg-rs/tgbot)
 [![Version](https://img.shields.io/crates/v/tgbot.svg?style=flat-square)](https://crates.io/crates/tgbot)
 [![Downloads](https://img.shields.io/crates/d/tgbot.svg?style=flat-square)](https://crates.io/crates/tgbot)
 [![Documentation](https://img.shields.io/badge/docs-API-brightgreen.svg?style=flat-square)](https://docs.rs/tgbot/)
