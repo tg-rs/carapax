@@ -3,10 +3,6 @@ use crate::types::Update;
 use failure::Error;
 use futures::{future, Async, Future, Poll};
 
-mod ratelimit;
-
-pub use self::ratelimit::*;
-
 /// Result of a middleware
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub enum MiddlewareResult {
