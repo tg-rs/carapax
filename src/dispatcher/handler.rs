@@ -5,6 +5,7 @@ use crate::types::{
 };
 use failure::Error;
 use futures::{future, Async, Future, Poll};
+use std::error::Error as StdError;
 
 /// Result of a handler
 #[derive(Copy, Clone, Debug)]
@@ -38,6 +39,15 @@ impl HandlerFuture {
 impl From<HandlerResult> for HandlerFuture {
     fn from(result: HandlerResult) -> HandlerFuture {
         HandlerFuture::new(future::ok(result))
+    }
+}
+
+impl<E> From<Result<HandlerResult, E>> for HandlerFuture
+where
+    E: StdError + Sync + Send + 'static,
+{
+    fn from(result: Result<HandlerResult, E>) -> Self {
+        HandlerFuture::new(future::result(result.map_err(Error::from)))
     }
 }
 
@@ -87,11 +97,27 @@ impl Future for IterHandlerFuture {
     }
 }
 
+macro_rules! impl_func {
+    ($handler:ident($arg:ident)) => {
+        impl<F, R> $handler for F
+        where
+            F: FnMut(&Api, &$arg) -> R,
+            R: Into<HandlerFuture>,
+        {
+            fn handle(&mut self, api: &Api, arg: &$arg) -> HandlerFuture {
+                (self)(api, arg).into()
+            }
+        }
+    };
+}
+
 /// A regular message handler
 pub trait MessageHandler {
     /// Handles a message
     fn handle(&mut self, api: &Api, message: &Message) -> HandlerFuture;
 }
+
+impl_func!(MessageHandler(Message));
 
 /// A command handler
 pub struct CommandHandler {
@@ -134,11 +160,15 @@ pub trait InlineQueryHandler {
     fn handle(&mut self, api: &Api, query: &InlineQuery) -> HandlerFuture;
 }
 
+impl_func!(InlineQueryHandler(InlineQuery));
+
 /// A chosen inline result handler
 pub trait ChosenInlineResultHandler {
     /// Handles a result
     fn handle(&mut self, api: &Api, result: &ChosenInlineResult) -> HandlerFuture;
 }
+
+impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
 
 /// A callback query handler
 pub trait CallbackQueryHandler {
@@ -146,14 +176,20 @@ pub trait CallbackQueryHandler {
     fn handle(&mut self, api: &Api, query: &CallbackQuery) -> HandlerFuture;
 }
 
+impl_func!(CallbackQueryHandler(CallbackQuery));
+
 /// A shipping query handler
 pub trait ShippingQueryHandler {
     /// Handles a query
     fn handle(&mut self, api: &Api, query: &ShippingQuery) -> HandlerFuture;
 }
 
+impl_func!(ShippingQueryHandler(ShippingQuery));
+
 /// A pre checkout query handler
 pub trait PreCheckoutQueryHandler {
     /// Handles a query
     fn handle(&mut self, api: &Api, query: &PreCheckoutQuery) -> HandlerFuture;
 }
+
+impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
