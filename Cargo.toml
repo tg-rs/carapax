@@ -15,7 +15,7 @@ travis-ci = { repository = "tg-rs/carapax", branch = "master" }
 failure = "0.1"
 futures = "0.1"
 log = "0.4"
-tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "07f8112b" }
+tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "76964a7" }
 
 [dev-dependencies]
 dotenv = "0.13"

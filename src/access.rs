@@ -365,17 +365,10 @@ mod tests {
             let policy = MockPolicy { result };
             let mut middleware = AccessMiddleware::new(policy);
             let middleware_result = block_on_all(middleware.before(&api, &update)).unwrap();
-            // TODO: use assert_eq!()
             if result {
-                match middleware_result {
-                    MiddlewareResult::Continue => {}
-                    _ => panic!("Unexpected middleware result"),
-                }
+                assert_eq!(middleware_result, MiddlewareResult::Continue);
             } else {
-                match middleware_result {
-                    MiddlewareResult::Stop => {}
-                    _ => panic!("Unexpected middleware result"),
-                }
+                assert_eq!(middleware_result, MiddlewareResult::Stop);
             }
         }
     }
