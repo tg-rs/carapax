@@ -1,4 +1,4 @@
-use self::middleware::{IterMiddlewareFuture, Middleware, MiddlewareResult};
+use self::middleware::IterMiddlewareFuture;
 use crate::api::Api;
 use crate::types::{Update, UpdateKind};
 use failure::Error;
