@@ -1,6 +1,6 @@
 use failure::Error;
 use futures::{future, Future, Poll};
-use tgbot::dispatcher::middleware::{Middleware, MiddlewareFuture, MiddlewareResult};
+use tgbot::dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult};
 use tgbot::types::{Integer, Update};
 use tgbot::Api;
 

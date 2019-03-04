@@ -2,7 +2,7 @@ use ratelimit_meter::{DirectRateLimiter, KeyedRateLimiter, GCRA};
 use std::num::NonZeroU32;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tgbot::dispatcher::middleware::{Middleware, MiddlewareFuture, MiddlewareResult};
+use tgbot::dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult};
 use tgbot::types::{Integer, Update};
 use tgbot::Api;
 
