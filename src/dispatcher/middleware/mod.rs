@@ -3,10 +3,8 @@ use crate::types::Update;
 use failure::Error;
 use futures::{future, Async, Future, Poll};
 
-mod access;
 mod ratelimit;
 
-pub use self::access::*;
 pub use self::ratelimit::*;
 
 /// Result of a middleware
