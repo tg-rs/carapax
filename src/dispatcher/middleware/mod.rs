@@ -10,7 +10,7 @@ pub use self::access::*;
 pub use self::ratelimit::*;
 
 /// Result of a middleware
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub enum MiddlewareResult {
     /// Continue propagation
     ///
