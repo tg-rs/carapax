@@ -11,13 +11,13 @@ use std::fmt;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
-struct WebhookServiceFactory {
+struct WebhookServiceFactory<C> {
     path: String,
-    dispatcher: Arc<Mutex<Dispatcher>>,
+    dispatcher: Arc<Mutex<Dispatcher<C>>>,
 }
 
-impl WebhookServiceFactory {
-    fn new<S: Into<String>>(path: S, dispatcher: Dispatcher) -> WebhookServiceFactory {
+impl<C> WebhookServiceFactory<C> {
+    fn new<S: Into<String>>(path: S, dispatcher: Dispatcher<C>) -> WebhookServiceFactory<C> {
         WebhookServiceFactory {
             path: path.into(),
             dispatcher: Arc::new(Mutex::new(dispatcher)),
@@ -36,11 +36,14 @@ impl fmt::Display for WebhookServiceFactoryError {
 
 impl StdError for WebhookServiceFactoryError {}
 
-impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
+impl<Ctx, C> MakeService<Ctx> for WebhookServiceFactory<C>
+where
+    C: Send + Sync + 'static,
+{
     type ReqBody = Body;
     type ResBody = Body;
     type Error = Error;
-    type Service = WebhookService;
+    type Service = WebhookService<C>;
     type Future = Box<Future<Item = Self::Service, Error = Self::MakeError> + Send>;
     type MakeError = WebhookServiceFactoryError;
 
@@ -52,12 +55,15 @@ impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
     }
 }
 
-struct WebhookService {
+struct WebhookService<C> {
     path: String,
-    dispatcher: Arc<Mutex<Dispatcher>>,
+    dispatcher: Arc<Mutex<Dispatcher<C>>>,
 }
 
-impl Service for WebhookService {
+impl<C> Service for WebhookService<C>
+where
+    C: Send + Sync + 'static,
+{
     type ReqBody = Body;
     type ResBody = Body;
     type Error = Error;
@@ -71,7 +77,7 @@ impl Service for WebhookService {
                 return Box::new(req.into_body().concat2().map(move |body| {
                     match serde_json::from_slice::<Update>(&body) {
                         Ok(update) => {
-                            tokio::spawn(dispatcher.lock().unwrap().dispatch(&update).then(|r| {
+                            tokio::spawn(dispatcher.lock().unwrap().dispatch(update).then(|r| {
                                 if let Err(e) = r {
                                     log::error!("Failed to dispatch update: {:?}", e)
                                 }
@@ -104,10 +110,11 @@ impl Service for WebhookService {
 /// - addr - Bind address
 /// - path - URL path for webhook
 /// - dispatcher - A dispatcher
-pub fn run_server<A, S>(addr: A, path: S, dispatcher: Dispatcher)
+pub fn run_server<A, S, C>(addr: A, path: S, dispatcher: Dispatcher<C>)
 where
     A: Into<SocketAddr>,
     S: Into<String>,
+    C: Send + Sync + 'static,
 {
     let server = Server::bind(&addr.into())
         .serve(WebhookServiceFactory::new(path, dispatcher))

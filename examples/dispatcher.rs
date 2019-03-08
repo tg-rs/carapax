@@ -3,14 +3,14 @@ use env_logger;
 use futures::Future;
 use log;
 use std::env;
-use tgbot::dispatcher::{Dispatcher, HandlerFuture, HandlerResult, MessageHandler};
+use tgbot::dispatcher::{DispatcherBuilder, Handler, HandlerFuture, MessageHandler};
 use tgbot::methods::SendMessage;
 use tgbot::types::Message;
 use tgbot::Api;
 
-struct Handler;
+struct EchoHandler;
 
-impl MessageHandler for Handler {
+impl MessageHandler<Api> for EchoHandler {
     fn handle(&mut self, api: &Api, message: &Message) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
         if let Some(text) = message.get_text() {
@@ -18,10 +18,10 @@ impl MessageHandler for Handler {
             let method = SendMessage::new(chat_id, text.data.clone());
             return HandlerFuture::new(api.execute(&method).then(|x| {
                 log::info!("sendMessage result: {:?}\n", x);
-                Ok(HandlerResult::Continue)
+                Ok(())
             }));
         }
-        HandlerResult::Continue.into()
+        ().into()
     }
 }
 
@@ -36,7 +36,8 @@ fn main() {
         None => Api::create(token),
     }
     .expect("Failed to create API");
-    Dispatcher::new(api.clone())
-        .add_message_handler(Handler)
-        .start_polling();
+    DispatcherBuilder::new()
+        .add_handler(Handler::message(EchoHandler))
+        .build(api.clone())
+        .start_polling(api);
 }

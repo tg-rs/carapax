@@ -1,8 +1,8 @@
-use self::middleware::IterMiddlewareFuture;
 use crate::api::Api;
-use crate::types::{Update, UpdateKind};
+use crate::types::{BotCommand, Update, UpdateKind};
 use failure::Error;
 use futures::{future, task, Async, Future, Poll, Stream};
+use std::sync::{Arc, Mutex};
 
 mod handler;
 mod middleware;
@@ -13,162 +13,109 @@ mod tests;
 pub use self::handler::*;
 pub use self::middleware::*;
 
-/// Dispatcher
-pub struct Dispatcher {
-    api: Api,
-    middleware: Vec<Box<Middleware + Send + Sync>>,
-    message: Vec<Box<MessageHandler + Send + Sync>>,
-    command: Vec<CommandHandler>,
-    inline_query: Vec<Box<InlineQueryHandler + Send + Sync>>,
-    chosen_inline_result: Vec<Box<ChosenInlineResultHandler + Send + Sync>>,
-    callback_query: Vec<Box<CallbackQueryHandler + Send + Sync>>,
-    shipping_query: Vec<Box<ShippingQueryHandler + Send + Sync>>,
-    pre_checkout_query: Vec<Box<PreCheckoutQueryHandler + Send + Sync>>,
+struct Store<C> {
+    middlewares: Vec<Box<Middleware<C> + Send + Sync>>,
+    handlers: Vec<Handler<C>>,
 }
 
-impl Dispatcher {
-    /// Creates a new dispatcher
-    pub fn new(api: Api) -> Self {
-        Dispatcher {
-            api,
-            middleware: vec![],
-            message: vec![],
-            command: vec![],
-            inline_query: vec![],
-            chosen_inline_result: vec![],
-            callback_query: vec![],
-            shipping_query: vec![],
-            pre_checkout_query: vec![],
+/// Defines how to handle errors in middlewares and handlers
+#[derive(Debug, Clone, Copy)]
+pub enum ErrorStrategy {
+    /// Ignore any error in a handler or middleware and write it to log
+    Ignore,
+    /// Return first error, all next handlers or middlewares will not run
+    Abort,
+}
+
+/// Dispatcher builder
+pub struct DispatcherBuilder<C> {
+    store: Store<C>,
+    middleware_error_strategy: ErrorStrategy,
+    handler_error_strategy: ErrorStrategy,
+}
+
+impl<C> DispatcherBuilder<C> {
+    /// Creates a new builder
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {
+            store: Store {
+                middlewares: vec![],
+                handlers: vec![],
+            },
+            middleware_error_strategy: ErrorStrategy::Abort,
+            handler_error_strategy: ErrorStrategy::Abort,
         }
+    }
+
+    /// Set middleware error strategy
+    pub fn middleware_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
+        self.middleware_error_strategy = strategy;
+        self
+    }
+
+    /// Set handler error strategy
+    pub fn handler_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
+        self.handler_error_strategy = strategy;
+        self
     }
 
     /// Add middleware handler
     pub fn add_middleware<H>(mut self, handler: H) -> Self
     where
-        H: Middleware + 'static + Send + Sync,
+        H: Middleware<C> + 'static + Send + Sync,
     {
-        self.middleware.push(Box::new(handler));
+        self.store.middlewares.push(Box::new(handler));
         self
     }
 
-    /// Add message handler
-    pub fn add_message_handler<H>(mut self, handler: H) -> Self
-    where
-        H: MessageHandler + 'static + Send + Sync,
-    {
-        self.message.push(Box::new(handler));
+    /// Add a regular handler
+    pub fn add_handler(mut self, handler: Handler<C>) -> Self {
+        self.store.handlers.push(handler);
         self
     }
 
-    /// Add command handler
-    pub fn add_command_handler(mut self, handler: CommandHandler) -> Self {
-        self.command.push(handler);
-        self
-    }
-
-    /// Add inline query handler
-    pub fn add_inline_query_handler<H>(mut self, handler: H) -> Self
-    where
-        H: InlineQueryHandler + 'static + Send + Sync,
-    {
-        self.inline_query.push(Box::new(handler));
-        self
-    }
-
-    /// Add chosen inline result handler
-    pub fn add_chosen_inline_result_handler<H>(mut self, handler: H) -> Self
-    where
-        H: ChosenInlineResultHandler + 'static + Send + Sync,
-    {
-        self.chosen_inline_result.push(Box::new(handler));
-        self
-    }
-
-    /// Add callback query handler
-    pub fn add_callback_query_handler<H>(mut self, handler: H) -> Self
-    where
-        H: CallbackQueryHandler + 'static + Send + Sync,
-    {
-        self.callback_query.push(Box::new(handler));
-        self
-    }
-
-    /// Add shipping query handler
-    pub fn add_shipping_query_handler<H>(mut self, handler: H) -> Self
-    where
-        H: ShippingQueryHandler + 'static + Send + Sync,
-    {
-        self.shipping_query.push(Box::new(handler));
-        self
-    }
-
-    /// Add pre checkout query handler
-    pub fn add_pre_checkout_query_handler<H>(mut self, handler: H) -> Self
-    where
-        H: PreCheckoutQueryHandler + 'static + Send + Sync,
-    {
-        self.pre_checkout_query.push(Box::new(handler));
-        self
-    }
-
-    /// Dispatch an update
-    pub fn dispatch(&mut self, update: &Update) -> DispatcherFuture {
-        // Use 'for' loop instead of iterators to avoid "cannot borrow self as mutable twice"
-        macro_rules! collect {
-            ($vec:ident, $func:ident, $var:expr) => {{
-                let mut futures = vec![];
-                for h in &mut self.$vec {
-                    futures.push(h.$func(&self.api, $var))
-                }
-                futures
-            }};
-            ($vec:ident, $data:expr) => {
-                collect!($vec, handle, $data)
-            };
-            ($name:ident) => {
-                collect!($name, $name)
-            };
+    /// Create a dispatcher
+    pub fn build(self, context: C) -> Dispatcher<C> {
+        Dispatcher {
+            context: Arc::new(context),
+            store: Arc::new(Mutex::new(self.store)),
+            middleware_error_strategy: self.middleware_error_strategy,
+            handler_error_strategy: self.handler_error_strategy,
         }
+    }
+}
 
-        let before = IterMiddlewareFuture::new(collect!(middleware, before, &update));
-        let main = IterHandlerFuture::new(match update.kind {
-            UpdateKind::Message(ref msg)
-            | UpdateKind::EditedMessage(ref msg)
-            | UpdateKind::ChannelPost(ref msg)
-            | UpdateKind::EditedChannelPost(ref msg) => match msg.get_commands() {
-                Some(commands) => {
-                    let mut futures = vec![];
-                    for handler in &mut self.command {
-                        for command in &commands {
-                            if handler.accepts(command) {
-                                futures.push(handler.handle(&self.api, &msg));
-                            }
-                        }
-                    }
-                    futures
-                }
-                None => collect!(message, &msg),
-            },
-            UpdateKind::InlineQuery(ref inline_query) => collect!(inline_query),
-            UpdateKind::ChosenInlineResult(ref chosen_inline_result) => {
-                collect!(chosen_inline_result)
-            }
-            UpdateKind::CallbackQuery(ref callback_query) => collect!(callback_query),
-            UpdateKind::ShippingQuery(ref shipping_query) => collect!(shipping_query),
-            UpdateKind::PreCheckoutQuery(ref pre_checkout_query) => collect!(pre_checkout_query),
-        });
-        let after = IterMiddlewareFuture::new(collect!(middleware, after, &update));
-        DispatcherFuture::new(before, main, after)
+/// Dispatcher
+pub struct Dispatcher<C> {
+    context: Arc<C>,
+    store: Arc<Mutex<Store<C>>>,
+    middleware_error_strategy: ErrorStrategy,
+    handler_error_strategy: ErrorStrategy,
+}
+
+impl<C> Dispatcher<C>
+where
+    C: Send + Sync + 'static,
+{
+    /// Dispatch an update
+    pub fn dispatch(&mut self, update: Update) -> DispatcherFuture<C> {
+        DispatcherFuture::new(
+            self.store.clone(),
+            self.context.clone(),
+            self.middleware_error_strategy,
+            self.handler_error_strategy,
+            update,
+        )
     }
 
-    /// Spawns a polling stream
-    pub fn start_polling(mut self) {
+    /// Starts a polling stream
+    pub fn start_polling(mut self, api: Api) {
         tokio::run(future::lazy(move || {
-            self.api
-                .get_updates()
+            api.get_updates()
                 .for_each(move |update| {
-                    let fut = self.dispatch(&update);
-                    self.api.spawn(fut);
+                    let f = self.dispatch(update);
+                    api.spawn(f);
                     Ok(())
                 })
                 .then(|r| {
@@ -182,89 +129,197 @@ impl Dispatcher {
 }
 
 /// Dispatcher future
-///
-/// Returns number of executed handlers on success
-/// (including middlewares, before and after separately)
 #[must_use = "futures do nothing unless polled"]
-pub struct DispatcherFuture {
-    before: IterMiddlewareFuture,
-    main: IterHandlerFuture,
-    after: IterMiddlewareFuture,
+pub struct DispatcherFuture<C> {
+    store: Arc<Mutex<Store<C>>>,
+    context: Arc<C>,
+    middleware_error_strategy: ErrorStrategy,
+    handler_error_strategy: ErrorStrategy,
+    update: Update,
     state: DispatcherFutureState,
+    middleware: Option<MiddlewareFuture>,
+    handler: Option<HandlerFuture>,
+    commands: Option<Vec<BotCommand>>,
 }
 
-impl DispatcherFuture {
-    fn new(
-        before: IterMiddlewareFuture,
-        main: IterHandlerFuture,
-        after: IterMiddlewareFuture,
-    ) -> DispatcherFuture {
-        DispatcherFuture {
-            before,
-            main,
-            after,
-            state: Default::default(),
-        }
-    }
-}
-
-impl Future for DispatcherFuture {
-    type Item = usize;
-    type Error = Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        use self::DispatcherFutureState::*;
-        match self.state {
-            Before => match self.before.poll() {
-                Ok(Async::Ready((MiddlewareResult::Continue, num))) => {
-                    self.state = Main(num);
-                    task::current().notify();
-                    Ok(Async::NotReady)
-                }
-                Ok(Async::Ready((MiddlewareResult::Stop, num))) => {
-                    self.state = After(num);
-                    task::current().notify();
-                    Ok(Async::NotReady)
-                }
-                Ok(Async::NotReady) => {
-                    task::current().notify();
-                    Ok(Async::NotReady)
-                }
-                Err(err) => Err(err),
-            },
-            Main(before_num) => match self.main.poll() {
-                Ok(Async::Ready(num)) => {
-                    self.state = After(before_num + num);
-                    task::current().notify();
-                    Ok(Async::NotReady)
-                }
-                Ok(Async::NotReady) => {
-                    task::current().notify();
-                    Ok(Async::NotReady)
-                }
-                Err(err) => Err(err),
-            },
-            After(total_num) => match self.after.poll() {
-                Ok(Async::Ready((_, num))) => Ok(Async::Ready(total_num + num)),
-                Ok(Async::NotReady) => {
-                    task::current().notify();
-                    Ok(Async::NotReady)
-                }
-                Err(err) => Err(err),
-            },
-        }
-    }
-}
-
-#[derive(Debug)]
 enum DispatcherFutureState {
-    Before,
+    Before(usize),
     Main(usize),
     After(usize),
 }
 
-impl Default for DispatcherFutureState {
-    fn default() -> Self {
-        DispatcherFutureState::Before
+impl<C> DispatcherFuture<C>
+where
+    C: Send + Sync + 'static,
+{
+    fn new(
+        store: Arc<Mutex<Store<C>>>,
+        context: Arc<C>,
+        middleware_error_strategy: ErrorStrategy,
+        handler_error_strategy: ErrorStrategy,
+        update: Update,
+    ) -> DispatcherFuture<C> {
+        DispatcherFuture {
+            store,
+            context,
+            middleware_error_strategy,
+            handler_error_strategy,
+            update,
+            state: DispatcherFutureState::Before(0),
+            middleware: None,
+            handler: None,
+            commands: None,
+        }
+    }
+
+    fn handle_before(&mut self, idx: usize) -> Poll<(), Error> {
+        match self.middleware {
+            Some(ref mut f) => match f.poll() {
+                Ok(Async::Ready(MiddlewareResult::Continue)) => {
+                    self.state = DispatcherFutureState::Before(idx + 1);
+                    self.middleware = None;
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                Ok(Async::Ready(MiddlewareResult::Stop)) => {
+                    self.state = DispatcherFutureState::After(0);
+                    self.middleware = None;
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                Ok(Async::NotReady) => {
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                Err(err) => match self.middleware_error_strategy {
+                    ErrorStrategy::Abort => Err(err),
+                    ErrorStrategy::Ignore => {
+                        log::error!("An error has occurred in before middleware: {:?}", err);
+                        self.state = DispatcherFutureState::Before(idx + 1);
+                        self.middleware = None;
+                        task::current().notify();
+                        Ok(Async::NotReady)
+                    }
+                },
+            },
+            None => match self.store.lock().unwrap().middlewares.get_mut(idx) {
+                Some(ref mut middleware) => {
+                    self.middleware = Some(middleware.before(&self.context, &self.update));
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                None => {
+                    self.state = DispatcherFutureState::Main(0);
+                    self.handler = None;
+                    self.commands = match self.update.kind {
+                        UpdateKind::Message(ref msg)
+                        | UpdateKind::EditedMessage(ref msg)
+                        | UpdateKind::ChannelPost(ref msg)
+                        | UpdateKind::EditedChannelPost(ref msg) => msg.get_commands(),
+                        _ => None,
+                    };
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+            },
+        }
+    }
+
+    fn handle_main(&mut self, idx: usize) -> Poll<(), Error> {
+        match self.handler {
+            Some(ref mut f) => match f.poll() {
+                Ok(Async::Ready(())) => {
+                    self.state = DispatcherFutureState::Main(idx + 1);
+                    self.handler = None;
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                Ok(Async::NotReady) => {
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                Err(err) => match self.handler_error_strategy {
+                    ErrorStrategy::Abort => Err(err),
+                    ErrorStrategy::Ignore => {
+                        log::error!("An error has occurred in handler: {:?}", err);
+                        self.state = DispatcherFutureState::Main(idx + 1);
+                        self.handler = None;
+                        task::current().notify();
+                        Ok(Async::NotReady)
+                    }
+                },
+            },
+            None => match self.store.lock().unwrap().handlers.get_mut(idx) {
+                Some(ref mut handler) => {
+                    self.handler =
+                        Some(handler.handle(&self.context, &self.update, &self.commands));
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                None => {
+                    self.state = DispatcherFutureState::After(0);
+                    self.middleware = None;
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+            },
+        }
+    }
+
+    fn handle_after(&mut self, idx: usize) -> Poll<(), Error> {
+        match self.middleware {
+            Some(ref mut f) => match f.poll() {
+                Ok(Async::Ready(MiddlewareResult::Continue)) => {
+                    self.state = DispatcherFutureState::After(idx + 1);
+                    self.middleware = None;
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                Ok(Async::Ready(MiddlewareResult::Stop)) => Ok(Async::Ready(())),
+                Ok(Async::NotReady) => {
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                Err(err) => match self.middleware_error_strategy {
+                    ErrorStrategy::Abort => Err(err),
+                    ErrorStrategy::Ignore => {
+                        log::error!("An error has occurred in after middleware: {:?}", err);
+                        self.state = DispatcherFutureState::After(idx + 1);
+                        self.middleware = None;
+                        task::current().notify();
+                        Ok(Async::NotReady)
+                    }
+                },
+            },
+            None => match self.store.lock().unwrap().middlewares.get_mut(idx) {
+                Some(ref mut middleware) => {
+                    self.middleware = Some(middleware.after(&self.context, &self.update));
+                    task::current().notify();
+                    Ok(Async::NotReady)
+                }
+                None => Ok(Async::Ready(())),
+            },
+        }
+    }
+
+    fn handle(&mut self) -> Poll<(), Error> {
+        use self::DispatcherFutureState::*;
+        match self.state {
+            Before(idx) => self.handle_before(idx),
+            Main(idx) => self.handle_main(idx),
+            After(idx) => self.handle_after(idx),
+        }
+    }
+}
+
+impl<C> Future for DispatcherFuture<C>
+where
+    C: Send + Sync + 'static,
+{
+    type Item = ();
+    type Error = Error;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        self.handle()
     }
 }

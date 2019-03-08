@@ -1,75 +1,81 @@
-use super::middleware::*;
 use super::*;
-use crate::api::Api;
 use crate::types::{
     CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery,
     Update,
 };
-use tokio::runtime::current_thread::block_on_all;
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
 
-struct MockHandler {
-    result: HandlerResult,
+struct MockContext {
+    calls: Arc<AtomicUsize>,
 }
 
-impl Default for MockHandler {
-    fn default() -> Self {
-        MockHandler {
-            result: HandlerResult::Continue,
+impl MockContext {
+    fn new() -> Self {
+        Self {
+            calls: Arc::new(AtomicUsize::new(0)),
         }
     }
-}
 
-impl MessageHandler for MockHandler {
-    fn handle(&mut self, _api: &Api, _message: &Message) -> HandlerFuture {
-        self.result.into()
+    fn inc_calls(&self) {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+    }
+
+    fn get_calls(&self) -> usize {
+        self.calls.load(Ordering::SeqCst)
     }
 }
 
-impl InlineQueryHandler for MockHandler {
-    fn handle(&mut self, _api: &Api, _query: &InlineQuery) -> HandlerFuture {
-        self.result.into()
-    }
+fn handle_message(context: &MockContext, _message: &Message) -> HandlerFuture {
+    context.inc_calls();
+    ().into()
 }
 
-impl ChosenInlineResultHandler for MockHandler {
-    fn handle(&mut self, _api: &Api, _result: &ChosenInlineResult) -> HandlerFuture {
-        self.result.into()
-    }
+fn handle_inline_query(context: &MockContext, _query: &InlineQuery) -> HandlerFuture {
+    context.inc_calls();
+    ().into()
 }
 
-impl CallbackQueryHandler for MockHandler {
-    fn handle(&mut self, _api: &Api, _query: &CallbackQuery) -> HandlerFuture {
-        self.result.into()
-    }
+fn handle_chose_inline_result(
+    context: &MockContext,
+    _result: &ChosenInlineResult,
+) -> HandlerFuture {
+    context.inc_calls();
+    ().into()
 }
 
-impl ShippingQueryHandler for MockHandler {
-    fn handle(&mut self, _api: &Api, _query: &ShippingQuery) -> HandlerFuture {
-        self.result.into()
-    }
+fn handle_callback_query(context: &MockContext, _query: &CallbackQuery) -> HandlerFuture {
+    context.inc_calls();
+    ().into()
 }
 
-impl PreCheckoutQueryHandler for MockHandler {
-    fn handle(&mut self, _api: &Api, _query: &PreCheckoutQuery) -> HandlerFuture {
-        self.result.into()
-    }
+fn handle_shipping_query(context: &MockContext, _query: &ShippingQuery) -> HandlerFuture {
+    context.inc_calls();
+    ().into()
 }
 
-fn create_dispatcher() -> Dispatcher {
-    Dispatcher::new(Api::create("test-dispatcher").expect("failed to create api"))
+fn handle_precheckout_query(context: &MockContext, _query: &PreCheckoutQuery) -> HandlerFuture {
+    context.inc_calls();
+    ().into()
+}
+
+fn handle_update(context: &MockContext, _update: &Update) -> HandlerFuture {
+    context.inc_calls();
+    ().into()
 }
 
 fn parse_update(data: &str) -> Update {
     serde_json::from_str(data).unwrap()
 }
 
-fn get_dispatch_result(f: DispatcherFuture) -> usize {
-    block_on_all(f).unwrap()
-}
-
 #[test]
 fn test_dispatch_message() {
-    let mut dispatcher = create_dispatcher().add_message_handler(MockHandler::default());
+    let mut dispatcher = DispatcherBuilder::new()
+        .add_handler(Handler::message(handle_message))
+        .add_handler(Handler::update(handle_update))
+        .build(MockContext::new());
     for data in &[
         r#"{
             "update_id": 1,
@@ -114,14 +120,20 @@ fn test_dispatch_message() {
         }"#,
     ] {
         let update = parse_update(data);
-        assert_eq!(get_dispatch_result(dispatcher.dispatch(&update)), 1);
+        dispatcher.dispatch(update).wait().unwrap();
     }
+    assert_eq!(dispatcher.context.get_calls(), 8);
 }
 
 #[test]
 fn test_dispatch_command() {
-    let handler = CommandHandler::new("/testcommand", MockHandler::default());
-    let mut dispatcher = create_dispatcher().add_command_handler(handler);
+    let mut dispatcher = DispatcherBuilder::new()
+        .add_handler(Handler::command(CommandHandler::new(
+            "/testcommand",
+            handle_message,
+        )))
+        .add_handler(Handler::update(handle_update))
+        .build(MockContext::new());
     for data in &[
         r#"{
             "update_id": 1,
@@ -178,8 +190,9 @@ fn test_dispatch_command() {
         }"#,
     ] {
         let update = parse_update(data);
-        assert_eq!(get_dispatch_result(dispatcher.dispatch(&update)), 1);
+        dispatcher.dispatch(update).wait().unwrap();
     }
+    assert_eq!(dispatcher.context.get_calls(), 8);
 
     // command not found
     let update = parse_update(
@@ -197,12 +210,16 @@ fn test_dispatch_command() {
             }
         }"#,
     );
-    assert_eq!(get_dispatch_result(dispatcher.dispatch(&update)), 0);
+    dispatcher.dispatch(update).wait().unwrap();
+    assert_eq!(dispatcher.context.get_calls(), 9);
 }
 
 #[test]
 fn test_dispatch_inline_query() {
-    let mut dispatcher = create_dispatcher().add_inline_query_handler(MockHandler::default());
+    let mut dispatcher = DispatcherBuilder::new()
+        .add_handler(Handler::inline_query(handle_inline_query))
+        .add_handler(Handler::update(handle_update))
+        .build(MockContext::new());
     let update = parse_update(
         r#"
         {
@@ -216,13 +233,16 @@ fn test_dispatch_inline_query() {
         }
     "#,
     );
-    assert_eq!(get_dispatch_result(dispatcher.dispatch(&update)), 1);
+    dispatcher.dispatch(update).wait().unwrap();
+    assert_eq!(dispatcher.context.get_calls(), 2);
 }
 
 #[test]
 fn test_dispatch_chosen_inline_result() {
-    let mut dispatcher =
-        create_dispatcher().add_chosen_inline_result_handler(MockHandler::default());
+    let mut dispatcher = DispatcherBuilder::new()
+        .add_handler(Handler::chosen_inline_result(handle_chose_inline_result))
+        .add_handler(Handler::update(handle_update))
+        .build(MockContext::new());
     let update = parse_update(
         r#"
         {
@@ -235,12 +255,16 @@ fn test_dispatch_chosen_inline_result() {
         }
     "#,
     );
-    assert_eq!(get_dispatch_result(dispatcher.dispatch(&update)), 1);
+    dispatcher.dispatch(update).wait().unwrap();
+    assert_eq!(dispatcher.context.get_calls(), 2);
 }
 
 #[test]
 fn test_dispatch_callback_query() {
-    let mut dispatcher = create_dispatcher().add_callback_query_handler(MockHandler::default());
+    let mut dispatcher = DispatcherBuilder::new()
+        .add_handler(Handler::callback_query(handle_callback_query))
+        .add_handler(Handler::update(handle_update))
+        .build(MockContext::new());
     let update = parse_update(
         r#"
         {
@@ -252,12 +276,16 @@ fn test_dispatch_callback_query() {
         }
     "#,
     );
-    assert_eq!(get_dispatch_result(dispatcher.dispatch(&update)), 1);
+    dispatcher.dispatch(update).wait().unwrap();
+    assert_eq!(dispatcher.context.get_calls(), 2);
 }
 
 #[test]
 fn test_dispatch_shipping_query() {
-    let mut dispatcher = create_dispatcher().add_shipping_query_handler(MockHandler::default());
+    let mut dispatcher = DispatcherBuilder::new()
+        .add_handler(Handler::shipping_query(handle_shipping_query))
+        .add_handler(Handler::update(handle_update))
+        .build(MockContext::new());
     let update = parse_update(
         r#"
         {
@@ -278,12 +306,16 @@ fn test_dispatch_shipping_query() {
         }
     "#,
     );
-    assert_eq!(get_dispatch_result(dispatcher.dispatch(&update)), 1);
+    dispatcher.dispatch(update).wait().unwrap();
+    assert_eq!(dispatcher.context.get_calls(), 2);
 }
 
 #[test]
 fn test_dispatch_pre_checkout_query() {
-    let mut dispatcher = create_dispatcher().add_pre_checkout_query_handler(MockHandler::default());
+    let mut dispatcher = DispatcherBuilder::new()
+        .add_handler(Handler::pre_checkout_query(handle_precheckout_query))
+        .add_handler(Handler::update(handle_update))
+        .build(MockContext::new());
     let update = parse_update(
         r#"
         {
@@ -298,35 +330,8 @@ fn test_dispatch_pre_checkout_query() {
         }
     "#,
     );
-    assert_eq!(get_dispatch_result(dispatcher.dispatch(&update)), 1);
-}
-
-#[test]
-fn test_stop_handler() {
-    use self::HandlerResult::*;
-    for (executed_num, results) in &[
-        (2, &[Continue, Stop, Continue, Continue]),
-        (1, &[Stop, Continue, Continue, Continue]),
-        (3, &[Continue, Continue, Stop, Continue]),
-    ] {
-        let mut dispatcher = create_dispatcher();
-        for result in *results {
-            dispatcher = dispatcher.add_message_handler(MockHandler { result: *result });
-        }
-        let f = dispatcher.dispatch(&parse_update(
-            r#"{
-                "update_id": 1,
-                "message": {
-                    "message_id": 1111,
-                    "date": 0,
-                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
-                    "chat": {"id": 1, "type": "private", "first_name": "test"},
-                    "text": "test"
-                }
-            }"#,
-        ));
-        assert_eq!(get_dispatch_result(f), *executed_num);
-    }
+    dispatcher.dispatch(update).wait().unwrap();
+    assert_eq!(dispatcher.context.get_calls(), 2);
 }
 
 struct MockMiddleware {
@@ -334,12 +339,14 @@ struct MockMiddleware {
     after_result: MiddlewareResult,
 }
 
-impl Middleware for MockMiddleware {
-    fn before(&mut self, _api: &Api, _update: &Update) -> MiddlewareFuture {
+impl Middleware<MockContext> for MockMiddleware {
+    fn before(&mut self, context: &MockContext, _update: &Update) -> MiddlewareFuture {
+        context.inc_calls();
         self.before_result.into()
     }
 
-    fn after(&mut self, _api: &Api, _update: &Update) -> MiddlewareFuture {
+    fn after(&mut self, context: &MockContext, _update: &Update) -> MiddlewareFuture {
+        context.inc_calls();
         self.after_result.into()
     }
 }
@@ -359,7 +366,7 @@ fn test_middleware() {
         }"#,
     );
 
-    let mut dispatcher = create_dispatcher()
+    let mut dispatcher = DispatcherBuilder::new()
         .add_middleware(MockMiddleware {
             before_result: MiddlewareResult::Continue,
             after_result: MiddlewareResult::Continue,
@@ -376,13 +383,12 @@ fn test_middleware() {
             before_result: MiddlewareResult::Continue,
             after_result: MiddlewareResult::Continue,
         })
-        .add_message_handler(MockHandler {
-            result: HandlerResult::Continue,
-        });
-    let f = dispatcher.dispatch(&update);
-    assert_eq!(get_dispatch_result(f), 5);
+        .add_handler(Handler::message(handle_message))
+        .build(MockContext::new());
+    dispatcher.dispatch(update.clone()).wait().unwrap();
+    assert_eq!(dispatcher.context.get_calls(), 5);
 
-    let mut dispatcher = create_dispatcher()
+    let mut dispatcher = DispatcherBuilder::new()
         .add_middleware(MockMiddleware {
             before_result: MiddlewareResult::Continue,
             after_result: MiddlewareResult::Stop,
@@ -391,12 +397,77 @@ fn test_middleware() {
             before_result: MiddlewareResult::Continue,
             after_result: MiddlewareResult::Continue,
         })
-        .add_message_handler(MockHandler {
-            result: HandlerResult::Stop,
-        })
-        .add_message_handler(MockHandler {
-            result: HandlerResult::Continue,
-        });
-    let f = dispatcher.dispatch(&update);
-    assert_eq!(get_dispatch_result(f), 4);
+        .add_handler(Handler::message(handle_message))
+        .build(MockContext::new());
+    dispatcher.dispatch(update).wait().unwrap();
+    assert_eq!(dispatcher.context.get_calls(), 4);
+}
+
+#[derive(Debug, Fail)]
+#[fail(display = "Test error")]
+struct ErrorMock;
+
+struct ErrorMiddleware;
+
+impl Middleware<MockContext> for ErrorMiddleware {
+    fn before(&mut self, context: &MockContext, _update: &Update) -> MiddlewareFuture {
+        context.inc_calls();
+        Err(ErrorMock).into()
+    }
+
+    fn after(&mut self, context: &MockContext, _update: &Update) -> MiddlewareFuture {
+        context.inc_calls();
+        Err(ErrorMock).into()
+    }
+}
+
+fn handle_update_error(context: &MockContext, _update: &Update) -> HandlerFuture {
+    context.inc_calls();
+    Err(ErrorMock).into()
+}
+
+#[test]
+fn test_error_strategy() {
+    let update = parse_update(
+        r#"{
+            "update_id": 1,
+            "message": {
+                "message_id": 1111,
+                "date": 0,
+                "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                "chat": {"id": 1, "type": "private", "first_name": "test"},
+                "text": "test"
+            }
+        }"#,
+    );
+
+    // Aborted on first call by default
+    let mut dispatcher = DispatcherBuilder::new()
+        .add_middleware(ErrorMiddleware)
+        .add_middleware(ErrorMiddleware)
+        .add_handler(Handler::update(handle_update_error))
+        .build(MockContext::new());
+    dispatcher.dispatch(update.clone()).wait().unwrap_err();
+    assert_eq!(dispatcher.context.get_calls(), 1);
+
+    // Aborted on handler call by default
+    let mut dispatcher = DispatcherBuilder::new()
+        .middleware_error_strategy(ErrorStrategy::Ignore)
+        .add_middleware(ErrorMiddleware)
+        .add_middleware(ErrorMiddleware)
+        .add_handler(Handler::update(handle_update_error))
+        .build(MockContext::new());
+    dispatcher.dispatch(update.clone()).wait().unwrap_err();
+    assert_eq!(dispatcher.context.get_calls(), 3);
+
+    // Ignore all errors
+    let mut dispatcher = DispatcherBuilder::new()
+        .middleware_error_strategy(ErrorStrategy::Ignore)
+        .handler_error_strategy(ErrorStrategy::Ignore)
+        .add_middleware(ErrorMiddleware)
+        .add_middleware(ErrorMiddleware)
+        .add_handler(Handler::update(handle_update_error))
+        .build(MockContext::new());
+    dispatcher.dispatch(update.clone()).wait().unwrap();
+    assert_eq!(dispatcher.context.get_calls(), 5);
 }

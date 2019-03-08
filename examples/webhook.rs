@@ -2,17 +2,17 @@ use dotenv::dotenv;
 use env_logger;
 use log;
 use std::env;
-use tgbot::dispatcher::{Dispatcher, HandlerFuture, HandlerResult, MessageHandler};
+use tgbot::dispatcher::{DispatcherBuilder, Handler, HandlerFuture, MessageHandler};
 use tgbot::types::Message;
 use tgbot::webhook;
 use tgbot::Api;
 
-struct Handler;
+struct LogMessageHandler;
 
-impl MessageHandler for Handler {
+impl MessageHandler<Api> for LogMessageHandler {
     fn handle(&mut self, _api: &Api, message: &Message) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
-        HandlerResult::Continue.into()
+        ().into()
     }
 }
 
@@ -27,6 +27,8 @@ fn main() {
         None => Api::create(token),
     }
     .expect("Failed to create API");
-    let dispatcher = Dispatcher::new(api.clone()).add_message_handler(Handler);
+    let dispatcher = DispatcherBuilder::new()
+        .add_handler(Handler::message(LogMessageHandler))
+        .build(api);
     webhook::run_server(([127, 0, 0, 1], 8080), "/", dispatcher);
 }

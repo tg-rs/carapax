@@ -1,7 +1,6 @@
-use crate::api::Api;
 use crate::types::Update;
 use failure::Error;
-use futures::{future, Async, Future, Poll};
+use futures::{future, Future, Poll};
 
 /// Result of a middleware
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
@@ -32,6 +31,15 @@ impl MiddlewareFuture {
     }
 }
 
+impl<E> From<Result<MiddlewareResult, E>> for MiddlewareFuture
+where
+    E: Into<Error>,
+{
+    fn from(result: Result<MiddlewareResult, E>) -> Self {
+        MiddlewareFuture::new(future::result(result.map_err(|e| e.into())))
+    }
+}
+
 impl From<MiddlewareResult> for MiddlewareFuture {
     fn from(result: MiddlewareResult) -> MiddlewareFuture {
         MiddlewareFuture::new(future::ok(result))
@@ -47,54 +55,15 @@ impl Future for MiddlewareFuture {
     }
 }
 
-#[must_use = "futures do nothing unless polled"]
-pub(super) struct IterMiddlewareFuture {
-    items: Vec<MiddlewareFuture>,
-    current: usize,
-}
-
-impl IterMiddlewareFuture {
-    pub(super) fn new(items: Vec<MiddlewareFuture>) -> IterMiddlewareFuture {
-        IterMiddlewareFuture { items, current: 0 }
-    }
-}
-
-impl Future for IterMiddlewareFuture {
-    type Item = (MiddlewareResult, usize);
-    type Error = Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let items_len = self.items.len();
-        if items_len == 0 {
-            return Ok(Async::Ready((MiddlewareResult::Continue, 0)));
-        }
-        if self.current >= items_len {
-            return Ok(Async::Ready((MiddlewareResult::Continue, self.current)));
-        }
-        let f = &mut self.items[self.current];
-        match f.poll() {
-            Ok(Async::Ready(MiddlewareResult::Continue)) => {
-                self.current += 1;
-                Ok(Async::NotReady)
-            }
-            Ok(Async::Ready(MiddlewareResult::Stop)) => {
-                Ok(Async::Ready((MiddlewareResult::Stop, self.current + 1)))
-            }
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(err) => Err(err),
-        }
-    }
-}
-
 /// Middleware handler
-pub trait Middleware {
+pub trait Middleware<C> {
     /// Called before all handlers
-    fn before(&mut self, _api: &Api, _update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _context: &C, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 
     /// Called after all handlers
-    fn after(&mut self, _api: &Api, _update: &Update) -> MiddlewareFuture {
+    fn after(&mut self, _context: &C, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 }
