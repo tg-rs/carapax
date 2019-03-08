@@ -158,7 +158,7 @@ where
     E: Into<Error>,
 {
     fn from(result: Result<(), E>) -> Self {
-        HandlerFuture::new(future::result(result.map_err(|e| e.into())))
+        HandlerFuture::new(future::result(result.map_err(Into::into)))
     }
 }
 

@@ -36,7 +36,7 @@ where
     E: Into<Error>,
 {
     fn from(result: Result<MiddlewareResult, E>) -> Self {
-        MiddlewareFuture::new(future::result(result.map_err(|e| e.into())))
+        MiddlewareFuture::new(future::result(result.map_err(Into::into)))
     }
 }
 
