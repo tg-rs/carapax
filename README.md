@@ -17,7 +17,7 @@ tgbot = "0.2"
 
 # Example
 
-See examples directory.
+See [examples](https://github.com/tg-rs/tgbot/tree/0.2.0/examples) directory.
 
 # Changelog
 
