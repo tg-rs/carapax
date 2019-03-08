@@ -43,7 +43,7 @@ pub struct Message {
 
 impl Message {
     /// Returns true if message has edited and false otherwise
-    pub fn has_edited(&self) -> bool {
+    pub fn is_edited(&self) -> bool {
         self.edit_date.is_some()
     }
 
