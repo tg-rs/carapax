@@ -6,9 +6,7 @@ mod reply_keyboard;
 #[cfg(test)]
 mod tests;
 
-pub use self::force_reply::*;
-pub use self::inline_keyboard::*;
-pub use self::reply_keyboard::*;
+pub use self::{force_reply::*, inline_keyboard::*, reply_keyboard::*};
 
 /// Reply markup
 #[derive(Clone, Debug, From, Serialize)]

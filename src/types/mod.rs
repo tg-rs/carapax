@@ -24,28 +24,8 @@ mod video;
 mod video_note;
 mod voice;
 
-pub use self::animation::*;
-pub use self::audio::*;
-pub use self::callback_query::*;
-pub use self::chat::*;
-pub use self::contact::*;
-pub use self::document::*;
-pub use self::file::*;
-pub use self::games::*;
-pub use self::inline_mode::*;
-pub use self::input_media::*;
-pub use self::location::*;
-pub use self::message::*;
-pub use self::passport::*;
-pub use self::payments::*;
-pub use self::photo_size::*;
-pub use self::primitive::*;
-pub use self::reply_markup::*;
-pub use self::response::*;
-pub use self::stickers::*;
-pub use self::update::*;
-pub use self::user::*;
-pub use self::venue::*;
-pub use self::video::*;
-pub use self::video_note::*;
-pub use self::voice::*;
+pub use self::{
+    animation::*, audio::*, callback_query::*, chat::*, contact::*, document::*, file::*, games::*, inline_mode::*,
+    input_media::*, location::*, message::*, passport::*, payments::*, photo_size::*, primitive::*, reply_markup::*,
+    response::*, stickers::*, update::*, user::*, venue::*, video::*, video_note::*, voice::*,
+};

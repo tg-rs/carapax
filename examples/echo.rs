@@ -1,12 +1,13 @@
 use dotenv::dotenv;
 use env_logger;
-use futures::future::lazy;
-use futures::{Future, Stream};
+use futures::{future::lazy, Future, Stream};
 use log;
 use std::env;
-use tgbot::methods::{GetMe, SendMessage};
-use tgbot::types::UpdateKind;
-use tgbot::Api;
+use tgbot::{
+    methods::{GetMe, SendMessage},
+    types::UpdateKind,
+    Api,
+};
 
 fn main() {
     dotenv().ok();

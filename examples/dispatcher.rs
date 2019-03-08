@@ -3,10 +3,12 @@ use env_logger;
 use futures::Future;
 use log;
 use std::env;
-use tgbot::dispatcher::{DispatcherBuilder, Handler, HandlerFuture, MessageHandler};
-use tgbot::methods::SendMessage;
-use tgbot::types::Message;
-use tgbot::Api;
+use tgbot::{
+    dispatcher::{DispatcherBuilder, Handler, HandlerFuture, MessageHandler},
+    methods::SendMessage,
+    types::Message,
+    Api,
+};
 
 struct EchoHandler;
 

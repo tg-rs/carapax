@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{GameHighScore, Integer};
+use crate::{
+    methods::method::*,
+    types::{GameHighScore, Integer},
+};
 use failure::Error;
 use serde::Serialize;
 

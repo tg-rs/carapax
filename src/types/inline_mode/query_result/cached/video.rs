@@ -1,6 +1,6 @@
-use crate::types::inline_mode::message_content::InputMessageContent;
-use crate::types::primitive::ParseMode;
-use crate::types::reply_markup::InlineKeyboardMarkup;
+use crate::types::{
+    inline_mode::message_content::InputMessageContent, primitive::ParseMode, reply_markup::InlineKeyboardMarkup,
+};
 use serde::Serialize;
 
 /// Link to a video file stored on the Telegram servers

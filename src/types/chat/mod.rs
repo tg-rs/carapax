@@ -1,6 +1,8 @@
-use crate::types::chat::raw::{RawChat, RawChatKind};
-use crate::types::message::Message;
-use crate::types::primitive::Integer;
+use crate::types::{
+    chat::raw::{RawChat, RawChatKind},
+    message::Message,
+    primitive::Integer,
+};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 
 mod member;
@@ -9,10 +11,10 @@ mod raw;
 #[cfg(test)]
 mod tests;
 
-pub use self::member::{
-    ChatMember, ChatMemberAdministrator, ChatMemberKicked, ChatMemberRestricted,
+pub use self::{
+    member::{ChatMember, ChatMemberAdministrator, ChatMemberKicked, ChatMemberRestricted},
+    photo::ChatPhoto,
 };
-pub use self::photo::ChatPhoto;
 
 /// Chat
 #[derive(Clone, Debug)]

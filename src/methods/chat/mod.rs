@@ -12,16 +12,7 @@ mod set_sticker_set;
 mod set_title;
 mod unpin_message;
 
-pub use self::delete_photo::*;
-pub use self::delete_sticker_set::*;
-pub use self::export_invite_link::*;
-pub use self::get::*;
-pub use self::get_administrators::*;
-pub use self::get_members_count::*;
-pub use self::leave::*;
-pub use self::pin_message::*;
-pub use self::set_description::*;
-pub use self::set_photo::*;
-pub use self::set_sticker_set::*;
-pub use self::set_title::*;
-pub use self::unpin_message::*;
+pub use self::{
+    delete_photo::*, delete_sticker_set::*, export_invite_link::*, get::*, get_administrators::*, get_members_count::*,
+    leave::*, pin_message::*, set_description::*, set_photo::*, set_sticker_set::*, set_title::*, unpin_message::*,
+};

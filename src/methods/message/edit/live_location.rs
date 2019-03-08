@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{ChatId, EditMessageResult, Float, InlineKeyboardMarkup, Integer};
+use crate::{
+    methods::method::*,
+    types::{ChatId, EditMessageResult, Float, InlineKeyboardMarkup, Integer},
+};
 use failure::Error;
 use serde::Serialize;
 
@@ -30,12 +32,7 @@ impl EditMessageLiveLocation {
     /// * message_id - Identifier of the sent message
     /// * latitude - Latitude of new location
     /// * longitude Longitude of new location
-    pub fn new<C: Into<ChatId>>(
-        chat_id: C,
-        message_id: Integer,
-        latitude: Float,
-        longitude: Float,
-    ) -> Self {
+    pub fn new<C: Into<ChatId>>(chat_id: C, message_id: Integer, latitude: Float, longitude: Float) -> Self {
         EditMessageLiveLocation {
             chat_id: Some(chat_id.into()),
             message_id: Some(message_id),
@@ -53,11 +50,7 @@ impl EditMessageLiveLocation {
     /// * inline_message_id - Identifier of the inline message
     /// * latitude - Latitude of new location
     /// * longitude Longitude of new location
-    pub fn with_inline_message_id<S: Into<String>>(
-        inline_message_id: S,
-        latitude: Float,
-        longitude: Float,
-    ) -> Self {
+    pub fn with_inline_message_id<S: Into<String>>(inline_message_id: S, latitude: Float, longitude: Float) -> Self {
         EditMessageLiveLocation {
             chat_id: None,
             message_id: None,

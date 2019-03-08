@@ -11,15 +11,7 @@ mod sticker;
 mod updates;
 mod user;
 
-pub use self::answer::*;
-pub use self::chat::*;
-pub use self::chat_member::*;
-pub use self::game::*;
-pub use self::get_file::*;
-pub use self::message::*;
-pub use self::method::*;
-pub use self::passport::*;
-pub use self::send::*;
-pub use self::sticker::*;
-pub use self::updates::*;
-pub use self::user::*;
+pub use self::{
+    answer::*, chat::*, chat_member::*, game::*, get_file::*, message::*, method::*, passport::*, send::*, sticker::*,
+    updates::*, user::*,
+};

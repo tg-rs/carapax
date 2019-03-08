@@ -1,6 +1,8 @@
-use crate::types::inline_mode::message_content::InputMessageContent;
-use crate::types::primitive::{Integer, ParseMode};
-use crate::types::reply_markup::InlineKeyboardMarkup;
+use crate::types::{
+    inline_mode::message_content::InputMessageContent,
+    primitive::{Integer, ParseMode},
+    reply_markup::InlineKeyboardMarkup,
+};
 use serde::Serialize;
 
 /// Link to a video animation (H.264/MPEG-4 AVC video without sound)

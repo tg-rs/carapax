@@ -28,15 +28,15 @@ impl PassportElementError {
     ) -> Result<Self, UnexpectedEncryptedPassportElementKind> {
         use self::EncryptedPassportElementKind::*;
         match kind {
-            Address | DriverLicense | IdentityCard | InternalPassport | Passport
-            | PersonalDetails => Ok(PassportElementError {
-                kind: PassportElementErrorKind::DataField {
-                    kind,
-                    field_name: field_name.into(),
-                    data_hash: data_hash.into(),
-                    message: message.into(),
-                },
-            }),
+            Address | DriverLicense | IdentityCard | InternalPassport | Passport | PersonalDetails =>
+                Ok(PassportElementError {
+                    kind: PassportElementErrorKind::DataField {
+                        kind,
+                        field_name: field_name.into(),
+                        data_hash: data_hash.into(),
+                        message: message.into(),
+                    },
+                }),
             _ => Err(UnexpectedEncryptedPassportElementKind(kind)),
         }
     }
@@ -58,15 +58,13 @@ impl PassportElementError {
     ) -> Result<Self, UnexpectedEncryptedPassportElementKind> {
         use self::EncryptedPassportElementKind::*;
         match kind {
-            DriverLicense | IdentityCard | InternalPassport | Passport => {
-                Ok(PassportElementError {
-                    kind: PassportElementErrorKind::FrontSide {
-                        kind,
-                        file_hash: file_hash.into(),
-                        message: message.into(),
-                    },
-                })
-            }
+            DriverLicense | IdentityCard | InternalPassport | Passport => Ok(PassportElementError {
+                kind: PassportElementErrorKind::FrontSide {
+                    kind,
+                    file_hash: file_hash.into(),
+                    message: message.into(),
+                },
+            }),
             _ => Err(UnexpectedEncryptedPassportElementKind(kind)),
         }
     }
@@ -115,15 +113,13 @@ impl PassportElementError {
     ) -> Result<Self, UnexpectedEncryptedPassportElementKind> {
         use self::EncryptedPassportElementKind::*;
         match kind {
-            DriverLicense | IdentityCard | InternalPassport | Passport => {
-                Ok(PassportElementError {
-                    kind: PassportElementErrorKind::Selfie {
-                        kind,
-                        file_hash: file_hash.into(),
-                        message: message.into(),
-                    },
-                })
-            }
+            DriverLicense | IdentityCard | InternalPassport | Passport => Ok(PassportElementError {
+                kind: PassportElementErrorKind::Selfie {
+                    kind,
+                    file_hash: file_hash.into(),
+                    message: message.into(),
+                },
+            }),
             _ => Err(UnexpectedEncryptedPassportElementKind(kind)),
         }
     }
@@ -145,17 +141,14 @@ impl PassportElementError {
     ) -> Result<Self, UnexpectedEncryptedPassportElementKind> {
         use self::EncryptedPassportElementKind::*;
         match kind {
-            BankStatement
-            | PassportRegistration
-            | RentalAgreement
-            | TemporaryRegistration
-            | UtilityBill => Ok(PassportElementError {
-                kind: PassportElementErrorKind::File {
-                    kind,
-                    file_hash: file_hash.into(),
-                    message: message.into(),
-                },
-            }),
+            BankStatement | PassportRegistration | RentalAgreement | TemporaryRegistration | UtilityBill =>
+                Ok(PassportElementError {
+                    kind: PassportElementErrorKind::File {
+                        kind,
+                        file_hash: file_hash.into(),
+                        message: message.into(),
+                    },
+                }),
             _ => Err(UnexpectedEncryptedPassportElementKind(kind)),
         }
     }
@@ -178,17 +171,14 @@ impl PassportElementError {
     ) -> Result<Self, UnexpectedEncryptedPassportElementKind> {
         use self::EncryptedPassportElementKind::*;
         match kind {
-            BankStatement
-            | PassportRegistration
-            | RentalAgreement
-            | TemporaryRegistration
-            | UtilityBill => Ok(PassportElementError {
-                kind: PassportElementErrorKind::Files {
-                    kind,
-                    file_hashes,
-                    message: message.into(),
-                },
-            }),
+            BankStatement | PassportRegistration | RentalAgreement | TemporaryRegistration | UtilityBill =>
+                Ok(PassportElementError {
+                    kind: PassportElementErrorKind::Files {
+                        kind,
+                        file_hashes,
+                        message: message.into(),
+                    },
+                }),
             _ => Err(UnexpectedEncryptedPassportElementKind(kind)),
         }
     }
@@ -277,11 +267,7 @@ impl PassportElementError {
     /// * kind - Type of element of the user's Telegram Passport which has the issue
     /// * element_hash - Base64-encoded element hash
     /// * message - Error message
-    pub fn unspecified<S: Into<String>>(
-        kind: EncryptedPassportElementKind,
-        element_hash: S,
-        message: S,
-    ) -> Self {
+    pub fn unspecified<S: Into<String>>(kind: EncryptedPassportElementKind, element_hash: S, message: S) -> Self {
         PassportElementError {
             kind: PassportElementErrorKind::Unspecified {
                 kind,

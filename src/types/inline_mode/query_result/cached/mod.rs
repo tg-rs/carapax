@@ -7,11 +7,4 @@ mod sticker;
 mod video;
 mod voice;
 
-pub use self::audio::*;
-pub use self::document::*;
-pub use self::gif::*;
-pub use self::mpeg4_gif::*;
-pub use self::photo::*;
-pub use self::sticker::*;
-pub use self::video::*;
-pub use self::voice::*;
+pub use self::{audio::*, document::*, gif::*, mpeg4_gif::*, photo::*, sticker::*, video::*, voice::*};

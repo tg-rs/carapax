@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{ChatId, Integer, Message, ParseMode, ReplyMarkup};
+use crate::{
+    methods::method::*,
+    types::{ChatId, Integer, Message, ParseMode, ReplyMarkup},
+};
 use failure::Error;
 use serde::Serialize;
 

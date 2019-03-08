@@ -14,19 +14,10 @@ mod venue;
 mod video;
 mod voice;
 
-pub use self::article::*;
-pub use self::audio::*;
-pub use self::cached::*;
-pub use self::contact::*;
-pub use self::document::*;
-pub use self::game::*;
-pub use self::gif::*;
-pub use self::location::*;
-pub use self::mpeg4_gif::*;
-pub use self::photo::*;
-pub use self::venue::*;
-pub use self::video::*;
-pub use self::voice::*;
+pub use self::{
+    article::*, audio::*, cached::*, contact::*, document::*, game::*, gif::*, location::*, mpeg4_gif::*, photo::*,
+    venue::*, video::*, voice::*,
+};
 
 /// Result of an inline query
 #[derive(Clone, Debug, From, Serialize)]

@@ -1,9 +1,11 @@
-use crate::types::callback_query::CallbackQuery;
-use crate::types::inline_mode::{ChosenInlineResult, InlineQuery};
-use crate::types::message::Message;
-use crate::types::payments::{PreCheckoutQuery, ShippingQuery};
-use crate::types::primitive::Integer;
-use crate::types::user::User;
+use crate::types::{
+    callback_query::CallbackQuery,
+    inline_mode::{ChosenInlineResult, InlineQuery},
+    message::Message,
+    payments::{PreCheckoutQuery, ShippingQuery},
+    primitive::Integer,
+    user::User,
+};
 use serde::{de::Error, Deserialize, Deserializer, Serialize};
 
 /// Incoming update

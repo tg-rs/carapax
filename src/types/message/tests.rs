@@ -1,6 +1,4 @@
-use crate::types::chat::ChannelChat;
-use crate::types::message::*;
-use crate::types::user::User;
+use crate::types::{chat::ChannelChat, message::*, user::User};
 
 #[test]
 fn test_deserialize_message_channel() {
@@ -224,12 +222,11 @@ fn test_deserialize_message_forward() {
     let msg: Message = serde_json::from_str(input).unwrap();
     if let Some(Forward {
         date,
-        from:
-            ForwardFrom::Channel {
-                chat,
-                message_id,
-                signature,
-            },
+        from: ForwardFrom::Channel {
+            chat,
+            message_id,
+            signature,
+        },
     }) = msg.forward
     {
         assert_eq!(date, 0);
@@ -253,10 +250,7 @@ fn test_deserialize_message_forward() {
         "forward_date": 0
     }"#;
     let err = serde_json::from_str::<Message>(input).unwrap_err();
-    assert_eq!(
-        err.to_string(),
-        String::from("Unexpected forward_* fields combination")
-    );
+    assert_eq!(err.to_string(), String::from("Unexpected forward_* fields combination"));
 }
 
 #[test]

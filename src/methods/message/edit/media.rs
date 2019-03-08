@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{ChatId, EditMessageResult, InlineKeyboardMarkup, InputMedia, Integer};
+use crate::{
+    methods::method::*,
+    types::{ChatId, EditMessageResult, InlineKeyboardMarkup, InputMedia, Integer},
+};
 use failure::Error;
 use serde::Serialize;
 
@@ -46,10 +48,7 @@ impl EditMessageMedia {
     ///
     /// * inline_message_id - Identifier of the inline message
     /// * media - New media content of the message
-    pub fn with_inline_message_id<S: Into<String>>(
-        inline_message_id: S,
-        media: InputMedia,
-    ) -> Self {
+    pub fn with_inline_message_id<S: Into<String>>(inline_message_id: S, media: InputMedia) -> Self {
         EditMessageMedia {
             chat_id: None,
             message_id: None,

@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{File, Integer};
+use crate::{
+    methods::method::*,
+    types::{File, Integer},
+};
 use failure::Error;
 use serde::Serialize;
 

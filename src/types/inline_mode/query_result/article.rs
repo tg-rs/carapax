@@ -1,6 +1,6 @@
-use crate::types::inline_mode::message_content::InputMessageContent;
-use crate::types::primitive::Integer;
-use crate::types::reply_markup::InlineKeyboardMarkup;
+use crate::types::{
+    inline_mode::message_content::InputMessageContent, primitive::Integer, reply_markup::InlineKeyboardMarkup,
+};
 use serde::Serialize;
 
 /// Link to an article or web page
@@ -33,11 +33,7 @@ impl InlineQueryResultArticle {
     /// * id - Unique identifier for this result, 1-64 Bytes
     /// * title - Title of the result
     /// * input_message_content - Content of the message to be sent
-    pub fn new<S: Into<String>>(
-        id: S,
-        title: S,
-        input_message_content: InputMessageContent,
-    ) -> Self {
+    pub fn new<S: Into<String>>(id: S, title: S, input_message_content: InputMessageContent) -> Self {
         InlineQueryResultArticle {
             id: id.into(),
             title: title.into(),

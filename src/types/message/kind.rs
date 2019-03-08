@@ -1,5 +1,7 @@
-use crate::types::chat::{ChannelChat, GroupChat, PrivateChat, SupergroupChat};
-use crate::types::user::User;
+use crate::types::{
+    chat::{ChannelChat, GroupChat, PrivateChat, SupergroupChat},
+    user::User,
+};
 
 /// Contains chat-specific data
 #[derive(Clone, Debug)]

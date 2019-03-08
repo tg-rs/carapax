@@ -6,8 +6,7 @@ mod error;
 #[cfg(test)]
 mod tests;
 
-pub use self::element::*;
-pub use self::error::*;
+pub use self::{element::*, error::*};
 
 /// Telegram Passport data shared with the bot by the user
 #[derive(Clone, Debug, Deserialize)]

@@ -1,22 +1,20 @@
-use crate::executor::Executor;
-use crate::methods::{Request, RequestBody, RequestMethod};
+use crate::{
+    executor::Executor,
+    methods::{Request, RequestBody, RequestMethod},
+};
 use failure::Error;
 use futures::{future, Future, Stream};
 use hyper::{
     client::{connect::Connect, Client, HttpConnector},
     Body, Request as HttpRequest,
 };
-use hyper_proxy::{
-    Intercept as HttpProxyIntercept, Proxy as HttpProxy, ProxyConnector as HttpProxyConnector,
-};
+use hyper_proxy::{Intercept as HttpProxyIntercept, Proxy as HttpProxy, ProxyConnector as HttpProxyConnector};
 use hyper_socks2::{Auth as SocksAuth, Proxy as SocksProxy};
 use hyper_tls::HttpsConnector;
 use log::{debug, log_enabled, Level::Debug};
-use std::net::SocketAddr;
-use std::sync::Arc;
+use std::{net::SocketAddr, sync::Arc};
 use typed_headers::Credentials as HttpProxyCredentials;
-use url::percent_encoding::percent_decode;
-use url::Url;
+use url::{percent_encoding::percent_decode, Url};
 
 const DEFAULT_HTTPS_DNS_WORKER_THREADS: usize = 1;
 
@@ -114,10 +112,7 @@ pub(crate) fn proxy_executor(dsn: &str) -> Result<Box<Executor>, Error> {
         "http" | "https" => {
             let mut proxy = HttpProxy::new(HttpProxyIntercept::All, dsn.parse()?);
             if let Some(password) = parsed_dsn.password() {
-                proxy.set_authorization(HttpProxyCredentials::basic(
-                    parsed_dsn.username(),
-                    password,
-                )?);
+                proxy.set_authorization(HttpProxyCredentials::basic(parsed_dsn.username(), password)?);
             }
             http_proxy_executor(proxy)
         }
@@ -129,9 +124,7 @@ pub(crate) fn proxy_executor(dsn: &str) -> Result<Box<Executor>, Error> {
             addrs: host,
             auth: parsed_dsn.password().map(|password| SocksAuth {
                 user: parsed_dsn.username().to_string(),
-                pass: percent_decode(password.as_bytes())
-                    .decode_utf8_lossy()
-                    .to_string(),
+                pass: percent_decode(password.as_bytes()).decode_utf8_lossy().to_string(),
             }),
         }),
         _ => unexpected_proxy!(),

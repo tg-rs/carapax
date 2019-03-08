@@ -2,10 +2,11 @@ use dotenv::dotenv;
 use env_logger;
 use log;
 use std::env;
-use tgbot::dispatcher::{DispatcherBuilder, Handler, HandlerFuture, MessageHandler};
-use tgbot::types::Message;
-use tgbot::webhook;
-use tgbot::Api;
+use tgbot::{
+    dispatcher::{DispatcherBuilder, Handler, HandlerFuture, MessageHandler},
+    types::Message,
+    webhook, Api,
+};
 
 struct LogMessageHandler;
 

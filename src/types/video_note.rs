@@ -1,5 +1,4 @@
-use crate::types::photo_size::PhotoSize;
-use crate::types::primitive::Integer;
+use crate::types::{photo_size::PhotoSize, primitive::Integer};
 use serde::Deserialize;
 
 /// Video message

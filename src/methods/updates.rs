@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{AllowedUpdate, Integer, Update, WebhookInfo};
+use crate::{
+    methods::method::*,
+    types::{AllowedUpdate, Integer, Update, WebhookInfo},
+};
 use failure::Error;
 use serde::Serialize;
 use std::collections::HashSet;
@@ -210,10 +212,7 @@ mod tests {
     fn test_serialize_get_updates() {
         let req = GetUpdates::default().get_request().unwrap().build("token");
         assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(
-            req.url,
-            String::from("https://api.telegram.org/bottoken/getUpdates")
-        );
+        assert_eq!(req.url, String::from("https://api.telegram.org/bottoken/getUpdates"));
         match req.body {
             RequestBody::Json(data) => {
                 assert_eq!(String::from_utf8(data).unwrap(), String::from(r#"{}"#));
@@ -274,16 +273,10 @@ mod tests {
     fn test_serialize_set_webhook() {
         let req = SetWebhook::new("url").get_request().unwrap().build("token");
         assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(
-            req.url,
-            String::from("https://api.telegram.org/bottoken/setWebhook")
-        );
+        assert_eq!(req.url, String::from("https://api.telegram.org/bottoken/setWebhook"));
         match req.body {
             RequestBody::Json(data) => {
-                assert_eq!(
-                    String::from_utf8(data).unwrap(),
-                    String::from(r#"{"url":"url"}"#)
-                );
+                assert_eq!(String::from_utf8(data).unwrap(), String::from(r#"{"url":"url"}"#));
             }
             data => panic!("Unexpected request data: {:?}", data),
         }
@@ -293,10 +286,7 @@ mod tests {
     fn test_serialize_delete_webhook() {
         let req = DeleteWebhook.get_request().unwrap().build("token");
         assert_eq!(req.method, RequestMethod::Get);
-        assert_eq!(
-            req.url,
-            String::from("https://api.telegram.org/bottoken/deleteWebhook")
-        );
+        assert_eq!(req.url, String::from("https://api.telegram.org/bottoken/deleteWebhook"));
         match req.body {
             RequestBody::Empty => {}
             data => panic!("Unexpected request data: {:?}", data),

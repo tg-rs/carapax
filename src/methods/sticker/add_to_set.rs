@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{Integer, MaskPosition};
+use crate::{
+    methods::method::*,
+    types::{Integer, MaskPosition},
+};
 use failure::Error;
 use serde::Serialize;
 
