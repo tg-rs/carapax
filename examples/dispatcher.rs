@@ -33,7 +33,7 @@ fn main() {
     let proxy = env::var("TGBOT_PROXY").ok();
     let api = match proxy {
         Some(proxy) => Api::with_proxy(token, &proxy),
-        None => Api::create(token),
+        None => Api::new(token),
     }
     .expect("Failed to create API");
     DispatcherBuilder::new()

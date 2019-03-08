@@ -17,7 +17,7 @@ pub struct Api {
 
 impl Api {
     /// Creates a client
-    pub fn create<S: Into<String>>(token: S) -> Result<Self, Error> {
+    pub fn new<S: Into<String>>(token: S) -> Result<Self, Error> {
         Ok(Api {
             executor: Arc::new(default_executor()?),
             token: token.into(),
