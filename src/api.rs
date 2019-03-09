@@ -1,12 +1,13 @@
-use crate::executor::{default_executor, proxy_executor, Executor};
-use crate::methods::Method;
-use crate::poll::UpdatesStream;
-use crate::types::Response;
+use crate::{
+    executor::{default_executor, proxy_executor, Executor},
+    methods::Method,
+    poll::UpdatesStream,
+    types::Response,
+};
 use failure::Error;
 use futures::{future, Future, Poll};
 use serde::de::DeserializeOwned;
-use std::fmt::Debug;
-use std::sync::Arc;
+use std::{fmt::Debug, sync::Arc};
 
 /// Telegram Bot API client
 #[derive(Clone)]
@@ -46,22 +47,15 @@ impl Api {
         let executor = self.executor.clone();
         ApiFuture {
             inner: Box::new(
-                future::result(
-                    method
-                        .get_request()
-                        .map(|builder| builder.build(&self.token)),
-                )
-                .and_then(move |req| executor.execute(req).from_err())
-                .and_then(|data| {
-                    future::result(serde_json::from_slice::<Response<M::Response>>(&data))
-                        .from_err()
-                })
-                .and_then(|rep| {
-                    future::result(match rep {
-                        Response::Success(obj) => Ok(obj),
-                        Response::Error(err) => Err(err.into()),
-                    })
-                }),
+                future::result(method.get_request().map(|builder| builder.build(&self.token)))
+                    .and_then(move |req| executor.execute(req).from_err())
+                    .and_then(|data| future::result(serde_json::from_slice::<Response<M::Response>>(&data)).from_err())
+                    .and_then(|rep| {
+                        future::result(match rep {
+                            Response::Success(obj) => Ok(obj),
+                            Response::Error(err) => Err(err.into()),
+                        })
+                    }),
             ),
         }
     }

@@ -52,46 +52,38 @@ impl<'de> Deserialize<'de> for EncryptedPassportElement {
                 data: required!(data),
                 hash: raw.hash,
             }),
-            BankStatement => {
-                EncryptedPassportElement::BankStatement(EncryptedPassportElementBankStatement {
-                    files: required!(files),
-                    translation: raw.translation,
-                    hash: raw.hash,
-                })
-            }
-            DriverLicense => {
-                EncryptedPassportElement::DriverLicense(EncryptedPassportElementDriverLicense {
-                    data: required!(data),
-                    front_side: required!(front_side),
-                    reverse_side: required!(reverse_side),
-                    selfie: required!(selfie),
-                    translation: raw.translation,
-                    hash: raw.hash,
-                })
-            }
+            BankStatement => EncryptedPassportElement::BankStatement(EncryptedPassportElementBankStatement {
+                files: required!(files),
+                translation: raw.translation,
+                hash: raw.hash,
+            }),
+            DriverLicense => EncryptedPassportElement::DriverLicense(EncryptedPassportElementDriverLicense {
+                data: required!(data),
+                front_side: required!(front_side),
+                reverse_side: required!(reverse_side),
+                selfie: required!(selfie),
+                translation: raw.translation,
+                hash: raw.hash,
+            }),
             Email => EncryptedPassportElement::Email(EncryptedPassportElementEmail {
                 email: required!(email),
                 hash: raw.hash,
             }),
-            IdentityCard => {
-                EncryptedPassportElement::IdentityCard(EncryptedPassportElementIdentityCard {
-                    data: required!(data),
-                    front_side: required!(front_side),
-                    reverse_side: required!(reverse_side),
-                    selfie: required!(selfie),
-                    translation: raw.translation,
-                    hash: raw.hash,
-                })
-            }
-            InternalPassport => EncryptedPassportElement::InternalPassport(
-                EncryptedPassportElementInternalPassport {
-                    data: required!(data),
-                    front_side: required!(front_side),
-                    selfie: required!(selfie),
-                    translation: raw.translation,
-                    hash: raw.hash,
-                },
-            ),
+            IdentityCard => EncryptedPassportElement::IdentityCard(EncryptedPassportElementIdentityCard {
+                data: required!(data),
+                front_side: required!(front_side),
+                reverse_side: required!(reverse_side),
+                selfie: required!(selfie),
+                translation: raw.translation,
+                hash: raw.hash,
+            }),
+            InternalPassport => EncryptedPassportElement::InternalPassport(EncryptedPassportElementInternalPassport {
+                data: required!(data),
+                front_side: required!(front_side),
+                selfie: required!(selfie),
+                translation: raw.translation,
+                hash: raw.hash,
+            }),
             Passport => EncryptedPassportElement::Passport(EncryptedPassportElementPassport {
                 data: required!(data),
                 front_side: required!(front_side),
@@ -99,46 +91,36 @@ impl<'de> Deserialize<'de> for EncryptedPassportElement {
                 translation: raw.translation,
                 hash: raw.hash,
             }),
-            PassportRegistration => EncryptedPassportElement::PassportRegistration(
-                EncryptedPassportElementPassportRegistration {
+            PassportRegistration =>
+                EncryptedPassportElement::PassportRegistration(EncryptedPassportElementPassportRegistration {
                     files: required!(files),
                     translation: raw.translation,
                     hash: raw.hash,
-                },
-            ),
-            PersonalDetails => {
-                EncryptedPassportElement::PersonalDetails(EncryptedPassportElementPersonalDetails {
-                    data: required!(data),
-                    hash: raw.hash,
-                })
-            }
-            PhoneNumber => {
-                EncryptedPassportElement::PhoneNumber(EncryptedPassportElementPhoneNumber {
-                    phone_number: required!(phone_number),
-                    hash: raw.hash,
-                })
-            }
-            RentalAgreement => {
-                EncryptedPassportElement::RentalAgreement(EncryptedPassportElementRentalAgreement {
+                }),
+            PersonalDetails => EncryptedPassportElement::PersonalDetails(EncryptedPassportElementPersonalDetails {
+                data: required!(data),
+                hash: raw.hash,
+            }),
+            PhoneNumber => EncryptedPassportElement::PhoneNumber(EncryptedPassportElementPhoneNumber {
+                phone_number: required!(phone_number),
+                hash: raw.hash,
+            }),
+            RentalAgreement => EncryptedPassportElement::RentalAgreement(EncryptedPassportElementRentalAgreement {
+                files: required!(files),
+                translation: raw.translation,
+                hash: raw.hash,
+            }),
+            TemporaryRegistration =>
+                EncryptedPassportElement::TemporaryRegistration(EncryptedPassportElementTemporaryRegistration {
                     files: required!(files),
                     translation: raw.translation,
                     hash: raw.hash,
-                })
-            }
-            TemporaryRegistration => EncryptedPassportElement::TemporaryRegistration(
-                EncryptedPassportElementTemporaryRegistration {
-                    files: required!(files),
-                    translation: raw.translation,
-                    hash: raw.hash,
-                },
-            ),
-            UtilityBill => {
-                EncryptedPassportElement::UtilityBill(EncryptedPassportElementUtilityBill {
-                    files: required!(files),
-                    translation: raw.translation,
-                    hash: raw.hash,
-                })
-            }
+                }),
+            UtilityBill => EncryptedPassportElement::UtilityBill(EncryptedPassportElementUtilityBill {
+                files: required!(files),
+                translation: raw.translation,
+                hash: raw.hash,
+            }),
         })
     }
 }

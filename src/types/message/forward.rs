@@ -1,6 +1,4 @@
-use crate::types::chat::ChannelChat;
-use crate::types::primitive::Integer;
-use crate::types::user::User;
+use crate::types::{chat::ChannelChat, primitive::Integer, user::User};
 
 /// Contains information about original message
 #[derive(Clone, Debug)]

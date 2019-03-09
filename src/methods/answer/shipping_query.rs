@@ -1,5 +1,4 @@
-use crate::methods::method::*;
-use crate::types::ShippingOption;
+use crate::{methods::method::*, types::ShippingOption};
 use failure::Error;
 use serde::Serialize;
 
@@ -24,10 +23,7 @@ impl AnswerShippingQuery {
     ///
     /// * shipping_query_id - Unique identifier for the query to be answered
     /// * shipping_options - Array of available shipping options
-    pub fn ok<S: Into<String>>(
-        shipping_query_id: S,
-        shipping_options: Vec<ShippingOption>,
-    ) -> Self {
+    pub fn ok<S: Into<String>>(shipping_query_id: S, shipping_options: Vec<ShippingOption>) -> Self {
         AnswerShippingQuery {
             shipping_query_id: shipping_query_id.into(),
             ok: true,

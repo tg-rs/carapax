@@ -1,7 +1,4 @@
-use crate::types::chat::photo::ChatPhoto;
-use crate::types::message::Message;
-use crate::types::primitive::Integer;
-use crate::types::user::User;
+use crate::types::{chat::photo::ChatPhoto, message::Message, primitive::Integer, user::User};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]

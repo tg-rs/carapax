@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{Integer, MaskPosition};
+use crate::{
+    methods::method::*,
+    types::{Integer, MaskPosition},
+};
 use failure::Error;
 use serde::Serialize;
 
@@ -39,13 +41,7 @@ impl CreateNewStickerSet {
     ///                 pass an HTTP URL as a String for Telegram to get a file from the Internet,
     ///                 or upload a new one using multipart/form-data
     /// * emojis - One or more emoji corresponding to the sticker
-    pub fn new<S: Into<String>>(
-        user_id: Integer,
-        name: S,
-        title: S,
-        png_sticker: S,
-        emojis: S,
-    ) -> Self {
+    pub fn new<S: Into<String>>(user_id: Integer, name: S, title: S, png_sticker: S, emojis: S) -> Self {
         CreateNewStickerSet {
             user_id,
             name: name.into(),

@@ -1,15 +1,16 @@
-use crate::dispatcher::Dispatcher;
-use crate::types::Update;
+use crate::{dispatcher::Dispatcher, types::Update};
 use futures::{future::ok, Future, Stream};
 use hyper::{
     header::{HeaderValue, ALLOW},
     service::{MakeService, Service},
     Body, Error, Method, Request, Response, Server, StatusCode,
 };
-use std::error::Error as StdError;
-use std::fmt;
-use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
+use std::{
+    error::Error as StdError,
+    fmt,
+    net::SocketAddr,
+    sync::{Arc, Mutex},
+};
 
 struct WebhookServiceFactory<C> {
     path: String,
@@ -96,8 +97,7 @@ where
             }
         } else {
             *rep.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
-            rep.headers_mut()
-                .insert(ALLOW, HeaderValue::from_static("POST"));
+            rep.headers_mut().insert(ALLOW, HeaderValue::from_static("POST"));
         }
         Box::new(ok(rep))
     }

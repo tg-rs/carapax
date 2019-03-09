@@ -201,15 +201,9 @@ fn test_deserialize_supergroup() {
         let photo = chat.photo.unwrap();
         assert_eq!(photo.small_file_id, "smallfileid");
         assert_eq!(photo.big_file_id, "bigfileid");
-        assert_eq!(
-            chat.description,
-            Some(String::from("supergroupdescription"))
-        );
+        assert_eq!(chat.description, Some(String::from("supergroupdescription")));
         assert_eq!(chat.invite_link, Some(String::from("supergroupinvitelink")));
-        assert_eq!(
-            chat.sticker_set_name,
-            Some(String::from("supergroupstickersetname"))
-        );
+        assert_eq!(chat.sticker_set_name, Some(String::from("supergroupstickersetname")));
         assert_eq!(chat.can_set_sticker_set, Some(true));
         assert!(chat.pinned_message.is_some());
     } else {

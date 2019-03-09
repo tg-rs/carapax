@@ -1,12 +1,16 @@
-use crate::api::Api;
-use crate::methods::GetUpdates;
-use crate::types::{AllowedUpdate, Integer, Update};
+use crate::{
+    api::Api,
+    methods::GetUpdates,
+    types::{AllowedUpdate, Integer, Update},
+};
 use failure::Error;
 use futures::{task, Async, Future, Poll, Stream};
 use log::error;
-use std::cmp::max;
-use std::collections::{HashSet, VecDeque};
-use std::time::Duration;
+use std::{
+    cmp::max,
+    collections::{HashSet, VecDeque},
+    time::Duration,
+};
 use tokio_timer::sleep;
 
 const DEFAULT_LIMIT: Integer = 100;
@@ -115,9 +119,7 @@ impl Stream for UpdatesStream {
             }
             Err(err) => {
                 error!("An error has occurred while getting updates: {:?}", err);
-                self.request = Some(Box::new(
-                    sleep(self.error_timeout).from_err().map(|()| None),
-                ));
+                self.request = Some(Box::new(sleep(self.error_timeout).from_err().map(|()| None)));
             }
         };
 

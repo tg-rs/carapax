@@ -1,6 +1,8 @@
-use crate::types::message::raw::{RawMessageEntity, RawMessageEntityKind};
-use crate::types::primitive::Integer;
-use crate::types::user::User;
+use crate::types::{
+    message::raw::{RawMessageEntity, RawMessageEntityKind},
+    primitive::Integer,
+    user::User,
+};
 use std::string::FromUtf16Error;
 
 /// Text with entities
@@ -35,20 +37,10 @@ impl Text {
                         return Err(ParseTextError::BadLength(length));
                     }
                     let (offset, length) = (offset as usize, length as usize);
-                    let data = String::from_utf16(
-                        &text
-                            .iter()
-                            .skip(offset)
-                            .take(length)
-                            .cloned()
-                            .collect::<Vec<u16>>(),
-                    )
-                    .map_err(ParseTextError::FromUtf16)?;
-                    let data = TextEntityData {
-                        offset,
-                        length,
-                        data,
-                    };
+                    let data =
+                        String::from_utf16(&text.iter().skip(offset).take(length).cloned().collect::<Vec<u16>>())
+                            .map_err(ParseTextError::FromUtf16)?;
+                    let data = TextEntityData { offset, length, data };
                     result.push(TextEntity::from_raw(entity, data)?)
                 }
                 Some(result)
@@ -92,10 +84,7 @@ pub enum TextEntity {
 }
 
 impl TextEntity {
-    fn from_raw(
-        entity: RawMessageEntity,
-        data: TextEntityData,
-    ) -> Result<TextEntity, ParseTextError> {
+    fn from_raw(entity: RawMessageEntity, data: TextEntityData) -> Result<TextEntity, ParseTextError> {
         Ok(match entity.kind {
             RawMessageEntityKind::Bold => TextEntity::Bold(data),
             RawMessageEntityKind::BotCommand => {
@@ -104,11 +93,7 @@ impl TextEntity {
                 assert!(len >= 1);
                 TextEntity::BotCommand(BotCommand {
                     command: parts[0].to_string(),
-                    bot_name: if len == 2 {
-                        Some(parts[1].to_string())
-                    } else {
-                        None
-                    },
+                    bot_name: if len == 2 { Some(parts[1].to_string()) } else { None },
                     data,
                 })
             }

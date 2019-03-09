@@ -1,20 +1,22 @@
-use crate::types::animation::Animation;
-use crate::types::audio::Audio;
-use crate::types::contact::Contact;
-use crate::types::document::Document;
-use crate::types::games::Game;
-use crate::types::location::Location;
-use crate::types::message::{Message, Text};
-use crate::types::passport::PassportData;
-use crate::types::payments::{Invoice, SuccessfulPayment};
-use crate::types::photo_size::PhotoSize;
-use crate::types::primitive::Integer;
-use crate::types::stickers::Sticker;
-use crate::types::user::User;
-use crate::types::venue::Venue;
-use crate::types::video::Video;
-use crate::types::video_note::VideoNote;
-use crate::types::voice::Voice;
+use crate::types::{
+    animation::Animation,
+    audio::Audio,
+    contact::Contact,
+    document::Document,
+    games::Game,
+    location::Location,
+    message::{Message, Text},
+    passport::PassportData,
+    payments::{Invoice, SuccessfulPayment},
+    photo_size::PhotoSize,
+    primitive::Integer,
+    stickers::Sticker,
+    user::User,
+    venue::Venue,
+    video::Video,
+    video_note::VideoNote,
+    voice::Voice,
+};
 
 /// Contains message data
 #[derive(Clone, Debug)]

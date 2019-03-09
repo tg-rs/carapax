@@ -1,6 +1,6 @@
 use crate::types::{
-    BotCommand, CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery,
-    ShippingQuery, Update, UpdateKind,
+    BotCommand, CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update,
+    UpdateKind,
 };
 use failure::Error;
 use futures::{future, Future, Poll};
@@ -89,12 +89,7 @@ enum HandlerKind<C> {
 }
 
 impl<C> Handler<C> {
-    pub(super) fn handle(
-        &mut self,
-        context: &C,
-        update: &Update,
-        commands: &Option<Vec<BotCommand>>,
-    ) -> HandlerFuture {
+    pub(super) fn handle(&mut self, context: &C, update: &Update, commands: &Option<Vec<BotCommand>>) -> HandlerFuture {
         macro_rules! handle {
             ($kind:ident($val:ident)) => {
                 if let HandlerKind::$kind(ref mut handler) = self.kind {
@@ -110,15 +105,14 @@ impl<C> Handler<C> {
             | UpdateKind::EditedMessage(ref msg)
             | UpdateKind::ChannelPost(ref msg)
             | UpdateKind::EditedChannelPost(ref msg) => match commands {
-                Some(commands) => {
+                Some(commands) =>
                     if let HandlerKind::Command(ref mut handler) = self.kind {
                         for command in commands {
                             if handler.accepts(command) {
                                 return handler.handle(context, msg);
                             }
                         }
-                    }
-                }
+                    },
                 None => handle!(Message(msg)),
             },
             UpdateKind::InlineQuery(ref val) => handle!(InlineQuery(val)),

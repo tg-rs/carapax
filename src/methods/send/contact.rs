@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{ChatId, Integer, Message, ReplyMarkup};
+use crate::{
+    methods::method::*,
+    types::{ChatId, Integer, Message, ReplyMarkup},
+};
 use failure::Error;
 use serde::Serialize;
 
@@ -29,11 +31,7 @@ impl SendContact {
     /// * chat_id - Unique identifier for the target chat
     /// * phone_number - Contact's phone number
     /// * first_name - Contact's first name
-    pub fn new<C: Into<ChatId>, S: Into<String>>(
-        chat_id: C,
-        phone_number: S,
-        first_name: S,
-    ) -> Self {
+    pub fn new<C: Into<ChatId>, S: Into<String>>(chat_id: C, phone_number: S, first_name: S) -> Self {
         SendContact {
             chat_id: chat_id.into(),
             phone_number: phone_number.into(),

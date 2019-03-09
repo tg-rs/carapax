@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{ChatId, Integer, Message, ReplyMarkup};
+use crate::{
+    methods::method::*,
+    types::{ChatId, Integer, Message, ReplyMarkup},
+};
 use failure::Error;
 use serde::Serialize;
 
@@ -73,7 +75,6 @@ impl SendVideoNote {
     }
 
     // Sends the message silently
-    ///
     /// Users will receive a notification with no sound
     pub fn disable_notification(mut self, disable_notification: bool) -> Self {
         self.disable_notification = Some(disable_notification);

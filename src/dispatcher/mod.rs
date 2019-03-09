@@ -1,5 +1,7 @@
-use crate::api::Api;
-use crate::types::{BotCommand, Update, UpdateKind};
+use crate::{
+    api::Api,
+    types::{BotCommand, Update, UpdateKind},
+};
 use failure::Error;
 use futures::{future, task, Async, Future, Poll, Stream};
 use std::sync::{Arc, Mutex};
@@ -10,8 +12,7 @@ mod middleware;
 #[cfg(test)]
 mod tests;
 
-pub use self::handler::*;
-pub use self::middleware::*;
+pub use self::{handler::*, middleware::*};
 
 struct Store<C> {
     middlewares: Vec<Box<Middleware<C> + Send + Sync>>,
@@ -251,8 +252,7 @@ where
             },
             None => match self.store.lock().unwrap().handlers.get_mut(idx) {
                 Some(ref mut handler) => {
-                    self.handler =
-                        Some(handler.handle(&self.context, &self.update, &self.commands));
+                    self.handler = Some(handler.handle(&self.context, &self.update, &self.commands));
                     task::current().notify();
                     Ok(Async::NotReady)
                 }

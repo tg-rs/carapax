@@ -1,5 +1,4 @@
-use crate::methods::method::*;
-use crate::types::StickerSet;
+use crate::{methods::method::*, types::StickerSet};
 use failure::Error;
 use serde::Serialize;
 

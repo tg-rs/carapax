@@ -1,8 +1,5 @@
 use super::*;
-use crate::types::{
-    CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery,
-    Update,
-};
+use crate::types::{CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
@@ -38,10 +35,7 @@ fn handle_inline_query(context: &MockContext, _query: &InlineQuery) -> HandlerFu
     ().into()
 }
 
-fn handle_chose_inline_result(
-    context: &MockContext,
-    _result: &ChosenInlineResult,
-) -> HandlerFuture {
+fn handle_chose_inline_result(context: &MockContext, _result: &ChosenInlineResult) -> HandlerFuture {
     context.inc_calls();
     ().into()
 }
@@ -128,10 +122,7 @@ fn test_dispatch_message() {
 #[test]
 fn test_dispatch_command() {
     let mut dispatcher = DispatcherBuilder::new()
-        .add_handler(Handler::command(CommandHandler::new(
-            "/testcommand",
-            handle_message,
-        )))
+        .add_handler(Handler::command(CommandHandler::new("/testcommand", handle_message)))
         .add_handler(Handler::update(handle_update))
         .build(MockContext::new());
     for data in &[

@@ -6,10 +6,6 @@ mod send;
 mod set_position_in_set;
 mod upload_file;
 
-pub use self::add_to_set::*;
-pub use self::delete_from_set::*;
-pub use self::get_set::*;
-pub use self::new_set::*;
-pub use self::send::*;
-pub use self::set_position_in_set::*;
-pub use self::upload_file::*;
+pub use self::{
+    add_to_set::*, delete_from_set::*, get_set::*, new_set::*, send::*, set_position_in_set::*, upload_file::*,
+};

@@ -1,6 +1,8 @@
-use crate::types::inline_mode::message_content::InputMessageContent;
-use crate::types::primitive::{Float, Integer};
-use crate::types::reply_markup::InlineKeyboardMarkup;
+use crate::types::{
+    inline_mode::message_content::InputMessageContent,
+    primitive::{Float, Integer},
+    reply_markup::InlineKeyboardMarkup,
+};
 use serde::Serialize;
 
 /// Venue
@@ -41,13 +43,7 @@ impl InlineQueryResultVenue {
     /// * longitude - Longitude of the venue location in degrees
     /// * title - Title of the venue
     /// * address - Address of the venue
-    pub fn new<S: Into<String>>(
-        id: S,
-        latitude: Float,
-        longitude: Float,
-        title: S,
-        address: S,
-    ) -> Self {
+    pub fn new<S: Into<String>>(id: S, latitude: Float, longitude: Float, title: S, address: S) -> Self {
         InlineQueryResultVenue {
             id: id.into(),
             latitude,

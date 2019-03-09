@@ -1,6 +1,8 @@
-use crate::types::chat::raw::{RawChatMember, RawChatMemberStatus};
-use crate::types::primitive::Integer;
-use crate::types::user::User;
+use crate::types::{
+    chat::raw::{RawChatMember, RawChatMemberStatus},
+    primitive::Integer,
+    user::User,
+};
 use serde::de::{Deserialize, Deserializer, Error};
 
 /// Information about one member of a chat
@@ -50,20 +52,18 @@ impl<'de> Deserialize<'de> for ChatMember {
             }};
         };
         Ok(match raw.status {
-            RawChatMemberStatus::Administrator => {
-                ChatMember::Administrator(ChatMemberAdministrator {
-                    user: raw.user,
-                    can_be_edited: required!(can_be_edited),
-                    can_change_info: required!(can_change_info),
-                    can_post_messages: required!(can_post_messages),
-                    can_edit_messages: required!(can_edit_messages),
-                    can_delete_messages: required!(can_delete_messages),
-                    can_invite_users: required!(can_invite_users),
-                    can_restrict_members: required!(can_restrict_members),
-                    can_pin_messages: required!(can_pin_messages),
-                    can_promote_members: required!(can_promote_members),
-                })
-            }
+            RawChatMemberStatus::Administrator => ChatMember::Administrator(ChatMemberAdministrator {
+                user: raw.user,
+                can_be_edited: required!(can_be_edited),
+                can_change_info: required!(can_change_info),
+                can_post_messages: required!(can_post_messages),
+                can_edit_messages: required!(can_edit_messages),
+                can_delete_messages: required!(can_delete_messages),
+                can_invite_users: required!(can_invite_users),
+                can_restrict_members: required!(can_restrict_members),
+                can_pin_messages: required!(can_pin_messages),
+                can_promote_members: required!(can_promote_members),
+            }),
             RawChatMemberStatus::Creator => ChatMember::Creator(raw.user),
             RawChatMemberStatus::Kicked => ChatMember::Kicked(ChatMemberKicked {
                 user: raw.user,

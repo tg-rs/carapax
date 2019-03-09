@@ -1,20 +1,22 @@
-use crate::types::animation::Animation;
-use crate::types::audio::Audio;
-use crate::types::chat::Chat;
-use crate::types::contact::Contact;
-use crate::types::document::Document;
-use crate::types::games::Game;
-use crate::types::location::Location;
-use crate::types::passport::PassportData;
-use crate::types::payments::{Invoice, SuccessfulPayment};
-use crate::types::photo_size::PhotoSize;
-use crate::types::primitive::Integer;
-use crate::types::stickers::Sticker;
-use crate::types::user::User;
-use crate::types::venue::Venue;
-use crate::types::video::Video;
-use crate::types::video_note::VideoNote;
-use crate::types::voice::Voice;
+use crate::types::{
+    animation::Animation,
+    audio::Audio,
+    chat::Chat,
+    contact::Contact,
+    document::Document,
+    games::Game,
+    location::Location,
+    passport::PassportData,
+    payments::{Invoice, SuccessfulPayment},
+    photo_size::PhotoSize,
+    primitive::Integer,
+    stickers::Sticker,
+    user::User,
+    venue::Venue,
+    video::Video,
+    video_note::VideoNote,
+    voice::Voice,
+};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]

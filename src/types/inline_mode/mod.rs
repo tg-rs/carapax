@@ -1,12 +1,10 @@
-use crate::types::location::Location;
-use crate::types::user::User;
+use crate::types::{location::Location, user::User};
 use serde::Deserialize;
 
 mod message_content;
 mod query_result;
 
-pub use self::message_content::*;
-pub use self::query_result::*;
+pub use self::{message_content::*, query_result::*};
 
 /// Incoming inline query
 ///

@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{InlineQueryResult, Integer};
+use crate::{
+    methods::method::*,
+    types::{InlineQueryResult, Integer},
+};
 use failure::Error;
 use serde::Serialize;
 

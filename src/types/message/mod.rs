@@ -1,7 +1,4 @@
-use crate::types::chat::Chat;
-use crate::types::message::raw::RawMessage;
-use crate::types::primitive::Integer;
-use crate::types::user::User;
+use crate::types::{chat::Chat, message::raw::RawMessage, primitive::Integer, user::User};
 use serde::{de::Error, Deserialize, Deserializer};
 
 mod data;
@@ -12,11 +9,8 @@ mod raw;
 mod tests;
 mod text;
 
-pub use self::data::*;
-pub use self::forward::*;
-pub use self::kind::*;
 pub(crate) use self::raw::RawMessageEntity;
-pub use self::text::*;
+pub use self::{data::*, forward::*, kind::*, text::*};
 
 /// This object represents a message
 #[derive(Clone, Debug)]
@@ -157,16 +151,14 @@ impl Message {
                 date,
                 from: ForwardFrom::User(user),
             }),
-            (Some(date), None, Some(Chat::Channel(chat)), Some(message_id), signature) => {
-                Some(Forward {
-                    date,
-                    from: ForwardFrom::Channel {
-                        chat,
-                        message_id,
-                        signature,
-                    },
-                })
-            }
+            (Some(date), None, Some(Chat::Channel(chat)), Some(message_id), signature) => Some(Forward {
+                date,
+                from: ForwardFrom::Channel {
+                    chat,
+                    message_id,
+                    signature,
+                },
+            }),
             (None, None, None, None, None) => None,
             _ => return Err(ParseError::BadForward),
         };
@@ -206,12 +198,12 @@ impl Message {
                     message_data!(MessageData::$variant(data));
                 }
             };
-            ($variant:ident($attr:ident, caption)) => {
+            ($variant:ident($attr:ident,caption)) => {
                 if let Some(data) = raw.$attr {
                     message_data!(MessageData::$variant { caption, data });
                 }
             };
-            ($variant:ident($attr:ident, flag)) => {
+            ($variant:ident($attr:ident,flag)) => {
                 if raw.$attr.unwrap_or(false) {
                     message_data!(MessageData::$variant);
                 }

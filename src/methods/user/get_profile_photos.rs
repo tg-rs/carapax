@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{Integer, UserProfilePhotos};
+use crate::{
+    methods::method::*,
+    types::{Integer, UserProfilePhotos},
+};
 use failure::Error;
 use serde::Serialize;
 

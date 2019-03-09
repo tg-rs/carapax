@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{Integer, PassportElementError};
+use crate::{
+    methods::method::*,
+    types::{Integer, PassportElementError},
+};
 use failure::Error;
 use serde::Serialize;
 

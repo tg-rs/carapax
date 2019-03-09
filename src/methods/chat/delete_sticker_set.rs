@@ -1,5 +1,4 @@
-use crate::methods::method::*;
-use crate::types::ChatId;
+use crate::{methods::method::*, types::ChatId};
 use failure::Error;
 use serde::Serialize;
 

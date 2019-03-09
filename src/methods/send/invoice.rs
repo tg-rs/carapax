@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{InlineKeyboardMarkup, Integer, LabeledPrice, Message};
+use crate::{
+    methods::method::*,
+    types::{InlineKeyboardMarkup, Integer, LabeledPrice, Message},
+};
 use failure::Error;
 use serde::Serialize;
 

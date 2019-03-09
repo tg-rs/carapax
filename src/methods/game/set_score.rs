@@ -1,5 +1,7 @@
-use crate::methods::method::*;
-use crate::types::{EditMessageResult, Integer};
+use crate::{
+    methods::method::*,
+    types::{EditMessageResult, Integer},
+};
 use failure::Error;
 use serde::Serialize;
 
@@ -51,11 +53,7 @@ impl SetGameScore {
     /// * inline_message_id - Identifier of the inline message
     /// * user_id - User identifier
     /// * score - New score, must be non-negative
-    pub fn with_inline_message_id<S: Into<String>>(
-        inline_message_id: S,
-        user_id: Integer,
-        score: Integer,
-    ) -> Self {
+    pub fn with_inline_message_id<S: Into<String>>(inline_message_id: S, user_id: Integer, score: Integer) -> Self {
         SetGameScore {
             user_id,
             score,
