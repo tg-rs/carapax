@@ -19,7 +19,7 @@ log = "0.4"
 nonzero_ext = "0.1"
 ratelimit_meter = "4.0"
 shellwords = "1.0"
-tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "4854f9e" }
+tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "f4fe6d8" }
 tokio = "0.1"
 
 [dev-dependencies]
