@@ -1,4 +1,6 @@
+use self::webhook::run_server;
 use crate::types::Update;
+use futures::{Future, Stream};
 use std::net::SocketAddr;
 
 mod poll;
@@ -6,24 +8,22 @@ mod webhook;
 
 pub use self::poll::UpdatesStream;
 
-pub(crate) use self::webhook::run_server;
-
 /// A webhook update handler
 pub trait UpdateHandler {
     /// Handles an update
     fn handle(&mut self, update: Update);
 }
 
-/// Defines how to get updates from telegram
+/// Defines how to get updates from Telegram
 pub struct UpdateMethod {
-    pub(crate) kind: UpdateMethodKind,
+    kind: UpdateMethodKind,
 }
 
 impl UpdateMethod {
     /// Get updates using long polling
-    pub fn poll() -> Self {
+    pub fn poll<S: Into<UpdatesStream>>(stream: S) -> Self {
         Self {
-            kind: UpdateMethodKind::Poll,
+            kind: UpdateMethodKind::Poll(stream.into()),
         }
     }
 
@@ -47,7 +47,29 @@ impl UpdateMethod {
     }
 }
 
-pub(crate) enum UpdateMethodKind {
-    Poll,
+enum UpdateMethodKind {
+    Poll(UpdatesStream),
     Webhook { addr: SocketAddr, path: String },
+}
+
+/// Start getting updates
+pub fn handle_updates<H>(update_method: UpdateMethod, mut handler: H)
+where
+    H: UpdateHandler + Send + Sync + 'static,
+{
+    match update_method.kind {
+        UpdateMethodKind::Poll(stream) => {
+            tokio::run(
+                stream
+                    .for_each(move |update| {
+                        handler.handle(update);
+                        Ok(())
+                    })
+                    .then(|_| Ok(())),
+            );
+        }
+        UpdateMethodKind::Webhook { addr, path } => {
+            run_server(addr, path, handler);
+        }
+    }
 }

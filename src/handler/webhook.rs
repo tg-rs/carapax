@@ -98,7 +98,7 @@ where
     }
 }
 
-pub(crate) fn run_server<H>(addr: SocketAddr, path: String, handler: H)
+pub(super) fn run_server<H>(addr: SocketAddr, path: String, handler: H)
 where
     H: UpdateHandler + Send + Sync + 'static,
 {

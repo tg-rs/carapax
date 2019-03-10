@@ -78,6 +78,12 @@ impl UpdatesStream {
     }
 }
 
+impl From<Api> for UpdatesStream {
+    fn from(api: Api) -> UpdatesStream {
+        UpdatesStream::new(api)
+    }
+}
+
 impl Stream for UpdatesStream {
     type Item = Update;
     type Error = Error;

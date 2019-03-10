@@ -18,5 +18,5 @@ pub mod types;
 
 pub use self::{
     api::{Api, ApiFuture},
-    handler::*,
+    handler::{handle_updates, UpdateHandler, UpdateMethod, UpdatesStream},
 };
