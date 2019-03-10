@@ -1,9 +1,13 @@
 use ratelimit_meter::{DirectRateLimiter, KeyedRateLimiter, GCRA};
-use std::num::NonZeroU32;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use tgbot::dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult};
-use tgbot::types::{Integer, Update};
+use std::{
+    num::NonZeroU32,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+use tgbot::{
+    dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult},
+    types::{Integer, Update},
+};
 
 pub use nonzero_ext::nonzero;
 
@@ -21,10 +25,7 @@ impl RateLimitMiddleware {
     /// - seconds - Duration in seconds
     pub fn direct(capacity: NonZeroU32, seconds: u64) -> Self {
         RateLimitMiddleware {
-            rate_limiter: RateLimiter::Direct(DirectRateLimiter::new(
-                capacity,
-                Duration::from_secs(seconds),
-            )),
+            rate_limiter: RateLimiter::Direct(DirectRateLimiter::new(capacity, Duration::from_secs(seconds))),
         }
     }
 

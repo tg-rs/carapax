@@ -1,7 +1,9 @@
 use failure::Error;
 use futures::{future, Future, Poll};
-use tgbot::dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult};
-use tgbot::types::{Integer, Update};
+use tgbot::{
+    dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult},
+    types::{Integer, Update},
+};
 
 /// Access control middleware
 ///
@@ -22,17 +24,13 @@ where
     P: AccessPolicy<C>,
 {
     fn before(&mut self, context: &C, update: &Update) -> MiddlewareFuture {
-        MiddlewareFuture::new(
-            self.policy
-                .is_granted(&context, &update)
-                .and_then(|result| {
-                    if result {
-                        Ok(MiddlewareResult::Continue)
-                    } else {
-                        Ok(MiddlewareResult::Stop)
-                    }
-                }),
-        )
+        MiddlewareFuture::new(self.policy.is_granted(&context, &update).and_then(|result| {
+            if result {
+                Ok(MiddlewareResult::Continue)
+            } else {
+                Ok(MiddlewareResult::Stop)
+            }
+        }))
     }
 }
 
@@ -272,9 +270,7 @@ impl PrincipalChat {
     fn accepts(&self, update: &Update) -> bool {
         match self {
             PrincipalChat::Id(chat_id) => update.get_chat_id().map(|x| x == *chat_id),
-            PrincipalChat::Username(ref chat_username) => {
-                update.get_chat_username().map(|x| x == chat_username)
-            }
+            PrincipalChat::Username(ref chat_username) => update.get_chat_username().map(|x| x == chat_username),
         }
         .unwrap_or(false)
     }
@@ -285,9 +281,8 @@ impl Principal {
         match self {
             Principal::User(principal) => principal.accepts(&update),
             Principal::Chat(principal) => principal.accepts(&update),
-            Principal::ChatUser(chat_principal, user_principal) => {
-                chat_principal.accepts(&update) && user_principal.accepts(&update)
-            }
+            Principal::ChatUser(chat_principal, user_principal) =>
+                chat_principal.accepts(&update) && user_principal.accepts(&update),
             Principal::All => true,
         }
     }

@@ -1,5 +1,7 @@
-use carapax::prelude::*;
-use carapax::ratelimit::{nonzero, RateLimitMiddleware};
+use carapax::{
+    prelude::*,
+    ratelimit::{nonzero, RateLimitMiddleware},
+};
 use dotenv::dotenv;
 use env_logger;
 use futures::Future;

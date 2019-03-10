@@ -1,5 +1,7 @@
-use carapax::access::{AccessMiddleware, AccessRule, InMemoryAccessPolicy};
-use carapax::prelude::*;
+use carapax::{
+    access::{AccessMiddleware, AccessRule, InMemoryAccessPolicy},
+    prelude::*,
+};
 use dotenv::dotenv;
 use env_logger;
 use futures::Future;
@@ -25,8 +27,7 @@ fn main() {
 
     let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
     let proxy = env::var("CARAPAX_PROXY").ok();
-    let allowed_username =
-        env::var("CARAPAX_ALLOWED_USERNAME").expect("CARAPAX_ALLOWED_USERNAME is not set");
+    let allowed_username = env::var("CARAPAX_ALLOWED_USERNAME").expect("CARAPAX_ALLOWED_USERNAME is not set");
     let api = match proxy {
         Some(proxy) => Api::with_proxy(token, &proxy),
         None => Api::new(token),
