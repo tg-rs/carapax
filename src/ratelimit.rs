@@ -4,7 +4,6 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tgbot::dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult};
 use tgbot::types::{Integer, Update};
-use tgbot::Api;
 
 pub use nonzero_ext::nonzero;
 
@@ -52,8 +51,8 @@ impl RateLimitMiddleware {
     }
 }
 
-impl Middleware for RateLimitMiddleware {
-    fn before(&mut self, _api: &Api, update: &Update) -> MiddlewareFuture {
+impl<C> Middleware<C> for RateLimitMiddleware {
+    fn before(&mut self, _context: &C, update: &Update) -> MiddlewareFuture {
         let should_pass = match self.rate_limiter {
             RateLimiter::Direct(ref mut limiter) => limiter.check().is_ok(),
             RateLimiter::Keyed {
