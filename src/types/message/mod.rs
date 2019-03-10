@@ -33,6 +33,8 @@ pub struct Message {
     pub media_group_id: Option<String>,
     /// Contains message data
     pub data: MessageData,
+    /// Contains command data
+    pub commands: Option<Vec<BotCommand>>,
 }
 
 impl Message {
@@ -103,33 +105,6 @@ impl Message {
         }
     }
 
-    /// Returns a list of commands in the message
-    pub fn get_commands(&self) -> Option<Vec<BotCommand>> {
-        if let Some(Text {
-            entities: Some(ref entities),
-            ..
-        }) = self.get_text()
-        {
-            let commands = entities
-                .iter()
-                .filter_map(|entity| {
-                    if let TextEntity::BotCommand(command) = entity {
-                        Some(command.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<BotCommand>>();
-            if commands.is_empty() {
-                None
-            } else {
-                Some(commands)
-            }
-        } else {
-            None
-        }
-    }
-
     fn from_raw(raw: RawMessage) -> Result<Message, ParseError> {
         macro_rules! required {
             ($name:ident) => {{
@@ -192,23 +167,29 @@ impl Message {
             None => None,
         };
 
-        macro_rules! message_data {
+        macro_rules! message {
             ($variant:ident($attr:ident)) => {
                 if let Some(data) = raw.$attr {
-                    message_data!(MessageData::$variant(data));
+                    message!(MessageData::$variant(data), None);
                 }
             };
             ($variant:ident($attr:ident,caption)) => {
                 if let Some(data) = raw.$attr {
-                    message_data!(MessageData::$variant { caption, data });
+                    let commands = if let Some(ref text) = caption {
+                        get_commands(text)
+                    } else {
+                        None
+                    };
+
+                    message!(MessageData::$variant { caption, data }, commands);
                 }
             };
             ($variant:ident($attr:ident,flag)) => {
                 if raw.$attr.unwrap_or(false) {
-                    message_data!(MessageData::$variant);
+                    message!(MessageData::$variant, None);
                 }
             };
-            ($data:expr) => {
+            ($data:expr, $commands:expr) => {
                 return Ok(Message {
                     id: raw.message_id,
                     date: raw.date,
@@ -218,44 +199,47 @@ impl Message {
                     edit_date: raw.edit_date,
                     media_group_id: raw.media_group_id,
                     data: $data,
+                    commands: $commands,
                 });
             };
         };
 
-        message_data!(Animation(animation));
-        message_data!(Audio(audio, caption));
-        message_data!(ChannelChatCreated(channel_chat_created, flag));
-        message_data!(ConnectedWebsite(connected_website));
-        message_data!(Contact(contact));
-        message_data!(DeleteChatPhoto(delete_chat_photo, flag));
-        message_data!(Document(document, caption));
-        message_data!(Game(game));
-        message_data!(GroupChatCreated(group_chat_created, flag));
-        message_data!(Invoice(invoice));
-        message_data!(LeftChatMember(left_chat_member));
-        message_data!(Location(location));
-        message_data!(MigrateFromChatId(migrate_from_chat_id));
-        message_data!(MigrateToChatId(migrate_to_chat_id));
-        message_data!(NewChatMembers(new_chat_members));
-        message_data!(NewChatPhoto(new_chat_photo));
-        message_data!(NewChatTitle(new_chat_title));
-        message_data!(PassportData(passport_data));
-        message_data!(Photo(photo, caption));
-        message_data!(Sticker(sticker));
-        message_data!(SuccessfulPayment(successful_payment));
-        message_data!(SupergroupChatCreated(supergroup_chat_created, flag));
-        message_data!(Venue(venue));
-        message_data!(Video(video, caption));
-        message_data!(VideoNote(video_note));
-        message_data!(Voice(voice, caption));
+        message!(Animation(animation));
+        message!(Audio(audio, caption));
+        message!(ChannelChatCreated(channel_chat_created, flag));
+        message!(ConnectedWebsite(connected_website));
+        message!(Contact(contact));
+        message!(DeleteChatPhoto(delete_chat_photo, flag));
+        message!(Document(document, caption));
+        message!(Game(game));
+        message!(GroupChatCreated(group_chat_created, flag));
+        message!(Invoice(invoice));
+        message!(LeftChatMember(left_chat_member));
+        message!(Location(location));
+        message!(MigrateFromChatId(migrate_from_chat_id));
+        message!(MigrateToChatId(migrate_to_chat_id));
+        message!(NewChatMembers(new_chat_members));
+        message!(NewChatPhoto(new_chat_photo));
+        message!(NewChatTitle(new_chat_title));
+        message!(PassportData(passport_data));
+        message!(Photo(photo, caption));
+        message!(Sticker(sticker));
+        message!(SuccessfulPayment(successful_payment));
+        message!(SupergroupChatCreated(supergroup_chat_created, flag));
+        message!(Venue(venue));
+        message!(Video(video, caption));
+        message!(VideoNote(video_note));
+        message!(Voice(voice, caption));
 
         if let Some(data) = raw.pinned_message {
             let data = Message::from_raw(*data)?;
-            message_data!(MessageData::PinnedMessage(Box::new(data)));
+            message!(MessageData::PinnedMessage(Box::new(data)), None);
         }
 
         if let Some(data) = raw.text {
-            message_data!(MessageData::Text(Text::parse(data, raw.entities)?));
+            let text = Text::parse(data, raw.entities)?;
+            let commands = get_commands(&text);
+            message!(MessageData::Text(text), commands);
         }
 
         Err(ParseError::NoData)
@@ -292,4 +276,29 @@ enum ParseError {
     MissingField(&'static str),
     #[fail(display = "Can not get message data")]
     NoData,
+}
+
+fn get_commands(text: &Text) -> Option<Vec<BotCommand>> {
+    if let Text {
+        entities: Some(ref entities),
+        ..
+    } = text
+    {
+        let commands = entities
+            .iter()
+            .filter_map(|entity| {
+                if let TextEntity::BotCommand(command) = entity {
+                    Some(command.clone())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<BotCommand>>();
+
+        if !commands.is_empty() {
+            return Some(commands);
+        }
+    }
+
+    None
 }
