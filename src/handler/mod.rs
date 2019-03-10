@@ -6,7 +6,7 @@ use std::net::SocketAddr;
 mod poll;
 mod webhook;
 
-pub use self::poll::UpdatesStream;
+pub use self::{poll::*, webhook::*};
 
 /// A webhook update handler
 pub trait UpdateHandler {
