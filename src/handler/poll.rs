@@ -38,13 +38,9 @@ impl UpdatesStream {
     }
 
     /// Set options
-    pub fn options(self, options: UpdatesStreamOptions) -> Self {
-        Self {
-            api: self.api,
-            items: self.items,
-            options,
-            request: self.request,
-        }
+    pub fn options(mut self, options: UpdatesStreamOptions) -> Self {
+        self.options = options;
+        self
     }
 }
 
