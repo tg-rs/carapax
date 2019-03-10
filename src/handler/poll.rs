@@ -18,7 +18,6 @@ const DEFAULT_POLL_TIMEOUT: Integer = 10;
 const DEFAULT_ERROR_TIMEOUT: u64 = 5;
 
 /// Updates stream used for long polling
-#[derive(Debug)]
 pub struct UpdatesStream {
     api: Api,
     options: UpdatesStreamOptions,
@@ -120,7 +119,7 @@ impl Stream for UpdatesStream {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct UpdatesStreamOptions {
     offset: Integer,
     limit: Integer,
