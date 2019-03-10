@@ -24,5 +24,5 @@ fn main() {
     }
     .expect("Failed to create API");
 
-    api.get_updates(UpdateMethod::Polling, Handler);
+    api.get_updates(UpdateMethod::poll(), Handler);
 }

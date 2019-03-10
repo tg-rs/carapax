@@ -1,6 +1,6 @@
 use crate::{
     executor::{default_executor, proxy_executor, Executor},
-    handlers::{run_server, UpdateMethod},
+    handlers::{run_server, UpdateMethod, UpdateMethodKind},
     methods::Method,
     types::Response,
     UpdateHandler, UpdatesStream,
@@ -69,8 +69,8 @@ impl Api {
     where
         H: UpdateHandler + Send + Sync + 'static,
     {
-        match update_method {
-            UpdateMethod::Polling => {
+        match update_method.kind {
+            UpdateMethodKind::Poll => {
                 let handler = Arc::new(Mutex::new(handler));
                 let handler_clone = handler.clone();
                 tokio::run(
@@ -82,7 +82,7 @@ impl Api {
                         .then(|_| Ok(())),
                 );
             }
-            UpdateMethod::Webhook { addr, path } => {
+            UpdateMethodKind::Webhook { addr, path } => {
                 run_server(addr, path, handler);
             }
         }

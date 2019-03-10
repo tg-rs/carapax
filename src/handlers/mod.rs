@@ -1,3 +1,6 @@
+use crate::types::Update;
+use std::net::SocketAddr;
+
 mod poll;
 mod webhook;
 
@@ -5,40 +8,46 @@ pub use self::poll::UpdatesStream;
 
 pub(crate) use self::webhook::run_server;
 
-use crate::types::Update;
-use std::net::SocketAddr;
-
 /// A webhook update handler
 pub trait UpdateHandler {
     /// Handles an update
     fn handle(&mut self, update: Update);
 }
 
-/// An update method
-pub enum UpdateMethod {
-    /// Get updates using "getUpdates" method
-    Polling,
-    /// Get updates using webhook
-    Webhook {
-        /// Bind address
-        addr: SocketAddr,
-        /// URL path for webhook
-        path: String,
-    },
+/// Defines how to get updates from telegram
+pub struct UpdateMethod {
+    pub(crate) kind: UpdateMethodKind,
 }
 
 impl UpdateMethod {
-    /// An easier way to create [`UpdateMethod::Webhook`]
+    /// Get updates using long polling
+    pub fn poll() -> Self {
+        Self {
+            kind: UpdateMethodKind::Poll,
+        }
+    }
+
+    /// Get updates using webhook
     ///
-    /// [`UpdateMethod::Webhook`]: enum.UpdateMethod.html#variant.Webhook
-    pub fn webhook<A, S>(addr: A, path: S) -> UpdateMethod
+    /// # Arguments
+    ///
+    /// - addr - Bind address
+    /// - path - URL path for webhook
+    pub fn webhook<A, S>(addr: A, path: S) -> Self
     where
         A: Into<SocketAddr>,
         S: Into<String>,
     {
-        UpdateMethod::Webhook {
-            addr: addr.into(),
-            path: path.into(),
+        Self {
+            kind: UpdateMethodKind::Webhook {
+                addr: addr.into(),
+                path: path.into(),
+            },
         }
     }
+}
+
+pub(crate) enum UpdateMethodKind {
+    Poll,
+    Webhook { addr: SocketAddr, path: String },
 }
