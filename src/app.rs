@@ -1,45 +1,11 @@
-use anymap::{
-    any::{Any, IntoBox},
-    Map,
+use crate::{
+    context::Context,
+    dispatcher::{DispatcherBuilder, ErrorStrategy, Handler, Middleware},
 };
+use anymap::any::{Any, IntoBox};
 use failure::Error;
 use std::net::SocketAddr;
-use tgbot::{
-    dispatcher::{DispatcherBuilder, ErrorStrategy, Handler, Middleware},
-    webhook, Api,
-};
-
-/// Context for handlers
-pub struct Context {
-    inner: Map<Any + Send + Sync>,
-}
-
-impl Context {
-    fn new() -> Self {
-        Self { inner: Map::new() }
-    }
-
-    /// Adds a value to context
-    pub fn add<T: IntoBox<Any + Send + Sync>>(&mut self, value: T) {
-        self.inner.insert(value);
-    }
-
-    /// Get a value from context
-    ///
-    /// # Panics
-    ///
-    /// Panics if value not found
-    pub fn get<T: IntoBox<Any + Send + Sync>>(&self) -> &T {
-        self.inner.get().expect("Value not found in context")
-    }
-
-    /// Get a value from context
-    ///
-    /// Returns a reference to the value stored in context for the type T, if it exists
-    pub fn get_opt<T: IntoBox<Any + Send + Sync>>(&self) -> Option<&T> {
-        self.inner.get()
-    }
-}
+use tgbot::{webhook, Api};
 
 /// Defines how to get updates
 pub struct RunMethod {
@@ -79,7 +45,7 @@ enum RunMethodKind {
 /// A Telegram Bot App
 pub struct App {
     token: String,
-    dispatcher_builder: DispatcherBuilder<Context>,
+    dispatcher_builder: DispatcherBuilder,
     context: Context,
     proxy: Option<String>,
 }
@@ -93,9 +59,9 @@ impl App {
     pub fn new<S: Into<String>>(token: S) -> Self {
         App {
             token: token.into(),
-            dispatcher_builder: DispatcherBuilder::new(),
+            dispatcher_builder: DispatcherBuilder::default(),
             proxy: None,
-            context: Context::new(),
+            context: Context::default(),
         }
     }
 
@@ -130,14 +96,14 @@ impl App {
     /// Add middleware handler
     pub fn add_middleware<M>(mut self, middleware: M) -> Self
     where
-        M: Middleware<Context> + 'static + Send + Sync,
+        M: Middleware + 'static + Send + Sync,
     {
         self.dispatcher_builder = self.dispatcher_builder.add_middleware(middleware);
         self
     }
 
     /// Add a regular handler
-    pub fn add_handler(mut self, handler: Handler<Context>) -> Self {
+    pub fn add_handler(mut self, handler: Handler) -> Self {
         self.dispatcher_builder = self.dispatcher_builder.add_handler(handler);
         self
     }

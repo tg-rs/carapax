@@ -1,9 +1,10 @@
+use crate::{
+    context::Context,
+    dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult},
+};
 use failure::Error;
 use futures::{future, Future, Poll};
-use tgbot::{
-    dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult},
-    types::{Integer, Update},
-};
+use tgbot::types::{Integer, Update};
 
 /// Access control middleware
 ///
@@ -19,11 +20,11 @@ impl<P> AccessMiddleware<P> {
     }
 }
 
-impl<P, C> Middleware<C> for AccessMiddleware<P>
+impl<P> Middleware for AccessMiddleware<P>
 where
-    P: AccessPolicy<C>,
+    P: AccessPolicy,
 {
-    fn before(&mut self, context: &C, update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, context: &Context, update: &Update) -> MiddlewareFuture {
         MiddlewareFuture::new(self.policy.is_granted(&context, &update).and_then(|result| {
             if result {
                 Ok(MiddlewareResult::Continue)
@@ -37,9 +38,9 @@ where
 /// An access policy
 ///
 /// Decides whether update is allowed or not
-pub trait AccessPolicy<C> {
+pub trait AccessPolicy {
     /// Return true if update is allowed and false otherwise
-    fn is_granted(&mut self, context: &C, update: &Update) -> AccessPolicyFuture;
+    fn is_granted(&mut self, context: &Context, update: &Update) -> AccessPolicyFuture;
 }
 
 /// Access policy future
@@ -312,8 +313,8 @@ impl InMemoryAccessPolicy {
     }
 }
 
-impl<C> AccessPolicy<C> for InMemoryAccessPolicy {
-    fn is_granted(&mut self, _context: &C, update: &Update) -> AccessPolicyFuture {
+impl AccessPolicy for InMemoryAccessPolicy {
+    fn is_granted(&mut self, _context: &Context, update: &Update) -> AccessPolicyFuture {
         let mut result = false;
         for rule in &self.rules {
             if rule.accepts(&update) {
@@ -335,8 +336,8 @@ mod tests {
         result: bool,
     }
 
-    impl<C> AccessPolicy<C> for MockPolicy {
-        fn is_granted(&mut self, _context: &C, _update: &Update) -> AccessPolicyFuture {
+    impl AccessPolicy for MockPolicy {
+        fn is_granted(&mut self, _context: &Context, _update: &Update) -> AccessPolicyFuture {
             self.result.into()
         }
     }
@@ -356,10 +357,11 @@ mod tests {
         }"#,
         )
         .unwrap();
+        let context = Context::default();
         for &result in &[true, false] {
             let policy = MockPolicy { result };
             let mut middleware = AccessMiddleware::new(policy);
-            let middleware_result = middleware.before(&(), &update).wait().unwrap();
+            let middleware_result = middleware.before(&context, &update).wait().unwrap();
             if result {
                 assert_eq!(middleware_result, MiddlewareResult::Continue);
             } else {
@@ -370,13 +372,15 @@ mod tests {
 
     #[test]
     fn test_in_memory_policy() {
+        let context = Context::default();
+
         macro_rules! check_access {
             ($rules:expr, $updates:expr) => {{
                 for rules in $rules {
                     let mut policy = InMemoryAccessPolicy::new(rules);
                     for (flag, update) in $updates {
                         let update: Update = from_str(update).unwrap();
-                        let is_granted = policy.is_granted(&(), &update).wait().unwrap();
+                        let is_granted = policy.is_granted(&context, &update).wait().unwrap();
                         assert_eq!(is_granted, *flag);
                     }
                 }

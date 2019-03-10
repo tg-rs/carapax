@@ -1,13 +1,14 @@
+use crate::{
+    context::Context,
+    dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult},
+};
 use ratelimit_meter::{DirectRateLimiter, KeyedRateLimiter, GCRA};
 use std::{
     num::NonZeroU32,
     sync::{Arc, Mutex},
     time::Duration,
 };
-use tgbot::{
-    dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult},
-    types::{Integer, Update},
-};
+use tgbot::types::{Integer, Update};
 
 pub use nonzero_ext::nonzero;
 
@@ -52,8 +53,8 @@ impl RateLimitMiddleware {
     }
 }
 
-impl<C> Middleware<C> for RateLimitMiddleware {
-    fn before(&mut self, _context: &C, update: &Update) -> MiddlewareFuture {
+impl Middleware for RateLimitMiddleware {
+    fn before(&mut self, _context: &Context, update: &Update) -> MiddlewareFuture {
         let should_pass = match self.rate_limiter {
             RateLimiter::Direct(ref mut limiter) => limiter.check().is_ok(),
             RateLimiter::Keyed {
