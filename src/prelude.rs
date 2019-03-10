@@ -3,4 +3,7 @@ pub use crate::{
     context::Context,
     dispatcher::*,
 };
-pub use tgbot::{methods::*, types::*, webhook::*, Api, ApiFuture, UpdatesStream};
+pub use tgbot::{
+    handle_updates, methods::*, types::*, Api, ApiFuture, UpdateHandler, UpdateMethod, UpdatesStream, WebhookService,
+    WebhookServiceFactory, WebhookServiceFactoryError,
+};

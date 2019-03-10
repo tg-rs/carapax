@@ -5,7 +5,7 @@ use crate::{
 use anymap::any::{Any, IntoBox};
 use failure::Error;
 use std::net::SocketAddr;
-use tgbot::{webhook, Api};
+use tgbot::{handle_updates, Api, UpdateMethod};
 
 /// Defines how to get updates
 pub struct RunMethod {
@@ -117,14 +117,11 @@ impl App {
         };
         self.context.add(api.clone());
         let dispatcher = self.dispatcher_builder.build(self.context);
-        match method.kind {
-            RunMethodKind::Poll => {
-                dispatcher.start_polling(api);
-            }
-            RunMethodKind::Webhook(addr, path) => {
-                webhook::run_server(addr, path, dispatcher);
-            }
-        }
+        let update_method = match method.kind {
+            RunMethodKind::Poll => UpdateMethod::poll(api),
+            RunMethodKind::Webhook(addr, path) => UpdateMethod::webhook(addr, path),
+        };
+        handle_updates(update_method, dispatcher);
         Ok(())
     }
 }

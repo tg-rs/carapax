@@ -1,8 +1,8 @@
 use crate::context::Context;
 use failure::Error;
-use futures::{future, task, Async, Future, Poll, Stream};
+use futures::{task, Async, Future, Poll};
 use std::sync::{Arc, Mutex};
-use tgbot::{types::Update, webhook::UpdateHandler as WebhookUpdateHandler, Api};
+use tgbot::types::Update;
 
 mod handler;
 mod middleware;
@@ -99,27 +99,9 @@ impl Dispatcher {
             update,
         )
     }
-
-    /// Starts a polling stream
-    pub fn start_polling(mut self, api: Api) {
-        tokio::run(future::lazy(move || {
-            api.get_updates()
-                .for_each(move |update| {
-                    let f = self.dispatch(update);
-                    api.spawn(f);
-                    Ok(())
-                })
-                .then(|r| {
-                    if let Err(e) = r {
-                        log::error!("Polling error: {:?}", e)
-                    }
-                    Ok(())
-                })
-        }));
-    }
 }
 
-impl WebhookUpdateHandler for Dispatcher {
+impl tgbot::UpdateHandler for Dispatcher {
     fn handle(&mut self, update: Update) {
         tokio::spawn(self.dispatch(update).then(|r| {
             if let Err(e) = r {
