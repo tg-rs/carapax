@@ -395,3 +395,53 @@ fn test_error_strategy() {
     dispatcher.dispatch(update.clone()).wait().unwrap();
     assert_eq!(dispatcher.context.get::<Counter>().get_calls(), 5);
 }
+
+struct Args {
+    items: Mutex<Vec<String>>,
+}
+
+impl Args {
+    fn new() -> Self {
+        Self {
+            items: Mutex::new(vec![]),
+        }
+    }
+
+    fn extend(&self, items: Vec<String>) {
+        self.items.lock().unwrap().extend(items);
+    }
+}
+
+fn command_handler(context: &Context, _message: &Message, args: Vec<String>) -> HandlerFuture {
+    let store = context.get::<Args>();
+    store.extend(args);
+    ().into()
+}
+
+#[test]
+fn test_commands_handler() {
+    let update = parse_update(
+        r#"{
+            "update_id": 1,
+            "message": {
+                "message_id": 1111,
+                "date": 0,
+                "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                "chat": {"id": 1, "type": "private", "first_name": "test"},
+                "text": "/testcommand 'arg1 v' arg2",
+                "entities": [
+                    {"type": "bot_command", "offset": 0, "length": 12}
+                ]
+            }
+        }"#,
+    );
+    let commands = CommandsHandler::default().add_handler("/testcommand", command_handler);
+    let mut context = Context::default();
+    context.add(Args::new());
+    let mut dispatcher = DispatcherBuilder::default()
+        .add_handler(Handler::message(commands))
+        .build(context);
+    dispatcher.dispatch(update.clone()).wait().unwrap();
+    let items: &Vec<String> = &dispatcher.context.get::<Args>().items.lock().unwrap();
+    assert_eq!(items, &vec![String::from("arg1 v"), String::from("arg2")]);
+}

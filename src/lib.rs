@@ -1,7 +1,6 @@
 //! A Telegram Bot framework
 #![warn(missing_docs)]
 
-#[cfg(test)]
 #[macro_use]
 extern crate failure;
 

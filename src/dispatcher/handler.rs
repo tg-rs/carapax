@@ -1,6 +1,8 @@
 use crate::context::Context;
 use failure::Error;
 use futures::{future, Future, Poll};
+use shellwords::{split, MismatchedQuotes};
+use std::{collections::HashMap, string::FromUtf16Error};
 use tgbot::types::{
     CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update, UpdateKind,
 };
@@ -218,3 +220,98 @@ pub trait UpdateHandler {
 }
 
 impl_func!(UpdateHandler(Update));
+
+/// A simple commands handler
+///
+/// Just takes a first command from a message and ignores others.
+/// Assumes that all text after command is arguments.
+/// Use quotes in order to include spaces in argument: `'hello word'`
+#[derive(Default)]
+pub struct CommandsHandler {
+    handlers: HashMap<String, Box<CommandHandler + Send + Sync>>,
+    not_found_handler: Option<Box<CommandHandler + Send + Sync>>,
+}
+
+impl CommandsHandler {
+    /// Add command handler
+    ///
+    /// # Arguments
+    ///
+    /// - name - Command name (starts with `/`)
+    /// - handler - Command handler
+    pub fn add_handler<S, H>(mut self, name: S, handler: H) -> Self
+    where
+        S: Into<String>,
+        H: CommandHandler + 'static + Send + Sync,
+    {
+        self.handlers.insert(name.into(), Box::new(handler));
+        self
+    }
+
+    /// Add not found command handler
+    pub fn not_found_handler<H>(mut self, handler: H) -> Self
+    where
+        H: CommandHandler + 'static + Send + Sync,
+    {
+        self.not_found_handler = Some(Box::new(handler));
+        self
+    }
+}
+
+/// An error occurred when parsing command arguments
+#[derive(Debug, Fail)]
+pub enum CommandError {
+    /// Can not decode command arguments
+    #[fail(display = "Can not decode command arguments: {:?}", _0)]
+    FromUtf16(#[cause] FromUtf16Error),
+    /// Can not split arguments: quotes mismatched
+    #[fail(display = "Can not split command arguments: quotes mismatched")]
+    MismatchedQuotes,
+}
+
+impl MessageHandler for CommandsHandler {
+    fn handle(&mut self, context: &Context, message: &Message) -> HandlerFuture {
+        match (&message.commands, message.get_text()) {
+            (Some(ref commands), Some(ref text)) => {
+                // tgbot guarantees that commands will never be empty, but we must be sure
+                assert!(!commands.is_empty());
+                // just take first command and ignore others
+                let command = &commands[0];
+                // assume that all text after command is arguments
+                let pos = command.data.offset + command.data.length;
+                // pos is UTF-16 offset
+                let input: Vec<u16> = text.data.encode_utf16().skip(pos).collect();
+                match String::from_utf16(&input) {
+                    Ok(input) => match split(&input) {
+                        Ok(args) => match self.handlers.get_mut(&command.command) {
+                            Some(handler) => handler.handle(context, message, args),
+                            None => match self.not_found_handler {
+                                Some(ref mut handler) => handler.handle(context, message, args),
+                                None => ().into(),
+                            },
+                        },
+                        Err(MismatchedQuotes) => Err(CommandError::MismatchedQuotes).into(),
+                    },
+                    Err(err) => Err(CommandError::FromUtf16(err)).into(),
+                }
+            }
+            _ => ().into(),
+        }
+    }
+}
+
+/// Actual command handler
+pub trait CommandHandler {
+    /// Handles a command
+    fn handle(&mut self, context: &Context, message: &Message, args: Vec<String>) -> HandlerFuture;
+}
+
+impl<F, R> CommandHandler for F
+where
+    F: FnMut(&Context, &Message, Vec<String>) -> R,
+    R: Into<HandlerFuture>,
+{
+    fn handle(&mut self, context: &Context, message: &Message, args: Vec<String>) -> HandlerFuture {
+        (self)(context, message, args).into()
+    }
+}
