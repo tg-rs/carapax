@@ -1,6 +1,6 @@
 use crate::{
     executor::{default_executor, proxy_executor, Executor},
-    handlers::{run_server, UpdateMethod, UpdateMethodKind},
+    handler::{run_server, UpdateMethod, UpdateMethodKind},
     methods::Method,
     types::Response,
     UpdateHandler, UpdatesStream,
