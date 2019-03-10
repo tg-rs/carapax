@@ -20,11 +20,7 @@ const DEFAULT_ERROR_TIMEOUT: u64 = 5;
 /// Updates stream used for long polling
 pub struct UpdatesStream {
     api: Api,
-    offset: Integer,
-    limit: Integer,
-    poll_timeout: Integer,
-    error_timeout: Duration,
-    allowed_updates: HashSet<AllowedUpdate>,
+    options: UpdatesStreamOptions,
     items: VecDeque<Update>,
     request: Option<Box<Future<Item = Option<Vec<Update>>, Error = Error> + Send>>,
 }
@@ -34,16 +30,108 @@ impl UpdatesStream {
     pub fn new(api: Api) -> Self {
         UpdatesStream {
             api,
-            offset: 0,
-            limit: DEFAULT_LIMIT,
-            poll_timeout: DEFAULT_POLL_TIMEOUT,
-            error_timeout: Duration::from_secs(DEFAULT_ERROR_TIMEOUT),
-            allowed_updates: HashSet::new(),
+            options: UpdatesStreamOptions::default(),
             items: VecDeque::new(),
             request: None,
         }
     }
 
+    /// Set options
+    pub fn options(self, options: UpdatesStreamOptions) -> Self {
+        Self {
+            api: self.api,
+            items: self.items,
+            options,
+            request: self.request,
+        }
+    }
+}
+
+impl From<Api> for UpdatesStream {
+    fn from(api: Api) -> UpdatesStream {
+        UpdatesStream::new(api)
+    }
+}
+
+impl Stream for UpdatesStream {
+    type Item = Update;
+    type Error = Error;
+
+    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
+        if let Some(update) = self.items.pop_front() {
+            return Ok(Async::Ready(Some(update)));
+        }
+
+        let options = &mut self.options;
+
+        let should_request = match self.request {
+            Some(ref mut request) => match request.poll() {
+                Ok(Async::Ready(Some(items))) => {
+                    for i in items {
+                        options.offset = max(options.offset, i.id);
+                        self.items.push_back(i);
+                    }
+                    Ok(())
+                }
+                Ok(Async::Ready(None)) => Ok(()),
+                Ok(Async::NotReady) => return Ok(Async::NotReady),
+                Err(err) => Err(err),
+            },
+            None => Ok(()),
+        };
+
+        match should_request {
+            Ok(()) => {
+                self.request = Some(Box::new(
+                    self.api
+                        .execute(
+                            &GetUpdates::default()
+                                .offset(options.offset + 1)
+                                .limit(options.limit)
+                                .timeout(options.poll_timeout)
+                                .allowed_updates(options.allowed_updates.clone()),
+                        )
+                        .map(Some),
+                ));
+            }
+            Err(err) => {
+                error!("An error has occurred while getting updates: {:?}", err);
+
+                options.error_timeout = Duration::from_secs(
+                    err.downcast::<ResponseError>()
+                        .ok()
+                        .map(|err| {
+                            err.parameters
+                                .map(|parameters| {
+                                    parameters
+                                        .retry_after
+                                        .map(|count| count as u64)
+                                        .unwrap_or(DEFAULT_ERROR_TIMEOUT)
+                                })
+                                .unwrap_or(DEFAULT_ERROR_TIMEOUT)
+                        })
+                        .unwrap_or(DEFAULT_ERROR_TIMEOUT),
+                );
+
+                self.request = Some(Box::new(sleep(options.error_timeout).from_err().map(|()| None)));
+            }
+        };
+
+        task::current().notify();
+
+        Ok(Async::NotReady)
+    }
+}
+
+pub struct UpdatesStreamOptions {
+    offset: Integer,
+    limit: Integer,
+    poll_timeout: Integer,
+    error_timeout: Duration,
+    allowed_updates: HashSet<AllowedUpdate>,
+}
+
+impl UpdatesStreamOptions {
     /// Limits the number of updates to be retrieved
     ///
     /// Values between 1—100 are accepted
@@ -78,71 +166,14 @@ impl UpdatesStream {
     }
 }
 
-impl From<Api> for UpdatesStream {
-    fn from(api: Api) -> UpdatesStream {
-        UpdatesStream::new(api)
-    }
-}
-
-impl Stream for UpdatesStream {
-    type Item = Update;
-    type Error = Error;
-
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        if let Some(update) = self.items.pop_front() {
-            return Ok(Async::Ready(Some(update)));
+impl Default for UpdatesStreamOptions {
+    fn default() -> Self {
+        UpdatesStreamOptions {
+            offset: 0,
+            limit: DEFAULT_LIMIT,
+            poll_timeout: DEFAULT_POLL_TIMEOUT,
+            error_timeout: Duration::from_secs(DEFAULT_ERROR_TIMEOUT),
+            allowed_updates: HashSet::new(),
         }
-
-        let should_request = match self.request {
-            Some(ref mut request) => match request.poll() {
-                Ok(Async::Ready(Some(items))) => {
-                    for i in items {
-                        self.offset = max(self.offset, i.id);
-                        self.items.push_back(i);
-                    }
-                    Ok(())
-                }
-                Ok(Async::Ready(None)) => Ok(()),
-                Ok(Async::NotReady) => return Ok(Async::NotReady),
-                Err(err) => Err(err),
-            },
-            None => Ok(()),
-        };
-
-        match should_request {
-            Ok(()) => {
-                self.request = Some(Box::new(
-                    self.api
-                        .execute(
-                            &GetUpdates::default()
-                                .offset(self.offset + 1)
-                                .limit(self.limit)
-                                .timeout(self.poll_timeout)
-                                .allowed_updates(self.allowed_updates.clone()),
-                        )
-                        .map(Some),
-                ));
-            }
-            Err(err) => {
-                error!("An error has occurred while getting updates: {:?}", err);
-
-                let err: ResponseError = err.downcast().expect("Failed to cast error to ResponseError");
-                self.error_timeout = Duration::from_secs(if let Some(parameters) = err.parameters {
-                    if let Some(timeout) = parameters.retry_after {
-                        timeout as u64
-                    } else {
-                        DEFAULT_ERROR_TIMEOUT
-                    }
-                } else {
-                    DEFAULT_ERROR_TIMEOUT
-                });
-
-                self.request = Some(Box::new(sleep(self.error_timeout).from_err().map(|()| None)));
-            }
-        };
-
-        task::current().notify();
-
-        Ok(Async::NotReady)
     }
 }
