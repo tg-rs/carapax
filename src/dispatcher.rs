@@ -1,22 +1,12 @@
-use crate::context::Context;
+use crate::{
+    context::Context,
+    handler::{Handler, HandlerFuture},
+    middleware::{Middleware, MiddlewareFuture, MiddlewareResult},
+};
 use failure::Error;
 use futures::{task, Async, Future, Poll};
 use std::sync::{Arc, Mutex};
 use tgbot::types::Update;
-
-mod handler;
-mod middleware;
-
-#[cfg(test)]
-mod tests;
-
-pub use self::{handler::*, middleware::*};
-
-#[derive(Default)]
-struct Store {
-    middlewares: Vec<Box<Middleware + Send + Sync>>,
-    handlers: Vec<Handler>,
-}
 
 /// Defines how to handle errors in middlewares and handlers
 #[derive(Debug, Clone, Copy)]
@@ -33,66 +23,45 @@ impl Default for ErrorStrategy {
     }
 }
 
-/// Dispatcher builder
-#[derive(Default)]
-pub struct DispatcherBuilder {
-    store: Store,
-    middleware_error_strategy: ErrorStrategy,
-    handler_error_strategy: ErrorStrategy,
+/// Dispatcher
+pub struct Dispatcher {
+    pub(crate) middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
+    pub(crate) handlers: Arc<Mutex<Vec<Handler>>>,
+    pub(crate) context: Arc<Context>,
+    pub(crate) middleware_error_strategy: ErrorStrategy,
+    pub(crate) handler_error_strategy: ErrorStrategy,
 }
 
-impl DispatcherBuilder {
-    /// Set middleware error strategy
-    pub fn middleware_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
+impl Dispatcher {
+    pub(crate) fn new(
+        middlewares: Vec<Box<Middleware + Send + Sync>>,
+        handlers: Vec<Handler>,
+        context: Context,
+    ) -> Self {
+        Self {
+            middlewares: Arc::new(Mutex::new(middlewares)),
+            handlers: Arc::new(Mutex::new(handlers)),
+            context: Arc::new(context),
+            middleware_error_strategy: ErrorStrategy::default(),
+            handler_error_strategy: ErrorStrategy::default(),
+        }
+    }
+
+    pub(crate) fn middleware_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
         self.middleware_error_strategy = strategy;
         self
     }
 
-    /// Set handler error strategy
-    pub fn handler_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
+    pub(crate) fn handler_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
         self.handler_error_strategy = strategy;
         self
     }
 
-    /// Add middleware handler
-    pub fn add_middleware<H>(mut self, handler: H) -> Self
-    where
-        H: Middleware + 'static + Send + Sync,
-    {
-        self.store.middlewares.push(Box::new(handler));
-        self
-    }
-
-    /// Add a regular handler
-    pub fn add_handler(mut self, handler: Handler) -> Self {
-        self.store.handlers.push(handler);
-        self
-    }
-
-    /// Create a dispatcher
-    pub fn build(self, context: Context) -> Dispatcher {
-        Dispatcher {
-            context: Arc::new(context),
-            store: Arc::new(Mutex::new(self.store)),
-            middleware_error_strategy: self.middleware_error_strategy,
-            handler_error_strategy: self.handler_error_strategy,
-        }
-    }
-}
-
-/// Dispatcher
-pub struct Dispatcher {
-    context: Arc<Context>,
-    store: Arc<Mutex<Store>>,
-    middleware_error_strategy: ErrorStrategy,
-    handler_error_strategy: ErrorStrategy,
-}
-
-impl Dispatcher {
     /// Dispatch an update
     pub fn dispatch(&mut self, update: Update) -> DispatcherFuture {
         DispatcherFuture::new(
-            self.store.clone(),
+            self.middlewares.clone(),
+            self.handlers.clone(),
             self.context.clone(),
             self.middleware_error_strategy,
             self.handler_error_strategy,
@@ -115,7 +84,8 @@ impl tgbot::UpdateHandler for Dispatcher {
 /// Dispatcher future
 #[must_use = "futures do nothing unless polled"]
 pub struct DispatcherFuture {
-    store: Arc<Mutex<Store>>,
+    middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
+    handlers: Arc<Mutex<Vec<Handler>>>,
     context: Arc<Context>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
@@ -133,14 +103,16 @@ enum DispatcherFutureState {
 
 impl DispatcherFuture {
     fn new(
-        store: Arc<Mutex<Store>>,
+        middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
+        handlers: Arc<Mutex<Vec<Handler>>>,
         context: Arc<Context>,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
         update: Update,
     ) -> DispatcherFuture {
         DispatcherFuture {
-            store,
+            middlewares,
+            handlers,
             context,
             middleware_error_strategy,
             handler_error_strategy,
@@ -181,7 +153,7 @@ impl DispatcherFuture {
                     }
                 },
             },
-            None => match self.store.lock().unwrap().middlewares.get_mut(idx) {
+            None => match self.middlewares.lock().unwrap().get_mut(idx) {
                 Some(ref mut middleware) => {
                     self.middleware = Some(middleware.before(&self.context, &self.update));
                     task::current().notify();
@@ -221,7 +193,7 @@ impl DispatcherFuture {
                     }
                 },
             },
-            None => match self.store.lock().unwrap().handlers.get_mut(idx) {
+            None => match self.handlers.lock().unwrap().get_mut(idx) {
                 Some(ref mut handler) => {
                     self.handler = Some(handler.handle(&self.context, &self.update));
                     task::current().notify();
@@ -262,7 +234,7 @@ impl DispatcherFuture {
                     }
                 },
             },
-            None => match self.store.lock().unwrap().middlewares.get_mut(idx) {
+            None => match self.middlewares.lock().unwrap().get_mut(idx) {
                 Some(ref mut middleware) => {
                     self.middleware = Some(middleware.after(&self.context, &self.update));
                     task::current().notify();
@@ -290,4 +262,117 @@ impl Future for DispatcherFuture {
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.handle()
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+
+    struct Counter {
+        calls: Arc<AtomicUsize>,
+    }
+
+    impl Counter {
+        fn new() -> Self {
+            Self {
+                calls: Arc::new(AtomicUsize::new(0)),
+            }
+        }
+
+        fn inc_calls(&self) {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+        }
+
+        fn get_calls(&self) -> usize {
+            self.calls.load(Ordering::SeqCst)
+        }
+    }
+
+    fn parse_update(data: &str) -> Update {
+        serde_json::from_str(data).unwrap()
+    }
+
+    fn create_context() -> Context {
+        let mut ctx = Context::default();
+        ctx.add(Counter::new());
+        ctx
+    }
+
+    #[derive(Debug, Fail)]
+    #[fail(display = "Test error")]
+    struct ErrorMock;
+
+    struct ErrorMiddleware;
+
+    impl Middleware for ErrorMiddleware {
+        fn before(&mut self, context: &Context, _update: &Update) -> MiddlewareFuture {
+            let counter: &Counter = context.get();
+            counter.inc_calls();
+            Err(ErrorMock).into()
+        }
+
+        fn after(&mut self, context: &Context, _update: &Update) -> MiddlewareFuture {
+            let counter: &Counter = context.get();
+            counter.inc_calls();
+            Err(ErrorMock).into()
+        }
+    }
+
+    fn handle_update_error(context: &Context, _update: &Update) -> HandlerFuture {
+        let counter: &Counter = context.get();
+        counter.inc_calls();
+        Err(ErrorMock).into()
+    }
+
+    #[test]
+    fn test_error_strategy() {
+        let update = parse_update(
+            r#"{
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "test"
+                }
+            }"#,
+        );
+
+        // Aborted on first call by default
+        let mut dispatcher = Dispatcher::new(
+            vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
+            vec![Handler::update(handle_update_error)],
+            create_context(),
+        );
+        dispatcher.dispatch(update.clone()).wait().unwrap_err();
+        assert_eq!(dispatcher.context.get::<Counter>().get_calls(), 1);
+
+        // Aborted on handler call by default
+        let mut dispatcher = Dispatcher::new(
+            vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
+            vec![Handler::update(handle_update_error)],
+            create_context(),
+        )
+        .middleware_error_strategy(ErrorStrategy::Ignore);
+        dispatcher.dispatch(update.clone()).wait().unwrap_err();
+        assert_eq!(dispatcher.context.get::<Counter>().get_calls(), 3);
+
+        // Ignore all errors
+        let mut dispatcher = Dispatcher::new(
+            vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
+            vec![Handler::update(handle_update_error)],
+            create_context(),
+        )
+        .middleware_error_strategy(ErrorStrategy::Ignore)
+        .handler_error_strategy(ErrorStrategy::Ignore);
+        dispatcher.dispatch(update.clone()).wait().unwrap();
+        assert_eq!(dispatcher.context.get::<Counter>().get_calls(), 5);
+    }
+
 }

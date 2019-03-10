@@ -1,6 +1,6 @@
 use crate::{
     context::Context,
-    dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult},
+    middleware::{Middleware, MiddlewareFuture, MiddlewareResult},
 };
 use ratelimit_meter::{DirectRateLimiter, KeyedRateLimiter, GCRA};
 use std::{

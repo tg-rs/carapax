@@ -6,9 +6,9 @@ extern crate failure;
 
 mod app;
 mod context;
-
-/// Updates dispatcher
-pub mod dispatcher;
+mod dispatcher;
+mod handler;
+mod middleware;
 
 /// Access rules and policies
 pub mod access;
@@ -19,7 +19,4 @@ pub mod ratelimit;
 /// A "prelude" for users of the framework
 pub mod prelude;
 
-pub use self::{
-    app::{App, RunMethod},
-    context::Context,
-};
+pub use self::{app::*, context::*, dispatcher::*, handler::*, middleware::*};

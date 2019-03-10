@@ -1,6 +1,6 @@
 use crate::{
     context::Context,
-    dispatcher::{Middleware, MiddlewareFuture, MiddlewareResult},
+    middleware::{Middleware, MiddlewareFuture, MiddlewareResult},
 };
 use failure::Error;
 use futures::{future, Future, Poll};

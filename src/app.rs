@@ -1,6 +1,8 @@
 use crate::{
     context::Context,
-    dispatcher::{DispatcherBuilder, ErrorStrategy, Handler, Middleware},
+    dispatcher::{Dispatcher, ErrorStrategy},
+    handler::Handler,
+    middleware::Middleware,
 };
 use anymap::any::{Any, IntoBox};
 use failure::Error;
@@ -45,8 +47,11 @@ enum RunMethodKind {
 /// A Telegram Bot App
 pub struct App {
     token: String,
-    dispatcher_builder: DispatcherBuilder,
     context: Context,
+    middlewares: Vec<Box<Middleware + Send + Sync>>,
+    middleware_error_strategy: ErrorStrategy,
+    handler_error_strategy: ErrorStrategy,
+    handlers: Vec<Handler>,
     proxy: Option<String>,
 }
 
@@ -59,7 +64,10 @@ impl App {
     pub fn new<S: Into<String>>(token: S) -> Self {
         App {
             token: token.into(),
-            dispatcher_builder: DispatcherBuilder::default(),
+            middlewares: vec![],
+            middleware_error_strategy: ErrorStrategy::default(),
+            handlers: vec![],
+            handler_error_strategy: ErrorStrategy::default(),
             proxy: None,
             context: Context::default(),
         }
@@ -81,7 +89,7 @@ impl App {
     ///
     /// See `ErrorStrategy` for more information
     pub fn middleware_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
-        self.dispatcher_builder = self.dispatcher_builder.middleware_error_strategy(strategy);
+        self.middleware_error_strategy = strategy;
         self
     }
 
@@ -89,7 +97,7 @@ impl App {
     ///
     /// See `ErrorStrategy` for more information
     pub fn handler_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
-        self.dispatcher_builder = self.dispatcher_builder.handler_error_strategy(strategy);
+        self.handler_error_strategy = strategy;
         self
     }
 
@@ -98,13 +106,13 @@ impl App {
     where
         M: Middleware + 'static + Send + Sync,
     {
-        self.dispatcher_builder = self.dispatcher_builder.add_middleware(middleware);
+        self.middlewares.push(Box::new(middleware));
         self
     }
 
     /// Add a regular handler
     pub fn add_handler(mut self, handler: Handler) -> Self {
-        self.dispatcher_builder = self.dispatcher_builder.add_handler(handler);
+        self.handlers.push(handler);
         self
     }
 
@@ -116,7 +124,9 @@ impl App {
             Api::new(self.token)?
         };
         self.context.add(api.clone());
-        let dispatcher = self.dispatcher_builder.build(self.context);
+        let dispatcher = Dispatcher::new(self.middlewares, self.handlers, self.context)
+            .middleware_error_strategy(self.middleware_error_strategy)
+            .handler_error_strategy(self.handler_error_strategy);
         let update_method = match method.kind {
             RunMethodKind::Poll => UpdateMethod::poll(api),
             RunMethodKind::Webhook(addr, path) => UpdateMethod::webhook(addr, path),
