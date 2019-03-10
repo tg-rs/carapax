@@ -1,4 +1,4 @@
-use crate::{dispatcher::Dispatcher, types::Update};
+use crate::types::Update;
 use futures::{future::ok, Future, Stream};
 use hyper::{
     header::{HeaderValue, ALLOW},
@@ -12,16 +12,16 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-struct WebhookServiceFactory<C> {
+struct WebhookServiceFactory<H> {
     path: String,
-    dispatcher: Arc<Mutex<Dispatcher<C>>>,
+    update_handler: Arc<Mutex<H>>,
 }
 
-impl<C> WebhookServiceFactory<C> {
-    fn new<S: Into<String>>(path: S, dispatcher: Dispatcher<C>) -> WebhookServiceFactory<C> {
+impl<H> WebhookServiceFactory<H> {
+    fn new<S: Into<String>>(path: S, update_handler: H) -> WebhookServiceFactory<H> {
         WebhookServiceFactory {
             path: path.into(),
-            dispatcher: Arc::new(Mutex::new(dispatcher)),
+            update_handler: Arc::new(Mutex::new(update_handler)),
         }
     }
 }
@@ -37,33 +37,33 @@ impl fmt::Display for WebhookServiceFactoryError {
 
 impl StdError for WebhookServiceFactoryError {}
 
-impl<Ctx, C> MakeService<Ctx> for WebhookServiceFactory<C>
+impl<Ctx, H> MakeService<Ctx> for WebhookServiceFactory<H>
 where
-    C: Send + Sync + 'static,
+    H: UpdateHandler + Send + Sync + 'static,
 {
     type ReqBody = Body;
     type ResBody = Body;
     type Error = Error;
-    type Service = WebhookService<C>;
+    type Service = WebhookService<H>;
     type Future = Box<Future<Item = Self::Service, Error = Self::MakeError> + Send>;
     type MakeError = WebhookServiceFactoryError;
 
     fn make_service(&mut self, _ctx: Ctx) -> Self::Future {
         Box::new(ok(WebhookService {
             path: self.path.clone(),
-            dispatcher: self.dispatcher.clone(),
+            update_handler: self.update_handler.clone(),
         }))
     }
 }
 
-struct WebhookService<C> {
+struct WebhookService<H> {
     path: String,
-    dispatcher: Arc<Mutex<Dispatcher<C>>>,
+    update_handler: Arc<Mutex<H>>,
 }
 
-impl<C> Service for WebhookService<C>
+impl<H> Service for WebhookService<H>
 where
-    C: Send + Sync + 'static,
+    H: UpdateHandler + Send + Sync + 'static,
 {
     type ReqBody = Body;
     type ResBody = Body;
@@ -74,16 +74,11 @@ where
         let mut rep = Response::new(Body::empty());
         if let Method::POST = *req.method() {
             if req.uri().path() == self.path {
-                let dispatcher = self.dispatcher.clone();
+                let update_handler = self.update_handler.clone();
                 return Box::new(req.into_body().concat2().map(move |body| {
                     match serde_json::from_slice::<Update>(&body) {
                         Ok(update) => {
-                            tokio::spawn(dispatcher.lock().unwrap().dispatch(update).then(|r| {
-                                if let Err(e) = r {
-                                    log::error!("Failed to dispatch update: {:?}", e)
-                                }
-                                Ok(())
-                            }));
+                            update_handler.lock().unwrap().handle(update);
                         }
                         Err(err) => {
                             *rep.status_mut() = StatusCode::BAD_REQUEST;
@@ -103,6 +98,12 @@ where
     }
 }
 
+/// A webhook update handler
+pub trait UpdateHandler {
+    /// Handles an update
+    fn handle(&mut self, update: Update);
+}
+
 /// Starts a HTTP server for webhooks
 ///
 /// # Arguments
@@ -110,14 +111,14 @@ where
 /// - addr - Bind address
 /// - path - URL path for webhook
 /// - dispatcher - A dispatcher
-pub fn run_server<A, S, C>(addr: A, path: S, dispatcher: Dispatcher<C>)
+pub fn run_server<A, S, H>(addr: A, path: S, handler: H)
 where
     A: Into<SocketAddr>,
     S: Into<String>,
-    C: Send + Sync + 'static,
+    H: UpdateHandler + Send + Sync + 'static,
 {
     let server = Server::bind(&addr.into())
-        .serve(WebhookServiceFactory::new(path, dispatcher))
+        .serve(WebhookServiceFactory::new(path, handler))
         .map_err(|e| log::error!("Server error: {}", e));
     tokio::run(server)
 }
