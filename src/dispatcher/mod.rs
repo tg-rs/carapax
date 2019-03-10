@@ -2,7 +2,7 @@ use crate::context::Context;
 use failure::Error;
 use futures::{future, task, Async, Future, Poll, Stream};
 use std::sync::{Arc, Mutex};
-use tgbot::{types::Update, webhook::UpdateHandler, Api};
+use tgbot::{types::Update, webhook::UpdateHandler as WebhookUpdateHandler, Api};
 
 mod handler;
 mod middleware;
@@ -119,7 +119,7 @@ impl Dispatcher {
     }
 }
 
-impl UpdateHandler for Dispatcher {
+impl WebhookUpdateHandler for Dispatcher {
     fn handle(&mut self, update: Update) {
         tokio::spawn(self.dispatch(update).then(|r| {
             if let Err(e) = r {
