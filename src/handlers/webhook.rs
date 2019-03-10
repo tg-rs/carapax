@@ -98,20 +98,11 @@ where
     }
 }
 
-/// Starts a HTTP server for webhooks
-///
-/// # Arguments
-///
-/// - addr - Bind address
-/// - path - URL path for webhook
-/// - handler - A handler
-pub(crate) fn run_server<A, S, H>(addr: A, path: S, handler: H)
+pub(crate) fn run_server<H>(addr: SocketAddr, path: String, handler: H)
 where
-    A: Into<SocketAddr>,
-    S: Into<String>,
     H: UpdateHandler + Send + Sync + 'static,
 {
-    let server = Server::bind(&addr.into())
+    let server = Server::bind(&addr)
         .serve(WebhookServiceFactory::new(path, handler))
         .map_err(|e| log::error!("Server error: {}", e));
     tokio::run(server)

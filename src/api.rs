@@ -6,7 +6,7 @@ use crate::{
     UpdateHandler, UpdatesStream,
 };
 use failure::Error;
-use futures::{future, stream::Stream, Future, Poll};
+use futures::{future, Future, Poll, Stream};
 use serde::de::DeserializeOwned;
 use std::{
     fmt::Debug,
