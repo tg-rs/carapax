@@ -335,7 +335,7 @@ fn test_deserialize_message_entities() {
         ]
     }"#;
     let msg: Message = serde_json::from_str(input).unwrap();
-    assert_eq!(msg.get_commands().unwrap().len(), 1);
+    assert_eq!(msg.commands.unwrap().len(), 1);
     if let MessageData::Text(text) = msg.data {
         let entities = text.entities.unwrap();
         assert_eq!(

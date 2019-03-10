@@ -216,7 +216,7 @@ where
                         UpdateKind::Message(ref msg)
                         | UpdateKind::EditedMessage(ref msg)
                         | UpdateKind::ChannelPost(ref msg)
-                        | UpdateKind::EditedChannelPost(ref msg) => msg.get_commands(),
+                        | UpdateKind::EditedChannelPost(ref msg) => msg.commands.clone(),
                         _ => None,
                     };
                     task::current().notify();
