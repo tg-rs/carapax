@@ -96,15 +96,9 @@ impl Stream for UpdatesStream {
                 options.error_timeout = Duration::from_secs(
                     err.downcast::<ResponseError>()
                         .ok()
-                        .map(|err| {
+                        .and_then(|err| {
                             err.parameters
-                                .map(|parameters| {
-                                    parameters
-                                        .retry_after
-                                        .map(|count| count as u64)
-                                        .unwrap_or(DEFAULT_ERROR_TIMEOUT)
-                                })
-                                .unwrap_or(DEFAULT_ERROR_TIMEOUT)
+                                .and_then(|parameters| parameters.retry_after.map(|count| count as u64))
                         })
                         .unwrap_or(DEFAULT_ERROR_TIMEOUT),
                 );
@@ -119,7 +113,7 @@ impl Stream for UpdatesStream {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct UpdatesStreamOptions {
     offset: Integer,
     limit: Integer,
