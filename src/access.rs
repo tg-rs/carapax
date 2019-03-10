@@ -336,7 +336,6 @@ impl<C> AccessPolicy<C> for InMemoryAccessPolicy {
 mod tests {
     use super::*;
     use serde_json::from_str;
-    use tokio::runtime::current_thread::block_on_all;
 
     struct MockPolicy {
         result: bool,
@@ -366,7 +365,7 @@ mod tests {
         for &result in &[true, false] {
             let policy = MockPolicy { result };
             let mut middleware = AccessMiddleware::new(policy);
-            let middleware_result = block_on_all(middleware.before(&(), &update)).unwrap();
+            let middleware_result = middleware.before(&(), &update).wait().unwrap();
             if result {
                 assert_eq!(middleware_result, MiddlewareResult::Continue);
             } else {
@@ -383,7 +382,7 @@ mod tests {
                     let mut policy = InMemoryAccessPolicy::new(rules);
                     for (flag, update) in $updates {
                         let update: Update = from_str(update).unwrap();
-                        let is_granted = block_on_all(policy.is_granted(&(), &update)).unwrap();
+                        let is_granted = policy.is_granted(&(), &update).wait().unwrap();
                         assert_eq!(is_granted, *flag);
                     }
                 }
