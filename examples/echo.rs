@@ -48,6 +48,6 @@ fn main() {
     app.add_middleware(access)
         .add_middleware(rate_limit)
         .add_handler(Handler::message(handle_message))
-        .run(RunMethod::poll())
+        .run(RunMethod::poll(Default::default()))
         .expect("Failed to start app");
 }

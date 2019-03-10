@@ -7,7 +7,7 @@ use crate::{
 use anymap::any::{Any, IntoBox};
 use failure::Error;
 use std::net::SocketAddr;
-use tgbot::{handle_updates, Api, UpdateMethod};
+use tgbot::{handle_updates, Api, UpdateMethod, UpdatesStream, UpdatesStreamOptions};
 
 /// Defines how to get updates
 pub struct RunMethod {
@@ -16,9 +16,9 @@ pub struct RunMethod {
 
 impl RunMethod {
     /// Get updates using long polling
-    pub fn poll() -> Self {
+    pub fn poll(options: UpdatesStreamOptions) -> Self {
         Self {
-            kind: RunMethodKind::Poll,
+            kind: RunMethodKind::Poll(options),
         }
     }
 
@@ -40,7 +40,7 @@ impl RunMethod {
 }
 
 enum RunMethodKind {
-    Poll,
+    Poll(UpdatesStreamOptions),
     Webhook(SocketAddr, String),
 }
 
@@ -128,7 +128,7 @@ impl App {
             .middleware_error_strategy(self.middleware_error_strategy)
             .handler_error_strategy(self.handler_error_strategy);
         let update_method = match method.kind {
-            RunMethodKind::Poll => UpdateMethod::poll(api),
+            RunMethodKind::Poll(options) => UpdateMethod::poll(UpdatesStream::new(api).options(options)),
             RunMethodKind::Webhook(addr, path) => UpdateMethod::webhook(addr, path),
         };
         handle_updates(update_method, dispatcher);

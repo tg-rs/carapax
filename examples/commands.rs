@@ -45,6 +45,6 @@ fn main() {
             .add_handler("/start", handle_start)
             .add_handler("/user_id", handle_user_id),
     ))
-    .run(RunMethod::poll())
+    .run(RunMethod::poll(Default::default()))
     .expect("Failed to start app");
 }
