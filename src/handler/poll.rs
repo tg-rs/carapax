@@ -1,7 +1,7 @@
 use crate::{
     api::Api,
     methods::GetUpdates,
-    types::{AllowedUpdate, Integer, Update},
+    types::{AllowedUpdate, Integer, ResponseError, Update},
 };
 use failure::Error;
 use futures::{task, Async, Future, Poll, Stream};
@@ -125,6 +125,18 @@ impl Stream for UpdatesStream {
             }
             Err(err) => {
                 error!("An error has occurred while getting updates: {:?}", err);
+
+                let err: ResponseError = err.downcast().expect("Failed to cast error to ResponseError");
+                self.error_timeout = Duration::from_secs(if let Some(parameters) = err.parameters {
+                    if let Some(timeout) = parameters.retry_after {
+                        timeout as u64
+                    } else {
+                        DEFAULT_ERROR_TIMEOUT
+                    }
+                } else {
+                    DEFAULT_ERROR_TIMEOUT
+                });
+
                 self.request = Some(Box::new(sleep(self.error_timeout).from_err().map(|()| None)));
             }
         };
