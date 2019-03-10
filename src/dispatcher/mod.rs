@@ -1,7 +1,4 @@
-use crate::{
-    api::Api,
-    types::{BotCommand, Update, UpdateKind},
-};
+use crate::{api::Api, types::Update};
 use failure::Error;
 use futures::{future, task, Async, Future, Poll, Stream};
 use std::sync::{Arc, Mutex};
@@ -140,7 +137,6 @@ pub struct DispatcherFuture<C> {
     state: DispatcherFutureState,
     middleware: Option<MiddlewareFuture>,
     handler: Option<HandlerFuture>,
-    commands: Option<Vec<BotCommand>>,
 }
 
 enum DispatcherFutureState {
@@ -169,7 +165,6 @@ where
             state: DispatcherFutureState::Before(0),
             middleware: None,
             handler: None,
-            commands: None,
         }
     }
 
@@ -212,13 +207,6 @@ where
                 None => {
                     self.state = DispatcherFutureState::Main(0);
                     self.handler = None;
-                    self.commands = match self.update.kind {
-                        UpdateKind::Message(ref msg)
-                        | UpdateKind::EditedMessage(ref msg)
-                        | UpdateKind::ChannelPost(ref msg)
-                        | UpdateKind::EditedChannelPost(ref msg) => msg.commands.clone(),
-                        _ => None,
-                    };
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
@@ -252,7 +240,7 @@ where
             },
             None => match self.store.lock().unwrap().handlers.get_mut(idx) {
                 Some(ref mut handler) => {
-                    self.handler = Some(handler.handle(&self.context, &self.update, &self.commands));
+                    self.handler = Some(handler.handle(&self.context, &self.update));
                     task::current().notify();
                     Ok(Async::NotReady)
                 }

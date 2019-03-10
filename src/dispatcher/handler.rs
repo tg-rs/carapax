@@ -1,6 +1,5 @@
 use crate::types::{
-    BotCommand, CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update,
-    UpdateKind,
+    CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update, UpdateKind,
 };
 use failure::Error;
 use futures::{future, Future, Poll};
@@ -21,11 +20,6 @@ impl<C> Handler<C> {
         H: MessageHandler<C> + 'static + Send + Sync,
     {
         Self::new(HandlerKind::Message(Box::new(handler)))
-    }
-
-    /// Create command handler
-    pub fn command(handler: CommandHandler<C>) -> Self {
-        Self::new(HandlerKind::Command(handler))
     }
 
     /// Create inline query handler
@@ -79,7 +73,6 @@ impl<C> Handler<C> {
 
 enum HandlerKind<C> {
     Message(Box<MessageHandler<C> + Send + Sync>),
-    Command(CommandHandler<C>),
     InlineQuery(Box<InlineQueryHandler<C> + Send + Sync>),
     ChosenInlineResult(Box<ChosenInlineResultHandler<C> + Send + Sync>),
     CallbackQuery(Box<CallbackQueryHandler<C> + Send + Sync>),
@@ -89,7 +82,7 @@ enum HandlerKind<C> {
 }
 
 impl<C> Handler<C> {
-    pub(super) fn handle(&mut self, context: &C, update: &Update, commands: &Option<Vec<BotCommand>>) -> HandlerFuture {
+    pub(super) fn handle(&mut self, context: &C, update: &Update) -> HandlerFuture {
         macro_rules! handle {
             ($kind:ident($val:ident)) => {
                 if let HandlerKind::$kind(ref mut handler) = self.kind {
@@ -104,17 +97,7 @@ impl<C> Handler<C> {
             UpdateKind::Message(ref msg)
             | UpdateKind::EditedMessage(ref msg)
             | UpdateKind::ChannelPost(ref msg)
-            | UpdateKind::EditedChannelPost(ref msg) => match commands {
-                Some(commands) =>
-                    if let HandlerKind::Command(ref mut handler) = self.kind {
-                        for command in commands {
-                            if handler.accepts(command) {
-                                return handler.handle(context, msg);
-                            }
-                        }
-                    },
-                None => handle!(Message(msg)),
-            },
+            | UpdateKind::EditedChannelPost(ref msg) => handle!(Message(msg)),
             UpdateKind::InlineQuery(ref val) => handle!(InlineQuery(val)),
             UpdateKind::ChosenInlineResult(ref val) => handle!(ChosenInlineResult(val)),
             UpdateKind::CallbackQuery(ref val) => handle!(CallbackQuery(val)),
@@ -186,41 +169,6 @@ pub trait MessageHandler<C> {
 }
 
 impl_func!(MessageHandler(Message));
-
-/// A command handler
-pub struct CommandHandler<C> {
-    name: String,
-    handler: Box<MessageHandler<C> + Send + Sync>,
-}
-
-impl<C> CommandHandler<C> {
-    /// Creates a new command handler
-    ///
-    /// # Arguments
-    ///
-    /// - name - command name (starts with /)
-    /// - handler - a message handler
-    pub fn new<S, H>(name: S, handler: H) -> Self
-    where
-        S: Into<String>,
-        H: MessageHandler<C> + 'static + Send + Sync,
-    {
-        CommandHandler {
-            name: name.into(),
-            handler: Box::new(handler),
-        }
-    }
-
-    pub(crate) fn accepts(&self, command: &BotCommand) -> bool {
-        self.name == command.command
-    }
-}
-
-impl<C> MessageHandler<C> for CommandHandler<C> {
-    fn handle(&mut self, context: &C, message: &Message) -> HandlerFuture {
-        self.handler.handle(context, message)
-    }
-}
 
 /// An inline query handler
 pub trait InlineQueryHandler<C> {
