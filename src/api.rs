@@ -64,7 +64,7 @@ impl Api {
         }
     }
 
-    /// Returns an updates stream used for long polling
+    /// Run getting updates using update method and handler
     pub fn get_updates<H>(&self, update_method: UpdateMethod, handler: H)
     where
         H: UpdateHandler + Send + Sync + 'static,
@@ -73,18 +73,17 @@ impl Api {
             UpdateMethod::Polling => {
                 let handler = Arc::new(Mutex::new(handler));
                 let handler_clone = handler.clone();
-                let api = self.clone();
                 tokio::run(
                     UpdatesStream::new(self.clone())
                         .for_each(move |update| {
-                            handler_clone.lock().unwrap().handle(&api, update);
+                            handler_clone.lock().unwrap().handle(update);
                             Ok(())
                         })
                         .then(|_| Ok(())),
                 );
             }
             UpdateMethod::Webhook { addr, path } => {
-                run_server(self.clone(), addr, path, handler);
+                run_server(addr, path, handler);
             }
         }
     }

@@ -1,4 +1,4 @@
-use crate::{types::Update, Api, UpdateHandler};
+use crate::{types::Update, UpdateHandler};
 use futures::{future::ok, Future, Stream};
 use hyper::{
     header::{HeaderValue, ALLOW},
@@ -13,15 +13,13 @@ use std::{
 };
 
 struct WebhookServiceFactory<H> {
-    api: Api,
     path: String,
     update_handler: Arc<Mutex<H>>,
 }
 
 impl<H> WebhookServiceFactory<H> {
-    fn new<S: Into<String>>(api: Api, path: S, update_handler: H) -> WebhookServiceFactory<H> {
+    fn new<S: Into<String>>(path: S, update_handler: H) -> WebhookServiceFactory<H> {
         WebhookServiceFactory {
-            api,
             path: path.into(),
             update_handler: Arc::new(Mutex::new(update_handler)),
         }
@@ -52,7 +50,6 @@ where
 
     fn make_service(&mut self, _ctx: Ctx) -> Self::Future {
         Box::new(ok(WebhookService {
-            api: self.api.clone(),
             path: self.path.clone(),
             update_handler: self.update_handler.clone(),
         }))
@@ -60,7 +57,6 @@ where
 }
 
 struct WebhookService<H> {
-    api: Api,
     path: String,
     update_handler: Arc<Mutex<H>>,
 }
@@ -78,12 +74,11 @@ where
         let mut rep = Response::new(Body::empty());
         if let Method::POST = *req.method() {
             if req.uri().path() == self.path {
-                let api = self.api.clone();
                 let update_handler = self.update_handler.clone();
                 return Box::new(req.into_body().concat2().map(move |body| {
                     match serde_json::from_slice::<Update>(&body) {
                         Ok(update) => {
-                            update_handler.lock().unwrap().handle(&api, update);
+                            update_handler.lock().unwrap().handle(update);
                         }
                         Err(err) => {
                             *rep.status_mut() = StatusCode::BAD_REQUEST;
@@ -110,14 +105,14 @@ where
 /// - addr - Bind address
 /// - path - URL path for webhook
 /// - handler - A handler
-pub fn run_server<A, S, H>(api: Api, addr: A, path: S, handler: H)
+pub(crate) fn run_server<A, S, H>(addr: A, path: S, handler: H)
 where
     A: Into<SocketAddr>,
     S: Into<String>,
     H: UpdateHandler + Send + Sync + 'static,
 {
     let server = Server::bind(&addr.into())
-        .serve(WebhookServiceFactory::new(api, path, handler))
+        .serve(WebhookServiceFactory::new(path, handler))
         .map_err(|e| log::error!("Server error: {}", e));
     tokio::run(server)
 }

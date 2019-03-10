@@ -2,12 +2,12 @@ use dotenv::dotenv;
 use env_logger;
 use log;
 use std::env;
-use tgbot::{run_server, types::Update, Api, UpdateHandler};
+use tgbot::{types::Update, Api, UpdateHandler, UpdateMethod};
 
 struct Handler;
 
 impl UpdateHandler for Handler {
-    fn handle(&mut self, _: &Api, update: Update) {
+    fn handle(&mut self, update: Update) {
         log::info!("got an update: {:?}\n", update);
     }
 }
@@ -24,5 +24,5 @@ fn main() {
     }
     .expect("Failed to create API");
 
-    run_server(api, ([127, 0, 0, 1], 8080), "/", Handler);
+    api.get_updates(UpdateMethod::Polling, Handler);
 }

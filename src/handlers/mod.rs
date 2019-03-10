@@ -1,15 +1,17 @@
 mod poll;
 mod webhook;
 
-pub use self::{poll::UpdatesStream, webhook::run_server};
+pub use self::poll::UpdatesStream;
 
-use crate::{types::Update, Api};
+pub(crate) use self::webhook::run_server;
+
+use crate::types::Update;
 use std::net::SocketAddr;
 
 /// A webhook update handler
 pub trait UpdateHandler {
     /// Handles an update
-    fn handle(&mut self, api: &Api, update: Update);
+    fn handle(&mut self, update: Update);
 }
 
 /// An update method
