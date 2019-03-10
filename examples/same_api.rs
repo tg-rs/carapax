@@ -2,7 +2,7 @@ use dotenv::dotenv;
 use env_logger;
 use log;
 use std::env;
-use tgbot::{run_server, types::Update, Api, UpdateHandler};
+use tgbot::{types::Update, Api, UpdateHandler, UpdateMethod};
 
 struct Handler;
 
@@ -24,5 +24,7 @@ fn main() {
     }
     .expect("Failed to create API");
 
-    run_server(api, ([127, 0, 0, 1], 8080), "/", Handler);
+    api.get_updates(UpdateMethod::webhook(([127, 0, 0, 1], 8080), "/"), Handler);
+    // or you can use polling
+    api.get_updates(UpdateMethod::Polling, Handler);
 }

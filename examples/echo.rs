@@ -1,28 +1,9 @@
 use dotenv::dotenv;
 use env_logger;
-use futures::{future::Future, stream::Stream};
+use futures::{future::Future, Stream};
 use log;
 use std::env;
-use tgbot::{
-    methods::SendMessage,
-    types::{Update, UpdateKind},
-    Api, UpdateHandler, UpdateMethod, UpdatesStream,
-};
-
-struct Handler;
-
-impl UpdateHandler for Handler {
-    fn handle(&mut self, api: &Api, update: Update) {
-        if let UpdateKind::Message(msg) = update.kind {
-            log::info!("GOT A MESSAGE: {:?}\n", msg);
-            if let Some(text) = msg.get_text() {
-                let chat_id = msg.get_chat_id();
-                let method = SendMessage::new(chat_id, text.data.clone());
-                api.spawn(api.execute(&method));
-            }
-        }
-    }
-}
+use tgbot::{methods::SendMessage, types::UpdateKind, Api, UpdatesStream};
 
 fn main() {
     dotenv().ok();
@@ -36,10 +17,6 @@ fn main() {
     }
     .expect("Failed to create API");
 
-    // use UpdateHandler
-    api.get_updates(UpdateMethod::Polling, Handler);
-
-    // use futures::stream::Stream
     tokio::run(
         UpdatesStream::new(api.clone())
             .for_each(move |update| {

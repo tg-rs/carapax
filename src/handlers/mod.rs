@@ -24,3 +24,19 @@ pub enum UpdateMethod {
         path: String,
     },
 }
+
+impl UpdateMethod {
+    /// An easier way to create [`UpdateMethod::Webhook`]
+    ///
+    /// [`UpdateMethod::Webhook`]: enum.UpdateMethod.html#variant.Webhook
+    pub fn webhook<A, S>(addr: A, path: S) -> UpdateMethod
+    where
+        A: Into<SocketAddr>,
+        S: Into<String>,
+    {
+        UpdateMethod::Webhook {
+            addr: addr.into(),
+            path: path.into(),
+        }
+    }
+}
