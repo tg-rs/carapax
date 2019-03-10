@@ -1,6 +1,8 @@
 //! A Telegram Bot framework
 #![warn(missing_docs)]
 
+mod app;
+
 /// Access rules and policies
 pub mod access;
 
