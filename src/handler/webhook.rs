@@ -12,7 +12,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-struct WebhookServiceFactory<H> {
+/// Creates a webhook service
+pub struct WebhookServiceFactory<H> {
     path: String,
     update_handler: Arc<Mutex<H>>,
 }
@@ -26,8 +27,9 @@ impl<H> WebhookServiceFactory<H> {
     }
 }
 
+/// An error when creating webhook service
 #[derive(Debug)]
-struct WebhookServiceFactoryError;
+pub struct WebhookServiceFactoryError;
 
 impl fmt::Display for WebhookServiceFactoryError {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
@@ -56,7 +58,8 @@ where
     }
 }
 
-struct WebhookService<H> {
+/// Webhook service
+pub struct WebhookService<H> {
     path: String,
     update_handler: Arc<Mutex<H>>,
 }
@@ -98,7 +101,7 @@ where
     }
 }
 
-pub(crate) fn run_server<H>(addr: SocketAddr, path: String, handler: H)
+pub(super) fn run_server<H>(addr: SocketAddr, path: String, handler: H)
 where
     H: UpdateHandler + Send + Sync + 'static,
 {

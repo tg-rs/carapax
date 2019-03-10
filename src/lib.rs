@@ -8,7 +8,7 @@ extern crate failure;
 
 mod api;
 mod executor;
-mod handlers;
+mod handler;
 
 /// Methods available in the Bot API
 pub mod methods;
@@ -18,5 +18,8 @@ pub mod types;
 
 pub use self::{
     api::{Api, ApiFuture},
-    handlers::*,
+    handler::{
+        handle_updates, UpdateHandler, UpdateMethod, UpdatesStream, WebhookService, WebhookServiceFactory,
+        WebhookServiceFactoryError,
+    },
 };
