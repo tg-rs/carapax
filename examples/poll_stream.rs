@@ -1,13 +1,9 @@
 use dotenv::dotenv;
 use env_logger;
-use futures::{future::lazy, Future, Stream};
+use futures::{future::Future, Stream};
 use log;
 use std::env;
-use tgbot::{
-    methods::{GetMe, SendMessage},
-    types::UpdateKind,
-    Api,
-};
+use tgbot::{methods::SendMessage, types::UpdateKind, Api, UpdatesStream};
 
 fn main() {
     dotenv().ok();
@@ -21,13 +17,8 @@ fn main() {
     }
     .expect("Failed to create API");
 
-    tokio::run(lazy(|| {
-        api.spawn(api.execute(&GetMe).then(|x| {
-            log::info!("getMe result: {:?}\n", x);
-            Ok::<(), ()>(())
-        }));
-
-        api.get_updates()
+    tokio::run(
+        UpdatesStream::new(api.clone())
             .for_each(move |update| {
                 if let UpdateKind::Message(msg) = update.kind {
                     log::info!("GOT A MESSAGE: {:?}\n", msg);
@@ -37,8 +28,9 @@ fn main() {
                         api.spawn(api.execute(&method));
                     }
                 }
+
                 Ok(())
             })
-            .then(|_| Ok(()))
-    }));
+            .then(|_| Ok(())),
+    );
 }

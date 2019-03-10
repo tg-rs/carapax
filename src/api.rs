@@ -1,13 +1,17 @@
 use crate::{
     executor::{default_executor, proxy_executor, Executor},
+    handlers::{run_server, UpdateMethod},
     methods::Method,
-    poll::UpdatesStream,
     types::Response,
+    UpdateHandler, UpdatesStream,
 };
 use failure::Error;
-use futures::{future, Future, Poll};
+use futures::{future, Future, Poll, Stream};
 use serde::de::DeserializeOwned;
-use std::{fmt::Debug, sync::Arc};
+use std::{
+    fmt::Debug,
+    sync::{Arc, Mutex},
+};
 
 /// Telegram Bot API client
 #[derive(Clone)]
@@ -60,9 +64,28 @@ impl Api {
         }
     }
 
-    /// Returns an updates stream used for long polling
-    pub fn get_updates(&self) -> UpdatesStream {
-        UpdatesStream::new(self.clone())
+    /// Run getting updates using update method and handler
+    pub fn get_updates<H>(&self, update_method: UpdateMethod, handler: H)
+    where
+        H: UpdateHandler + Send + Sync + 'static,
+    {
+        match update_method {
+            UpdateMethod::Polling => {
+                let handler = Arc::new(Mutex::new(handler));
+                let handler_clone = handler.clone();
+                tokio::run(
+                    UpdatesStream::new(self.clone())
+                        .for_each(move |update| {
+                            handler_clone.lock().unwrap().handle(update);
+                            Ok(())
+                        })
+                        .then(|_| Ok(())),
+                );
+            }
+            UpdateMethod::Webhook { addr, path } => {
+                run_server(addr, path, handler);
+            }
+        }
     }
 
     /// Spawns a future on the default executor.
