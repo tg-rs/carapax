@@ -318,11 +318,10 @@ impl<C> AccessPolicy<C> for InMemoryAccessPolicy {
         for rule in &self.rules {
             if rule.accepts(&update) {
                 result = rule.is_granted;
-                log::info!("Granted access for: {:?}", rule);
+                log::info!("Found rule: {:?}", rule);
                 break;
             }
         }
-        log::info!("No rules found, access forbidden");
         result.into()
     }
 }
