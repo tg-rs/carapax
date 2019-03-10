@@ -113,6 +113,7 @@ impl Stream for UpdatesStream {
     }
 }
 
+/// Update stream options
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct UpdatesStreamOptions {
     offset: Integer,

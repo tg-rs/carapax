@@ -19,7 +19,7 @@ pub mod types;
 pub use self::{
     api::{Api, ApiFuture},
     handler::{
-        handle_updates, UpdateHandler, UpdateMethod, UpdatesStream, WebhookService, WebhookServiceFactory,
-        WebhookServiceFactoryError,
+        handle_updates, UpdateHandler, UpdateMethod, UpdatesStream, UpdatesStreamOptions, WebhookService,
+        WebhookServiceFactory, WebhookServiceFactoryError,
     },
 };
