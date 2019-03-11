@@ -1,6 +1,6 @@
-use self::webhook::run_server;
 use crate::types::Update;
 use futures::{Future, Stream};
+use hyper::Server;
 use std::net::SocketAddr;
 
 mod poll;
@@ -69,7 +69,10 @@ where
             );
         }
         UpdateMethodKind::Webhook { addr, path } => {
-            run_server(addr, path, handler);
+            let server = Server::bind(&addr)
+                .serve(WebhookServiceFactory::new(path, handler))
+                .map_err(|e| log::error!("Server error: {}", e));
+            tokio::run(server)
         }
     }
 }

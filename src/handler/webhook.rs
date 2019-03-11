@@ -3,12 +3,11 @@ use futures::{future::ok, Future, Stream};
 use hyper::{
     header::{HeaderValue, ALLOW},
     service::{MakeService, Service},
-    Body, Error, Method, Request, Response, Server, StatusCode,
+    Body, Error, Method, Request, Response, StatusCode,
 };
 use std::{
     error::Error as StdError,
     fmt,
-    net::SocketAddr,
     sync::{Arc, Mutex},
 };
 
@@ -19,7 +18,8 @@ pub struct WebhookServiceFactory<H> {
 }
 
 impl<H> WebhookServiceFactory<H> {
-    fn new<S: Into<String>>(path: S, update_handler: H) -> WebhookServiceFactory<H> {
+    /// Creates a new factory
+    pub fn new<S: Into<String>>(path: S, update_handler: H) -> WebhookServiceFactory<H> {
         WebhookServiceFactory {
             path: path.into(),
             update_handler: Arc::new(Mutex::new(update_handler)),
@@ -99,14 +99,4 @@ where
         }
         Box::new(ok(rep))
     }
-}
-
-pub(super) fn run_server<H>(addr: SocketAddr, path: String, handler: H)
-where
-    H: UpdateHandler + Send + Sync + 'static,
-{
-    let server = Server::bind(&addr)
-        .serve(WebhookServiceFactory::new(path, handler))
-        .map_err(|e| log::error!("Server error: {}", e));
-    tokio::run(server)
 }
