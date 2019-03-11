@@ -32,7 +32,7 @@ fn main() {
     let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
     let proxy = env::var("CARAPAX_PROXY").ok();
 
-    let api = Api::new(token).unwrap();
+    let api = Api::new(token, proxy).unwrap();
     let app = App::new(api.clone(), api);
 
     app.add_handler(Handler::message(

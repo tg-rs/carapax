@@ -30,7 +30,7 @@ fn main() {
     let proxy = env::var("CARAPAX_PROXY").ok();
     let allowed_username = env::var("CARAPAX_ALLOWED_USERNAME").expect("CARAPAX_ALLOWED_USERNAME is not set");
 
-    let api = Api::new(token).unwrap();
+    let api = Api::new(token, proxy).unwrap();
     let app = App::new(api.clone(), api);
 
     // Deny from all except for allowed_username
