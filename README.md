@@ -1,6 +1,6 @@
 # CARAPAX
 
-A telegram bot framework
+A Telegram Bot Framework
 
 [![Travis](https://img.shields.io/travis/tg-rs/carapax.svg?style=flat-square)](https://travis-ci.org/tg-rs/carapax)
 [![Version](https://img.shields.io/crates/v/carapax.svg?style=flat-square)](https://crates.io/crates/carapax)
@@ -9,6 +9,23 @@ A telegram bot framework
 [![License](https://img.shields.io/crates/l/carapax.svg?style=flat-square)](./LICENSE)
 
 Name comes from [Carapace](https://en.wikipedia.org/wiki/Carapace) (carapax in latin).
+
+# Installation
+
+```toml
+[dependencies]
+carapax = "0.1"
+```
+
+# Example
+
+See [examples](https://github.com/tg-rs/carapax/tree/0.1.0/examples) directory.
+
+# Changelog
+
+# 0.1.0 (12.03.2019)
+
+- First release.
 
 # LICENSE
 
