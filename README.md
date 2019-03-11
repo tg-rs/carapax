@@ -12,12 +12,12 @@ A Telegram Bot library
 
 ```toml
 [dependencies]
-tgbot = "0.2"
+tgbot = "0.3"
 ```
 
 # Example
 
-See [examples](https://github.com/tg-rs/tgbot/tree/0.2.0/examples) directory.
+See [examples](https://github.com/tg-rs/tgbot/tree/0.3.0/examples) directory.
 
 # Changelog
 
