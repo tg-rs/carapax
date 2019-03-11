@@ -1,7 +1,4 @@
-use crate::{
-    context::Context,
-    middleware::{Middleware, MiddlewareFuture, MiddlewareResult},
-};
+use crate::middleware::{Middleware, MiddlewareFuture, MiddlewareResult};
 use ratelimit_meter::{DirectRateLimiter, KeyedRateLimiter, GCRA};
 use std::{
     num::NonZeroU32,
@@ -54,7 +51,7 @@ impl RateLimitMiddleware {
 }
 
 impl<S> Middleware<S> for RateLimitMiddleware {
-    fn before(&mut self, _context: &Context<S>, update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _context: &S, update: &Update) -> MiddlewareFuture {
         let should_pass = match self.rate_limiter {
             RateLimiter::Direct(ref mut limiter) => limiter.check().is_ok(),
             RateLimiter::Keyed {

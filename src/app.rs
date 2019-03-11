@@ -1,5 +1,4 @@
 use crate::{
-    context::Context,
     dispatcher::{Dispatcher, ErrorStrategy},
     handler::Handler,
     middleware::Middleware,
@@ -45,7 +44,7 @@ enum RunMethodKind {
 /// A Telegram Bot App
 pub struct App<S> {
     api: Api,
-    context: Context<S>,
+    context: S,
     middlewares: Vec<Box<Middleware<S> + Send + Sync>>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
@@ -65,7 +64,7 @@ impl<S> App<S> {
             middleware_error_strategy: ErrorStrategy::default(),
             handlers: vec![],
             handler_error_strategy: ErrorStrategy::default(),
-            context: Context::from(context),
+            context,
         }
     }
 
@@ -103,7 +102,7 @@ impl<S> App<S> {
 
 impl<S> App<S>
 where
-    S: Send + Sync + 'static
+    S: Send + Sync + 'static,
 {
     /// Run app
     pub fn run(self, method: RunMethod) {

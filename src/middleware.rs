@@ -1,4 +1,3 @@
-use crate::context::Context;
 use failure::Error;
 use futures::{future, Future, Poll};
 use tgbot::types::Update;
@@ -59,12 +58,12 @@ impl Future for MiddlewareFuture {
 /// Middleware handler
 pub trait Middleware<S> {
     /// Called before all handlers
-    fn before(&mut self, _context: &Context<S>, _update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _context: &S, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 
     /// Called after all handlers
-    fn after(&mut self, _context: &Context<S>, _update: &Update) -> MiddlewareFuture {
+    fn after(&mut self, _context: &S, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 }
@@ -113,27 +112,20 @@ mod tests {
     }
 
     impl Middleware<Counter> for MockMiddleware {
-        fn before(&mut self, context: &Context<Counter>, _update: &Update) -> MiddlewareFuture {
-            let counter = context.get();
-            counter.inc_calls();
+        fn before(&mut self, context: &Counter, _update: &Update) -> MiddlewareFuture {
+            context.inc_calls();
             self.before_result.into()
         }
 
-        fn after(&mut self, context: &Context<Counter>, _update: &Update) -> MiddlewareFuture {
-            let counter = context.get();
-            counter.inc_calls();
+        fn after(&mut self, context: &Counter, _update: &Update) -> MiddlewareFuture {
+            context.inc_calls();
             self.after_result.into()
         }
     }
 
-    fn handle_message(context: &Context<Counter>, _message: &Message) -> HandlerFuture {
-        let counter = context.get();
-        counter.inc_calls();
+    fn handle_message(context: &Counter, _message: &Message) -> HandlerFuture {
+        context.inc_calls();
         ().into()
-    }
-
-    fn create_context() -> Context<Counter> {
-        Context::from(Counter::new())
     }
 
     #[test]
@@ -171,10 +163,10 @@ mod tests {
                 }),
             ],
             vec![Handler::message(handle_message)],
-            create_context(),
+            Counter::new(),
         );
         dispatcher.dispatch(update.clone()).wait().unwrap();
-        assert_eq!(dispatcher.context.get().get_calls(), 5);
+        assert_eq!(dispatcher.context.get_calls(), 5);
 
         let mut dispatcher = Dispatcher::new(
             vec![
@@ -188,9 +180,9 @@ mod tests {
                 }),
             ],
             vec![Handler::message(handle_message)],
-            create_context(),
+            Counter::new(),
         );
         dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.get().get_calls(), 4);
+        assert_eq!(dispatcher.context.get_calls(), 4);
     }
 }

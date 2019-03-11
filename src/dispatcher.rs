@@ -1,5 +1,4 @@
 use crate::{
-    context::Context,
     handler::{Handler, HandlerFuture},
     middleware::{Middleware, MiddlewareFuture, MiddlewareResult},
 };
@@ -27,7 +26,7 @@ impl Default for ErrorStrategy {
 pub struct Dispatcher<S> {
     pub(crate) middlewares: Arc<Mutex<Vec<Box<Middleware<S> + Send + Sync>>>>,
     pub(crate) handlers: Arc<Mutex<Vec<Handler<S>>>>,
-    pub(crate) context: Arc<Context<S>>,
+    pub(crate) context: Arc<S>,
     pub(crate) middleware_error_strategy: ErrorStrategy,
     pub(crate) handler_error_strategy: ErrorStrategy,
 }
@@ -36,7 +35,7 @@ impl<S> Dispatcher<S> {
     pub(crate) fn new(
         middlewares: Vec<Box<Middleware<S> + Send + Sync>>,
         handlers: Vec<Handler<S>>,
-        context: Context<S>,
+        context: S,
     ) -> Self {
         Self {
             middlewares: Arc::new(Mutex::new(middlewares)),
@@ -72,7 +71,7 @@ impl<S> Dispatcher<S> {
 
 impl<S> tgbot::UpdateHandler for Dispatcher<S>
 where
-    S: Send + Sync + 'static
+    S: Send + Sync + 'static,
 {
     fn handle(&mut self, update: Update) {
         tokio::spawn(self.dispatch(update).then(|r| {
@@ -89,7 +88,7 @@ where
 pub struct DispatcherFuture<S> {
     middlewares: Arc<Mutex<Vec<Box<Middleware<S> + Send + Sync>>>>,
     handlers: Arc<Mutex<Vec<Handler<S>>>>,
-    context: Arc<Context<S>>,
+    context: Arc<S>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
     update: Update,
@@ -108,7 +107,7 @@ impl<S> DispatcherFuture<S> {
     fn new(
         middlewares: Arc<Mutex<Vec<Box<Middleware<S> + Send + Sync>>>>,
         handlers: Arc<Mutex<Vec<Handler<S>>>>,
-        context: Arc<Context<S>>,
+        context: Arc<S>,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
         update: Update,
@@ -300,10 +299,6 @@ mod tests {
         serde_json::from_str(data).unwrap()
     }
 
-    fn create_context() -> Context<Counter> {
-        Context::from(Counter::new())
-    }
-
     #[derive(Debug, Fail)]
     #[fail(display = "Test error")]
     struct ErrorMock;
@@ -311,22 +306,19 @@ mod tests {
     struct ErrorMiddleware;
 
     impl Middleware<Counter> for ErrorMiddleware {
-        fn before(&mut self, context: &Context<Counter>, _update: &Update) -> MiddlewareFuture {
-            let counter = context.get();
-            counter.inc_calls();
+        fn before(&mut self, context: &Counter, _update: &Update) -> MiddlewareFuture {
+            context.inc_calls();
             Err(ErrorMock).into()
         }
 
-        fn after(&mut self, context: &Context<Counter>, _update: &Update) -> MiddlewareFuture {
-            let counter = context.get();
-            counter.inc_calls();
+        fn after(&mut self, context: &Counter, _update: &Update) -> MiddlewareFuture {
+            context.inc_calls();
             Err(ErrorMock).into()
         }
     }
 
-    fn handle_update_error(context: &Context<Counter>, _update: &Update) -> HandlerFuture {
-        let counter = context.get();
-        counter.inc_calls();
+    fn handle_update_error(context: &Counter, _update: &Update) -> HandlerFuture {
+        context.inc_calls();
         Err(ErrorMock).into()
     }
 
@@ -349,30 +341,30 @@ mod tests {
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
-            create_context(),
+            Counter::new(),
         );
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
-        assert_eq!(dispatcher.context.get().get_calls(), 1);
+        assert_eq!(dispatcher.context.get_calls(), 1);
 
         // Aborted on handler call by default
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
-            create_context(),
+            Counter::new(),
         )
         .middleware_error_strategy(ErrorStrategy::Ignore);
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
-        assert_eq!(dispatcher.context.get().get_calls(), 3);
+        assert_eq!(dispatcher.context.get_calls(), 3);
 
         // Ignore all errors
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
-            create_context(),
+            Counter::new(),
         )
         .middleware_error_strategy(ErrorStrategy::Ignore)
         .handler_error_strategy(ErrorStrategy::Ignore);
         dispatcher.dispatch(update.clone()).wait().unwrap();
-        assert_eq!(dispatcher.context.get().get_calls(), 5);
+        assert_eq!(dispatcher.context.get_calls(), 5);
     }
 }
