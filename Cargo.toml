@@ -12,14 +12,13 @@ repository = "https://github.com/tg-rs/carapax"
 travis-ci = { repository = "tg-rs/carapax", branch = "master" }
 
 [dependencies]
-anymap = "0.12"
 failure = "0.1"
 futures = "0.1"
 log = "0.4"
 nonzero_ext = "0.1"
 ratelimit_meter = "4.0"
 shellwords = "1.0"
-tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "f84ff9b" }
+tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "aa268d3" }
 tokio = "0.1"
 
 [dev-dependencies]

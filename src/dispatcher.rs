@@ -1,5 +1,4 @@
 use crate::{
-    context::Context,
     handler::{Handler, HandlerFuture},
     middleware::{Middleware, MiddlewareFuture, MiddlewareResult},
 };
@@ -24,24 +23,24 @@ impl Default for ErrorStrategy {
 }
 
 /// Dispatcher
-pub struct Dispatcher {
-    pub(crate) middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
-    pub(crate) handlers: Arc<Mutex<Vec<Handler>>>,
-    pub(crate) context: Arc<Context>,
+pub struct Dispatcher<S> {
+    pub(crate) middlewares: Arc<Mutex<Vec<Box<Middleware<S> + Send + Sync>>>>,
+    pub(crate) handlers: Arc<Mutex<Vec<Handler<S>>>>,
+    pub(crate) context: Arc<Mutex<S>>,
     pub(crate) middleware_error_strategy: ErrorStrategy,
     pub(crate) handler_error_strategy: ErrorStrategy,
 }
 
-impl Dispatcher {
+impl<S> Dispatcher<S> {
     pub(crate) fn new(
-        middlewares: Vec<Box<Middleware + Send + Sync>>,
-        handlers: Vec<Handler>,
-        context: Context,
+        middlewares: Vec<Box<Middleware<S> + Send + Sync>>,
+        handlers: Vec<Handler<S>>,
+        context: S,
     ) -> Self {
         Self {
             middlewares: Arc::new(Mutex::new(middlewares)),
             handlers: Arc::new(Mutex::new(handlers)),
-            context: Arc::new(context),
+            context: Arc::new(Mutex::new(context)),
             middleware_error_strategy: ErrorStrategy::default(),
             handler_error_strategy: ErrorStrategy::default(),
         }
@@ -58,7 +57,7 @@ impl Dispatcher {
     }
 
     /// Dispatch an update
-    pub fn dispatch(&mut self, update: Update) -> DispatcherFuture {
+    pub fn dispatch(&mut self, update: Update) -> DispatcherFuture<S> {
         DispatcherFuture::new(
             self.middlewares.clone(),
             self.handlers.clone(),
@@ -70,7 +69,10 @@ impl Dispatcher {
     }
 }
 
-impl tgbot::UpdateHandler for Dispatcher {
+impl<S> tgbot::UpdateHandler for Dispatcher<S>
+where
+    S: Send + Sync + 'static,
+{
     fn handle(&mut self, update: Update) {
         tokio::spawn(self.dispatch(update).then(|r| {
             if let Err(e) = r {
@@ -83,10 +85,10 @@ impl tgbot::UpdateHandler for Dispatcher {
 
 /// Dispatcher future
 #[must_use = "futures do nothing unless polled"]
-pub struct DispatcherFuture {
-    middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
-    handlers: Arc<Mutex<Vec<Handler>>>,
-    context: Arc<Context>,
+pub struct DispatcherFuture<S> {
+    middlewares: Arc<Mutex<Vec<Box<Middleware<S> + Send + Sync>>>>,
+    handlers: Arc<Mutex<Vec<Handler<S>>>>,
+    context: Arc<Mutex<S>>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
     update: Update,
@@ -101,15 +103,15 @@ enum DispatcherFutureState {
     After(usize),
 }
 
-impl DispatcherFuture {
+impl<S> DispatcherFuture<S> {
     fn new(
-        middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
-        handlers: Arc<Mutex<Vec<Handler>>>,
-        context: Arc<Context>,
+        middlewares: Arc<Mutex<Vec<Box<Middleware<S> + Send + Sync>>>>,
+        handlers: Arc<Mutex<Vec<Handler<S>>>>,
+        context: Arc<Mutex<S>>,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
         update: Update,
-    ) -> DispatcherFuture {
+    ) -> DispatcherFuture<S> {
         DispatcherFuture {
             middlewares,
             handlers,
@@ -155,7 +157,8 @@ impl DispatcherFuture {
             },
             None => match self.middlewares.lock().unwrap().get_mut(idx) {
                 Some(ref mut middleware) => {
-                    self.middleware = Some(middleware.before(&self.context, &self.update));
+                    let context = self.context.clone();
+                    self.middleware = Some(middleware.before(&mut context.lock().unwrap(), &self.update));
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
@@ -194,8 +197,9 @@ impl DispatcherFuture {
                 },
             },
             None => match self.handlers.lock().unwrap().get_mut(idx) {
-                Some(ref mut handler) => {
-                    self.handler = Some(handler.handle(&self.context, &self.update));
+                Some(handler) => {
+                    let context = self.context.clone();
+                    self.handler = Some(handler.handle(&mut context.lock().unwrap(), &self.update));
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
@@ -236,7 +240,8 @@ impl DispatcherFuture {
             },
             None => match self.middlewares.lock().unwrap().get_mut(idx) {
                 Some(ref mut middleware) => {
-                    self.middleware = Some(middleware.after(&self.context, &self.update));
+                    let context = self.context.clone();
+                    self.middleware = Some(middleware.after(&mut context.lock().unwrap(), &self.update));
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
@@ -255,7 +260,7 @@ impl DispatcherFuture {
     }
 }
 
-impl Future for DispatcherFuture {
+impl<S> Future for DispatcherFuture<S> {
     type Item = ();
     type Error = Error;
 
@@ -297,35 +302,26 @@ mod tests {
         serde_json::from_str(data).unwrap()
     }
 
-    fn create_context() -> Context {
-        let mut ctx = Context::default();
-        ctx.add(Counter::new());
-        ctx
-    }
-
     #[derive(Debug, Fail)]
     #[fail(display = "Test error")]
     struct ErrorMock;
 
     struct ErrorMiddleware;
 
-    impl Middleware for ErrorMiddleware {
-        fn before(&mut self, context: &Context, _update: &Update) -> MiddlewareFuture {
-            let counter: &Counter = context.get();
-            counter.inc_calls();
+    impl Middleware<Counter> for ErrorMiddleware {
+        fn before(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
+            context.inc_calls();
             Err(ErrorMock).into()
         }
 
-        fn after(&mut self, context: &Context, _update: &Update) -> MiddlewareFuture {
-            let counter: &Counter = context.get();
-            counter.inc_calls();
+        fn after(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
+            context.inc_calls();
             Err(ErrorMock).into()
         }
     }
 
-    fn handle_update_error(context: &Context, _update: &Update) -> HandlerFuture {
-        let counter: &Counter = context.get();
-        counter.inc_calls();
+    fn handle_update_error(context: &mut Counter, _update: &Update) -> HandlerFuture {
+        context.inc_calls();
         Err(ErrorMock).into()
     }
 
@@ -348,31 +344,30 @@ mod tests {
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
-            create_context(),
+            Counter::new(),
         );
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
-        assert_eq!(dispatcher.context.get::<Counter>().get_calls(), 1);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 1);
 
         // Aborted on handler call by default
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
-            create_context(),
+            Counter::new(),
         )
         .middleware_error_strategy(ErrorStrategy::Ignore);
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
-        assert_eq!(dispatcher.context.get::<Counter>().get_calls(), 3);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 3);
 
         // Ignore all errors
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
-            create_context(),
+            Counter::new(),
         )
         .middleware_error_strategy(ErrorStrategy::Ignore)
         .handler_error_strategy(ErrorStrategy::Ignore);
         dispatcher.dispatch(update.clone()).wait().unwrap();
-        assert_eq!(dispatcher.context.get::<Counter>().get_calls(), 5);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 5);
     }
-
 }

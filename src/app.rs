@@ -1,11 +1,8 @@
 use crate::{
-    context::Context,
     dispatcher::{Dispatcher, ErrorStrategy},
     handler::Handler,
     middleware::Middleware,
 };
-use anymap::any::{Any, IntoBox};
-use failure::Error;
 use std::net::SocketAddr;
 use tgbot::{handle_updates, Api, UpdateMethod, UpdatesStream, UpdatesStreamOptions};
 
@@ -45,44 +42,31 @@ enum RunMethodKind {
 }
 
 /// A Telegram Bot App
-pub struct App {
-    token: String,
-    context: Context,
-    middlewares: Vec<Box<Middleware + Send + Sync>>,
+pub struct App<S> {
+    api: Api,
+    context: S,
+    middlewares: Vec<Box<Middleware<S> + Send + Sync>>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
-    handlers: Vec<Handler>,
-    proxy: Option<String>,
+    handlers: Vec<Handler<S>>,
 }
 
-impl App {
+impl<S> App<S> {
     /// Creates a new app
     ///
     /// # Arguments
     ///
-    /// - token - A telegram bot token
-    pub fn new<S: Into<String>>(token: S) -> Self {
+    /// * api - tgbot::Api
+    /// * context - any type you want to use as context
+    pub fn new(api: Api, context: S) -> Self {
         App {
-            token: token.into(),
+            api,
             middlewares: vec![],
             middleware_error_strategy: ErrorStrategy::default(),
             handlers: vec![],
             handler_error_strategy: ErrorStrategy::default(),
-            proxy: None,
-            context: Context::default(),
+            context,
         }
-    }
-
-    /// Add a value to context
-    pub fn context<T: IntoBox<Any + Send + Sync>>(mut self, value: T) -> Self {
-        self.context.add(value);
-        self
-    }
-
-    /// Set proxy for client
-    pub fn proxy<S: Into<String>>(mut self, proxy: S) -> Self {
-        self.proxy = Some(proxy.into());
-        self
     }
 
     /// Set middleware error strategy
@@ -104,34 +88,32 @@ impl App {
     /// Add middleware handler
     pub fn add_middleware<M>(mut self, middleware: M) -> Self
     where
-        M: Middleware + 'static + Send + Sync,
+        M: Middleware<S> + 'static + Send + Sync,
     {
         self.middlewares.push(Box::new(middleware));
         self
     }
 
     /// Add a regular handler
-    pub fn add_handler(mut self, handler: Handler) -> Self {
+    pub fn add_handler(mut self, handler: Handler<S>) -> Self {
         self.handlers.push(handler);
         self
     }
+}
 
+impl<S> App<S>
+where
+    S: Send + Sync + 'static,
+{
     /// Run app
-    pub fn run(mut self, method: RunMethod) -> Result<(), Error> {
-        let api = if let Some(proxy) = self.proxy {
-            Api::with_proxy(self.token, &proxy)?
-        } else {
-            Api::new(self.token)?
-        };
-        self.context.add(api.clone());
+    pub fn run(self, method: RunMethod) {
         let dispatcher = Dispatcher::new(self.middlewares, self.handlers, self.context)
             .middleware_error_strategy(self.middleware_error_strategy)
             .handler_error_strategy(self.handler_error_strategy);
         let update_method = match method.kind {
-            RunMethodKind::Poll(options) => UpdateMethod::poll(UpdatesStream::new(api).options(options)),
+            RunMethodKind::Poll(options) => UpdateMethod::poll(UpdatesStream::new(self.api.clone()).options(options)),
             RunMethodKind::Webhook(addr, path) => UpdateMethod::webhook(addr, path),
         };
         handle_updates(update_method, dispatcher);
-        Ok(())
     }
 }
