@@ -31,7 +31,7 @@ fn main() {
     let allowed_username = env::var("CARAPAX_ALLOWED_USERNAME").expect("CARAPAX_ALLOWED_USERNAME is not set");
 
     let api = Api::new(token, proxy).unwrap();
-    let app = App::new(api.clone(), api);
+    let app = App::new(api.clone());
 
     // Deny from all except for allowed_username
     let rule = AccessRule::allow_user(allowed_username);
@@ -44,5 +44,5 @@ fn main() {
     app.add_middleware(access)
         .add_middleware(rate_limit)
         .add_handler(Handler::message(handle_message))
-        .run(RunMethod::poll(Default::default()));
+        .run(UpdateMethod::poll(UpdatesStream::new(api)));
 }

@@ -33,12 +33,12 @@ fn main() {
     let proxy = env::var("CARAPAX_PROXY").ok();
 
     let api = Api::new(token, proxy).unwrap();
-    let app = App::new(api.clone(), api);
+    let app = App::new(api.clone());
 
     app.add_handler(Handler::message(
         CommandsHandler::default()
             .add_handler("/start", handle_start)
             .add_handler("/user_id", handle_user_id),
     ))
-    .run(RunMethod::poll(Default::default()));
+    .run(UpdateMethod::poll(UpdatesStream::new(api)));
 }
