@@ -21,8 +21,8 @@ impl<S, P> Middleware<S> for AccessMiddleware<P>
 where
     P: AccessPolicy<S>,
 {
-    fn before(&mut self, context: &S, update: &Update) -> MiddlewareFuture {
-        MiddlewareFuture::new(self.policy.is_granted(&context, &update).and_then(|result| {
+    fn before(&mut self, context: &mut S, update: &Update) -> MiddlewareFuture {
+        MiddlewareFuture::new(self.policy.is_granted(context, &update).and_then(|result| {
             if result {
                 Ok(MiddlewareResult::Continue)
             } else {
@@ -37,7 +37,7 @@ where
 /// Decides whether update is allowed or not
 pub trait AccessPolicy<S> {
     /// Return true if update is allowed and false otherwise
-    fn is_granted(&mut self, context: &S, update: &Update) -> AccessPolicyFuture;
+    fn is_granted(&mut self, context: &mut S, update: &Update) -> AccessPolicyFuture;
 }
 
 /// Access policy future
@@ -311,7 +311,7 @@ impl InMemoryAccessPolicy {
 }
 
 impl<S> AccessPolicy<S> for InMemoryAccessPolicy {
-    fn is_granted(&mut self, _context: &S, update: &Update) -> AccessPolicyFuture {
+    fn is_granted(&mut self, _context: &mut S, update: &Update) -> AccessPolicyFuture {
         let mut result = false;
         for rule in &self.rules {
             if rule.accepts(&update) {
@@ -334,7 +334,7 @@ mod tests {
     }
 
     impl AccessPolicy<()> for MockPolicy {
-        fn is_granted(&mut self, _: &(), _update: &Update) -> AccessPolicyFuture {
+        fn is_granted(&mut self, _: &mut (), _update: &Update) -> AccessPolicyFuture {
             self.result.into()
         }
     }
@@ -357,7 +357,7 @@ mod tests {
         for &result in &[true, false] {
             let policy = MockPolicy { result };
             let mut middleware = AccessMiddleware::new(policy);
-            let middleware_result = middleware.before(&(), &update).wait().unwrap();
+            let middleware_result = middleware.before(&mut (), &update).wait().unwrap();
             if result {
                 assert_eq!(middleware_result, MiddlewareResult::Continue);
             } else {
@@ -374,7 +374,7 @@ mod tests {
                     let mut policy = InMemoryAccessPolicy::new(rules);
                     for (flag, update) in $updates {
                         let update: Update = from_str(update).unwrap();
-                        let is_granted = policy.is_granted(&(), &update).wait().unwrap();
+                        let is_granted = policy.is_granted(&mut (), &update).wait().unwrap();
                         assert_eq!(is_granted, *flag);
                     }
                 }

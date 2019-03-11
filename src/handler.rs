@@ -84,7 +84,7 @@ enum HandlerKind<S> {
 }
 
 impl<S> Handler<S> {
-    pub(super) fn handle(&mut self, context: &S, update: &Update) -> HandlerFuture {
+    pub(super) fn handle(&mut self, context: &mut S, update: &Update) -> HandlerFuture {
         macro_rules! handle {
             ($kind:ident($val:ident)) => {
                 if let HandlerKind::$kind(ref mut handler) = self.kind {
@@ -154,10 +154,10 @@ macro_rules! impl_func {
     ($handler:ident($arg:ident)) => {
         impl<S, F, R> $handler<S> for F
         where
-            F: FnMut(&S, &$arg) -> R,
+            F: FnMut(&mut S, &$arg) -> R,
             R: Into<HandlerFuture>,
         {
-            fn handle(&mut self, context: &S, arg: &$arg) -> HandlerFuture {
+            fn handle(&mut self, context: &mut S, arg: &$arg) -> HandlerFuture {
                 (self)(context, arg).into()
             }
         }
@@ -167,7 +167,7 @@ macro_rules! impl_func {
 /// A regular message handler
 pub trait MessageHandler<S> {
     /// Handles a message
-    fn handle(&mut self, context: &S, message: &Message) -> HandlerFuture;
+    fn handle(&mut self, context: &mut S, message: &Message) -> HandlerFuture;
 }
 
 impl_func!(MessageHandler(Message));
@@ -175,7 +175,7 @@ impl_func!(MessageHandler(Message));
 /// An inline query handler
 pub trait InlineQueryHandler<S> {
     /// Handles a query
-    fn handle(&mut self, context: &S, query: &InlineQuery) -> HandlerFuture;
+    fn handle(&mut self, context: &mut S, query: &InlineQuery) -> HandlerFuture;
 }
 
 impl_func!(InlineQueryHandler(InlineQuery));
@@ -183,7 +183,7 @@ impl_func!(InlineQueryHandler(InlineQuery));
 /// A chosen inline result handler
 pub trait ChosenInlineResultHandler<S> {
     /// Handles a result
-    fn handle(&mut self, context: &S, result: &ChosenInlineResult) -> HandlerFuture;
+    fn handle(&mut self, context: &mut S, result: &ChosenInlineResult) -> HandlerFuture;
 }
 
 impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
@@ -191,7 +191,7 @@ impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
 /// A callback query handler
 pub trait CallbackQueryHandler<S> {
     /// Handles a query
-    fn handle(&mut self, context: &S, query: &CallbackQuery) -> HandlerFuture;
+    fn handle(&mut self, context: &mut S, query: &CallbackQuery) -> HandlerFuture;
 }
 
 impl_func!(CallbackQueryHandler(CallbackQuery));
@@ -199,7 +199,7 @@ impl_func!(CallbackQueryHandler(CallbackQuery));
 /// A shipping query handler
 pub trait ShippingQueryHandler<S> {
     /// Handles a query
-    fn handle(&mut self, context: &S, query: &ShippingQuery) -> HandlerFuture;
+    fn handle(&mut self, context: &mut S, query: &ShippingQuery) -> HandlerFuture;
 }
 
 impl_func!(ShippingQueryHandler(ShippingQuery));
@@ -207,7 +207,7 @@ impl_func!(ShippingQueryHandler(ShippingQuery));
 /// A pre checkout query handler
 pub trait PreCheckoutQueryHandler<S> {
     /// Handles a query
-    fn handle(&mut self, context: &S, query: &PreCheckoutQuery) -> HandlerFuture;
+    fn handle(&mut self, context: &mut S, query: &PreCheckoutQuery) -> HandlerFuture;
 }
 
 impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
@@ -215,7 +215,7 @@ impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
 /// A regular update handler
 pub trait UpdateHandler<S> {
     /// Handles an update
-    fn handle(&mut self, context: &S, update: &Update) -> HandlerFuture;
+    fn handle(&mut self, context: &mut S, update: &Update) -> HandlerFuture;
 }
 
 impl_func!(UpdateHandler(Update));
@@ -277,7 +277,7 @@ pub enum CommandError {
 }
 
 impl<S> MessageHandler<S> for CommandsHandler<S> {
-    fn handle(&mut self, context: &S, message: &Message) -> HandlerFuture {
+    fn handle(&mut self, context: &mut S, message: &Message) -> HandlerFuture {
         match (&message.commands, message.get_text()) {
             (Some(ref commands), Some(ref text)) => {
                 // tgbot guarantees that commands will never be empty, but we must be sure
@@ -310,15 +310,15 @@ impl<S> MessageHandler<S> for CommandsHandler<S> {
 /// Actual command handler
 pub trait CommandHandler<S> {
     /// Handles a command
-    fn handle(&mut self, context: &S, message: &Message, args: Vec<String>) -> HandlerFuture;
+    fn handle(&mut self, context: &mut S, message: &Message, args: Vec<String>) -> HandlerFuture;
 }
 
 impl<S, F, R> CommandHandler<S> for F
 where
-    F: FnMut(&S, &Message, Vec<String>) -> R,
+    F: FnMut(&mut S, &Message, Vec<String>) -> R,
     R: Into<HandlerFuture>,
 {
-    fn handle(&mut self, context: &S, message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn handle(&mut self, context: &mut S, message: &Message, args: Vec<String>) -> HandlerFuture {
         (self)(context, message, args).into()
     }
 }
@@ -330,7 +330,7 @@ mod tests {
     use crate::dispatcher::Dispatcher;
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc, Mutex,
+        Arc,
     };
 
     struct Counter {
@@ -354,57 +354,57 @@ mod tests {
     }
 
     struct Args {
-        items: Mutex<Vec<String>>,
+        items: Vec<String>,
     }
 
     impl Args {
         fn new() -> Self {
             Self {
-                items: Mutex::new(vec![]),
+                items: vec![],
             }
         }
 
-        fn extend(&self, items: Vec<String>) {
-            self.items.lock().unwrap().extend(items);
+        fn extend(&mut self, items: Vec<String>) {
+            self.items.extend(items);
         }
     }
 
-    fn command_handler(context: &Args, _message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn command_handler(context: &mut Args, _message: &Message, args: Vec<String>) -> HandlerFuture {
         context.extend(args);
         ().into()
     }
 
-    fn handle_message(context: &Counter, _message: &Message) -> HandlerFuture {
+    fn handle_message(context: &mut Counter, _message: &Message) -> HandlerFuture {
         context.inc_calls();
         ().into()
     }
 
-    fn handle_inline_query(context: &Counter, _query: &InlineQuery) -> HandlerFuture {
+    fn handle_inline_query(context: &mut Counter, _query: &InlineQuery) -> HandlerFuture {
         context.inc_calls();
         ().into()
     }
 
-    fn handle_chose_inline_result(context: &Counter, _result: &ChosenInlineResult) -> HandlerFuture {
+    fn handle_chose_inline_result(context: &mut Counter, _result: &ChosenInlineResult) -> HandlerFuture {
         context.inc_calls();
         ().into()
     }
 
-    fn handle_callback_query(context: &Counter, _query: &CallbackQuery) -> HandlerFuture {
+    fn handle_callback_query(context: &mut Counter, _query: &CallbackQuery) -> HandlerFuture {
         context.inc_calls();
         ().into()
     }
 
-    fn handle_shipping_query(context: &Counter, _query: &ShippingQuery) -> HandlerFuture {
+    fn handle_shipping_query(context: &mut Counter, _query: &ShippingQuery) -> HandlerFuture {
         context.inc_calls();
         ().into()
     }
 
-    fn handle_precheckout_query(context: &Counter, _query: &PreCheckoutQuery) -> HandlerFuture {
+    fn handle_precheckout_query(context: &mut Counter, _query: &PreCheckoutQuery) -> HandlerFuture {
         context.inc_calls();
         ().into()
     }
 
-    fn handle_update(context: &Counter, _update: &Update) -> HandlerFuture {
+    fn handle_update(context: &mut Counter, _update: &Update) -> HandlerFuture {
         context.inc_calls();
         ().into()
     }
@@ -466,7 +466,7 @@ mod tests {
             let update = parse_update(data);
             dispatcher.dispatch(update).wait().unwrap();
         }
-        assert_eq!(dispatcher.context.get_calls(), 8);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 8);
     }
 
     #[test]
@@ -493,7 +493,7 @@ mod tests {
             "#,
         );
         dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.get_calls(), 2);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 2);
     }
 
     #[test]
@@ -519,7 +519,7 @@ mod tests {
             "#,
         );
         dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.get_calls(), 2);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 2);
     }
 
     #[test]
@@ -544,7 +544,7 @@ mod tests {
             "#,
         );
         dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.get_calls(), 2);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 2);
     }
 
     #[test]
@@ -578,7 +578,7 @@ mod tests {
             "#,
         );
         dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.get_calls(), 2);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 2);
     }
 
     #[test]
@@ -606,7 +606,7 @@ mod tests {
             "#,
         );
         dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.get_calls(), 2);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 2);
     }
 
     #[test]
@@ -629,7 +629,7 @@ mod tests {
         let commands = CommandsHandler::default().add_handler("/testcommand", command_handler);
         let mut dispatcher = Dispatcher::new(vec![], vec![Handler::message(commands)], Args::new());
         dispatcher.dispatch(update.clone()).wait().unwrap();
-        let items: &Vec<String> = &dispatcher.context.items.lock().unwrap();
+        let items: &Vec<String> = &dispatcher.context.lock().unwrap().items;
         assert_eq!(items, &vec![String::from("arg1 v"), String::from("arg2")]);
     }
 }

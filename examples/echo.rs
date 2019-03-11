@@ -9,7 +9,7 @@ use futures::Future;
 use log;
 use std::env;
 
-fn handle_message(api: &Api, message: &Message) -> HandlerFuture {
+fn handle_message(api: &mut Api, message: &Message) -> HandlerFuture {
     log::info!("got a message: {:?}\n", message);
     if let Some(text) = message.get_text() {
         let chat_id = message.get_chat_id();

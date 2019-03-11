@@ -51,7 +51,7 @@ impl RateLimitMiddleware {
 }
 
 impl<S> Middleware<S> for RateLimitMiddleware {
-    fn before(&mut self, _context: &S, update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _context: &mut S, update: &Update) -> MiddlewareFuture {
         let should_pass = match self.rate_limiter {
             RateLimiter::Direct(ref mut limiter) => limiter.check().is_ok(),
             RateLimiter::Keyed {

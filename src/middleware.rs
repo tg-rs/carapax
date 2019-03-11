@@ -58,12 +58,12 @@ impl Future for MiddlewareFuture {
 /// Middleware handler
 pub trait Middleware<S> {
     /// Called before all handlers
-    fn before(&mut self, _context: &S, _update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _context: &mut S, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 
     /// Called after all handlers
-    fn after(&mut self, _context: &S, _update: &Update) -> MiddlewareFuture {
+    fn after(&mut self, _context: &mut S, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 }
@@ -112,18 +112,18 @@ mod tests {
     }
 
     impl Middleware<Counter> for MockMiddleware {
-        fn before(&mut self, context: &Counter, _update: &Update) -> MiddlewareFuture {
+        fn before(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
             context.inc_calls();
             self.before_result.into()
         }
 
-        fn after(&mut self, context: &Counter, _update: &Update) -> MiddlewareFuture {
+        fn after(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
             context.inc_calls();
             self.after_result.into()
         }
     }
 
-    fn handle_message(context: &Counter, _message: &Message) -> HandlerFuture {
+    fn handle_message(context: &mut Counter, _message: &Message) -> HandlerFuture {
         context.inc_calls();
         ().into()
     }
@@ -166,7 +166,7 @@ mod tests {
             Counter::new(),
         );
         dispatcher.dispatch(update.clone()).wait().unwrap();
-        assert_eq!(dispatcher.context.get_calls(), 5);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 5);
 
         let mut dispatcher = Dispatcher::new(
             vec![
@@ -183,6 +183,6 @@ mod tests {
             Counter::new(),
         );
         dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.get_calls(), 4);
+        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 4);
     }
 }
