@@ -9,12 +9,12 @@ use futures::Future;
 use log;
 use std::env;
 
-fn handle_message(context: &Context, message: &Message) -> HandlerFuture {
+fn handle_message(context: &Context<Api>, message: &Message) -> HandlerFuture {
     log::info!("got a message: {:?}\n", message);
     if let Some(text) = message.get_text() {
         let chat_id = message.get_chat_id();
         let method = SendMessage::new(chat_id, text.data.clone());
-        let api = context.get::<Api>();
+        let api = context.get();
         return HandlerFuture::new(api.execute(&method).then(|x| {
             log::info!("sendMessage result: {:?}\n", x);
             Ok(())
@@ -31,11 +31,8 @@ fn main() {
     let proxy = env::var("CARAPAX_PROXY").ok();
     let allowed_username = env::var("CARAPAX_ALLOWED_USERNAME").expect("CARAPAX_ALLOWED_USERNAME is not set");
 
-    let mut app = App::new(token);
-
-    if let Some(proxy) = proxy {
-        app = app.proxy(proxy);
-    }
+    let api = Api::new(token).unwrap();
+    let app = App::new(api.clone(), api);
 
     // Deny from all except for allowed_username
     let rule = AccessRule::allow_user(allowed_username);
@@ -48,6 +45,5 @@ fn main() {
     app.add_middleware(access)
         .add_middleware(rate_limit)
         .add_handler(Handler::message(handle_message))
-        .run(RunMethod::poll(Default::default()))
-        .expect("Failed to start app");
+        .run(RunMethod::poll(Default::default()));
 }

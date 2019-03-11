@@ -1,38 +1,28 @@
-use anymap::{
-    any::{Any, IntoBox},
-    Map,
-};
-
 /// Context for handlers
-pub struct Context {
-    inner: Map<Any + Send + Sync>,
+pub struct Context<S> {
+    pub(crate) inner: S,
 }
 
-impl Default for Context {
+impl Default for Context<()> {
     fn default() -> Self {
-        Self { inner: Map::new() }
+        Self { inner: () }
     }
 }
 
-impl Context {
-    /// Adds a value to context
-    pub fn add<T: IntoBox<Any + Send + Sync>>(&mut self, value: T) {
-        self.inner.insert(value);
+impl<S> From<S> for Context<S> {
+    fn from(inner: S) -> Self {
+        Self { inner }
+    }
+}
+
+impl<S> Context<S> {
+    /// Return inner state
+    pub fn get(&self) -> &S {
+        &self.inner
     }
 
-    /// Get a value from context
-    ///
-    /// # Panics
-    ///
-    /// Panics if value not found
-    pub fn get<T: IntoBox<Any + Send + Sync>>(&self) -> &T {
-        self.inner.get().expect("Value not found in context")
-    }
-
-    /// Get a value from context
-    ///
-    /// Returns a reference to the value stored in context for the type T, if it exists
-    pub fn get_opt<T: IntoBox<Any + Send + Sync>>(&self) -> Option<&T> {
-        self.inner.get()
+    /// Return inner state as mutable
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
     }
 }

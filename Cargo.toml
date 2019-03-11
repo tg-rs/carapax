@@ -12,7 +12,6 @@ repository = "https://github.com/tg-rs/carapax"
 travis-ci = { repository = "tg-rs/carapax", branch = "master" }
 
 [dependencies]
-anymap = "0.12"
 failure = "0.1"
 futures = "0.1"
 log = "0.4"
