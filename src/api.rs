@@ -17,23 +17,28 @@ pub struct Api {
 
 impl Api {
     /// Creates a client
-    pub fn new<S: Into<String>>(token: S) -> Result<Self, Error> {
-        Ok(Api {
-            executor: Arc::new(default_executor()?),
-            token: token.into(),
-        })
-    }
-
-    /// Creates a client with specified proxy
+    ///
+    /// # Arguments
+    ///
+    /// * token - Bot API token
+    /// * proxy - Optional proxy
     ///
     /// Proxy format:
     /// * http://[user:password]host:port
     /// * https://[user:password]@host:port
     /// * socks4://userid@host:port
     /// * socks5://[user:password]@host:port
-    pub fn with_proxy<S: Into<String>>(token: S, url: &str) -> Result<Self, Error> {
+    pub fn new<T, P>(token: T, proxy: Option<P>) -> Result<Self, Error>
+    where
+        T: Into<String>,
+        P: AsRef<str>,
+    {
         Ok(Api {
-            executor: Arc::new(proxy_executor(url)?),
+            executor: Arc::new(if let Some(proxy) = proxy {
+                proxy_executor(proxy.as_ref())?
+            } else {
+                default_executor()?
+            }),
             token: token.into(),
         })
     }

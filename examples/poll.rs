@@ -36,10 +36,6 @@ fn main() {
 
     let token = env::var("TGBOT_TOKEN").expect("TGBOT_TOKEN is not set");
     let proxy = env::var("TGBOT_PROXY").ok();
-    let api = match proxy {
-        Some(proxy) => Api::with_proxy(token, &proxy),
-        None => Api::new(token),
-    }
-    .expect("Failed to create API");
+    let api = Api::new(token, proxy).expect("Failed to create API");
     handle_updates(UpdateMethod::poll(api.clone()), Handler { api });
 }
