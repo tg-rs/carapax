@@ -23,19 +23,19 @@ impl Default for ErrorStrategy {
 }
 
 /// Dispatcher
-pub struct Dispatcher<S> {
-    pub(crate) middlewares: Arc<Mutex<Vec<Box<Middleware<S> + Send + Sync>>>>,
-    pub(crate) handlers: Arc<Mutex<Vec<Handler<S>>>>,
-    pub(crate) context: Arc<Mutex<S>>,
+pub struct Dispatcher<C> {
+    pub(crate) middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
+    pub(crate) handlers: Arc<Mutex<Vec<Handler<C>>>>,
+    pub(crate) context: Arc<Mutex<C>>,
     pub(crate) middleware_error_strategy: ErrorStrategy,
     pub(crate) handler_error_strategy: ErrorStrategy,
 }
 
-impl<S> Dispatcher<S> {
+impl<C> Dispatcher<C> {
     pub(crate) fn new(
-        middlewares: Vec<Box<Middleware<S> + Send + Sync>>,
-        handlers: Vec<Handler<S>>,
-        context: S,
+        middlewares: Vec<Box<Middleware<C> + Send + Sync>>,
+        handlers: Vec<Handler<C>>,
+        context: C,
     ) -> Self {
         Self {
             middlewares: Arc::new(Mutex::new(middlewares)),
@@ -57,7 +57,7 @@ impl<S> Dispatcher<S> {
     }
 
     /// Dispatch an update
-    pub fn dispatch(&mut self, update: Update) -> DispatcherFuture<S> {
+    pub fn dispatch(&mut self, update: Update) -> DispatcherFuture<C> {
         DispatcherFuture::new(
             self.middlewares.clone(),
             self.handlers.clone(),
@@ -69,9 +69,9 @@ impl<S> Dispatcher<S> {
     }
 }
 
-impl<S> tgbot::UpdateHandler for Dispatcher<S>
+impl<C> tgbot::UpdateHandler for Dispatcher<C>
 where
-    S: Send + Sync + 'static,
+    C: Send + Sync + 'static,
 {
     fn handle(&mut self, update: Update) {
         tokio::spawn(self.dispatch(update).then(|r| {
@@ -85,10 +85,10 @@ where
 
 /// Dispatcher future
 #[must_use = "futures do nothing unless polled"]
-pub struct DispatcherFuture<S> {
-    middlewares: Arc<Mutex<Vec<Box<Middleware<S> + Send + Sync>>>>,
-    handlers: Arc<Mutex<Vec<Handler<S>>>>,
-    context: Arc<Mutex<S>>,
+pub struct DispatcherFuture<C> {
+    middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
+    handlers: Arc<Mutex<Vec<Handler<C>>>>,
+    context: Arc<Mutex<C>>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
     update: Update,
@@ -103,15 +103,15 @@ enum DispatcherFutureState {
     After(usize),
 }
 
-impl<S> DispatcherFuture<S> {
+impl<C> DispatcherFuture<C> {
     fn new(
-        middlewares: Arc<Mutex<Vec<Box<Middleware<S> + Send + Sync>>>>,
-        handlers: Arc<Mutex<Vec<Handler<S>>>>,
-        context: Arc<Mutex<S>>,
+        middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
+        handlers: Arc<Mutex<Vec<Handler<C>>>>,
+        context: Arc<Mutex<C>>,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
         update: Update,
-    ) -> DispatcherFuture<S> {
+    ) -> DispatcherFuture<C> {
         DispatcherFuture {
             middlewares,
             handlers,
@@ -260,7 +260,7 @@ impl<S> DispatcherFuture<S> {
     }
 }
 
-impl<S> Future for DispatcherFuture<S> {
+impl<C> Future for DispatcherFuture<C> {
     type Item = ();
     type Error = Error;
 

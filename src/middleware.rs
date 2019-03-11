@@ -25,7 +25,7 @@ impl MiddlewareFuture {
     /// Creates a new middleware future
     pub fn new<F>(f: F) -> MiddlewareFuture
     where
-        F: Future<Item = MiddlewareResult, Error = Error> + 'static + Send,
+        F: Future<Item = MiddlewareResult, Error = Error> + Send + 'static,
     {
         MiddlewareFuture { inner: Box::new(f) }
     }
@@ -56,14 +56,14 @@ impl Future for MiddlewareFuture {
 }
 
 /// Middleware handler
-pub trait Middleware<S> {
+pub trait Middleware<C> {
     /// Called before all handlers
-    fn before(&mut self, _context: &mut S, _update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _context: &mut C, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 
     /// Called after all handlers
-    fn after(&mut self, _context: &mut S, _update: &Update) -> MiddlewareFuture {
+    fn after(&mut self, _context: &mut C, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 }

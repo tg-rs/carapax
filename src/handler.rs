@@ -7,19 +7,19 @@ use tgbot::types::{
 };
 
 /// A regular update handler
-pub struct Handler<S> {
-    kind: HandlerKind<S>,
+pub struct Handler<C> {
+    kind: HandlerKind<C>,
 }
 
-impl<S> Handler<S> {
-    fn new(kind: HandlerKind<S>) -> Self {
+impl<C> Handler<C> {
+    fn new(kind: HandlerKind<C>) -> Self {
         Self { kind }
     }
 
     /// Create message handler
     pub fn message<H>(handler: H) -> Self
     where
-        H: MessageHandler<S> + 'static + Send + Sync,
+        H: MessageHandler<C> + Send + Sync + 'static,
     {
         Self::new(HandlerKind::Message(Box::new(handler)))
     }
@@ -27,7 +27,7 @@ impl<S> Handler<S> {
     /// Create inline query handler
     pub fn inline_query<H>(handler: H) -> Self
     where
-        H: InlineQueryHandler<S> + 'static + Send + Sync,
+        H: InlineQueryHandler<C> + Send + Sync + 'static,
     {
         Self::new(HandlerKind::InlineQuery(Box::new(handler)))
     }
@@ -35,7 +35,7 @@ impl<S> Handler<S> {
     /// Create chosen inline result handler
     pub fn chosen_inline_result<H>(handler: H) -> Self
     where
-        H: ChosenInlineResultHandler<S> + 'static + Send + Sync,
+        H: ChosenInlineResultHandler<C> + Send + Sync + 'static,
     {
         Self::new(HandlerKind::ChosenInlineResult(Box::new(handler)))
     }
@@ -43,7 +43,7 @@ impl<S> Handler<S> {
     /// Create callback query handler
     pub fn callback_query<H>(handler: H) -> Self
     where
-        H: CallbackQueryHandler<S> + 'static + Send + Sync,
+        H: CallbackQueryHandler<C> + Send + Sync + 'static,
     {
         Self::new(HandlerKind::CallbackQuery(Box::new(handler)))
     }
@@ -51,7 +51,7 @@ impl<S> Handler<S> {
     /// Create shipping query handler
     pub fn shipping_query<H>(handler: H) -> Self
     where
-        H: ShippingQueryHandler<S> + 'static + Send + Sync,
+        H: ShippingQueryHandler<C> + Send + Sync + 'static,
     {
         Self::new(HandlerKind::ShippingQuery(Box::new(handler)))
     }
@@ -59,7 +59,7 @@ impl<S> Handler<S> {
     /// Create pre checkout query handler
     pub fn pre_checkout_query<H>(handler: H) -> Self
     where
-        H: PreCheckoutQueryHandler<S> + 'static + Send + Sync,
+        H: PreCheckoutQueryHandler<C> + Send + Sync + 'static,
     {
         Self::new(HandlerKind::PreCheckoutQuery(Box::new(handler)))
     }
@@ -67,24 +67,24 @@ impl<S> Handler<S> {
     /// Create a regular update handler
     pub fn update<H>(handler: H) -> Self
     where
-        H: UpdateHandler<S> + 'static + Send + Sync,
+        H: UpdateHandler<C> + Send + Sync + 'static,
     {
         Self::new(HandlerKind::Update(Box::new(handler)))
     }
 }
 
-enum HandlerKind<S> {
-    Message(Box<MessageHandler<S> + Send + Sync>),
-    InlineQuery(Box<InlineQueryHandler<S> + Send + Sync>),
-    ChosenInlineResult(Box<ChosenInlineResultHandler<S> + Send + Sync>),
-    CallbackQuery(Box<CallbackQueryHandler<S> + Send + Sync>),
-    ShippingQuery(Box<ShippingQueryHandler<S> + Send + Sync>),
-    PreCheckoutQuery(Box<PreCheckoutQueryHandler<S> + Send + Sync>),
-    Update(Box<UpdateHandler<S> + Send + Sync>),
+enum HandlerKind<C> {
+    Message(Box<MessageHandler<C> + Send + Sync>),
+    InlineQuery(Box<InlineQueryHandler<C> + Send + Sync>),
+    ChosenInlineResult(Box<ChosenInlineResultHandler<C> + Send + Sync>),
+    CallbackQuery(Box<CallbackQueryHandler<C> + Send + Sync>),
+    ShippingQuery(Box<ShippingQueryHandler<C> + Send + Sync>),
+    PreCheckoutQuery(Box<PreCheckoutQueryHandler<C> + Send + Sync>),
+    Update(Box<UpdateHandler<C> + Send + Sync>),
 }
 
-impl<S> Handler<S> {
-    pub(super) fn handle(&mut self, context: &mut S, update: &Update) -> HandlerFuture {
+impl<C> Handler<C> {
+    pub(super) fn handle(&mut self, context: &mut C, update: &Update) -> HandlerFuture {
         macro_rules! handle {
             ($kind:ident($val:ident)) => {
                 if let HandlerKind::$kind(ref mut handler) = self.kind {
@@ -96,10 +96,10 @@ impl<S> Handler<S> {
         handle!(Update(update));
 
         match update.kind {
-            UpdateKind::Message(ref msg)
-            | UpdateKind::EditedMessage(ref msg)
-            | UpdateKind::ChannelPost(ref msg)
-            | UpdateKind::EditedChannelPost(ref msg) => handle!(Message(msg)),
+            UpdateKind::Message(ref val)
+            | UpdateKind::EditedMessage(ref val)
+            | UpdateKind::ChannelPost(ref val)
+            | UpdateKind::EditedChannelPost(ref val) => handle!(Message(val)),
             UpdateKind::InlineQuery(ref val) => handle!(InlineQuery(val)),
             UpdateKind::ChosenInlineResult(ref val) => handle!(ChosenInlineResult(val)),
             UpdateKind::CallbackQuery(ref val) => handle!(CallbackQuery(val)),
@@ -120,7 +120,7 @@ impl HandlerFuture {
     /// Creates a new handler future
     pub fn new<F>(f: F) -> HandlerFuture
     where
-        F: Future<Item = (), Error = Error> + 'static + Send,
+        F: Future<Item = (), Error = Error> + Send + 'static,
     {
         HandlerFuture { inner: Box::new(f) }
     }
@@ -152,12 +152,12 @@ impl Future for HandlerFuture {
 
 macro_rules! impl_func {
     ($handler:ident($arg:ident)) => {
-        impl<S, F, R> $handler<S> for F
+        impl<C, F, R> $handler<C> for F
         where
-            F: FnMut(&mut S, &$arg) -> R,
+            F: FnMut(&mut C, &$arg) -> R,
             R: Into<HandlerFuture>,
         {
-            fn handle(&mut self, context: &mut S, arg: &$arg) -> HandlerFuture {
+            fn handle(&mut self, context: &mut C, arg: &$arg) -> HandlerFuture {
                 (self)(context, arg).into()
             }
         }
@@ -165,57 +165,57 @@ macro_rules! impl_func {
 }
 
 /// A regular message handler
-pub trait MessageHandler<S> {
+pub trait MessageHandler<C> {
     /// Handles a message
-    fn handle(&mut self, context: &mut S, message: &Message) -> HandlerFuture;
+    fn handle(&mut self, context: &mut C, message: &Message) -> HandlerFuture;
 }
 
 impl_func!(MessageHandler(Message));
 
 /// An inline query handler
-pub trait InlineQueryHandler<S> {
+pub trait InlineQueryHandler<C> {
     /// Handles a query
-    fn handle(&mut self, context: &mut S, query: &InlineQuery) -> HandlerFuture;
+    fn handle(&mut self, context: &mut C, query: &InlineQuery) -> HandlerFuture;
 }
 
 impl_func!(InlineQueryHandler(InlineQuery));
 
 /// A chosen inline result handler
-pub trait ChosenInlineResultHandler<S> {
+pub trait ChosenInlineResultHandler<C> {
     /// Handles a result
-    fn handle(&mut self, context: &mut S, result: &ChosenInlineResult) -> HandlerFuture;
+    fn handle(&mut self, context: &mut C, result: &ChosenInlineResult) -> HandlerFuture;
 }
 
 impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
 
 /// A callback query handler
-pub trait CallbackQueryHandler<S> {
+pub trait CallbackQueryHandler<C> {
     /// Handles a query
-    fn handle(&mut self, context: &mut S, query: &CallbackQuery) -> HandlerFuture;
+    fn handle(&mut self, context: &mut C, query: &CallbackQuery) -> HandlerFuture;
 }
 
 impl_func!(CallbackQueryHandler(CallbackQuery));
 
 /// A shipping query handler
-pub trait ShippingQueryHandler<S> {
+pub trait ShippingQueryHandler<C> {
     /// Handles a query
-    fn handle(&mut self, context: &mut S, query: &ShippingQuery) -> HandlerFuture;
+    fn handle(&mut self, context: &mut C, query: &ShippingQuery) -> HandlerFuture;
 }
 
 impl_func!(ShippingQueryHandler(ShippingQuery));
 
 /// A pre checkout query handler
-pub trait PreCheckoutQueryHandler<S> {
+pub trait PreCheckoutQueryHandler<C> {
     /// Handles a query
-    fn handle(&mut self, context: &mut S, query: &PreCheckoutQuery) -> HandlerFuture;
+    fn handle(&mut self, context: &mut C, query: &PreCheckoutQuery) -> HandlerFuture;
 }
 
 impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
 
 /// A regular update handler
-pub trait UpdateHandler<S> {
+pub trait UpdateHandler<C> {
     /// Handles an update
-    fn handle(&mut self, context: &mut S, update: &Update) -> HandlerFuture;
+    fn handle(&mut self, context: &mut C, update: &Update) -> HandlerFuture;
 }
 
 impl_func!(UpdateHandler(Update));
@@ -225,12 +225,12 @@ impl_func!(UpdateHandler(Update));
 /// Just takes a first command from a message and ignores others.
 /// Assumes that all text after command is arguments.
 /// Use quotes in order to include spaces in argument: `'hello word'`
-pub struct CommandsHandler<S> {
-    handlers: HashMap<String, Box<CommandHandler<S> + Send + Sync>>,
-    not_found_handler: Option<Box<CommandHandler<S> + Send + Sync>>,
+pub struct CommandsHandler<C> {
+    handlers: HashMap<String, Box<CommandHandler<C> + Send + Sync>>,
+    not_found_handler: Option<Box<CommandHandler<C> + Send + Sync>>,
 }
 
-impl<S> Default for CommandsHandler<S> {
+impl<C> Default for CommandsHandler<C> {
     fn default() -> Self {
         Self {
             handlers: HashMap::new(),
@@ -239,17 +239,17 @@ impl<S> Default for CommandsHandler<S> {
     }
 }
 
-impl<S> CommandsHandler<S> {
+impl<C> CommandsHandler<C> {
     /// Add command handler
     ///
     /// # Arguments
     ///
     /// - name - Command name (starts with `/`)
     /// - handler - Command handler
-    pub fn add_handler<I, H>(mut self, name: I, handler: H) -> Self
+    pub fn add_handler<S, H>(mut self, name: S, handler: H) -> Self
     where
-        I: Into<String>,
-        H: CommandHandler<S> + 'static + Send + Sync,
+        S: Into<String>,
+        H: CommandHandler<C> + Send + Sync + 'static,
     {
         self.handlers.insert(name.into(), Box::new(handler));
         self
@@ -258,7 +258,7 @@ impl<S> CommandsHandler<S> {
     /// Add not found command handler
     pub fn not_found_handler<H>(mut self, handler: H) -> Self
     where
-        H: CommandHandler<S> + 'static + Send + Sync,
+        H: CommandHandler<C> + Send + Sync + 'static,
     {
         self.not_found_handler = Some(Box::new(handler));
         self
@@ -276,8 +276,8 @@ pub enum CommandError {
     MismatchedQuotes,
 }
 
-impl<S> MessageHandler<S> for CommandsHandler<S> {
-    fn handle(&mut self, context: &mut S, message: &Message) -> HandlerFuture {
+impl<C> MessageHandler<C> for CommandsHandler<C> {
+    fn handle(&mut self, context: &mut C, message: &Message) -> HandlerFuture {
         match (&message.commands, message.get_text()) {
             (Some(ref commands), Some(ref text)) => {
                 // tgbot guarantees that commands will never be empty, but we must be sure
@@ -308,17 +308,17 @@ impl<S> MessageHandler<S> for CommandsHandler<S> {
 }
 
 /// Actual command handler
-pub trait CommandHandler<S> {
+pub trait CommandHandler<C> {
     /// Handles a command
-    fn handle(&mut self, context: &mut S, message: &Message, args: Vec<String>) -> HandlerFuture;
+    fn handle(&mut self, context: &mut C, message: &Message, args: Vec<String>) -> HandlerFuture;
 }
 
-impl<S, F, R> CommandHandler<S> for F
+impl<C, F, R> CommandHandler<C> for F
 where
-    F: FnMut(&mut S, &Message, Vec<String>) -> R,
+    F: FnMut(&mut C, &Message, Vec<String>) -> R,
     R: Into<HandlerFuture>,
 {
-    fn handle(&mut self, context: &mut S, message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn handle(&mut self, context: &mut C, message: &Message, args: Vec<String>) -> HandlerFuture {
         (self)(context, message, args).into()
     }
 }
@@ -359,9 +359,7 @@ mod tests {
 
     impl Args {
         fn new() -> Self {
-            Self {
-                items: vec![],
-            }
+            Self { items: vec![] }
         }
 
         fn extend(&mut self, items: Vec<String>) {

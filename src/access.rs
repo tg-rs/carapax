@@ -17,11 +17,11 @@ impl<P> AccessMiddleware<P> {
     }
 }
 
-impl<S, P> Middleware<S> for AccessMiddleware<P>
+impl<C, P> Middleware<C> for AccessMiddleware<P>
 where
-    P: AccessPolicy<S>,
+    P: AccessPolicy<C>,
 {
-    fn before(&mut self, context: &mut S, update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, context: &mut C, update: &Update) -> MiddlewareFuture {
         MiddlewareFuture::new(self.policy.is_granted(context, &update).and_then(|result| {
             if result {
                 Ok(MiddlewareResult::Continue)
@@ -35,9 +35,9 @@ where
 /// An access policy
 ///
 /// Decides whether update is allowed or not
-pub trait AccessPolicy<S> {
+pub trait AccessPolicy<C> {
     /// Return true if update is allowed and false otherwise
-    fn is_granted(&mut self, context: &mut S, update: &Update) -> AccessPolicyFuture;
+    fn is_granted(&mut self, context: &mut C, update: &Update) -> AccessPolicyFuture;
 }
 
 /// Access policy future
@@ -310,8 +310,8 @@ impl InMemoryAccessPolicy {
     }
 }
 
-impl<S> AccessPolicy<S> for InMemoryAccessPolicy {
-    fn is_granted(&mut self, _context: &mut S, update: &Update) -> AccessPolicyFuture {
+impl<C> AccessPolicy<C> for InMemoryAccessPolicy {
+    fn is_granted(&mut self, _context: &mut C, update: &Update) -> AccessPolicyFuture {
         let mut result = false;
         for rule in &self.rules {
             if rule.accepts(&update) {

@@ -42,23 +42,23 @@ enum RunMethodKind {
 }
 
 /// A Telegram Bot App
-pub struct App<S> {
+pub struct App<C> {
     api: Api,
-    context: S,
-    middlewares: Vec<Box<Middleware<S> + Send + Sync>>,
+    context: C,
+    middlewares: Vec<Box<Middleware<C> + Send + Sync>>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
-    handlers: Vec<Handler<S>>,
+    handlers: Vec<Handler<C>>,
 }
 
-impl<S> App<S> {
+impl<C> App<C> {
     /// Creates a new app
     ///
     /// # Arguments
     ///
     /// * api - tgbot::Api
     /// * context - any type you want to use as context
-    pub fn new(api: Api, context: S) -> Self {
+    pub fn new(api: Api, context: C) -> Self {
         App {
             api,
             middlewares: vec![],
@@ -88,22 +88,22 @@ impl<S> App<S> {
     /// Add middleware handler
     pub fn add_middleware<M>(mut self, middleware: M) -> Self
     where
-        M: Middleware<S> + 'static + Send + Sync,
+        M: Middleware<C> + Send + Sync + 'static,
     {
         self.middlewares.push(Box::new(middleware));
         self
     }
 
     /// Add a regular handler
-    pub fn add_handler(mut self, handler: Handler<S>) -> Self {
+    pub fn add_handler(mut self, handler: Handler<C>) -> Self {
         self.handlers.push(handler);
         self
     }
 }
 
-impl<S> App<S>
+impl<C> App<C>
 where
-    S: Send + Sync + 'static,
+    C: Send + Sync + 'static,
 {
     /// Run app
     pub fn run(self, method: RunMethod) {
