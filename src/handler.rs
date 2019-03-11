@@ -327,7 +327,7 @@ where
 mod tests {
     use super::*;
 
-    use crate::dispatcher::Dispatcher;
+    use crate::dispatcher::{Dispatcher, ErrorStrategy};
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -417,8 +417,8 @@ mod tests {
             vec![],
             vec![Handler::message(handle_message), Handler::update(handle_update)],
             Counter::new(),
-            Default::default(),
-            Default::default(),
+            ErrorStrategy::Abort,
+            ErrorStrategy::Abort,
         );
         for data in &[
             r#"{
@@ -478,8 +478,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
-            Default::default(),
-            Default::default(),
+            ErrorStrategy::Abort,
+            ErrorStrategy::Abort,
         );
         let update = parse_update(
             r#"
@@ -507,8 +507,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
-            Default::default(),
-            Default::default(),
+            ErrorStrategy::Abort,
+            ErrorStrategy::Abort,
         );
         let update = parse_update(
             r#"
@@ -535,8 +535,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
-            Default::default(),
-            Default::default(),
+            ErrorStrategy::Abort,
+            ErrorStrategy::Abort,
         );
         let update = parse_update(
             r#"
@@ -562,8 +562,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
-            Default::default(),
-            Default::default(),
+            ErrorStrategy::Abort,
+            ErrorStrategy::Abort,
         );
         let update = parse_update(
             r#"
@@ -598,8 +598,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
-            Default::default(),
-            Default::default(),
+            ErrorStrategy::Abort,
+            ErrorStrategy::Abort,
         );
         let update = parse_update(
             r#"
@@ -641,8 +641,8 @@ mod tests {
             vec![],
             vec![Handler::message(commands)],
             Args::new(),
-            Default::default(),
-            Default::default(),
+            ErrorStrategy::Abort,
+            ErrorStrategy::Abort,
         );
         dispatcher.dispatch(update.clone()).wait().unwrap();
         let items: &Vec<String> = &dispatcher.context.lock().unwrap().items;

@@ -23,16 +23,17 @@ impl<C> App<C> {
     pub fn new(context: C) -> Self {
         App {
             middlewares: vec![],
-            middleware_error_strategy: ErrorStrategy::default(),
+            middleware_error_strategy: ErrorStrategy::Abort,
             handlers: vec![],
-            handler_error_strategy: ErrorStrategy::default(),
+            handler_error_strategy: ErrorStrategy::Abort,
             context,
         }
     }
 
     /// Set middleware error strategy
     ///
-    /// See `ErrorStrategy` for more information
+    /// See `ErrorStrategy` for more information.
+    /// Default values is `ErrorStrategy::Abort`.
     pub fn middleware_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
         self.middleware_error_strategy = strategy;
         self
@@ -40,7 +41,8 @@ impl<C> App<C> {
 
     /// Set handler error strategy
     ///
-    /// See `ErrorStrategy` for more information
+    /// See `ErrorStrategy` for more information.
+    /// Default values is `ErrorStrategy::Abort`.
     pub fn handler_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
         self.handler_error_strategy = strategy;
         self

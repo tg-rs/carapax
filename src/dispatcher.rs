@@ -16,12 +16,6 @@ pub enum ErrorStrategy {
     Abort,
 }
 
-impl Default for ErrorStrategy {
-    fn default() -> ErrorStrategy {
-        ErrorStrategy::Abort
-    }
-}
-
 /// Dispatcher
 pub struct Dispatcher<C> {
     middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
@@ -332,24 +326,24 @@ mod tests {
             }"#,
         );
 
-        // Aborted on first call by default
+        // Aborted on first call
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
             Counter::new(),
-            Default::default(),
-            Default::default(),
+            ErrorStrategy::Abort,
+            ErrorStrategy::Abort,
         );
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
         assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 1);
 
-        // Aborted on handler call by default
+        // Aborted on handler call
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
             Counter::new(),
             ErrorStrategy::Ignore,
-            Default::default(),
+            ErrorStrategy::Abort,
         );
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
         assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 3);
