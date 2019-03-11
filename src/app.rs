@@ -10,8 +10,8 @@ pub struct App<C> {
     context: C,
     middlewares: Vec<Box<Middleware<C> + Send + Sync>>,
     middleware_error_strategy: ErrorStrategy,
-    handler_error_strategy: ErrorStrategy,
     handlers: Vec<Handler<C>>,
+    handler_error_strategy: ErrorStrategy,
 }
 
 impl<C> App<C> {
@@ -68,9 +68,13 @@ where
 {
     /// Run app
     pub fn run(self, method: UpdateMethod) {
-        let dispatcher = Dispatcher::new(self.middlewares, self.handlers, self.context)
-            .middleware_error_strategy(self.middleware_error_strategy)
-            .handler_error_strategy(self.handler_error_strategy);
+        let dispatcher = Dispatcher::new(
+            self.middlewares,
+            self.handlers,
+            self.context,
+            self.middleware_error_strategy,
+            self.handler_error_strategy,
+        );
         handle_updates(method, dispatcher);
     }
 }

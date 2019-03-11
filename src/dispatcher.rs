@@ -24,11 +24,11 @@ impl Default for ErrorStrategy {
 
 /// Dispatcher
 pub struct Dispatcher<C> {
-    pub(crate) middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
-    pub(crate) handlers: Arc<Mutex<Vec<Handler<C>>>>,
+    middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
+    handlers: Arc<Mutex<Vec<Handler<C>>>>,
     pub(crate) context: Arc<Mutex<C>>,
-    pub(crate) middleware_error_strategy: ErrorStrategy,
-    pub(crate) handler_error_strategy: ErrorStrategy,
+    middleware_error_strategy: ErrorStrategy,
+    handler_error_strategy: ErrorStrategy,
 }
 
 impl<C> Dispatcher<C> {
@@ -36,24 +36,16 @@ impl<C> Dispatcher<C> {
         middlewares: Vec<Box<Middleware<C> + Send + Sync>>,
         handlers: Vec<Handler<C>>,
         context: C,
+        middleware_error_strategy: ErrorStrategy,
+        handler_error_strategy: ErrorStrategy,
     ) -> Self {
         Self {
             middlewares: Arc::new(Mutex::new(middlewares)),
             handlers: Arc::new(Mutex::new(handlers)),
             context: Arc::new(Mutex::new(context)),
-            middleware_error_strategy: ErrorStrategy::default(),
-            handler_error_strategy: ErrorStrategy::default(),
+            middleware_error_strategy,
+            handler_error_strategy,
         }
-    }
-
-    pub(crate) fn middleware_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
-        self.middleware_error_strategy = strategy;
-        self
-    }
-
-    pub(crate) fn handler_error_strategy(mut self, strategy: ErrorStrategy) -> Self {
-        self.handler_error_strategy = strategy;
-        self
     }
 
     /// Dispatch an update
@@ -345,6 +337,8 @@ mod tests {
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
             Counter::new(),
+            Default::default(),
+            Default::default(),
         );
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
         assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 1);
@@ -354,8 +348,9 @@ mod tests {
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
             Counter::new(),
-        )
-        .middleware_error_strategy(ErrorStrategy::Ignore);
+            ErrorStrategy::Ignore,
+            Default::default(),
+        );
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
         assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 3);
 
@@ -364,9 +359,9 @@ mod tests {
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
             Counter::new(),
-        )
-        .middleware_error_strategy(ErrorStrategy::Ignore)
-        .handler_error_strategy(ErrorStrategy::Ignore);
+            ErrorStrategy::Ignore,
+            ErrorStrategy::Ignore,
+        );
         dispatcher.dispatch(update.clone()).wait().unwrap();
         assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 5);
     }

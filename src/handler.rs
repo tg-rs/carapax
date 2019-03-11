@@ -417,6 +417,8 @@ mod tests {
             vec![],
             vec![Handler::message(handle_message), Handler::update(handle_update)],
             Counter::new(),
+            Default::default(),
+            Default::default(),
         );
         for data in &[
             r#"{
@@ -476,6 +478,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
+            Default::default(),
+            Default::default(),
         );
         let update = parse_update(
             r#"
@@ -503,6 +507,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
+            Default::default(),
+            Default::default(),
         );
         let update = parse_update(
             r#"
@@ -529,6 +535,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
+            Default::default(),
+            Default::default(),
         );
         let update = parse_update(
             r#"
@@ -554,6 +562,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
+            Default::default(),
+            Default::default(),
         );
         let update = parse_update(
             r#"
@@ -588,6 +598,8 @@ mod tests {
                 Handler::update(handle_update),
             ],
             Counter::new(),
+            Default::default(),
+            Default::default(),
         );
         let update = parse_update(
             r#"
@@ -625,7 +637,13 @@ mod tests {
             }"#,
         );
         let commands = CommandsHandler::default().add_handler("/testcommand", command_handler);
-        let mut dispatcher = Dispatcher::new(vec![], vec![Handler::message(commands)], Args::new());
+        let mut dispatcher = Dispatcher::new(
+            vec![],
+            vec![Handler::message(commands)],
+            Args::new(),
+            Default::default(),
+            Default::default(),
+        );
         dispatcher.dispatch(update.clone()).wait().unwrap();
         let items: &Vec<String> = &dispatcher.context.lock().unwrap().items;
         assert_eq!(items, &vec![String::from("arg1 v"), String::from("arg2")]);

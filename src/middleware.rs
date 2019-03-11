@@ -164,6 +164,8 @@ mod tests {
             ],
             vec![Handler::message(handle_message)],
             Counter::new(),
+            Default::default(),
+            Default::default(),
         );
         dispatcher.dispatch(update.clone()).wait().unwrap();
         assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 5);
@@ -181,6 +183,8 @@ mod tests {
             ],
             vec![Handler::message(handle_message)],
             Counter::new(),
+            Default::default(),
+            Default::default(),
         );
         dispatcher.dispatch(update).wait().unwrap();
         assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 4);
