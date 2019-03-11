@@ -56,7 +56,8 @@ impl<S> App<S> {
     ///
     /// # Arguments
     ///
-    /// - token - A telegram bot token
+    /// * api - tgbot::Api
+    /// * context - any type you want to use as context
     pub fn new(api: Api, context: S) -> Self {
         App {
             api,
