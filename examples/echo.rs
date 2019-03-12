@@ -1,7 +1,4 @@
-use carapax::{
-    prelude::*,
-    ratelimit::{nonzero, RateLimitMiddleware},
-};
+use carapax::prelude::*;
 use dotenv::dotenv;
 use env_logger;
 use futures::Future;
@@ -29,12 +26,7 @@ fn main() {
     let proxy = env::var("CARAPAX_PROXY").ok();
 
     let api = Api::new(token, proxy).unwrap();
-    let app = App::new(api.clone());
-
-    // take 1 update per 5 seconds
-    let rate_limit = RateLimitMiddleware::direct(nonzero!(1u32), 5);
-
-    app.add_middleware(rate_limit)
+    App::new(api.clone())
         .add_handler(Handler::message(handle_message))
         .run(UpdateMethod::poll(UpdatesStream::new(api)));
 }

@@ -16,8 +16,6 @@ travis-ci = { repository = "tg-rs/carapax", branch = "master" }
 failure = "0.1"
 futures = "0.1"
 log = "0.4"
-nonzero_ext = "0.1"
-ratelimit_meter = "4.0"
 shellwords = "1.0"
 tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "1a2677b" }
 tokio = "0.1"
