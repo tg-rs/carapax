@@ -16,8 +16,7 @@ pub enum ErrorStrategy {
     Abort,
 }
 
-/// Dispatcher
-pub struct Dispatcher<C> {
+pub(crate) struct Dispatcher<C> {
     middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
     handlers: Arc<Mutex<Vec<Handler<C>>>>,
     pub(crate) context: Arc<Mutex<C>>,
@@ -42,8 +41,7 @@ impl<C> Dispatcher<C> {
         }
     }
 
-    /// Dispatch an update
-    pub fn dispatch(&mut self, update: Update) -> DispatcherFuture<C> {
+    pub(crate) fn dispatch(&mut self, update: Update) -> DispatcherFuture<C> {
         DispatcherFuture::new(
             self.middlewares.clone(),
             self.handlers.clone(),
@@ -69,9 +67,8 @@ where
     }
 }
 
-/// Dispatcher future
 #[must_use = "futures do nothing unless polled"]
-pub struct DispatcherFuture<C> {
+pub(crate) struct DispatcherFuture<C> {
     middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
     handlers: Arc<Mutex<Vec<Handler<C>>>>,
     context: Arc<Mutex<C>>,

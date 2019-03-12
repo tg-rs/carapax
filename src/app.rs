@@ -64,19 +64,25 @@ impl<C> App<C> {
     }
 }
 
+impl<C> Into<Dispatcher<C>> for App<C> {
+    fn into(self: App<C>) -> Dispatcher<C> {
+        Dispatcher::new(
+            self.middlewares,
+            self.handlers,
+            self.context,
+            self.middleware_error_strategy,
+            self.handler_error_strategy,
+        )
+    }
+}
+
 impl<C> App<C>
 where
     C: Send + Sync + 'static,
 {
     /// Run app
     pub fn run(self, method: UpdateMethod) {
-        let dispatcher = Dispatcher::new(
-            self.middlewares,
-            self.handlers,
-            self.context,
-            self.middleware_error_strategy,
-            self.handler_error_strategy,
-        );
+        let dispatcher: Dispatcher<C> = self.into();
         handle_updates(method, dispatcher);
     }
 }

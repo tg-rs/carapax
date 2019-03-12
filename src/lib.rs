@@ -18,4 +18,4 @@ pub mod ratelimit;
 /// A "prelude" for users of the framework
 pub mod prelude;
 
-pub use self::{app::*, dispatcher::*, handler::*, middleware::*};
+pub use self::{app::*, handler::*, middleware::*};
