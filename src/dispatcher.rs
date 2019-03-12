@@ -5,7 +5,7 @@ use crate::{
 use failure::Error;
 use futures::{task, Async, Future, Poll};
 use std::sync::{Arc, Mutex};
-use tgbot::types::Update;
+use tgbot::{types::Update, UpdateHandler};
 
 /// Defines how to handle errors in middlewares and handlers
 #[derive(Debug, Clone, Copy)]
@@ -53,7 +53,7 @@ impl<C> Dispatcher<C> {
     }
 }
 
-impl<C> tgbot::UpdateHandler for Dispatcher<C>
+impl<C> UpdateHandler for Dispatcher<C>
 where
     C: Send + Sync + 'static,
 {
