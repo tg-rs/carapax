@@ -8,7 +8,7 @@ mod webhook;
 
 pub use self::{poll::*, webhook::*};
 
-/// A webhook update handler
+/// An update handler
 pub trait UpdateHandler {
     /// Handles an update
     fn handle(&mut self, update: Update);
@@ -68,11 +68,10 @@ where
                     .then(|_| Ok(())),
             );
         }
-        UpdateMethodKind::Webhook { addr, path } => {
-            let server = Server::bind(&addr)
+        UpdateMethodKind::Webhook { addr, path } => tokio::run(
+            Server::bind(&addr)
                 .serve(WebhookServiceFactory::new(path, handler))
-                .map_err(|e| log::error!("Server error: {}", e));
-            tokio::run(server)
-        }
+                .map_err(|e| log::error!("Server error: {}", e)),
+        ),
     }
 }
