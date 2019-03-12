@@ -1,11 +1,6 @@
 //! A Telegram Bot API client library
 #![warn(missing_docs)]
 
-#[macro_use]
-extern crate derive_more;
-#[macro_use]
-extern crate failure;
-
 mod api;
 mod executor;
 mod handler;

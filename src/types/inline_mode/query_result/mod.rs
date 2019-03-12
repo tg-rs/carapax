@@ -20,7 +20,7 @@ pub use self::{
 };
 
 /// Result of an inline query
-#[derive(Clone, Debug, From, Serialize)]
+#[derive(Clone, Debug, derive_more::From, Serialize)]
 #[serde(tag = "type")]
 #[allow(clippy::large_enum_variant)]
 pub enum InlineQueryResult {

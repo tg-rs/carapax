@@ -159,7 +159,7 @@ pub struct TextEntityData {
 }
 
 /// An error when parsing entities
-#[derive(Debug, Fail)]
+#[derive(Debug, failure::Fail)]
 pub(crate) enum ParseTextError {
     /// Offset is out of text bounds
     #[fail(display = "Offset \"{}\" is out of text bounds", _0)]

@@ -2,7 +2,7 @@ use crate::types::primitive::{Float, Integer, ParseMode};
 use serde::Serialize;
 
 /// Content of a message to be sent as a result of an inline query
-#[derive(Clone, Debug, From, Serialize)]
+#[derive(Clone, Debug, derive_more::From, Serialize)]
 #[serde(untagged)]
 pub enum InputMessageContent {
     /// Contact message

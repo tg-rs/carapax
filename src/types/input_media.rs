@@ -2,7 +2,7 @@ use crate::types::primitive::{Integer, ParseMode};
 use serde::Serialize;
 
 /// Photo or video to be sent in a media group
-#[derive(Clone, Debug, From, Serialize)]
+#[derive(Clone, Debug, derive_more::From, Serialize)]
 pub enum MediaGroupItem {
     /// Photo to be sent
     #[serde(rename = "photo")]
@@ -13,7 +13,7 @@ pub enum MediaGroupItem {
 }
 
 /// Content of a media message to be sent
-#[derive(Clone, Debug, From, Serialize)]
+#[derive(Clone, Debug, derive_more::From, Serialize)]
 #[serde(tag = "type")]
 pub enum InputMedia {
     /// Animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent

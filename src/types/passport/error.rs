@@ -348,6 +348,6 @@ enum PassportElementErrorKind {
 }
 
 /// Unexpected encrypted passport element kind
-#[derive(Clone, Debug, Fail)]
+#[derive(Clone, Debug, failure::Fail)]
 #[fail(display = "Unexpected element kind: {:?}", _0)]
 pub struct UnexpectedEncryptedPassportElementKind(EncryptedPassportElementKind);

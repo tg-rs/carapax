@@ -9,7 +9,7 @@ mod tests;
 pub use self::{force_reply::*, inline_keyboard::*, reply_keyboard::*};
 
 /// Reply markup
-#[derive(Clone, Debug, From, Serialize)]
+#[derive(Clone, Debug, derive_more::From, Serialize)]
 #[serde(untagged)]
 pub enum ReplyMarkup {
     /// Force reply
