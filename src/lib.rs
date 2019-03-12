@@ -16,10 +16,7 @@ pub mod methods;
 /// Types available in the Bot API
 pub mod types;
 
-pub use self::{
-    api::{Api, ApiFuture},
-    handler::{
-        handle_updates, UpdateHandler, UpdateMethod, UpdatesStream, UpdatesStreamOptions, WebhookService,
-        WebhookServiceFactory, WebhookServiceFactoryError,
-    },
-};
+/// A "prelude" for users of the library
+pub mod prelude;
+
+pub use self::{api::*, handler::*};
