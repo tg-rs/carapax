@@ -9,9 +9,6 @@ mod dispatcher;
 mod handler;
 mod middleware;
 
-/// Access rules and policies
-pub mod access;
-
 /// Rate limit middleware
 pub mod ratelimit;
 

@@ -1,5 +1,4 @@
 use carapax::{
-    access::{AccessMiddleware, AccessRule, InMemoryAccessPolicy},
     prelude::*,
     ratelimit::{nonzero, RateLimitMiddleware},
 };
@@ -28,21 +27,14 @@ fn main() {
 
     let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
     let proxy = env::var("CARAPAX_PROXY").ok();
-    let allowed_username = env::var("CARAPAX_ALLOWED_USERNAME").expect("CARAPAX_ALLOWED_USERNAME is not set");
 
     let api = Api::new(token, proxy).unwrap();
     let app = App::new(api.clone());
 
-    // Deny from all except for allowed_username
-    let rule = AccessRule::allow_user(allowed_username);
-    let policy = InMemoryAccessPolicy::default().push_rule(rule);
-    let access = AccessMiddleware::new(policy);
-
     // take 1 update per 5 seconds
     let rate_limit = RateLimitMiddleware::direct(nonzero!(1u32), 5);
 
-    app.add_middleware(access)
-        .add_middleware(rate_limit)
+    app.add_middleware(rate_limit)
         .add_handler(Handler::message(handle_message))
         .run(UpdateMethod::poll(UpdatesStream::new(api)));
 }
