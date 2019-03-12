@@ -266,7 +266,7 @@ pub enum EditMessageResult {
     Bool(bool),
 }
 
-#[derive(Debug, Fail, From)]
+#[derive(Debug, failure::Fail, derive_more::From)]
 enum ParseError {
     #[fail(display = "Unexpected forward_* fields combination")]
     BadForward,

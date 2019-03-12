@@ -93,7 +93,7 @@ fn http_proxy_executor(proxy: HttpProxy) -> Result<Box<Executor>, Error> {
     Ok(Box::new(HyperExecutor::new(client)))
 }
 
-#[derive(Debug, Fail)]
+#[derive(Debug, failure::Fail)]
 #[fail(display = "Unexpected proxy: {}", _0)]
 struct UnexpectedProxyError(String);
 

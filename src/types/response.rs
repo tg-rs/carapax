@@ -40,7 +40,7 @@ where
 }
 
 /// Response error
-#[derive(Clone, Debug, Fail)]
+#[derive(Clone, Debug, failure::Fail)]
 #[fail(
     display = "A telegram error has occurred: code={:?} message={}",
     error_code, description
