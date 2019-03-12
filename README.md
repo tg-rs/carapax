@@ -18,7 +18,14 @@ carapax-access = "0.1"
 # Example
 
 ```rust
-// TODO
+use carapax_access::{AccessMiddleware, InMemoryAccessPolicy, AccessRule};
+
+// Deny from all except for @username
+let rule = AccessRule::allow_user("username");
+let policy = InMemoryAccessPolicy::default().push_rule(rule);
+let access = AccessMiddleware::new(policy);
+
+app.add_middleware(access);
 ```
 
 # LICENSE
