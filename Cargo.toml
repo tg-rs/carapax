@@ -11,6 +11,7 @@ repository = "https://github.com/tg-rs/carapax"
 
 [badges]
 travis-ci = { repository = "tg-rs/carapax", branch = "master" }
+codecov = { repository = "tg-rs/carapax" }
 
 [dependencies]
 failure = "0.1"
