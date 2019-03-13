@@ -7,6 +7,7 @@ A Telegram Bot library
 [![Downloads](https://img.shields.io/crates/d/tgbot.svg?style=flat-square)](https://crates.io/crates/tgbot)
 [![Documentation](https://img.shields.io/badge/docs-API-brightgreen.svg?style=flat-square)](https://docs.rs/tgbot/)
 [![License](https://img.shields.io/crates/l/tgbot.svg?style=flat-square)](./LICENSE)
+[![Codecov](https://img.shields.io/codecov/c/github/tg-rs/tgbot.svg?style=flat-square)](https://codecov.io/gh/tg-rs/tgbot)
 
 # Installation
 
