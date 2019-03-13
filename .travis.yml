@@ -35,7 +35,7 @@ script:
 before_cache:
   - git clone https://github.com/SimonKagstrom/kcov
   - cd kcov
-  - cmake ..
+  - cmake .
   - make install -j2
   - cd ..
   - |
