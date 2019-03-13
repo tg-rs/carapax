@@ -1,16 +1,33 @@
 sudo: false
+cache:
+  - ccache
+  - cargo
 language: rust
-cache: cargo
 rust:
   - stable
   - beta
   - nightly
-before_script:
-  - rustup component add clippy
+
 matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
+
+before_script:
+  - rustup component add clippy
+  - |
+    if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
+      cargo install grcov -f
+      export CARGO_INCREMENTAL=0
+      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+    fi
 script:
   - cargo clippy --all-targets --all-features -- -D warnings
   - cargo test
+before_cache:
+  - |
+    if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
+      zip -0 ccov.zip `find . \( -name "tgbot*.gc*" \) -print`;
+      grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" > lcov.info;
+      bash <(curl -s https://codecov.io/bash) -f lcov.info;
+    fi
