@@ -8,20 +8,6 @@ rust:
   - beta
   - nightly
 
-env:
-  - RUSTFLAGS="-C link-dead-code"
-
-addons:
-  apt:
-    packages:
-      - binutils-dev
-      - libcurl4-openssl-dev
-      - zlib1g-dev
-      - libdw-dev
-      - libiberty-dev
-      - cmake
-      - gcc
-
 matrix:
   allow_failures:
     - rust: nightly
@@ -29,19 +15,19 @@ matrix:
 
 before_script:
   - rustup component add clippy
+  - |
+    if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
+      cargo install grcov
+      export CARGO_INCREMENTAL=0
+      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+    fi
 script:
   - cargo clippy --all-targets --all-features -- -D warnings
   - cargo test
 before_cache:
-  - git clone https://github.com/SimonKagstrom/kcov
-  - cd kcov
-  - cmake .
-  - make install -j2
-  - cd ..
   - |
-    for file in target/debug/tgbot-*;
-      do [ -x "${file}" ] || continue;
-      mkdir -p "target/cov/$(basename $file)";
-      kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
-    done
-  - bash <(curl -s https://codecov.io/bash)
+    if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
+      zip -0 ccov.zip `find . \( -name "tgbot.gc*" \) -print`;
+      grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" > lcov.info;
+      bash <(curl -s https://codecov.io/bash) -f lcov.info;
+    fi
