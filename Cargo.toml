@@ -11,6 +11,7 @@ repository = "https://github.com/tg-rs/tgbot"
 
 [badges]
 travis-ci = { repository = "tg-rs/tgbot", branch = "master" }
+codecov = { repository = "tg-rs/tgbot" }
 
 [dependencies]
 derive_more = "0.14"
