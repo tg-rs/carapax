@@ -1,8 +1,10 @@
 use crate::types::chat::member::ChatMember;
 
+use serde_json::json;
+
 #[test]
 fn test_deserialize_chat_member_admin() {
-    let admin = r#"{
+    let admin = json!({
         "status": "administrator",
         "user": {
             "id": 1,
@@ -21,8 +23,8 @@ fn test_deserialize_chat_member_admin() {
         "can_restrict_members": true,
         "can_pin_messages": false,
         "can_promote_members": true
-    }"#;
-    let admin: ChatMember = serde_json::from_str(admin).unwrap();
+    });
+    let admin: ChatMember = serde_json::from_value(admin).unwrap();
     if let ChatMember::Administrator(ref admin) = admin {
         assert_eq!(admin.user.id, 1);
         assert_eq!(admin.user.is_bot, false);
@@ -46,15 +48,15 @@ fn test_deserialize_chat_member_admin() {
 
 #[test]
 fn test_deserialize_chat_member_creator() {
-    let creator = r#"{
+    let creator = json!({
         "status": "creator",
         "user": {
             "id": 1,
             "is_bot": false,
             "first_name": "firstname"
         }
-    }"#;
-    let creator: ChatMember = serde_json::from_str(creator).unwrap();
+    });
+    let creator: ChatMember = serde_json::from_value(creator).unwrap();
     if let ChatMember::Creator(ref creator) = creator {
         assert_eq!(creator.id, 1);
         assert_eq!(creator.is_bot, false);
@@ -69,7 +71,7 @@ fn test_deserialize_chat_member_creator() {
 
 #[test]
 fn test_deserialize_chat_member_kicked() {
-    let kicked = r#"{
+    let kicked = json!({
         "status": "kicked",
         "user": {
             "id": 1,
@@ -79,8 +81,8 @@ fn test_deserialize_chat_member_kicked() {
             "username": "username"
         },
         "until_date": 0
-    }"#;
-    let kicked: ChatMember = serde_json::from_str(kicked).unwrap();
+    });
+    let kicked: ChatMember = serde_json::from_value(kicked).unwrap();
     if let ChatMember::Kicked(ref kicked) = kicked {
         assert_eq!(kicked.user.id, 1);
         assert_eq!(kicked.user.is_bot, true);
@@ -96,15 +98,15 @@ fn test_deserialize_chat_member_kicked() {
 
 #[test]
 fn test_deserialize_chat_member_left() {
-    let left = r#"{
+    let left = json!({
         "status": "left",
         "user": {
             "id": 1,
             "is_bot": true,
             "first_name": "firstname"
         }
-    }"#;
-    let left: ChatMember = serde_json::from_str(left).unwrap();
+    });
+    let left: ChatMember = serde_json::from_value(left).unwrap();
     if let ChatMember::Left(ref left) = left {
         assert_eq!(left.id, 1);
         assert_eq!(left.is_bot, true);
@@ -119,15 +121,15 @@ fn test_deserialize_chat_member_left() {
 
 #[test]
 fn test_deserialize_chat_member_plain() {
-    let plain = r#"{
+    let plain = json!({
         "status": "member",
         "user": {
             "id": 1,
             "is_bot": false,
             "first_name": "firstname"
         }
-    }"#;
-    let plain: ChatMember = serde_json::from_str(plain).unwrap();
+    });
+    let plain: ChatMember = serde_json::from_value(plain).unwrap();
     if let ChatMember::Member(ref plain) = plain {
         assert_eq!(plain.id, 1);
         assert_eq!(plain.is_bot, false);
@@ -142,7 +144,7 @@ fn test_deserialize_chat_member_plain() {
 
 #[test]
 fn test_deserialize_chat_member_restricted() {
-    let restricted = r#"{
+    let restricted = json!({
         "status": "restricted",
         "user": {
             "id": 1,
@@ -154,8 +156,8 @@ fn test_deserialize_chat_member_restricted() {
         "can_send_media_messages": false,
         "can_send_other_messages": true,
         "can_add_web_page_previews": false
-    }"#;
-    let restricted: ChatMember = serde_json::from_str(restricted).unwrap();
+    });
+    let restricted: ChatMember = serde_json::from_value(restricted).unwrap();
     if let ChatMember::Restricted(ref restricted) = restricted {
         assert_eq!(restricted.user.id, 1);
         assert_eq!(restricted.user.is_bot, true);

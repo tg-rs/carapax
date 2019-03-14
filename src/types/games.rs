@@ -72,15 +72,15 @@ pub struct GameHighScore {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use serde_json::json;
     #[test]
     fn test_deserialize_game() {
-        let input = r#"{
+        let input = json!({
             "title": "title",
             "description": "description",
             "photo": []
-        }"#;
-        let game: Game = serde_json::from_str(input).unwrap();
+        });
+        let game: Game = serde_json::from_value(input).unwrap();
         assert_eq!(game.title, String::from("title"));
         assert_eq!(game.description, String::from("description"));
     }

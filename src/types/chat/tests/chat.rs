@@ -1,8 +1,10 @@
 use crate::types::chat::Chat;
 
+use serde_json::json;
+
 #[test]
 fn test_deserialize_channel() {
-    let input = r#"{
+    let input = json!({
         "id": 1,
         "type": "channel",
         "title": "channeltitle",
@@ -23,8 +25,8 @@ fn test_deserialize_channel() {
             },
             "text": "test"
         }
-    }"#;
-    let chat: Chat = serde_json::from_str(input).unwrap();
+    });
+    let chat: Chat = serde_json::from_value(input).unwrap();
     if let Chat::Channel(chat) = chat {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, String::from("channeltitle"));
@@ -38,12 +40,12 @@ fn test_deserialize_channel() {
     } else {
         panic!("Unexpected chat: {:?}", chat);
     }
-    let input = r#"{
+    let input = json!({
         "id": 1,
         "type": "channel",
         "title": "channeltitle"
-    }"#;
-    let chat: Chat = serde_json::from_str(input).unwrap();
+    });
+    let chat: Chat = serde_json::from_value(input).unwrap();
     if let Chat::Channel(chat) = chat {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, String::from("channeltitle"));
@@ -59,7 +61,7 @@ fn test_deserialize_channel() {
 
 #[test]
 fn test_deserialize_group() {
-    let input = r#"{
+    let input = json!({
         "id": 1,
         "type": "group",
         "title": "grouptitle",
@@ -85,8 +87,8 @@ fn test_deserialize_group() {
             },
             "text": "test"
         }
-    }"#;
-    let chat: Chat = serde_json::from_str(input).unwrap();
+    });
+    let chat: Chat = serde_json::from_value(input).unwrap();
     if let Chat::Group(chat) = chat {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, String::from("grouptitle"));
@@ -99,13 +101,13 @@ fn test_deserialize_group() {
     } else {
         panic!("Unexpected chat: {:?}", chat);
     }
-    let input = r#"{
+    let input = json!({
         "id": 1,
         "type": "group",
         "title": "grouptitle",
         "all_members_are_administrators": false
-    }"#;
-    let chat: Chat = serde_json::from_str(input).unwrap();
+    });
+    let chat: Chat = serde_json::from_value(input).unwrap();
     if let Chat::Group(chat) = chat {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, String::from("grouptitle"));
@@ -120,7 +122,7 @@ fn test_deserialize_group() {
 
 #[test]
 fn test_deserialize_private() {
-    let input = r#"{
+    let input = json!({
         "id": 1,
         "type": "private",
         "username": "testusername",
@@ -130,8 +132,8 @@ fn test_deserialize_private() {
             "small_file_id": "smallfileid",
             "big_file_id": "bigfileid"
         }
-    }"#;
-    let chat: Chat = serde_json::from_str(input).unwrap();
+    });
+    let chat: Chat = serde_json::from_value(input).unwrap();
     if let Chat::Private(chat) = chat {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.username, Some(String::from("testusername")));
@@ -144,12 +146,12 @@ fn test_deserialize_private() {
         panic!("Unexpected chat: {:?}", chat)
     }
 
-    let input = r#"{
+    let input = json!({
         "id": 1,
         "type": "private",
         "first_name": "testfirstname"
-    }"#;
-    let chat: Chat = serde_json::from_str(input).unwrap();
+    });
+    let chat: Chat = serde_json::from_value(input).unwrap();
     if let Chat::Private(chat) = chat {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.username.is_none(), true);
@@ -163,7 +165,7 @@ fn test_deserialize_private() {
 
 #[test]
 fn test_deserialize_supergroup() {
-    let input = r#"{
+    let input = json!({
         "id": 1,
         "type": "supergroup",
         "title": "supergrouptitle",
@@ -192,8 +194,8 @@ fn test_deserialize_supergroup() {
             },
             "text": "test"
         }
-    }"#;
-    let chat: Chat = serde_json::from_str(input).unwrap();
+    });
+    let chat: Chat = serde_json::from_value(input).unwrap();
     if let Chat::Supergroup(chat) = chat {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, String::from("supergrouptitle"));
@@ -209,13 +211,13 @@ fn test_deserialize_supergroup() {
     } else {
         panic!("Unexpected chat: {:?}", chat)
     }
-    let input = r#"{
+    let input = json!({
         "id": 1,
         "type": "supergroup",
         "title": "supergrouptitle",
         "username": "supergroupusername"
-    }"#;
-    let chat: Chat = serde_json::from_str(input).unwrap();
+    });
+    let chat: Chat = serde_json::from_value(input).unwrap();
     if let Chat::Supergroup(chat) = chat {
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, String::from("supergrouptitle"));

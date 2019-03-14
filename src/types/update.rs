@@ -190,11 +190,12 @@ struct RawUpdate {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
     use super::*;
 
     #[test]
     fn test_deserialize() {
-        let input = r#"{
+        let input = json!({
             "update_id": 1,
             "message": {
                 "message_id": 1,
@@ -211,8 +212,8 @@ mod tests {
                 },
                 "text": "test"
             }
-        }"#;
-        let update: Update = serde_json::from_str(input).unwrap();
+        });
+        let update: Update = serde_json::from_value(input).unwrap();
         assert_eq!(update.get_chat_id(), Some(1));
         assert_eq!(update.get_user().map(|u| u.id), Some(1));
         if let Update {

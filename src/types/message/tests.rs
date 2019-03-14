@@ -1,8 +1,10 @@
 use crate::types::{chat::ChannelChat, message::*, user::User};
 
+use serde_json::json;
+
 #[test]
 fn test_deserialize_message_channel() {
-    let input = r#"{
+    let input = json!({
         "message_id": 1,
         "date": 0,
         "chat": {
@@ -11,8 +13,8 @@ fn test_deserialize_message_channel() {
             "title": "channeltitle"
         },
         "text": "test"
-    }"#;
-    let msg: Message = serde_json::from_str(input).unwrap();
+    });
+    let msg: Message = serde_json::from_value(input).unwrap();
     assert_eq!(msg.id, 1);
     assert_eq!(msg.date, 0);
     assert_eq!(msg.get_chat_id(), 1);
@@ -39,7 +41,7 @@ fn test_deserialize_message_channel() {
 
 #[test]
 fn test_deserialize_message_group() {
-    let input = r#"{
+    let input = json!({
         "message_id": 1,
         "date": 0,
         "from": {
@@ -55,8 +57,8 @@ fn test_deserialize_message_group() {
         },
         "text": "test",
         "edit_date": 1
-    }"#;
-    let msg: Message = serde_json::from_str(input).unwrap();
+    });
+    let msg: Message = serde_json::from_value(input).unwrap();
     assert_eq!(msg.id, 1);
     assert_eq!(msg.date, 0);
     assert_eq!(msg.get_chat_id(), 1);
@@ -80,17 +82,17 @@ fn test_deserialize_message_group() {
         panic!("Unexpected message data: {:?}", msg.data);
     }
 
-    let input = r#"{
+    let input = json!({
         "message_id": 1, "date": 0, "text": "test",
         "chat": {"id": 1, "type": "group", "title": "grouptitle", "all_members_are_administrators": true}
-    }"#;
-    let err = serde_json::from_str::<Message>(input).unwrap_err();
+    });
+    let err = serde_json::from_value::<Message>(input).unwrap_err();
     assert_eq!(err.to_string(), String::from("\"from\" field is missing"));
 }
 
 #[test]
 fn test_deserialize_message_private() {
-    let input = r#"{
+    let input = json!({
         "message_id": 1,
         "date": 0,
         "from": {
@@ -104,8 +106,8 @@ fn test_deserialize_message_private() {
             "first_name": "firstname"
         },
         "text": "test"
-    }"#;
-    let msg: Message = serde_json::from_str(input).unwrap();
+    });
+    let msg: Message = serde_json::from_value(input).unwrap();
     assert_eq!(msg.id, 1);
     assert_eq!(msg.date, 0);
     assert_eq!(msg.get_chat_id(), 1);
@@ -127,17 +129,17 @@ fn test_deserialize_message_private() {
         panic!("Unexpected message data: {:?}", msg.data);
     }
 
-    let input = r#"{
+    let input = json!({
         "message_id": 1, "date": 0, "text": "test",
         "chat": {"id": 1, "type": "private", "first_name": "firstname"}
-    }"#;
-    let err = serde_json::from_str::<Message>(input).unwrap_err();
+    });
+    let err = serde_json::from_value::<Message>(input).unwrap_err();
     assert_eq!(err.to_string(), String::from("\"from\" field is missing"));
 }
 
 #[test]
 fn test_deserialize_message_supergroup() {
-    let input = r#"{
+    let input = json!({
         "message_id": 1,
         "date": 0,
         "from": {
@@ -152,8 +154,8 @@ fn test_deserialize_message_supergroup() {
             "username": "supergroupusername"
         },
         "text": "test"
-    }"#;
-    let msg: Message = serde_json::from_str(input).unwrap();
+    });
+    let msg: Message = serde_json::from_value(input).unwrap();
     assert_eq!(msg.id, 1);
     assert_eq!(msg.date, 0);
     assert_eq!(msg.get_chat_id(), 1);
@@ -176,26 +178,26 @@ fn test_deserialize_message_supergroup() {
         panic!("Unexpected message data: {:?}", msg.data);
     }
 
-    let input = r#"{
+    let input = json!({
         "message_id": 1, "date": 0,
         "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
         "text": "test"
-    }"#;
-    let err = serde_json::from_str::<Message>(input).unwrap_err();
+    });
+    let err = serde_json::from_value::<Message>(input).unwrap_err();
     assert_eq!(err.to_string(), String::from("\"from\" field is missing"));
 }
 
 #[test]
 fn test_deserialize_message_forward() {
-    let input = r#"{
+    let input = json!({
         "message_id": 1, "date": 0,
         "from": {"id": 1, "first_name": "firstname", "is_bot": false},
         "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
         "text": "test",
         "forward_from": {"id": 2, "first_name": "firstname", "is_bot": false},
         "forward_date": 0
-    }"#;
-    let msg: Message = serde_json::from_str(input).unwrap();
+    });
+    let msg: Message = serde_json::from_value(input).unwrap();
     if let Some(Forward {
         date,
         from: ForwardFrom::User(user),
@@ -209,7 +211,7 @@ fn test_deserialize_message_forward() {
         panic!("Unexpected forward data: {:?}", msg.forward);
     }
 
-    let input = r#"{
+    let input = json!({
         "message_id": 1, "date": 0,
         "from": {"id": 1, "first_name": "firstname", "is_bot": false},
         "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -218,8 +220,8 @@ fn test_deserialize_message_forward() {
         "forward_from_message_id": 1,
         "forward_signature": "test",
         "forward_date": 0
-    }"#;
-    let msg: Message = serde_json::from_str(input).unwrap();
+    });
+    let msg: Message = serde_json::from_value(input).unwrap();
     if let Some(Forward {
         date,
         from: ForwardFrom::Channel {
@@ -238,7 +240,7 @@ fn test_deserialize_message_forward() {
         panic!("Unexpected forward data: {:?}", msg.forward);
     }
 
-    let input = r#"{
+    let input = json!({
         "message_id": 1, "date": 0,
         "from": {"id": 1, "first_name": "firstname", "is_bot": false},
         "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -248,14 +250,14 @@ fn test_deserialize_message_forward() {
         "forward_from_message_id": 1,
         "forward_signature": "test",
         "forward_date": 0
-    }"#;
-    let err = serde_json::from_str::<Message>(input).unwrap_err();
+    });
+    let err = serde_json::from_value::<Message>(input).unwrap_err();
     assert_eq!(err.to_string(), String::from("Unexpected forward_* fields combination"));
 }
 
 #[test]
 fn test_deserialize_message_reply() {
-    let input = r#"{
+    let input = json!({
         "message_id": 2, "date": 1,
         "from": {"id": 1, "first_name": "firstname", "is_bot": false},
         "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -266,8 +268,8 @@ fn test_deserialize_message_reply() {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "text": "test"
         }
-    }"#;
-    let msg: Message = serde_json::from_str(input).unwrap();
+    });
+    let msg: Message = serde_json::from_value(input).unwrap();
     if let Some(msg) = msg.reply_to {
         assert_eq!(msg.id, 1);
     } else {
@@ -277,7 +279,7 @@ fn test_deserialize_message_reply() {
 
 #[test]
 fn test_deserialize_message_data() {
-    let input = r#"{
+    let input = json!({
         "message_id": 1, "date": 0,
         "from": {"id": 1, "first_name": "firstname", "is_bot": false},
         "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -290,8 +292,8 @@ fn test_deserialize_message_data() {
         "document": {
             "file_id": "fileid"
         }
-    }"#;
-    let msg: Message = serde_json::from_str(input).unwrap();
+    });
+    let msg: Message = serde_json::from_value(input).unwrap();
     if let MessageData::Animation(animation) = msg.data {
         assert_eq!(animation.file_id, String::from("fileid"));
         assert_eq!(animation.width, 200);
@@ -304,7 +306,7 @@ fn test_deserialize_message_data() {
 
 #[test]
 fn test_deserialize_message_entities() {
-    let input = r#"{
+    let input = json!({
         "message_id": 1, "date": 0,
         "from": {"id": 1, "first_name": "firstname", "is_bot": false},
         "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -333,8 +335,8 @@ fn test_deserialize_message_entities() {
             },
             {"type": "url", "offset": 93, "length": 3}
         ]
-    }"#;
-    let msg: Message = serde_json::from_str(input).unwrap();
+    });
+    let msg: Message = serde_json::from_value(input).unwrap();
     assert_eq!(msg.commands.unwrap().len(), 1);
     if let MessageData::Text(text) = msg.data {
         let entities = text.entities.unwrap();
@@ -432,9 +434,9 @@ fn test_deserialize_message_entities() {
 
 #[test]
 fn test_deserialize_message_bad_entities() {
-    for (input, error) in &[
+    for (input, error) in vec![
         (
-            r#"{
+            json!({
                 "message_id": 1, "date": 0,
                 "from": {"id": 1, "first_name": "firstname", "is_bot": false},
                 "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -446,11 +448,11 @@ fn test_deserialize_message_bad_entities() {
                         "length": 1
                     }
                 ]
-            }"#,
+            }),
             "Failed to parse text: Offset \"-1\" is out of text bounds",
         ),
         (
-            r#"{
+            json!({
                 "message_id": 1, "date": 0,
                 "from": {"id": 1, "first_name": "firstname", "is_bot": false},
                 "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -462,11 +464,11 @@ fn test_deserialize_message_bad_entities() {
                         "length": 1
                     }
                 ]
-            }"#,
+            }),
             "Failed to parse text: Offset \"11\" is out of text bounds",
         ),
         (
-            r#"{
+            json!({
                 "message_id": 1, "date": 0,
                 "from": {"id": 1, "first_name": "firstname", "is_bot": false},
                 "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -478,11 +480,11 @@ fn test_deserialize_message_bad_entities() {
                         "length": -1
                     }
                 ]
-            }"#,
+            }),
             "Failed to parse text: Length \"-1\" is out of text bounds",
         ),
         (
-            r#"{
+            json!({
                 "message_id": 1, "date": 0,
                 "from": {"id": 1, "first_name": "firstname", "is_bot": false},
                 "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -494,11 +496,11 @@ fn test_deserialize_message_bad_entities() {
                         "length": 11
                     }
                 ]
-            }"#,
+            }),
             "Failed to parse text: Length \"11\" is out of text bounds",
         ),
         (
-            r#"{
+            json!({
                 "message_id": 1, "date": 0,
                 "from": {"id": 1, "first_name": "firstname", "is_bot": false},
                 "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -510,11 +512,11 @@ fn test_deserialize_message_bad_entities() {
                         "length": 2
                     }
                 ]
-            }"#,
+            }),
             "Failed to parse text: URL is required for text_link entity",
         ),
         (
-            r#"{
+            json!({
                 "message_id": 1, "date": 0,
                 "from": {"id": 1, "first_name": "firstname", "is_bot": false},
                 "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
@@ -526,11 +528,11 @@ fn test_deserialize_message_bad_entities() {
                         "length": 2
                     }
                 ]
-            }"#,
+            }),
             "Failed to parse text: User is required for text_mention entity",
         ),
     ] {
-        let err = serde_json::from_str::<Message>(input).unwrap_err();
+        let err = serde_json::from_value::<Message>(input).unwrap_err();
         assert_eq!(err.to_string(), error.to_string());
     }
 }
