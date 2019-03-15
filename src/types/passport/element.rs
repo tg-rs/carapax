@@ -91,12 +91,13 @@ impl<'de> Deserialize<'de> for EncryptedPassportElement {
                 translation: raw.translation,
                 hash: raw.hash,
             }),
-            PassportRegistration =>
+            PassportRegistration => {
                 EncryptedPassportElement::PassportRegistration(EncryptedPassportElementPassportRegistration {
                     files: required!(files),
                     translation: raw.translation,
                     hash: raw.hash,
-                }),
+                })
+            }
             PersonalDetails => EncryptedPassportElement::PersonalDetails(EncryptedPassportElementPersonalDetails {
                 data: required!(data),
                 hash: raw.hash,
@@ -110,12 +111,13 @@ impl<'de> Deserialize<'de> for EncryptedPassportElement {
                 translation: raw.translation,
                 hash: raw.hash,
             }),
-            TemporaryRegistration =>
+            TemporaryRegistration => {
                 EncryptedPassportElement::TemporaryRegistration(EncryptedPassportElementTemporaryRegistration {
                     files: required!(files),
                     translation: raw.translation,
                     hash: raw.hash,
-                }),
+                })
+            }
             UtilityBill => EncryptedPassportElement::UtilityBill(EncryptedPassportElementUtilityBill {
                 files: required!(files),
                 translation: raw.translation,
