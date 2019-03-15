@@ -27,7 +27,10 @@ fn test_serialize() {
     ]]
     .into();
     let j = serde_json::to_value(&markup).unwrap();
-    assert_eq!(j, json!({"inline_keyboard":[[{"text":"test"},{"text":"url","url":"tg://user?id=1"},{"text":"cd","callback_data":"cd"},{"text":"siq","switch_inline_query":"siq"},{"text":"siqcc","switch_inline_query_current_chat":"siqcc"},{"text":"cg","callback_game":""},{"text":"pay","pay":true}]]}));
+    assert_eq!(
+        j,
+        json!({"inline_keyboard":[[{"text":"test"},{"text":"url","url":"tg://user?id=1"},{"text":"cd","callback_data":"cd"},{"text":"siq","switch_inline_query":"siq"},{"text":"siqcc","switch_inline_query_current_chat":"siqcc"},{"text":"cg","callback_game":""},{"text":"pay","pay":true}]]})
+    );
 
     let row = vec![
         KeyboardButton::new("test"),

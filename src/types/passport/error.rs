@@ -28,7 +28,7 @@ impl PassportElementError {
     ) -> Result<Self, UnexpectedEncryptedPassportElementKind> {
         use self::EncryptedPassportElementKind::*;
         match kind {
-            Address | DriverLicense | IdentityCard | InternalPassport | Passport | PersonalDetails =>
+            Address | DriverLicense | IdentityCard | InternalPassport | Passport | PersonalDetails => {
                 Ok(PassportElementError {
                     kind: PassportElementErrorKind::DataField {
                         kind,
@@ -36,7 +36,8 @@ impl PassportElementError {
                         data_hash: data_hash.into(),
                         message: message.into(),
                     },
-                }),
+                })
+            }
             _ => Err(UnexpectedEncryptedPassportElementKind(kind)),
         }
     }
@@ -141,14 +142,15 @@ impl PassportElementError {
     ) -> Result<Self, UnexpectedEncryptedPassportElementKind> {
         use self::EncryptedPassportElementKind::*;
         match kind {
-            BankStatement | PassportRegistration | RentalAgreement | TemporaryRegistration | UtilityBill =>
+            BankStatement | PassportRegistration | RentalAgreement | TemporaryRegistration | UtilityBill => {
                 Ok(PassportElementError {
                     kind: PassportElementErrorKind::File {
                         kind,
                         file_hash: file_hash.into(),
                         message: message.into(),
                     },
-                }),
+                })
+            }
             _ => Err(UnexpectedEncryptedPassportElementKind(kind)),
         }
     }
@@ -171,14 +173,15 @@ impl PassportElementError {
     ) -> Result<Self, UnexpectedEncryptedPassportElementKind> {
         use self::EncryptedPassportElementKind::*;
         match kind {
-            BankStatement | PassportRegistration | RentalAgreement | TemporaryRegistration | UtilityBill =>
+            BankStatement | PassportRegistration | RentalAgreement | TemporaryRegistration | UtilityBill => {
                 Ok(PassportElementError {
                     kind: PassportElementErrorKind::Files {
                         kind,
                         file_hashes,
                         message: message.into(),
                     },
-                }),
+                })
+            }
             _ => Err(UnexpectedEncryptedPassportElementKind(kind)),
         }
     }
