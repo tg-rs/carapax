@@ -1,4 +1,4 @@
-use crate::{handler::queue::Queue, types::Update, UpdateHandler};
+use crate::{handler::queue::Queue, types::Update, Never, UpdateHandler};
 use futures::{
     future::{ok, Either},
     Future, Sink, Stream,
@@ -8,7 +8,6 @@ use hyper::{
     service::{MakeService, Service},
     Body, Error, Method, Request, Response, StatusCode,
 };
-use std::{error::Error as StdError, fmt};
 use tokio_sync::mpsc;
 
 /// Creates a webhook service
@@ -32,25 +31,13 @@ impl WebhookServiceFactory {
     }
 }
 
-/// An error when creating webhook service
-#[derive(Debug)]
-pub struct WebhookServiceFactoryError;
-
-impl fmt::Display for WebhookServiceFactoryError {
-    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
-        write!(out, "Failed to create webhook service")
-    }
-}
-
-impl StdError for WebhookServiceFactoryError {}
-
 impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
     type ReqBody = Body;
     type ResBody = Body;
     type Error = Error;
     type Service = WebhookService;
     type Future = Box<Future<Item = Self::Service, Error = Self::MakeError> + Send>;
-    type MakeError = WebhookServiceFactoryError;
+    type MakeError = Never;
 
     fn make_service(&mut self, _ctx: Ctx) -> Self::Future {
         let path = self.path.clone();
