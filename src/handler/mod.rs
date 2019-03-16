@@ -1,4 +1,5 @@
 use crate::types::Update;
+use futures::future::Either;
 use futures::{Future, Stream};
 use hyper::Server;
 use std::net::SocketAddr;
@@ -53,22 +54,20 @@ enum UpdateMethodKind {
 }
 
 /// Start getting updates
-pub fn handle_updates<H>(update_method: UpdateMethod, mut handler: H)
+pub fn handle_updates<H>(update_method: UpdateMethod, mut handler: H) -> impl Future<Item = (), Error = ()>
 where
     H: UpdateHandler + Send + Sync + 'static,
 {
     match update_method.kind {
-        UpdateMethodKind::Poll(stream) => {
-            tokio::run(
-                stream
-                    .for_each(move |update| {
-                        handler.handle(update);
-                        Ok(())
-                    })
-                    .then(|_| Ok(())),
-            );
-        }
-        UpdateMethodKind::Webhook { addr, path } => tokio::run(
+        UpdateMethodKind::Poll(stream) => Either::A(
+            stream
+                .for_each(move |update| {
+                    handler.handle(update);
+                    Ok(())
+                })
+                .then(|_| Ok(())),
+        ),
+        UpdateMethodKind::Webhook { addr, path } => Either::B(
             Server::bind(&addr)
                 .serve(WebhookServiceFactory::new(path, handler))
                 .map_err(|e| log::error!("Server error: {}", e)),
