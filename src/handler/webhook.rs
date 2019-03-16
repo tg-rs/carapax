@@ -1,4 +1,4 @@
-use crate::{handler::queue::Queue, types::Update, UpdateHandler};
+use crate::{types::Update, Never, UpdateHandler};
 use futures::{
     future::{ok, Either},
     Future, Sink, Stream,
@@ -8,41 +8,38 @@ use hyper::{
     service::{MakeService, Service},
     Body, Error, Method, Request, Response, StatusCode,
 };
-use std::{error::Error as StdError, fmt};
-use tokio_sync::mpsc;
+use lazy_queue::sync::bounded::LazyQueue;
+use tokio_executor::spawn;
 
 /// Creates a webhook service
 pub struct WebhookServiceFactory {
     path: String,
-    queue: Queue,
+    queue: LazyQueue<Update>,
+    processor: Option<Box<dyn Future<Item = (), Error = ()> + Send>>,
 }
 
 impl WebhookServiceFactory {
     /// Creates a new factory
-    pub fn new<S, H>(path: S, update_handler: H) -> WebhookServiceFactory
+    pub fn new<S, H>(path: S, mut update_handler: H) -> WebhookServiceFactory
     where
         S: Into<String>,
         H: UpdateHandler + Send + Sync + 'static,
     {
-        let queue = Queue::prepare(update_handler);
+        const QUEUE_SIZE: usize = 10;
+        let (queue, processor) = LazyQueue::new(
+            move |update| {
+                update_handler.handle(update);
+                Ok::<_, Never>(())
+            },
+            QUEUE_SIZE,
+        );
         WebhookServiceFactory {
             path: path.into(),
             queue,
+            processor: Some(Box::new(processor.map_err(|e| log::error!("Processing error: {}", e)))),
         }
     }
 }
-
-/// An error when creating webhook service
-#[derive(Debug)]
-pub struct WebhookServiceFactoryError;
-
-impl fmt::Display for WebhookServiceFactoryError {
-    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
-        write!(out, "Failed to create webhook service")
-    }
-}
-
-impl StdError for WebhookServiceFactoryError {}
 
 impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
     type ReqBody = Body;
@@ -50,12 +47,14 @@ impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
     type Error = Error;
     type Service = WebhookService;
     type Future = Box<Future<Item = Self::Service, Error = Self::MakeError> + Send>;
-    type MakeError = WebhookServiceFactoryError;
+    type MakeError = Never;
 
     fn make_service(&mut self, _ctx: Ctx) -> Self::Future {
         let path = self.path.clone();
-        let queue = self.queue.get_sender();
-        self.queue.launch();
+        let queue = self.queue.clone();
+        if let Some(fut) = self.processor.take() {
+            spawn(fut);
+        }
         Box::new(ok(WebhookService { path, queue }))
     }
 }
@@ -63,12 +62,12 @@ impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
 /// Webhook service
 pub struct WebhookService {
     path: String,
-    queue: mpsc::Sender<Update>,
+    queue: LazyQueue<Update>,
 }
 
 fn put_on_a_queue(
     request: Request<Body>,
-    queue: mpsc::Sender<Update>,
+    queue: impl Sink<SinkItem = Update>,
 ) -> impl Future<Item = Response<Body>, Error = Error> {
     request
         .into_body()

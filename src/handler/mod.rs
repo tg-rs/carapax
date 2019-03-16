@@ -4,7 +4,6 @@ use hyper::Server;
 use std::net::SocketAddr;
 
 mod poll;
-mod queue;
 mod webhook;
 
 pub use self::{poll::*, webhook::*};
