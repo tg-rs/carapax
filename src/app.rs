@@ -3,6 +3,7 @@ use crate::{
     handler::Handler,
     middleware::Middleware,
 };
+use futures::Future;
 use tgbot::{handle_updates, UpdateMethod};
 
 /// A Telegram Bot App
@@ -81,8 +82,8 @@ where
     C: Send + Sync + 'static,
 {
     /// Run app
-    pub fn run(self, method: UpdateMethod) {
+    pub fn run(self, method: UpdateMethod) -> impl Future<Item = (), Error = ()> {
         let dispatcher: Dispatcher<C> = self.into();
-        handle_updates(method, dispatcher);
+        handle_updates(method, dispatcher)
     }
 }

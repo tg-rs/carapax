@@ -58,7 +58,7 @@ where
     C: Send + Sync + 'static,
 {
     fn handle(&mut self, update: Update) {
-        tokio::spawn(self.dispatch(update).then(|r| {
+        tokio_executor::spawn(self.dispatch(update).then(|r| {
             if let Err(e) = r {
                 log::error!("Failed to dispatch update: {:?}", e);
             }
