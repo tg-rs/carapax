@@ -14,5 +14,8 @@ impl UpdateHandler for Handler {
 fn main() {
     dotenv().ok();
     env_logger::init();
-    handle_updates(UpdateMethod::webhook(([127, 0, 0, 1], 8080), "/"), Handler);
+    tokio::run(handle_updates(
+        UpdateMethod::webhook(([127, 0, 0, 1], 8080), "/"),
+        Handler,
+    ));
 }
