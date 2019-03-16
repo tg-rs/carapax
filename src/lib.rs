@@ -5,6 +5,7 @@
 mod api;
 mod executor;
 mod handler;
+mod never;
 
 /// Methods available in the Bot API
 pub mod methods;
@@ -16,3 +17,4 @@ pub mod types;
 pub mod prelude;
 
 pub use self::{api::*, handler::*};
+use never::Never;
