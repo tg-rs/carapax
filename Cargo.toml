@@ -20,6 +20,7 @@ log = "0.4"
 shellwords = "1.0"
 tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "1a2677b" }
 tokio = "0.1"
+tokio-executor = "0.1"
 
 [dev-dependencies]
 dotenv = "0.13"
