@@ -69,7 +69,7 @@ impl Api {
     where
         F: Future<Item = T, Error = E> + 'static + Send,
     {
-        tokio::spawn(f.then(|r| {
+        tokio_executor::spawn(f.then(|r| {
             if let Err(e) = r {
                 log::error!("An error has occurred: {:?}", e)
             }

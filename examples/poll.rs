@@ -37,5 +37,5 @@ fn main() {
     let token = env::var("TGBOT_TOKEN").expect("TGBOT_TOKEN is not set");
     let proxy = env::var("TGBOT_PROXY").ok();
     let api = Api::new(token, proxy).expect("Failed to create API");
-    handle_updates(UpdateMethod::poll(api.clone()), Handler { api });
+    tokio::run(handle_updates(UpdateMethod::poll(api.clone()), Handler { api }));
 }
