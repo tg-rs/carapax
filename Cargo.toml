@@ -18,11 +18,11 @@ failure = "0.1"
 futures = "0.1"
 log = "0.4"
 shellwords = "1.0"
-tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "1a2677b" }
-tokio = "0.1"
+tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "7759363" }
 tokio-executor = "0.1"
 
 [dev-dependencies]
 dotenv = "0.13"
 env_logger = "0.6"
 serde_json = "1.0"
+tokio = { version = "0.1", default-features = false }

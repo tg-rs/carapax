@@ -35,10 +35,12 @@ fn main() {
     let api = Api::new(token, proxy).unwrap();
     let app = App::new(api.clone());
 
-    app.add_handler(Handler::message(
-        CommandsHandler::default()
-            .add_handler("/start", handle_start)
-            .add_handler("/user_id", handle_user_id),
-    ))
-    .run(UpdateMethod::poll(UpdatesStream::new(api)));
+    tokio::run(
+        app.add_handler(Handler::message(
+            CommandsHandler::default()
+                .add_handler("/start", handle_start)
+                .add_handler("/user_id", handle_user_id),
+        ))
+        .run(UpdateMethod::poll(UpdatesStream::new(api))),
+    );
 }

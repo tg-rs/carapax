@@ -26,7 +26,9 @@ fn main() {
     let proxy = env::var("CARAPAX_PROXY").ok();
 
     let api = Api::new(token, proxy).unwrap();
-    App::new(api.clone())
-        .add_handler(Handler::message(handle_message))
-        .run(UpdateMethod::poll(UpdatesStream::new(api)));
+    tokio::run(
+        App::new(api.clone())
+            .add_handler(Handler::message(handle_message))
+            .run(UpdateMethod::poll(UpdatesStream::new(api))),
+    );
 }
