@@ -14,8 +14,8 @@ use std::{
 use tokio_timer::sleep;
 
 const DEFAULT_LIMIT: Integer = 100;
-const DEFAULT_POLL_TIMEOUT: Integer = 10;
-const DEFAULT_ERROR_TIMEOUT: u64 = 5;
+const DEFAULT_POLL_TIMEOUT: Duration = Duration::from_secs(10);
+const DEFAULT_ERROR_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Updates stream used for long polling
 pub struct UpdatesStream {
@@ -93,15 +93,15 @@ impl Stream for UpdatesStream {
             Err(err) => {
                 error!("An error has occurred while getting updates: {:?}", err);
 
-                options.error_timeout = Duration::from_secs(
-                    err.downcast::<ResponseError>()
-                        .ok()
-                        .and_then(|err| {
-                            err.parameters
-                                .and_then(|parameters| parameters.retry_after.map(|count| count as u64))
+                options.error_timeout = err
+                    .downcast::<ResponseError>()
+                    .ok()
+                    .and_then(|err| {
+                        err.parameters.and_then(|parameters| {
+                            parameters.retry_after.map(|count| Duration::from_secs(count as u64))
                         })
-                        .unwrap_or(DEFAULT_ERROR_TIMEOUT),
-                );
+                    })
+                    .unwrap_or(DEFAULT_ERROR_TIMEOUT);
 
                 self.request = Some(Box::new(sleep(options.error_timeout).from_err().map(|()| None)));
             }
@@ -118,7 +118,7 @@ impl Stream for UpdatesStream {
 pub struct UpdatesStreamOptions {
     offset: Integer,
     limit: Integer,
-    poll_timeout: Integer,
+    poll_timeout: Duration,
     error_timeout: Duration,
     allowed_updates: HashSet<AllowedUpdate>,
 }
@@ -138,7 +138,7 @@ impl UpdatesStreamOptions {
     /// 0 - usual short polling
     /// Defaults to 10
     /// Should be positive, short polling should be used for testing purposes only
-    pub fn poll_timeout(mut self, poll_timeout: Integer) -> Self {
+    pub fn poll_timeout(mut self, poll_timeout: Duration) -> Self {
         self.poll_timeout = poll_timeout;
         self
     }
@@ -164,7 +164,7 @@ impl Default for UpdatesStreamOptions {
             offset: 0,
             limit: DEFAULT_LIMIT,
             poll_timeout: DEFAULT_POLL_TIMEOUT,
-            error_timeout: Duration::from_secs(DEFAULT_ERROR_TIMEOUT),
+            error_timeout: DEFAULT_ERROR_TIMEOUT,
             allowed_updates: HashSet::new(),
         }
     }

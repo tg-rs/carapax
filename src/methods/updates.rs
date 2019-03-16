@@ -4,7 +4,7 @@ use crate::{
 };
 use failure::Error;
 use serde::Serialize;
-use std::collections::HashSet;
+use std::{collections::HashSet, time::Duration};
 
 /// Receive incoming updates using long polling
 ///
@@ -55,8 +55,8 @@ impl GetUpdates {
     ///
     /// Defaults to 0, i.e. usual short polling
     /// Should be positive, short polling should be used for testing purposes only
-    pub fn timeout(mut self, timeout: Integer) -> Self {
-        self.timeout = Some(timeout);
+    pub fn timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = Some(timeout.as_secs() as i64);
         self
     }
 
