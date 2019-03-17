@@ -12,7 +12,7 @@ fn handle_start(context: Context, message: &Message, _: Vec<String>) -> HandlerF
     let api = context.get::<Api>();
     HandlerFuture::new(api.execute(&method).then(|x| {
         log::info!("sendMessage result: {:?}\n", x);
-        Ok(context)
+        Ok(HandlerResult::Continue(context))
     }))
 }
 
@@ -23,7 +23,7 @@ fn handle_user_id(context: Context, message: &Message, _: Vec<String>) -> Handle
     let api = context.get::<Api>();
     HandlerFuture::new(api.execute(&method).then(|x| {
         log::info!("sendMessage result: {:?}\n", x);
-        Ok(context)
+        Ok(HandlerResult::Continue(context))
     }))
 }
 

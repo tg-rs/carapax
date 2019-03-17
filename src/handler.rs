@@ -107,21 +107,33 @@ impl Handler {
             UpdateKind::ShippingQuery(ref val) => handle!(ShippingQuery(val)),
             UpdateKind::PreCheckoutQuery(ref val) => handle!(PreCheckoutQuery(val)),
         }
-        context.into()
+        HandlerResult::Continue(context).into()
     }
+}
+
+/// Result of a handler
+pub enum HandlerResult {
+    /// Continue propagation
+    ///
+    /// Next handler (if exists) will run after current has finished
+    Continue(Context),
+    /// Stop propagation
+    ///
+    /// Next handler (if exists) will not run after current has finished
+    Stop(Context),
 }
 
 /// A handler future
 #[must_use = "futures do nothing unless polled"]
 pub struct HandlerFuture {
-    inner: Box<Future<Item = Context, Error = (Error, Context)> + Send>,
+    inner: Box<Future<Item = HandlerResult, Error = (Error, Context)> + Send>,
 }
 
 impl HandlerFuture {
     /// Creates a new handler future
     pub fn new<F>(f: F) -> HandlerFuture
     where
-        F: Future<Item = Context, Error = (Error, Context)> + Send + 'static,
+        F: Future<Item = HandlerResult, Error = (Error, Context)> + Send + 'static,
     {
         HandlerFuture { inner: Box::new(f) }
     }
@@ -129,21 +141,27 @@ impl HandlerFuture {
 
 impl From<Context> for HandlerFuture {
     fn from(context: Context) -> HandlerFuture {
-        HandlerFuture::new(future::ok(context))
+        HandlerResult::Continue(context).into()
     }
 }
 
-impl<E> From<Result<Context, (E, Context)>> for HandlerFuture
+impl From<HandlerResult> for HandlerFuture {
+    fn from(result: HandlerResult) -> HandlerFuture {
+        HandlerFuture::new(future::ok(result))
+    }
+}
+
+impl<E> From<Result<HandlerResult, (E, Context)>> for HandlerFuture
 where
     E: Into<Error>,
 {
-    fn from(result: Result<Context, (E, Context)>) -> Self {
+    fn from(result: Result<HandlerResult, (E, Context)>) -> Self {
         HandlerFuture::new(future::result(result.map_err(|(err, context)| (err.into(), context))))
     }
 }
 
 impl Future for HandlerFuture {
-    type Item = Context;
+    type Item = HandlerResult;
     type Error = (Error, Context);
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
@@ -295,7 +313,7 @@ impl MessageHandler for CommandsHandler {
                             Some(handler) => handler.handle(context, message, args),
                             None => match self.not_found_handler {
                                 Some(ref handler) => handler.handle(context, message, args),
-                                None => context.into(),
+                                None => HandlerResult::Continue(context).into(),
                             },
                         },
                         Err(MismatchedQuotes) => Err((CommandError::MismatchedQuotes, context)).into(),
@@ -303,7 +321,7 @@ impl MessageHandler for CommandsHandler {
                     Err(err) => Err((CommandError::FromUtf16(err), context)).into(),
                 }
             }
-            _ => context.into(),
+            _ => HandlerResult::Continue(context).into(),
         }
     }
 }
@@ -329,7 +347,6 @@ mod tests {
     use super::*;
 
     use crate::dispatcher::{Dispatcher, ErrorStrategy};
-    use crate::middleware::{Middleware, MiddlewareFuture, MiddlewareResult};
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -368,6 +385,12 @@ mod tests {
         fn extend(&mut self, items: Vec<String>) {
             self.items.extend(items);
         }
+    }
+
+    fn setup_context(mut context: Context, _update: &Update) -> HandlerFuture {
+        context.set(Args::new());
+        context.set(Counter::new());
+        context.into()
     }
 
     fn command_handler(mut context: Context, _message: &Message, args: Vec<String>) -> HandlerFuture {
@@ -414,23 +437,15 @@ mod tests {
         serde_json::from_str(data).unwrap()
     }
 
-    struct SetupContextMiddleware;
-
-    impl Middleware for SetupContextMiddleware {
-        fn before(&self, mut context: Context, _update: &Update) -> MiddlewareFuture {
-            context.set(Args::new());
-            context.set(Counter::new());
-            MiddlewareResult::Continue(context).into()
-        }
-    }
-
     #[test]
     fn test_dispatch_message() {
         let dispatcher = Dispatcher::new(
             Api::new("token", None::<&str>).unwrap(),
-            vec![Box::new(SetupContextMiddleware)],
-            vec![Handler::message(handle_message), Handler::update(handle_update)],
-            ErrorStrategy::Abort,
+            vec![
+                Handler::update(setup_context),
+                Handler::message(handle_message),
+                Handler::update(handle_update),
+            ],
             ErrorStrategy::Abort,
         );
         for data in &[
@@ -486,12 +501,11 @@ mod tests {
     fn test_dispatch_inline_query() {
         let dispatcher = Dispatcher::new(
             Api::new("token", None::<&str>).unwrap(),
-            vec![Box::new(SetupContextMiddleware)],
             vec![
+                Handler::update(setup_context),
                 Handler::inline_query(handle_inline_query),
                 Handler::update(handle_update),
             ],
-            ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
         let update = parse_update(
@@ -515,12 +529,11 @@ mod tests {
     fn test_dispatch_chosen_inline_result() {
         let dispatcher = Dispatcher::new(
             Api::new("token", None::<&str>).unwrap(),
-            vec![Box::new(SetupContextMiddleware)],
             vec![
+                Handler::update(setup_context),
                 Handler::chosen_inline_result(handle_chose_inline_result),
                 Handler::update(handle_update),
             ],
-            ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
         let update = parse_update(
@@ -543,12 +556,11 @@ mod tests {
     fn test_dispatch_callback_query() {
         let dispatcher = Dispatcher::new(
             Api::new("token", None::<&str>).unwrap(),
-            vec![Box::new(SetupContextMiddleware)],
             vec![
+                Handler::update(setup_context),
                 Handler::callback_query(handle_callback_query),
                 Handler::update(handle_update),
             ],
-            ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
         let update = parse_update(
@@ -570,12 +582,11 @@ mod tests {
     fn test_dispatch_shipping_query() {
         let dispatcher = Dispatcher::new(
             Api::new("token", None::<&str>).unwrap(),
-            vec![Box::new(SetupContextMiddleware)],
             vec![
+                Handler::update(setup_context),
                 Handler::shipping_query(handle_shipping_query),
                 Handler::update(handle_update),
             ],
-            ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
         let update = parse_update(
@@ -606,12 +617,11 @@ mod tests {
     fn test_dispatch_pre_checkout_query() {
         let dispatcher = Dispatcher::new(
             Api::new("token", None::<&str>).unwrap(),
-            vec![Box::new(SetupContextMiddleware)],
             vec![
+                Handler::update(setup_context),
                 Handler::pre_checkout_query(handle_precheckout_query),
                 Handler::update(handle_update),
             ],
-            ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
         let update = parse_update(
@@ -652,9 +662,7 @@ mod tests {
         let commands = CommandsHandler::default().add_handler("/testcommand", command_handler);
         let dispatcher = Dispatcher::new(
             Api::new("token", None::<&str>).unwrap(),
-            vec![Box::new(SetupContextMiddleware)],
-            vec![Handler::message(commands)],
-            ErrorStrategy::Abort,
+            vec![Handler::update(setup_context), Handler::message(commands)],
             ErrorStrategy::Abort,
         );
         let context = dispatcher.dispatch(update.clone()).wait().unwrap();
