@@ -77,6 +77,12 @@ impl DispatcherFuture {
     }
 }
 
+impl DispatcherFuture {
+    fn take_context(&mut self) -> Context {
+        self.context.take().expect("Surprise! Context lost...")
+    }
+}
+
 impl Future for DispatcherFuture {
     type Item = Context;
     type Error = (Error, Context);
@@ -84,23 +90,21 @@ impl Future for DispatcherFuture {
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         match self.handler {
             Some(ref mut f) => match f.poll() {
-                Ok(Async::Ready(HandlerResult::Continue(context))) => {
-                    self.context = Some(context);
+                Ok(Async::Ready(HandlerResult::Continue)) => {
                     self.handler_idx += 1;
                     self.handler = None;
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
-                Ok(Async::Ready(HandlerResult::Stop(context))) => Ok(Async::Ready(context)),
+                Ok(Async::Ready(HandlerResult::Stop)) => Ok(Async::Ready(self.take_context())),
                 Ok(Async::NotReady) => {
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
-                Err((err, context)) => match self.error_strategy {
-                    ErrorStrategy::Abort => Err((err, context)),
+                Err(err) => match self.error_strategy {
+                    ErrorStrategy::Abort => Err((err, self.take_context())),
                     ErrorStrategy::Ignore => {
                         log::error!("An error has occurred in after middleware: {:?}", err);
-                        self.context = Some(context);
                         self.handler_idx += 1;
                         self.handler = None;
                         task::current().notify();
@@ -108,20 +112,20 @@ impl Future for DispatcherFuture {
                     }
                 },
             },
-            None => {
-                if let Some(context) = self.context.take() {
-                    match self.handlers.get(self.handler_idx) {
-                        Some(handler) => {
-                            self.handler = Some(handler.handle(context, &self.update));
-                            task::current().notify();
-                            Ok(Async::NotReady)
-                        }
-                        None => Ok(Async::Ready(context)),
-                    }
-                } else {
-                    panic!("Surprise! Context was lost...");
+            None => match self.handlers.get(self.handler_idx) {
+                Some(handler) => {
+                    self.handler = Some(handler.handle(
+                        match self.context {
+                            Some(ref mut context) => context,
+                            None => panic!("Suprise! Context lost..."),
+                        },
+                        &self.update,
+                    ));
+                    task::current().notify();
+                    Ok(Async::NotReady)
                 }
-            }
+                None => Ok(Async::Ready(self.take_context())),
+            },
         }
     }
 }
@@ -155,9 +159,9 @@ mod tests {
         }
     }
 
-    fn setup_context(mut context: Context, _update: &Update) -> HandlerFuture {
+    fn setup_context(context: &mut Context, _update: &Update) -> HandlerFuture {
         context.set(Counter::new());
-        context.into()
+        HandlerResult::Continue.into()
     }
 
     fn parse_update(data: &str) -> Update {
@@ -168,14 +172,14 @@ mod tests {
     #[fail(display = "Test error")]
     struct ErrorMock;
 
-    fn handle_update_ok(context: Context, _update: &Update) -> HandlerFuture {
+    fn handle_update_ok(context: &mut Context, _update: &Update) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        HandlerResult::Continue(context).into()
+        HandlerResult::Continue.into()
     }
 
-    fn handle_update_err(context: Context, _update: &Update) -> HandlerFuture {
+    fn handle_update_err(context: &mut Context, _update: &Update) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        Err((ErrorMock, context)).into()
+        Err(ErrorMock).into()
     }
 
     #[test]
