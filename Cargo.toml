@@ -14,7 +14,7 @@ travis-ci = { repository = "tg-rs/carapax", branch = "master" }
 codecov = { repository = "tg-rs/carapax" }
 
 [dependencies]
-anymap = "0.12.1"
+anymap = "0.12.0"
 failure = "0.1.5"
 futures = "0.1.23"
 log = "0.4.6"
