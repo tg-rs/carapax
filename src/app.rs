@@ -36,12 +36,15 @@ impl App {
     }
 
     /// Add a handler
+    ///
+    /// When a handler fails with error, all next handlers will not run.
+    /// Use `App::error_strategy()` to change this behaviour.
     pub fn add_handler(mut self, handler: Handler) -> Self {
         self.handlers.push(handler);
         self
     }
 
-    /// Run app
+    /// Returns a future that will run app
     pub fn run(self, api: Api, method: UpdateMethod) -> impl Future<Item = (), Error = ()> {
         handle_updates(method, Dispatcher::new(api, self.handlers, self.error_strategy))
     }
