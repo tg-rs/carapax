@@ -1,3 +1,4 @@
+use crate::context::Context;
 use failure::Error;
 use futures::{future, Future, Poll};
 use tgbot::types::Update;
@@ -56,14 +57,14 @@ impl Future for MiddlewareFuture {
 }
 
 /// Middleware handler
-pub trait Middleware<C> {
+pub trait Middleware {
     /// Called before all handlers
-    fn before(&mut self, _context: &mut C, _update: &Update) -> MiddlewareFuture {
+    fn before(&mut self, _context: &mut Context, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 
     /// Called after all handlers
-    fn after(&mut self, _context: &mut C, _update: &Update) -> MiddlewareFuture {
+    fn after(&mut self, _context: &mut Context, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue.into()
     }
 }
@@ -111,21 +112,27 @@ mod tests {
         after_result: MiddlewareResult,
     }
 
-    impl Middleware<Counter> for MockMiddleware {
-        fn before(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
-            context.inc_calls();
+    impl Middleware for MockMiddleware {
+        fn before(&mut self, context: &mut Context, _update: &Update) -> MiddlewareFuture {
+            context.get::<Counter>().inc_calls();
             self.before_result.into()
         }
 
-        fn after(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
-            context.inc_calls();
+        fn after(&mut self, context: &mut Context, _update: &Update) -> MiddlewareFuture {
+            context.get::<Counter>().inc_calls();
             self.after_result.into()
         }
     }
 
-    fn handle_message(context: &mut Counter, _message: &Message) -> HandlerFuture {
-        context.inc_calls();
+    fn handle_message(context: &mut Context, _message: &Message) -> HandlerFuture {
+        context.get::<Counter>().inc_calls();
         ().into()
+    }
+
+    fn create_context() -> Context {
+        let mut context = Context::default();
+        context.set(Counter::new());
+        context
     }
 
     #[test]
@@ -163,12 +170,12 @@ mod tests {
                 }),
             ],
             vec![Handler::message(handle_message)],
-            Counter::new(),
+            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
         dispatcher.dispatch(update.clone()).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 5);
+        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 5);
 
         let mut dispatcher = Dispatcher::new(
             vec![
@@ -182,11 +189,11 @@ mod tests {
                 }),
             ],
             vec![Handler::message(handle_message)],
-            Counter::new(),
+            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
         dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 4);
+        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 4);
     }
 }

@@ -1,4 +1,5 @@
 use crate::{
+    context::Context,
     dispatcher::{Dispatcher, ErrorStrategy},
     handler::Handler,
     middleware::Middleware,
@@ -7,21 +8,21 @@ use futures::Future;
 use tgbot::{handle_updates, UpdateMethod};
 
 /// A Telegram Bot App
-pub struct App<C> {
-    context: C,
-    middlewares: Vec<Box<Middleware<C> + Send + Sync>>,
+pub struct App {
+    context: Context,
+    middlewares: Vec<Box<Middleware + Send + Sync>>,
     middleware_error_strategy: ErrorStrategy,
-    handlers: Vec<Handler<C>>,
+    handlers: Vec<Handler>,
     handler_error_strategy: ErrorStrategy,
 }
 
-impl<C> App<C> {
+impl App {
     /// Creates a new app
     ///
     /// # Arguments
     ///
     /// * context - Any type you want to use as context
-    pub fn new(context: C) -> Self {
+    pub fn new(context: Context) -> Self {
         App {
             middlewares: vec![],
             middleware_error_strategy: ErrorStrategy::Abort,
@@ -52,21 +53,27 @@ impl<C> App<C> {
     /// Add middleware handler
     pub fn add_middleware<M>(mut self, middleware: M) -> Self
     where
-        M: Middleware<C> + Send + Sync + 'static,
+        M: Middleware + Send + Sync + 'static,
     {
         self.middlewares.push(Box::new(middleware));
         self
     }
 
     /// Add a regular handler
-    pub fn add_handler(mut self, handler: Handler<C>) -> Self {
+    pub fn add_handler(mut self, handler: Handler) -> Self {
         self.handlers.push(handler);
         self
     }
+
+    /// Run app
+    pub fn run(self, method: UpdateMethod) -> impl Future<Item = (), Error = ()> {
+        let dispatcher: Dispatcher = self.into();
+        handle_updates(method, dispatcher)
+    }
 }
 
-impl<C> Into<Dispatcher<C>> for App<C> {
-    fn into(self: App<C>) -> Dispatcher<C> {
+impl Into<Dispatcher> for App {
+    fn into(self: App) -> Dispatcher {
         Dispatcher::new(
             self.middlewares,
             self.handlers,
@@ -74,16 +81,5 @@ impl<C> Into<Dispatcher<C>> for App<C> {
             self.middleware_error_strategy,
             self.handler_error_strategy,
         )
-    }
-}
-
-impl<C> App<C>
-where
-    C: Send + Sync + 'static,
-{
-    /// Run app
-    pub fn run(self, method: UpdateMethod) -> impl Future<Item = (), Error = ()> {
-        let dispatcher: Dispatcher<C> = self.into();
-        handle_updates(method, dispatcher)
     }
 }

@@ -1,4 +1,5 @@
 use crate::{
+    context::Context,
     handler::{Handler, HandlerFuture},
     middleware::{Middleware, MiddlewareFuture, MiddlewareResult},
 };
@@ -16,19 +17,19 @@ pub enum ErrorStrategy {
     Abort,
 }
 
-pub(crate) struct Dispatcher<C> {
-    middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
-    handlers: Arc<Mutex<Vec<Handler<C>>>>,
-    pub(crate) context: Arc<Mutex<C>>,
+pub(crate) struct Dispatcher {
+    middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
+    handlers: Arc<Mutex<Vec<Handler>>>,
+    pub(crate) context: Arc<Mutex<Context>>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
 }
 
-impl<C> Dispatcher<C> {
+impl Dispatcher {
     pub(crate) fn new(
-        middlewares: Vec<Box<Middleware<C> + Send + Sync>>,
-        handlers: Vec<Handler<C>>,
-        context: C,
+        middlewares: Vec<Box<Middleware + Send + Sync>>,
+        handlers: Vec<Handler>,
+        context: Context,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
     ) -> Self {
@@ -41,7 +42,7 @@ impl<C> Dispatcher<C> {
         }
     }
 
-    pub(crate) fn dispatch(&mut self, update: Update) -> DispatcherFuture<C> {
+    pub(crate) fn dispatch(&mut self, update: Update) -> DispatcherFuture {
         DispatcherFuture::new(
             self.middlewares.clone(),
             self.handlers.clone(),
@@ -53,10 +54,7 @@ impl<C> Dispatcher<C> {
     }
 }
 
-impl<C> UpdateHandler for Dispatcher<C>
-where
-    C: Send + Sync + 'static,
-{
+impl UpdateHandler for Dispatcher {
     fn handle(&mut self, update: Update) {
         tokio_executor::spawn(self.dispatch(update).then(|r| {
             if let Err(e) = r {
@@ -68,10 +66,10 @@ where
 }
 
 #[must_use = "futures do nothing unless polled"]
-pub(crate) struct DispatcherFuture<C> {
-    middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
-    handlers: Arc<Mutex<Vec<Handler<C>>>>,
-    context: Arc<Mutex<C>>,
+pub(crate) struct DispatcherFuture {
+    middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
+    handlers: Arc<Mutex<Vec<Handler>>>,
+    context: Arc<Mutex<Context>>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
     update: Update,
@@ -86,15 +84,15 @@ enum DispatcherFutureState {
     After(usize),
 }
 
-impl<C> DispatcherFuture<C> {
+impl DispatcherFuture {
     fn new(
-        middlewares: Arc<Mutex<Vec<Box<Middleware<C> + Send + Sync>>>>,
-        handlers: Arc<Mutex<Vec<Handler<C>>>>,
-        context: Arc<Mutex<C>>,
+        middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
+        handlers: Arc<Mutex<Vec<Handler>>>,
+        context: Arc<Mutex<Context>>,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
         update: Update,
-    ) -> DispatcherFuture<C> {
+    ) -> DispatcherFuture {
         DispatcherFuture {
             middlewares,
             handlers,
@@ -243,7 +241,7 @@ impl<C> DispatcherFuture<C> {
     }
 }
 
-impl<C> Future for DispatcherFuture<C> {
+impl Future for DispatcherFuture {
     type Item = ();
     type Error = Error;
 
@@ -291,21 +289,27 @@ mod tests {
 
     struct ErrorMiddleware;
 
-    impl Middleware<Counter> for ErrorMiddleware {
-        fn before(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
-            context.inc_calls();
+    impl Middleware for ErrorMiddleware {
+        fn before(&mut self, context: &mut Context, _update: &Update) -> MiddlewareFuture {
+            context.get::<Counter>().inc_calls();
             Err(ErrorMock).into()
         }
 
-        fn after(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
-            context.inc_calls();
+        fn after(&mut self, context: &mut Context, _update: &Update) -> MiddlewareFuture {
+            context.get::<Counter>().inc_calls();
             Err(ErrorMock).into()
         }
     }
 
-    fn handle_update_error(context: &mut Counter, _update: &Update) -> HandlerFuture {
-        context.inc_calls();
+    fn handle_update_error(context: &mut Context, _update: &Update) -> HandlerFuture {
+        context.get::<Counter>().inc_calls();
         Err(ErrorMock).into()
+    }
+
+    fn create_context() -> Context {
+        let mut context = Context::default();
+        context.set(Counter::new());
+        context
     }
 
     #[test]
@@ -327,33 +331,33 @@ mod tests {
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
-            Counter::new(),
+            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
-        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 1);
+        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 1);
 
         // Aborted on handler call
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
-            Counter::new(),
+            create_context(),
             ErrorStrategy::Ignore,
             ErrorStrategy::Abort,
         );
         dispatcher.dispatch(update.clone()).wait().unwrap_err();
-        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 3);
+        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 3);
 
         // Ignore all errors
         let mut dispatcher = Dispatcher::new(
             vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
             vec![Handler::update(handle_update_error)],
-            Counter::new(),
+            create_context(),
             ErrorStrategy::Ignore,
             ErrorStrategy::Ignore,
         );
         dispatcher.dispatch(update.clone()).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 5);
+        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 5);
     }
 }
