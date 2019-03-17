@@ -1,42 +1,42 @@
+use crate::context::Context;
 use failure::Error;
 use futures::{future, Future, Poll};
 use tgbot::types::Update;
 
 /// Result of a middleware
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub enum MiddlewareResult {
     /// Continue propagation
     ///
     /// Next middleware and all handlers (if exists) will run after current has finished
-    Continue,
+    Continue(Context),
     /// Stop propagation
     ///
     /// Next middleware and all handlers (if exists) will not run after current has finished
-    Stop,
+    Stop(Context),
 }
 
 /// A middleware future
 #[must_use = "futures do nothing unless polled"]
 pub struct MiddlewareFuture {
-    inner: Box<Future<Item = MiddlewareResult, Error = Error> + Send>,
+    inner: Box<Future<Item = MiddlewareResult, Error = (Error, Context)> + Send>,
 }
 
 impl MiddlewareFuture {
     /// Creates a new middleware future
     pub fn new<F>(f: F) -> MiddlewareFuture
     where
-        F: Future<Item = MiddlewareResult, Error = Error> + Send + 'static,
+        F: Future<Item = MiddlewareResult, Error = (Error, Context)> + Send + 'static,
     {
         MiddlewareFuture { inner: Box::new(f) }
     }
 }
 
-impl<E> From<Result<MiddlewareResult, E>> for MiddlewareFuture
+impl<E> From<Result<MiddlewareResult, (E, Context)>> for MiddlewareFuture
 where
     E: Into<Error>,
 {
-    fn from(result: Result<MiddlewareResult, E>) -> Self {
-        MiddlewareFuture::new(future::result(result.map_err(Into::into)))
+    fn from(result: Result<MiddlewareResult, (E, Context)>) -> Self {
+        MiddlewareFuture::new(future::result(result.map_err(|(err, context)| (err.into(), context))))
     }
 }
 
@@ -48,7 +48,7 @@ impl From<MiddlewareResult> for MiddlewareFuture {
 
 impl Future for MiddlewareFuture {
     type Item = MiddlewareResult;
-    type Error = Error;
+    type Error = (Error, Context);
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.inner.poll()
@@ -56,15 +56,15 @@ impl Future for MiddlewareFuture {
 }
 
 /// Middleware handler
-pub trait Middleware<C> {
+pub trait Middleware {
     /// Called before all handlers
-    fn before(&mut self, _context: &mut C, _update: &Update) -> MiddlewareFuture {
-        MiddlewareResult::Continue.into()
+    fn before(&self, context: Context, _update: &Update) -> MiddlewareFuture {
+        MiddlewareResult::Continue(context).into()
     }
 
     /// Called after all handlers
-    fn after(&mut self, _context: &mut C, _update: &Update) -> MiddlewareFuture {
-        MiddlewareResult::Continue.into()
+    fn after(&self, context: Context, _update: &Update) -> MiddlewareFuture {
+        MiddlewareResult::Continue(context).into()
     }
 }
 
@@ -80,7 +80,7 @@ mod tests {
         atomic::{AtomicUsize, Ordering},
         Arc,
     };
-    use tgbot::types::Message;
+    use tgbot::{types::Message, Api};
 
     struct Counter {
         calls: Arc<AtomicUsize>,
@@ -107,25 +107,44 @@ mod tests {
     }
 
     struct MockMiddleware {
-        before_result: MiddlewareResult,
-        after_result: MiddlewareResult,
+        continue_before: bool,
+        continue_after: bool,
     }
 
-    impl Middleware<Counter> for MockMiddleware {
-        fn before(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
-            context.inc_calls();
-            self.before_result.into()
+    impl Middleware for MockMiddleware {
+        fn before(&self, context: Context, _update: &Update) -> MiddlewareFuture {
+            context.get::<Counter>().inc_calls();
+            if self.continue_before {
+                MiddlewareResult::Continue(context)
+            } else {
+                MiddlewareResult::Stop(context)
+            }
+            .into()
         }
 
-        fn after(&mut self, context: &mut Counter, _update: &Update) -> MiddlewareFuture {
-            context.inc_calls();
-            self.after_result.into()
+        fn after(&self, context: Context, _update: &Update) -> MiddlewareFuture {
+            context.get::<Counter>().inc_calls();
+            if self.continue_after {
+                MiddlewareResult::Continue(context)
+            } else {
+                MiddlewareResult::Stop(context)
+            }
+            .into()
         }
     }
 
-    fn handle_message(context: &mut Counter, _message: &Message) -> HandlerFuture {
-        context.inc_calls();
-        ().into()
+    fn handle_message(context: Context, _message: &Message) -> HandlerFuture {
+        context.get::<Counter>().inc_calls();
+        context.into()
+    }
+
+    struct CounterMiddleware;
+
+    impl Middleware for CounterMiddleware {
+        fn before(&self, mut context: Context, _update: &Update) -> MiddlewareFuture {
+            context.set(Counter::new());
+            MiddlewareResult::Continue(context).into()
+        }
     }
 
     #[test]
@@ -143,50 +162,52 @@ mod tests {
         }"#,
         );
 
-        let mut dispatcher = Dispatcher::new(
+        let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![
+                Box::new(CounterMiddleware),
                 Box::new(MockMiddleware {
-                    before_result: MiddlewareResult::Continue,
-                    after_result: MiddlewareResult::Continue,
+                    continue_before: true,
+                    continue_after: true,
                 }),
                 Box::new(MockMiddleware {
-                    before_result: MiddlewareResult::Stop,
-                    after_result: MiddlewareResult::Continue,
+                    continue_before: false,
+                    continue_after: true,
                 }),
                 Box::new(MockMiddleware {
-                    before_result: MiddlewareResult::Continue,
-                    after_result: MiddlewareResult::Stop,
+                    continue_before: true,
+                    continue_after: false,
                 }),
                 Box::new(MockMiddleware {
-                    before_result: MiddlewareResult::Continue,
-                    after_result: MiddlewareResult::Continue,
+                    continue_before: true,
+                    continue_after: false,
                 }),
             ],
             vec![Handler::message(handle_message)],
-            Counter::new(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
-        dispatcher.dispatch(update.clone()).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 5);
+        let context = dispatcher.dispatch(update.clone()).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 5);
 
-        let mut dispatcher = Dispatcher::new(
+        let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![
+                Box::new(CounterMiddleware),
                 Box::new(MockMiddleware {
-                    before_result: MiddlewareResult::Continue,
-                    after_result: MiddlewareResult::Stop,
+                    continue_before: true,
+                    continue_after: false,
                 }),
                 Box::new(MockMiddleware {
-                    before_result: MiddlewareResult::Continue,
-                    after_result: MiddlewareResult::Continue,
+                    continue_before: true,
+                    continue_after: true,
                 }),
             ],
             vec![Handler::message(handle_message)],
-            Counter::new(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
-        dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get_calls(), 4);
+        let context = dispatcher.dispatch(update).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 4);
     }
 }
