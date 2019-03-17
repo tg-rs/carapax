@@ -20,7 +20,6 @@ pub enum ErrorStrategy {
 pub(crate) struct Dispatcher {
     middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
     handlers: Arc<Mutex<Vec<Handler>>>,
-    pub(crate) context: Arc<Mutex<Context>>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
 }
@@ -29,24 +28,22 @@ impl Dispatcher {
     pub(crate) fn new(
         middlewares: Vec<Box<Middleware + Send + Sync>>,
         handlers: Vec<Handler>,
-        context: Context,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
     ) -> Self {
         Self {
             middlewares: Arc::new(Mutex::new(middlewares)),
             handlers: Arc::new(Mutex::new(handlers)),
-            context: Arc::new(Mutex::new(context)),
             middleware_error_strategy,
             handler_error_strategy,
         }
     }
 
-    pub(crate) fn dispatch(&mut self, update: Update) -> DispatcherFuture {
+    pub(crate) fn dispatch(&self, update: Update) -> DispatcherFuture {
         DispatcherFuture::new(
             self.middlewares.clone(),
             self.handlers.clone(),
-            self.context.clone(),
+            Context::default(),
             self.middleware_error_strategy,
             self.handler_error_strategy,
             update,
@@ -57,7 +54,7 @@ impl Dispatcher {
 impl UpdateHandler for Dispatcher {
     fn handle(&mut self, update: Update) {
         tokio_executor::spawn(self.dispatch(update).then(|r| {
-            if let Err(e) = r {
+            if let Err((e, _context)) = r {
                 log::error!("Failed to dispatch update: {:?}", e);
             }
             Ok(())
@@ -69,7 +66,7 @@ impl UpdateHandler for Dispatcher {
 pub(crate) struct DispatcherFuture {
     middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
     handlers: Arc<Mutex<Vec<Handler>>>,
-    context: Arc<Mutex<Context>>,
+    context: Option<Context>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
     update: Update,
@@ -84,11 +81,17 @@ enum DispatcherFutureState {
     After(usize),
 }
 
+macro_rules! context_lost {
+    () => {
+        panic!("Surprise! Context was lost...");
+    };
+}
+
 impl DispatcherFuture {
     fn new(
         middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
         handlers: Arc<Mutex<Vec<Handler>>>,
-        context: Arc<Mutex<Context>>,
+        context: Context,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
         update: Update,
@@ -96,7 +99,7 @@ impl DispatcherFuture {
         DispatcherFuture {
             middlewares,
             handlers,
-            context,
+            context: Some(context),
             middleware_error_strategy,
             handler_error_strategy,
             update,
@@ -106,16 +109,18 @@ impl DispatcherFuture {
         }
     }
 
-    fn handle_before(&mut self, idx: usize) -> Poll<(), Error> {
+    fn handle_before(&mut self, idx: usize) -> Poll<Context, (Error, Context)> {
         match self.middleware {
             Some(ref mut f) => match f.poll() {
-                Ok(Async::Ready(MiddlewareResult::Continue)) => {
+                Ok(Async::Ready(MiddlewareResult::Continue(context))) => {
+                    self.context = Some(context);
                     self.state = DispatcherFutureState::Before(idx + 1);
                     self.middleware = None;
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
-                Ok(Async::Ready(MiddlewareResult::Stop)) => {
+                Ok(Async::Ready(MiddlewareResult::Stop(context))) => {
+                    self.context = Some(context);
                     self.state = DispatcherFutureState::After(0);
                     self.middleware = None;
                     task::current().notify();
@@ -125,10 +130,11 @@ impl DispatcherFuture {
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
-                Err(err) => match self.middleware_error_strategy {
-                    ErrorStrategy::Abort => Err(err),
+                Err((err, context)) => match self.middleware_error_strategy {
+                    ErrorStrategy::Abort => Err((err, context)),
                     ErrorStrategy::Ignore => {
                         log::error!("An error has occurred in before middleware: {:?}", err);
+                        self.context = Some(context);
                         self.state = DispatcherFutureState::Before(idx + 1);
                         self.middleware = None;
                         task::current().notify();
@@ -138,10 +144,13 @@ impl DispatcherFuture {
             },
             None => match self.middlewares.lock().unwrap().get_mut(idx) {
                 Some(ref mut middleware) => {
-                    let context = self.context.clone();
-                    self.middleware = Some(middleware.before(&mut context.lock().unwrap(), &self.update));
-                    task::current().notify();
-                    Ok(Async::NotReady)
+                    if let Some(context) = self.context.take() {
+                        self.middleware = Some(middleware.before(context, &self.update));
+                        task::current().notify();
+                        Ok(Async::NotReady)
+                    } else {
+                        context_lost!()
+                    }
                 }
                 None => {
                     self.state = DispatcherFutureState::Main(0);
@@ -153,10 +162,11 @@ impl DispatcherFuture {
         }
     }
 
-    fn handle_main(&mut self, idx: usize) -> Poll<(), Error> {
+    fn handle_main(&mut self, idx: usize) -> Poll<Context, (Error, Context)> {
         match self.handler {
             Some(ref mut f) => match f.poll() {
-                Ok(Async::Ready(())) => {
+                Ok(Async::Ready(context)) => {
+                    self.context = Some(context);
                     self.state = DispatcherFutureState::Main(idx + 1);
                     self.handler = None;
                     task::current().notify();
@@ -166,10 +176,11 @@ impl DispatcherFuture {
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
-                Err(err) => match self.handler_error_strategy {
-                    ErrorStrategy::Abort => Err(err),
+                Err((err, context)) => match self.handler_error_strategy {
+                    ErrorStrategy::Abort => Err((err, context)),
                     ErrorStrategy::Ignore => {
                         log::error!("An error has occurred in handler: {:?}", err);
+                        self.context = Some(context);
                         self.state = DispatcherFutureState::Main(idx + 1);
                         self.handler = None;
                         task::current().notify();
@@ -179,10 +190,13 @@ impl DispatcherFuture {
             },
             None => match self.handlers.lock().unwrap().get_mut(idx) {
                 Some(handler) => {
-                    let context = self.context.clone();
-                    self.handler = Some(handler.handle(&mut context.lock().unwrap(), &self.update));
-                    task::current().notify();
-                    Ok(Async::NotReady)
+                    if let Some(context) = self.context.take() {
+                        self.handler = Some(handler.handle(context, &self.update));
+                        task::current().notify();
+                        Ok(Async::NotReady)
+                    } else {
+                        context_lost!()
+                    }
                 }
                 None => {
                     self.state = DispatcherFutureState::After(0);
@@ -194,24 +208,26 @@ impl DispatcherFuture {
         }
     }
 
-    fn handle_after(&mut self, idx: usize) -> Poll<(), Error> {
+    fn handle_after(&mut self, idx: usize) -> Poll<Context, (Error, Context)> {
         match self.middleware {
             Some(ref mut f) => match f.poll() {
-                Ok(Async::Ready(MiddlewareResult::Continue)) => {
+                Ok(Async::Ready(MiddlewareResult::Continue(context))) => {
+                    self.context = Some(context);
                     self.state = DispatcherFutureState::After(idx + 1);
                     self.middleware = None;
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
-                Ok(Async::Ready(MiddlewareResult::Stop)) => Ok(Async::Ready(())),
+                Ok(Async::Ready(MiddlewareResult::Stop(context))) => Ok(Async::Ready(context)),
                 Ok(Async::NotReady) => {
                     task::current().notify();
                     Ok(Async::NotReady)
                 }
-                Err(err) => match self.middleware_error_strategy {
-                    ErrorStrategy::Abort => Err(err),
+                Err((err, context)) => match self.middleware_error_strategy {
+                    ErrorStrategy::Abort => Err((err, context)),
                     ErrorStrategy::Ignore => {
                         log::error!("An error has occurred in after middleware: {:?}", err);
+                        self.context = Some(context);
                         self.state = DispatcherFutureState::After(idx + 1);
                         self.middleware = None;
                         task::current().notify();
@@ -219,19 +235,24 @@ impl DispatcherFuture {
                     }
                 },
             },
-            None => match self.middlewares.lock().unwrap().get_mut(idx) {
-                Some(ref mut middleware) => {
-                    let context = self.context.clone();
-                    self.middleware = Some(middleware.after(&mut context.lock().unwrap(), &self.update));
-                    task::current().notify();
-                    Ok(Async::NotReady)
+            None => {
+                if let Some(context) = self.context.take() {
+                    match self.middlewares.lock().unwrap().get_mut(idx) {
+                        Some(ref mut middleware) => {
+                            self.middleware = Some(middleware.after(context, &self.update));
+                            task::current().notify();
+                            Ok(Async::NotReady)
+                        }
+                        None => Ok(Async::Ready(context)),
+                    }
+                } else {
+                    context_lost!()
                 }
-                None => Ok(Async::Ready(())),
-            },
+            }
         }
     }
 
-    fn handle(&mut self) -> Poll<(), Error> {
+    fn handle(&mut self) -> Poll<Context, (Error, Context)> {
         use self::DispatcherFutureState::*;
         match self.state {
             Before(idx) => self.handle_before(idx),
@@ -242,8 +263,8 @@ impl DispatcherFuture {
 }
 
 impl Future for DispatcherFuture {
-    type Item = ();
-    type Error = Error;
+    type Item = Context;
+    type Error = (Error, Context);
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.handle()
@@ -290,26 +311,29 @@ mod tests {
     struct ErrorMiddleware;
 
     impl Middleware for ErrorMiddleware {
-        fn before(&mut self, context: &mut Context, _update: &Update) -> MiddlewareFuture {
+        fn before(&mut self, context: Context, _update: &Update) -> MiddlewareFuture {
             context.get::<Counter>().inc_calls();
-            Err(ErrorMock).into()
+            Err((ErrorMock, context)).into()
         }
 
-        fn after(&mut self, context: &mut Context, _update: &Update) -> MiddlewareFuture {
+        fn after(&mut self, context: Context, _update: &Update) -> MiddlewareFuture {
             context.get::<Counter>().inc_calls();
-            Err(ErrorMock).into()
+            Err((ErrorMock, context)).into()
         }
     }
 
-    fn handle_update_error(context: &mut Context, _update: &Update) -> HandlerFuture {
+    fn handle_update_error(context: Context, _update: &Update) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        Err(ErrorMock).into()
+        Err((ErrorMock, context)).into()
     }
 
-    fn create_context() -> Context {
-        let mut context = Context::default();
-        context.set(Counter::new());
-        context
+    struct CounterMiddleware;
+
+    impl Middleware for CounterMiddleware {
+        fn before(&mut self, mut context: Context, _update: &Update) -> MiddlewareFuture {
+            context.set(Counter::new());
+            MiddlewareResult::Continue(context).into()
+        }
     }
 
     #[test]
@@ -328,36 +352,45 @@ mod tests {
         );
 
         // Aborted on first call
-        let mut dispatcher = Dispatcher::new(
-            vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
+        let dispatcher = Dispatcher::new(
+            vec![
+                Box::new(CounterMiddleware),
+                Box::new(ErrorMiddleware),
+                Box::new(ErrorMiddleware),
+            ],
             vec![Handler::update(handle_update_error)],
-            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
-        dispatcher.dispatch(update.clone()).wait().unwrap_err();
-        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 1);
+        let (_err, context) = dispatcher.dispatch(update.clone()).wait().unwrap_err();
+        assert_eq!(context.get::<Counter>().get_calls(), 1);
 
         // Aborted on handler call
-        let mut dispatcher = Dispatcher::new(
-            vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
+        let dispatcher = Dispatcher::new(
+            vec![
+                Box::new(CounterMiddleware),
+                Box::new(ErrorMiddleware),
+                Box::new(ErrorMiddleware),
+            ],
             vec![Handler::update(handle_update_error)],
-            create_context(),
             ErrorStrategy::Ignore,
             ErrorStrategy::Abort,
         );
-        dispatcher.dispatch(update.clone()).wait().unwrap_err();
-        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 3);
+        let (_err, context) = dispatcher.dispatch(update.clone()).wait().unwrap_err();
+        assert_eq!(context.get::<Counter>().get_calls(), 3);
 
         // Ignore all errors
-        let mut dispatcher = Dispatcher::new(
-            vec![Box::new(ErrorMiddleware), Box::new(ErrorMiddleware)],
+        let dispatcher = Dispatcher::new(
+            vec![
+                Box::new(CounterMiddleware),
+                Box::new(ErrorMiddleware),
+                Box::new(ErrorMiddleware),
+            ],
             vec![Handler::update(handle_update_error)],
-            create_context(),
             ErrorStrategy::Ignore,
             ErrorStrategy::Ignore,
         );
-        dispatcher.dispatch(update.clone()).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 5);
+        let context = dispatcher.dispatch(update.clone()).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 5);
     }
 }

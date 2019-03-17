@@ -1,5 +1,4 @@
 use crate::{
-    context::Context,
     dispatcher::{Dispatcher, ErrorStrategy},
     handler::Handler,
     middleware::Middleware,
@@ -9,26 +8,26 @@ use tgbot::{handle_updates, UpdateMethod};
 
 /// A Telegram Bot App
 pub struct App {
-    context: Context,
     middlewares: Vec<Box<Middleware + Send + Sync>>,
     middleware_error_strategy: ErrorStrategy,
     handlers: Vec<Handler>,
     handler_error_strategy: ErrorStrategy,
 }
 
+impl Default for App {
+    fn default() -> App {
+        App::new()
+    }
+}
+
 impl App {
     /// Creates a new app
-    ///
-    /// # Arguments
-    ///
-    /// * context - Any type you want to use as context
-    pub fn new(context: Context) -> Self {
+    pub fn new() -> Self {
         App {
             middlewares: vec![],
             middleware_error_strategy: ErrorStrategy::Abort,
             handlers: vec![],
             handler_error_strategy: ErrorStrategy::Abort,
-            context,
         }
     }
 
@@ -67,19 +66,14 @@ impl App {
 
     /// Run app
     pub fn run(self, method: UpdateMethod) -> impl Future<Item = (), Error = ()> {
-        let dispatcher: Dispatcher = self.into();
-        handle_updates(method, dispatcher)
-    }
-}
-
-impl Into<Dispatcher> for App {
-    fn into(self: App) -> Dispatcher {
-        Dispatcher::new(
-            self.middlewares,
-            self.handlers,
-            self.context,
-            self.middleware_error_strategy,
-            self.handler_error_strategy,
+        handle_updates(
+            method,
+            Dispatcher::new(
+                self.middlewares,
+                self.handlers,
+                self.middleware_error_strategy,
+                self.handler_error_strategy,
+            ),
         )
     }
 }

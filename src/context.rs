@@ -4,6 +4,7 @@ use anymap::{
 };
 
 /// Context for handlers
+#[derive(Debug)]
 pub struct Context {
     inner: Map<Any + Send + Sync>,
 }

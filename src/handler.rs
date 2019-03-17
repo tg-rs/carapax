@@ -85,7 +85,7 @@ enum HandlerKind {
 }
 
 impl Handler {
-    pub(super) fn handle(&mut self, context: &mut Context, update: &Update) -> HandlerFuture {
+    pub(super) fn handle(&mut self, context: Context, update: &Update) -> HandlerFuture {
         macro_rules! handle {
             ($kind:ident($val:ident)) => {
                 if let HandlerKind::$kind(ref mut handler) = self.kind {
@@ -107,44 +107,44 @@ impl Handler {
             UpdateKind::ShippingQuery(ref val) => handle!(ShippingQuery(val)),
             UpdateKind::PreCheckoutQuery(ref val) => handle!(PreCheckoutQuery(val)),
         }
-        ().into()
+        context.into()
     }
 }
 
 /// A handler future
 #[must_use = "futures do nothing unless polled"]
 pub struct HandlerFuture {
-    inner: Box<Future<Item = (), Error = Error> + Send>,
+    inner: Box<Future<Item = Context, Error = (Error, Context)> + Send>,
 }
 
 impl HandlerFuture {
     /// Creates a new handler future
     pub fn new<F>(f: F) -> HandlerFuture
     where
-        F: Future<Item = (), Error = Error> + Send + 'static,
+        F: Future<Item = Context, Error = (Error, Context)> + Send + 'static,
     {
         HandlerFuture { inner: Box::new(f) }
     }
 }
 
-impl From<()> for HandlerFuture {
-    fn from(_: ()) -> HandlerFuture {
-        HandlerFuture::new(future::ok(()))
+impl From<Context> for HandlerFuture {
+    fn from(context: Context) -> HandlerFuture {
+        HandlerFuture::new(future::ok(context))
     }
 }
 
-impl<E> From<Result<(), E>> for HandlerFuture
+impl<E> From<Result<Context, (E, Context)>> for HandlerFuture
 where
     E: Into<Error>,
 {
-    fn from(result: Result<(), E>) -> Self {
-        HandlerFuture::new(future::result(result.map_err(Into::into)))
+    fn from(result: Result<Context, (E, Context)>) -> Self {
+        HandlerFuture::new(future::result(result.map_err(|(err, context)| (err.into(), context))))
     }
 }
 
 impl Future for HandlerFuture {
-    type Item = ();
-    type Error = Error;
+    type Item = Context;
+    type Error = (Error, Context);
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.inner.poll()
@@ -155,10 +155,10 @@ macro_rules! impl_func {
     ($handler:ident($arg:ident)) => {
         impl<F, R> $handler for F
         where
-            F: FnMut(&mut Context, &$arg) -> R,
+            F: FnMut(Context, &$arg) -> R,
             R: Into<HandlerFuture>,
         {
-            fn handle(&mut self, context: &mut Context, arg: &$arg) -> HandlerFuture {
+            fn handle(&mut self, context: Context, arg: &$arg) -> HandlerFuture {
                 (self)(context, arg).into()
             }
         }
@@ -168,7 +168,7 @@ macro_rules! impl_func {
 /// A regular message handler
 pub trait MessageHandler {
     /// Handles a message
-    fn handle(&mut self, context: &mut Context, message: &Message) -> HandlerFuture;
+    fn handle(&mut self, context: Context, message: &Message) -> HandlerFuture;
 }
 
 impl_func!(MessageHandler(Message));
@@ -176,7 +176,7 @@ impl_func!(MessageHandler(Message));
 /// An inline query handler
 pub trait InlineQueryHandler {
     /// Handles a query
-    fn handle(&mut self, context: &mut Context, query: &InlineQuery) -> HandlerFuture;
+    fn handle(&mut self, context: Context, query: &InlineQuery) -> HandlerFuture;
 }
 
 impl_func!(InlineQueryHandler(InlineQuery));
@@ -184,7 +184,7 @@ impl_func!(InlineQueryHandler(InlineQuery));
 /// A chosen inline result handler
 pub trait ChosenInlineResultHandler {
     /// Handles a result
-    fn handle(&mut self, context: &mut Context, result: &ChosenInlineResult) -> HandlerFuture;
+    fn handle(&mut self, context: Context, result: &ChosenInlineResult) -> HandlerFuture;
 }
 
 impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
@@ -192,7 +192,7 @@ impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
 /// A callback query handler
 pub trait CallbackQueryHandler {
     /// Handles a query
-    fn handle(&mut self, context: &mut Context, query: &CallbackQuery) -> HandlerFuture;
+    fn handle(&mut self, context: Context, query: &CallbackQuery) -> HandlerFuture;
 }
 
 impl_func!(CallbackQueryHandler(CallbackQuery));
@@ -200,7 +200,7 @@ impl_func!(CallbackQueryHandler(CallbackQuery));
 /// A shipping query handler
 pub trait ShippingQueryHandler {
     /// Handles a query
-    fn handle(&mut self, context: &mut Context, query: &ShippingQuery) -> HandlerFuture;
+    fn handle(&mut self, context: Context, query: &ShippingQuery) -> HandlerFuture;
 }
 
 impl_func!(ShippingQueryHandler(ShippingQuery));
@@ -208,7 +208,7 @@ impl_func!(ShippingQueryHandler(ShippingQuery));
 /// A pre checkout query handler
 pub trait PreCheckoutQueryHandler {
     /// Handles a query
-    fn handle(&mut self, context: &mut Context, query: &PreCheckoutQuery) -> HandlerFuture;
+    fn handle(&mut self, context: Context, query: &PreCheckoutQuery) -> HandlerFuture;
 }
 
 impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
@@ -216,7 +216,7 @@ impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
 /// A regular update handler
 pub trait UpdateHandler {
     /// Handles an update
-    fn handle(&mut self, context: &mut Context, update: &Update) -> HandlerFuture;
+    fn handle(&mut self, context: Context, update: &Update) -> HandlerFuture;
 }
 
 impl_func!(UpdateHandler(Update));
@@ -278,7 +278,7 @@ pub enum CommandError {
 }
 
 impl MessageHandler for CommandsHandler {
-    fn handle(&mut self, context: &mut Context, message: &Message) -> HandlerFuture {
+    fn handle(&mut self, context: Context, message: &Message) -> HandlerFuture {
         match (&message.commands, message.get_text()) {
             (Some(ref commands), Some(ref text)) => {
                 // tgbot guarantees that commands will never be empty, but we must be sure
@@ -295,15 +295,15 @@ impl MessageHandler for CommandsHandler {
                             Some(handler) => handler.handle(context, message, args),
                             None => match self.not_found_handler {
                                 Some(ref mut handler) => handler.handle(context, message, args),
-                                None => ().into(),
+                                None => context.into(),
                             },
                         },
-                        Err(MismatchedQuotes) => Err(CommandError::MismatchedQuotes).into(),
+                        Err(MismatchedQuotes) => Err((CommandError::MismatchedQuotes, context)).into(),
                     },
-                    Err(err) => Err(CommandError::FromUtf16(err)).into(),
+                    Err(err) => Err((CommandError::FromUtf16(err), context)).into(),
                 }
             }
-            _ => ().into(),
+            _ => context.into(),
         }
     }
 }
@@ -311,15 +311,15 @@ impl MessageHandler for CommandsHandler {
 /// Actual command handler
 pub trait CommandHandler {
     /// Handles a command
-    fn handle(&mut self, context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture;
+    fn handle(&mut self, context: Context, message: &Message, args: Vec<String>) -> HandlerFuture;
 }
 
 impl<F, R> CommandHandler for F
 where
-    F: FnMut(&mut Context, &Message, Vec<String>) -> R,
+    F: FnMut(Context, &Message, Vec<String>) -> R,
     R: Into<HandlerFuture>,
 {
-    fn handle(&mut self, context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn handle(&mut self, context: Context, message: &Message, args: Vec<String>) -> HandlerFuture {
         (self)(context, message, args).into()
     }
 }
@@ -329,6 +329,7 @@ mod tests {
     use super::*;
 
     use crate::dispatcher::{Dispatcher, ErrorStrategy};
+    use crate::middleware::{Middleware, MiddlewareFuture, MiddlewareResult};
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -368,63 +369,65 @@ mod tests {
         }
     }
 
-    fn command_handler(context: &mut Context, _message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn command_handler(mut context: Context, _message: &Message, args: Vec<String>) -> HandlerFuture {
         context.get_mut::<Args>().extend(args);
-        ().into()
+        context.into()
     }
 
-    fn handle_message(context: &mut Context, _message: &Message) -> HandlerFuture {
+    fn handle_message(context: Context, _message: &Message) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        ().into()
+        context.into()
     }
 
-    fn handle_inline_query(context: &mut Context, _query: &InlineQuery) -> HandlerFuture {
+    fn handle_inline_query(context: Context, _query: &InlineQuery) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        ().into()
+        context.into()
     }
 
-    fn handle_chose_inline_result(context: &mut Context, _result: &ChosenInlineResult) -> HandlerFuture {
+    fn handle_chose_inline_result(context: Context, _result: &ChosenInlineResult) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        ().into()
+        context.into()
     }
 
-    fn handle_callback_query(context: &mut Context, _query: &CallbackQuery) -> HandlerFuture {
+    fn handle_callback_query(context: Context, _query: &CallbackQuery) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        ().into()
+        context.into()
     }
 
-    fn handle_shipping_query(context: &mut Context, _query: &ShippingQuery) -> HandlerFuture {
+    fn handle_shipping_query(context: Context, _query: &ShippingQuery) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        ().into()
+        context.into()
     }
 
-    fn handle_precheckout_query(context: &mut Context, _query: &PreCheckoutQuery) -> HandlerFuture {
+    fn handle_precheckout_query(context: Context, _query: &PreCheckoutQuery) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        ().into()
+        context.into()
     }
 
-    fn handle_update(context: &mut Context, _update: &Update) -> HandlerFuture {
+    fn handle_update(context: Context, _update: &Update) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        ().into()
+        context.into()
     }
 
     fn parse_update(data: &str) -> Update {
         serde_json::from_str(data).unwrap()
     }
 
-    fn create_context() -> Context {
-        let mut context = Context::default();
-        context.set(Args::new());
-        context.set(Counter::new());
-        context
+    struct SetupContextMiddleware;
+
+    impl Middleware for SetupContextMiddleware {
+        fn before(&mut self, mut context: Context, _update: &Update) -> MiddlewareFuture {
+            context.set(Args::new());
+            context.set(Counter::new());
+            MiddlewareResult::Continue(context).into()
+        }
     }
 
     #[test]
     fn test_dispatch_message() {
-        let mut dispatcher = Dispatcher::new(
-            vec![],
+        let dispatcher = Dispatcher::new(
+            vec![Box::new(SetupContextMiddleware)],
             vec![Handler::message(handle_message), Handler::update(handle_update)],
-            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
@@ -472,20 +475,19 @@ mod tests {
             }"#,
         ] {
             let update = parse_update(data);
-            dispatcher.dispatch(update).wait().unwrap();
+            let context = dispatcher.dispatch(update).wait().unwrap();
+            assert_eq!(context.get::<Counter>().get_calls(), 2);
         }
-        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 8);
     }
 
     #[test]
     fn test_dispatch_inline_query() {
-        let mut dispatcher = Dispatcher::new(
-            vec![],
+        let dispatcher = Dispatcher::new(
+            vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::inline_query(handle_inline_query),
                 Handler::update(handle_update),
             ],
-            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
@@ -502,19 +504,18 @@ mod tests {
                 }
             "#,
         );
-        dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 2);
+        let context = dispatcher.dispatch(update).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
 
     #[test]
     fn test_dispatch_chosen_inline_result() {
-        let mut dispatcher = Dispatcher::new(
-            vec![],
+        let dispatcher = Dispatcher::new(
+            vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::chosen_inline_result(handle_chose_inline_result),
                 Handler::update(handle_update),
             ],
-            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
@@ -530,19 +531,18 @@ mod tests {
                 }
             "#,
         );
-        dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 2);
+        let context = dispatcher.dispatch(update).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
 
     #[test]
     fn test_dispatch_callback_query() {
-        let mut dispatcher = Dispatcher::new(
-            vec![],
+        let dispatcher = Dispatcher::new(
+            vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::callback_query(handle_callback_query),
                 Handler::update(handle_update),
             ],
-            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
@@ -557,19 +557,18 @@ mod tests {
                 }
             "#,
         );
-        dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 2);
+        let context = dispatcher.dispatch(update).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
 
     #[test]
     fn test_dispatch_shipping_query() {
-        let mut dispatcher = Dispatcher::new(
-            vec![],
+        let dispatcher = Dispatcher::new(
+            vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::shipping_query(handle_shipping_query),
                 Handler::update(handle_update),
             ],
-            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
@@ -593,19 +592,18 @@ mod tests {
                 }
             "#,
         );
-        dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 2);
+        let context = dispatcher.dispatch(update).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
 
     #[test]
     fn test_dispatch_pre_checkout_query() {
-        let mut dispatcher = Dispatcher::new(
-            vec![],
+        let dispatcher = Dispatcher::new(
+            vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::pre_checkout_query(handle_precheckout_query),
                 Handler::update(handle_update),
             ],
-            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
@@ -623,8 +621,8 @@ mod tests {
                 }
             "#,
         );
-        dispatcher.dispatch(update).wait().unwrap();
-        assert_eq!(dispatcher.context.lock().unwrap().get::<Counter>().get_calls(), 2);
+        let context = dispatcher.dispatch(update).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
 
     #[test]
@@ -645,15 +643,13 @@ mod tests {
             }"#,
         );
         let commands = CommandsHandler::default().add_handler("/testcommand", command_handler);
-        let mut dispatcher = Dispatcher::new(
-            vec![],
+        let dispatcher = Dispatcher::new(
+            vec![Box::new(SetupContextMiddleware)],
             vec![Handler::message(commands)],
-            create_context(),
             ErrorStrategy::Abort,
             ErrorStrategy::Abort,
         );
-        dispatcher.dispatch(update.clone()).wait().unwrap();
-        let context = dispatcher.context.lock().unwrap();
+        let context = dispatcher.dispatch(update.clone()).wait().unwrap();
         let args = context.get::<Args>();
         assert_eq!(args.items, vec![String::from("arg1 v"), String::from("arg2")]);
     }
