@@ -85,10 +85,10 @@ enum HandlerKind {
 }
 
 impl Handler {
-    pub(super) fn handle(&mut self, context: Context, update: &Update) -> HandlerFuture {
+    pub(super) fn handle(&self, context: Context, update: &Update) -> HandlerFuture {
         macro_rules! handle {
             ($kind:ident($val:ident)) => {
-                if let HandlerKind::$kind(ref mut handler) = self.kind {
+                if let HandlerKind::$kind(ref handler) = self.kind {
                     return handler.handle(context, $val);
                 }
             };
@@ -155,10 +155,10 @@ macro_rules! impl_func {
     ($handler:ident($arg:ident)) => {
         impl<F, R> $handler for F
         where
-            F: FnMut(Context, &$arg) -> R,
+            F: Fn(Context, &$arg) -> R,
             R: Into<HandlerFuture>,
         {
-            fn handle(&mut self, context: Context, arg: &$arg) -> HandlerFuture {
+            fn handle(&self, context: Context, arg: &$arg) -> HandlerFuture {
                 (self)(context, arg).into()
             }
         }
@@ -168,7 +168,7 @@ macro_rules! impl_func {
 /// A regular message handler
 pub trait MessageHandler {
     /// Handles a message
-    fn handle(&mut self, context: Context, message: &Message) -> HandlerFuture;
+    fn handle(&self, context: Context, message: &Message) -> HandlerFuture;
 }
 
 impl_func!(MessageHandler(Message));
@@ -176,7 +176,7 @@ impl_func!(MessageHandler(Message));
 /// An inline query handler
 pub trait InlineQueryHandler {
     /// Handles a query
-    fn handle(&mut self, context: Context, query: &InlineQuery) -> HandlerFuture;
+    fn handle(&self, context: Context, query: &InlineQuery) -> HandlerFuture;
 }
 
 impl_func!(InlineQueryHandler(InlineQuery));
@@ -184,7 +184,7 @@ impl_func!(InlineQueryHandler(InlineQuery));
 /// A chosen inline result handler
 pub trait ChosenInlineResultHandler {
     /// Handles a result
-    fn handle(&mut self, context: Context, result: &ChosenInlineResult) -> HandlerFuture;
+    fn handle(&self, context: Context, result: &ChosenInlineResult) -> HandlerFuture;
 }
 
 impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
@@ -192,7 +192,7 @@ impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
 /// A callback query handler
 pub trait CallbackQueryHandler {
     /// Handles a query
-    fn handle(&mut self, context: Context, query: &CallbackQuery) -> HandlerFuture;
+    fn handle(&self, context: Context, query: &CallbackQuery) -> HandlerFuture;
 }
 
 impl_func!(CallbackQueryHandler(CallbackQuery));
@@ -200,7 +200,7 @@ impl_func!(CallbackQueryHandler(CallbackQuery));
 /// A shipping query handler
 pub trait ShippingQueryHandler {
     /// Handles a query
-    fn handle(&mut self, context: Context, query: &ShippingQuery) -> HandlerFuture;
+    fn handle(&self, context: Context, query: &ShippingQuery) -> HandlerFuture;
 }
 
 impl_func!(ShippingQueryHandler(ShippingQuery));
@@ -208,7 +208,7 @@ impl_func!(ShippingQueryHandler(ShippingQuery));
 /// A pre checkout query handler
 pub trait PreCheckoutQueryHandler {
     /// Handles a query
-    fn handle(&mut self, context: Context, query: &PreCheckoutQuery) -> HandlerFuture;
+    fn handle(&self, context: Context, query: &PreCheckoutQuery) -> HandlerFuture;
 }
 
 impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
@@ -216,7 +216,7 @@ impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
 /// A regular update handler
 pub trait UpdateHandler {
     /// Handles an update
-    fn handle(&mut self, context: Context, update: &Update) -> HandlerFuture;
+    fn handle(&self, context: Context, update: &Update) -> HandlerFuture;
 }
 
 impl_func!(UpdateHandler(Update));
@@ -278,7 +278,7 @@ pub enum CommandError {
 }
 
 impl MessageHandler for CommandsHandler {
-    fn handle(&mut self, context: Context, message: &Message) -> HandlerFuture {
+    fn handle(&self, context: Context, message: &Message) -> HandlerFuture {
         match (&message.commands, message.get_text()) {
             (Some(ref commands), Some(ref text)) => {
                 // tgbot guarantees that commands will never be empty, but we must be sure
@@ -291,10 +291,10 @@ impl MessageHandler for CommandsHandler {
                 let input: Vec<u16> = text.data.encode_utf16().skip(pos).collect();
                 match String::from_utf16(&input) {
                     Ok(input) => match split(&input) {
-                        Ok(args) => match self.handlers.get_mut(&command.command) {
+                        Ok(args) => match self.handlers.get(&command.command) {
                             Some(handler) => handler.handle(context, message, args),
                             None => match self.not_found_handler {
-                                Some(ref mut handler) => handler.handle(context, message, args),
+                                Some(ref handler) => handler.handle(context, message, args),
                                 None => context.into(),
                             },
                         },
@@ -311,15 +311,15 @@ impl MessageHandler for CommandsHandler {
 /// Actual command handler
 pub trait CommandHandler {
     /// Handles a command
-    fn handle(&mut self, context: Context, message: &Message, args: Vec<String>) -> HandlerFuture;
+    fn handle(&self, context: Context, message: &Message, args: Vec<String>) -> HandlerFuture;
 }
 
 impl<F, R> CommandHandler for F
 where
-    F: FnMut(Context, &Message, Vec<String>) -> R,
+    F: Fn(Context, &Message, Vec<String>) -> R,
     R: Into<HandlerFuture>,
 {
-    fn handle(&mut self, context: Context, message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn handle(&self, context: Context, message: &Message, args: Vec<String>) -> HandlerFuture {
         (self)(context, message, args).into()
     }
 }
@@ -417,7 +417,7 @@ mod tests {
     struct SetupContextMiddleware;
 
     impl Middleware for SetupContextMiddleware {
-        fn before(&mut self, mut context: Context, _update: &Update) -> MiddlewareFuture {
+        fn before(&self, mut context: Context, _update: &Update) -> MiddlewareFuture {
             context.set(Args::new());
             context.set(Counter::new());
             MiddlewareResult::Continue(context).into()

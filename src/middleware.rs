@@ -58,12 +58,12 @@ impl Future for MiddlewareFuture {
 /// Middleware handler
 pub trait Middleware {
     /// Called before all handlers
-    fn before(&mut self, context: Context, _update: &Update) -> MiddlewareFuture {
+    fn before(&self, context: Context, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue(context).into()
     }
 
     /// Called after all handlers
-    fn after(&mut self, context: Context, _update: &Update) -> MiddlewareFuture {
+    fn after(&self, context: Context, _update: &Update) -> MiddlewareFuture {
         MiddlewareResult::Continue(context).into()
     }
 }
@@ -112,7 +112,7 @@ mod tests {
     }
 
     impl Middleware for MockMiddleware {
-        fn before(&mut self, context: Context, _update: &Update) -> MiddlewareFuture {
+        fn before(&self, context: Context, _update: &Update) -> MiddlewareFuture {
             context.get::<Counter>().inc_calls();
             if self.continue_before {
                 MiddlewareResult::Continue(context)
@@ -122,7 +122,7 @@ mod tests {
             .into()
         }
 
-        fn after(&mut self, context: Context, _update: &Update) -> MiddlewareFuture {
+        fn after(&self, context: Context, _update: &Update) -> MiddlewareFuture {
             context.get::<Counter>().inc_calls();
             if self.continue_after {
                 MiddlewareResult::Continue(context)
@@ -141,7 +141,7 @@ mod tests {
     struct CounterMiddleware;
 
     impl Middleware for CounterMiddleware {
-        fn before(&mut self, mut context: Context, _update: &Update) -> MiddlewareFuture {
+        fn before(&self, mut context: Context, _update: &Update) -> MiddlewareFuture {
             context.set(Counter::new());
             MiddlewareResult::Continue(context).into()
         }

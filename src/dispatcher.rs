@@ -5,7 +5,7 @@ use crate::{
 };
 use failure::Error;
 use futures::{task, Async, Future, Poll};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tgbot::{types::Update, Api, UpdateHandler};
 
 /// Defines how to handle errors in middlewares and handlers
@@ -19,8 +19,8 @@ pub enum ErrorStrategy {
 
 pub(crate) struct Dispatcher {
     api: Api,
-    middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
-    handlers: Arc<Mutex<Vec<Handler>>>,
+    middlewares: Arc<Vec<Box<Middleware + Send + Sync>>>,
+    handlers: Arc<Vec<Handler>>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
 }
@@ -35,8 +35,8 @@ impl Dispatcher {
     ) -> Self {
         Self {
             api,
-            middlewares: Arc::new(Mutex::new(middlewares)),
-            handlers: Arc::new(Mutex::new(handlers)),
+            middlewares: Arc::new(middlewares),
+            handlers: Arc::new(handlers),
             middleware_error_strategy,
             handler_error_strategy,
         }
@@ -69,8 +69,8 @@ impl UpdateHandler for Dispatcher {
 
 #[must_use = "futures do nothing unless polled"]
 pub(crate) struct DispatcherFuture {
-    middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
-    handlers: Arc<Mutex<Vec<Handler>>>,
+    middlewares: Arc<Vec<Box<Middleware + Send + Sync>>>,
+    handlers: Arc<Vec<Handler>>,
     context: Option<Context>,
     middleware_error_strategy: ErrorStrategy,
     handler_error_strategy: ErrorStrategy,
@@ -94,8 +94,8 @@ macro_rules! context_lost {
 
 impl DispatcherFuture {
     fn new(
-        middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
-        handlers: Arc<Mutex<Vec<Handler>>>,
+        middlewares: Arc<Vec<Box<Middleware + Send + Sync>>>,
+        handlers: Arc<Vec<Handler>>,
         context: Context,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
@@ -147,7 +147,7 @@ impl DispatcherFuture {
                     }
                 },
             },
-            None => match self.middlewares.lock().unwrap().get_mut(idx) {
+            None => match self.middlewares.get(idx) {
                 Some(ref mut middleware) => {
                     if let Some(context) = self.context.take() {
                         self.middleware = Some(middleware.before(context, &self.update));
@@ -193,7 +193,7 @@ impl DispatcherFuture {
                     }
                 },
             },
-            None => match self.handlers.lock().unwrap().get_mut(idx) {
+            None => match self.handlers.get(idx) {
                 Some(handler) => {
                     if let Some(context) = self.context.take() {
                         self.handler = Some(handler.handle(context, &self.update));
@@ -242,7 +242,7 @@ impl DispatcherFuture {
             },
             None => {
                 if let Some(context) = self.context.take() {
-                    match self.middlewares.lock().unwrap().get_mut(idx) {
+                    match self.middlewares.get(idx) {
                         Some(ref mut middleware) => {
                             self.middleware = Some(middleware.after(context, &self.update));
                             task::current().notify();
@@ -316,12 +316,12 @@ mod tests {
     struct ErrorMiddleware;
 
     impl Middleware for ErrorMiddleware {
-        fn before(&mut self, context: Context, _update: &Update) -> MiddlewareFuture {
+        fn before(&self, context: Context, _update: &Update) -> MiddlewareFuture {
             context.get::<Counter>().inc_calls();
             Err((ErrorMock, context)).into()
         }
 
-        fn after(&mut self, context: Context, _update: &Update) -> MiddlewareFuture {
+        fn after(&self, context: Context, _update: &Update) -> MiddlewareFuture {
             context.get::<Counter>().inc_calls();
             Err((ErrorMock, context)).into()
         }
@@ -335,7 +335,7 @@ mod tests {
     struct CounterMiddleware;
 
     impl Middleware for CounterMiddleware {
-        fn before(&mut self, mut context: Context, _update: &Update) -> MiddlewareFuture {
+        fn before(&self, mut context: Context, _update: &Update) -> MiddlewareFuture {
             context.set(Counter::new());
             MiddlewareResult::Continue(context).into()
         }
