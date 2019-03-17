@@ -334,6 +334,7 @@ mod tests {
         atomic::{AtomicUsize, Ordering},
         Arc,
     };
+    use tgbot::Api;
 
     struct Counter {
         calls: Arc<AtomicUsize>,
@@ -426,6 +427,7 @@ mod tests {
     #[test]
     fn test_dispatch_message() {
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![Box::new(SetupContextMiddleware)],
             vec![Handler::message(handle_message), Handler::update(handle_update)],
             ErrorStrategy::Abort,
@@ -483,6 +485,7 @@ mod tests {
     #[test]
     fn test_dispatch_inline_query() {
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::inline_query(handle_inline_query),
@@ -511,6 +514,7 @@ mod tests {
     #[test]
     fn test_dispatch_chosen_inline_result() {
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::chosen_inline_result(handle_chose_inline_result),
@@ -538,6 +542,7 @@ mod tests {
     #[test]
     fn test_dispatch_callback_query() {
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::callback_query(handle_callback_query),
@@ -564,6 +569,7 @@ mod tests {
     #[test]
     fn test_dispatch_shipping_query() {
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::shipping_query(handle_shipping_query),
@@ -599,6 +605,7 @@ mod tests {
     #[test]
     fn test_dispatch_pre_checkout_query() {
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![Box::new(SetupContextMiddleware)],
             vec![
                 Handler::pre_checkout_query(handle_precheckout_query),
@@ -644,6 +651,7 @@ mod tests {
         );
         let commands = CommandsHandler::default().add_handler("/testcommand", command_handler);
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![Box::new(SetupContextMiddleware)],
             vec![Handler::message(commands)],
             ErrorStrategy::Abort,

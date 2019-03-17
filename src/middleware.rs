@@ -80,7 +80,7 @@ mod tests {
         atomic::{AtomicUsize, Ordering},
         Arc,
     };
-    use tgbot::types::Message;
+    use tgbot::{types::Message, Api};
 
     struct Counter {
         calls: Arc<AtomicUsize>,
@@ -163,6 +163,7 @@ mod tests {
         );
 
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![
                 Box::new(CounterMiddleware),
                 Box::new(MockMiddleware {
@@ -190,6 +191,7 @@ mod tests {
         assert_eq!(context.get::<Counter>().get_calls(), 5);
 
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![
                 Box::new(CounterMiddleware),
                 Box::new(MockMiddleware {

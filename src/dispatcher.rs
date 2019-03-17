@@ -6,7 +6,7 @@ use crate::{
 use failure::Error;
 use futures::{task, Async, Future, Poll};
 use std::sync::{Arc, Mutex};
-use tgbot::{types::Update, UpdateHandler};
+use tgbot::{types::Update, Api, UpdateHandler};
 
 /// Defines how to handle errors in middlewares and handlers
 #[derive(Debug, Clone, Copy)]
@@ -18,6 +18,7 @@ pub enum ErrorStrategy {
 }
 
 pub(crate) struct Dispatcher {
+    api: Api,
     middlewares: Arc<Mutex<Vec<Box<Middleware + Send + Sync>>>>,
     handlers: Arc<Mutex<Vec<Handler>>>,
     middleware_error_strategy: ErrorStrategy,
@@ -26,12 +27,14 @@ pub(crate) struct Dispatcher {
 
 impl Dispatcher {
     pub(crate) fn new(
+        api: Api,
         middlewares: Vec<Box<Middleware + Send + Sync>>,
         handlers: Vec<Handler>,
         middleware_error_strategy: ErrorStrategy,
         handler_error_strategy: ErrorStrategy,
     ) -> Self {
         Self {
+            api,
             middlewares: Arc::new(Mutex::new(middlewares)),
             handlers: Arc::new(Mutex::new(handlers)),
             middleware_error_strategy,
@@ -40,10 +43,12 @@ impl Dispatcher {
     }
 
     pub(crate) fn dispatch(&self, update: Update) -> DispatcherFuture {
+        let mut context = Context::default();
+        context.set(self.api.clone());
         DispatcherFuture::new(
             self.middlewares.clone(),
             self.handlers.clone(),
-            Context::default(),
+            context,
             self.middleware_error_strategy,
             self.handler_error_strategy,
             update,
@@ -353,6 +358,7 @@ mod tests {
 
         // Aborted on first call
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![
                 Box::new(CounterMiddleware),
                 Box::new(ErrorMiddleware),
@@ -367,6 +373,7 @@ mod tests {
 
         // Aborted on handler call
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![
                 Box::new(CounterMiddleware),
                 Box::new(ErrorMiddleware),
@@ -381,6 +388,7 @@ mod tests {
 
         // Ignore all errors
         let dispatcher = Dispatcher::new(
+            Api::new("token", None::<&str>).unwrap(),
             vec![
                 Box::new(CounterMiddleware),
                 Box::new(ErrorMiddleware),

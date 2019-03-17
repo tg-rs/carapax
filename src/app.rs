@@ -4,7 +4,7 @@ use crate::{
     middleware::Middleware,
 };
 use futures::Future;
-use tgbot::{handle_updates, UpdateMethod};
+use tgbot::{handle_updates, Api, UpdateMethod};
 
 /// A Telegram Bot App
 pub struct App {
@@ -65,10 +65,11 @@ impl App {
     }
 
     /// Run app
-    pub fn run(self, method: UpdateMethod) -> impl Future<Item = (), Error = ()> {
+    pub fn run(self, api: Api, method: UpdateMethod) -> impl Future<Item = (), Error = ()> {
         handle_updates(
             method,
             Dispatcher::new(
+                api,
                 self.middlewares,
                 self.handlers,
                 self.middleware_error_strategy,

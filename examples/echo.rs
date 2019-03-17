@@ -5,7 +5,7 @@ use futures::Future;
 use log;
 use std::env;
 
-fn handle_message(context: &mut Context, message: &Message) -> HandlerFuture {
+fn handle_message(context: Context, message: &Message) -> HandlerFuture {
     log::info!("got a message: {:?}\n", message);
     if let Some(text) = message.get_text() {
         let chat_id = message.get_chat_id();
@@ -13,10 +13,10 @@ fn handle_message(context: &mut Context, message: &Message) -> HandlerFuture {
         let api = context.get::<Api>();
         return HandlerFuture::new(api.execute(&method).then(|x| {
             log::info!("sendMessage result: {:?}\n", x);
-            Ok(())
+            Ok(context)
         }));
     }
-    ().into()
+    context.into()
 }
 
 fn main() {
@@ -27,11 +27,9 @@ fn main() {
     let proxy = env::var("CARAPAX_PROXY").ok();
 
     let api = Api::new(token, proxy).unwrap();
-    let mut context = Context::default();
-    context.set(api.clone());
     tokio::run(
-        App::new(context)
+        App::new()
             .add_handler(Handler::message(handle_message))
-            .run(UpdateMethod::poll(UpdatesStream::new(api))),
+            .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
     );
 }
