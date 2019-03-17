@@ -13,7 +13,7 @@ fn handle_message(context: Context, message: &Message) -> HandlerFuture {
         let api = context.get::<Api>();
         return HandlerFuture::new(api.execute(&method).then(|x| {
             log::info!("sendMessage result: {:?}\n", x);
-            Ok(context)
+            Ok(HandlerResult::Continue(context))
         }));
     }
     context.into()
