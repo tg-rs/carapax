@@ -13,3 +13,5 @@ mod handler;
 pub mod prelude;
 
 pub use self::{app::*, context::*, dispatcher::*, handler::*};
+
+pub use tgbot as core;
