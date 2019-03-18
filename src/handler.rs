@@ -85,7 +85,7 @@ enum HandlerKind {
 }
 
 impl Handler {
-    pub(super) fn handle(&self, context: Context, update: &Update) -> HandlerFuture {
+    pub(super) fn handle(&self, context: &mut Context, update: &Update) -> HandlerFuture {
         macro_rules! handle {
             ($kind:ident($val:ident)) => {
                 if let HandlerKind::$kind(ref handler) = self.kind {
@@ -107,7 +107,7 @@ impl Handler {
             UpdateKind::ShippingQuery(ref val) => handle!(ShippingQuery(val)),
             UpdateKind::PreCheckoutQuery(ref val) => handle!(PreCheckoutQuery(val)),
         }
-        HandlerResult::Continue(context).into()
+        HandlerResult::Continue.into()
     }
 }
 
@@ -116,32 +116,26 @@ pub enum HandlerResult {
     /// Continue propagation
     ///
     /// Next handler (if exists) will run after current has finished
-    Continue(Context),
+    Continue,
     /// Stop propagation
     ///
     /// Next handler (if exists) will not run after current has finished
-    Stop(Context),
+    Stop,
 }
 
 /// A handler future
 #[must_use = "futures do nothing unless polled"]
 pub struct HandlerFuture {
-    inner: Box<Future<Item = HandlerResult, Error = (Error, Context)> + Send>,
+    inner: Box<Future<Item = HandlerResult, Error = Error> + Send>,
 }
 
 impl HandlerFuture {
     /// Creates a new handler future
     pub fn new<F>(f: F) -> HandlerFuture
     where
-        F: Future<Item = HandlerResult, Error = (Error, Context)> + Send + 'static,
+        F: Future<Item = HandlerResult, Error = Error> + Send + 'static,
     {
         HandlerFuture { inner: Box::new(f) }
-    }
-}
-
-impl From<Context> for HandlerFuture {
-    fn from(context: Context) -> HandlerFuture {
-        HandlerResult::Continue(context).into()
     }
 }
 
@@ -151,18 +145,18 @@ impl From<HandlerResult> for HandlerFuture {
     }
 }
 
-impl<E> From<Result<HandlerResult, (E, Context)>> for HandlerFuture
+impl<E> From<Result<HandlerResult, E>> for HandlerFuture
 where
     E: Into<Error>,
 {
-    fn from(result: Result<HandlerResult, (E, Context)>) -> Self {
-        HandlerFuture::new(future::result(result.map_err(|(err, context)| (err.into(), context))))
+    fn from(result: Result<HandlerResult, E>) -> Self {
+        HandlerFuture::new(future::result(result.map_err(Into::into)))
     }
 }
 
 impl Future for HandlerFuture {
     type Item = HandlerResult;
-    type Error = (Error, Context);
+    type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.inner.poll()
@@ -173,10 +167,10 @@ macro_rules! impl_func {
     ($handler:ident($arg:ident)) => {
         impl<F, R> $handler for F
         where
-            F: Fn(Context, &$arg) -> R,
+            F: Fn(&mut Context, &$arg) -> R,
             R: Into<HandlerFuture>,
         {
-            fn handle(&self, context: Context, arg: &$arg) -> HandlerFuture {
+            fn handle(&self, context: &mut Context, arg: &$arg) -> HandlerFuture {
                 (self)(context, arg).into()
             }
         }
@@ -186,7 +180,7 @@ macro_rules! impl_func {
 /// A regular message handler
 pub trait MessageHandler {
     /// Handles a message
-    fn handle(&self, context: Context, message: &Message) -> HandlerFuture;
+    fn handle(&self, context: &mut Context, message: &Message) -> HandlerFuture;
 }
 
 impl_func!(MessageHandler(Message));
@@ -194,7 +188,7 @@ impl_func!(MessageHandler(Message));
 /// An inline query handler
 pub trait InlineQueryHandler {
     /// Handles a query
-    fn handle(&self, context: Context, query: &InlineQuery) -> HandlerFuture;
+    fn handle(&self, context: &mut Context, query: &InlineQuery) -> HandlerFuture;
 }
 
 impl_func!(InlineQueryHandler(InlineQuery));
@@ -202,7 +196,7 @@ impl_func!(InlineQueryHandler(InlineQuery));
 /// A chosen inline result handler
 pub trait ChosenInlineResultHandler {
     /// Handles a result
-    fn handle(&self, context: Context, result: &ChosenInlineResult) -> HandlerFuture;
+    fn handle(&self, context: &mut Context, result: &ChosenInlineResult) -> HandlerFuture;
 }
 
 impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
@@ -210,7 +204,7 @@ impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
 /// A callback query handler
 pub trait CallbackQueryHandler {
     /// Handles a query
-    fn handle(&self, context: Context, query: &CallbackQuery) -> HandlerFuture;
+    fn handle(&self, context: &mut Context, query: &CallbackQuery) -> HandlerFuture;
 }
 
 impl_func!(CallbackQueryHandler(CallbackQuery));
@@ -218,7 +212,7 @@ impl_func!(CallbackQueryHandler(CallbackQuery));
 /// A shipping query handler
 pub trait ShippingQueryHandler {
     /// Handles a query
-    fn handle(&self, context: Context, query: &ShippingQuery) -> HandlerFuture;
+    fn handle(&self, context: &mut Context, query: &ShippingQuery) -> HandlerFuture;
 }
 
 impl_func!(ShippingQueryHandler(ShippingQuery));
@@ -226,7 +220,7 @@ impl_func!(ShippingQueryHandler(ShippingQuery));
 /// A pre checkout query handler
 pub trait PreCheckoutQueryHandler {
     /// Handles a query
-    fn handle(&self, context: Context, query: &PreCheckoutQuery) -> HandlerFuture;
+    fn handle(&self, context: &mut Context, query: &PreCheckoutQuery) -> HandlerFuture;
 }
 
 impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
@@ -234,7 +228,7 @@ impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
 /// A regular update handler
 pub trait UpdateHandler {
     /// Handles an update
-    fn handle(&self, context: Context, update: &Update) -> HandlerFuture;
+    fn handle(&self, context: &mut Context, update: &Update) -> HandlerFuture;
 }
 
 impl_func!(UpdateHandler(Update));
@@ -296,7 +290,7 @@ pub enum CommandError {
 }
 
 impl MessageHandler for CommandsHandler {
-    fn handle(&self, context: Context, message: &Message) -> HandlerFuture {
+    fn handle(&self, context: &mut Context, message: &Message) -> HandlerFuture {
         match (&message.commands, message.get_text()) {
             (Some(ref commands), Some(ref text)) => {
                 // tgbot guarantees that commands will never be empty, but we must be sure
@@ -313,15 +307,15 @@ impl MessageHandler for CommandsHandler {
                             Some(handler) => handler.handle(context, message, args),
                             None => match self.not_found_handler {
                                 Some(ref handler) => handler.handle(context, message, args),
-                                None => HandlerResult::Continue(context).into(),
+                                None => HandlerResult::Continue.into(),
                             },
                         },
-                        Err(MismatchedQuotes) => Err((CommandError::MismatchedQuotes, context)).into(),
+                        Err(MismatchedQuotes) => Err(CommandError::MismatchedQuotes).into(),
                     },
-                    Err(err) => Err((CommandError::FromUtf16(err), context)).into(),
+                    Err(err) => Err(CommandError::FromUtf16(err)).into(),
                 }
             }
-            _ => HandlerResult::Continue(context).into(),
+            _ => HandlerResult::Continue.into(),
         }
     }
 }
@@ -329,15 +323,15 @@ impl MessageHandler for CommandsHandler {
 /// Actual command handler
 pub trait CommandHandler {
     /// Handles a command
-    fn handle(&self, context: Context, message: &Message, args: Vec<String>) -> HandlerFuture;
+    fn handle(&self, context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture;
 }
 
 impl<F, R> CommandHandler for F
 where
-    F: Fn(Context, &Message, Vec<String>) -> R,
+    F: Fn(&mut Context, &Message, Vec<String>) -> R,
     R: Into<HandlerFuture>,
 {
-    fn handle(&self, context: Context, message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn handle(&self, context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture {
         (self)(context, message, args).into()
     }
 }
@@ -387,50 +381,50 @@ mod tests {
         }
     }
 
-    fn setup_context(mut context: Context, _update: &Update) -> HandlerFuture {
+    fn setup_context(context: &mut Context, _update: &Update) -> HandlerFuture {
         context.set(Args::new());
         context.set(Counter::new());
-        context.into()
+        HandlerResult::Continue.into()
     }
 
-    fn command_handler(mut context: Context, _message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn command_handler(context: &mut Context, _message: &Message, args: Vec<String>) -> HandlerFuture {
         context.get_mut::<Args>().extend(args);
-        context.into()
+        HandlerResult::Continue.into()
     }
 
-    fn handle_message(context: Context, _message: &Message) -> HandlerFuture {
+    fn handle_message(context: &mut Context, _message: &Message) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        context.into()
+        HandlerResult::Continue.into()
     }
 
-    fn handle_inline_query(context: Context, _query: &InlineQuery) -> HandlerFuture {
+    fn handle_inline_query(context: &mut Context, _query: &InlineQuery) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        context.into()
+        HandlerResult::Continue.into()
     }
 
-    fn handle_chose_inline_result(context: Context, _result: &ChosenInlineResult) -> HandlerFuture {
+    fn handle_chose_inline_result(context: &mut Context, _result: &ChosenInlineResult) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        context.into()
+        HandlerResult::Continue.into()
     }
 
-    fn handle_callback_query(context: Context, _query: &CallbackQuery) -> HandlerFuture {
+    fn handle_callback_query(context: &mut Context, _query: &CallbackQuery) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        context.into()
+        HandlerResult::Continue.into()
     }
 
-    fn handle_shipping_query(context: Context, _query: &ShippingQuery) -> HandlerFuture {
+    fn handle_shipping_query(context: &mut Context, _query: &ShippingQuery) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        context.into()
+        HandlerResult::Continue.into()
     }
 
-    fn handle_precheckout_query(context: Context, _query: &PreCheckoutQuery) -> HandlerFuture {
+    fn handle_precheckout_query(context: &mut Context, _query: &PreCheckoutQuery) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        context.into()
+        HandlerResult::Continue.into()
     }
 
-    fn handle_update(context: Context, _update: &Update) -> HandlerFuture {
+    fn handle_update(context: &mut Context, _update: &Update) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
-        context.into()
+        HandlerResult::Continue.into()
     }
 
     fn parse_update(data: &str) -> Update {

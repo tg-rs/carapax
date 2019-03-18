@@ -5,25 +5,25 @@ use futures::Future;
 use log;
 use std::env;
 
-fn handle_start(context: Context, message: &Message, _: Vec<String>) -> HandlerFuture {
+fn handle_start(context: &mut Context, message: &Message, _: Vec<String>) -> HandlerFuture {
     log::info!("handle /start command\n");
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, "Hello!");
     let api = context.get::<Api>();
     HandlerFuture::new(api.execute(&method).then(|x| {
         log::info!("sendMessage result: {:?}\n", x);
-        Ok(HandlerResult::Continue(context))
+        Ok(HandlerResult::Continue)
     }))
 }
 
-fn handle_user_id(context: Context, message: &Message, _: Vec<String>) -> HandlerFuture {
+fn handle_user_id(context: &mut Context, message: &Message, _: Vec<String>) -> HandlerFuture {
     log::info!("handle /user_id command\n");
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, format!("Your ID is: {:?}", message.get_user().map(|u| u.id)));
     let api = context.get::<Api>();
     HandlerFuture::new(api.execute(&method).then(|x| {
         log::info!("sendMessage result: {:?}\n", x);
-        Ok(HandlerResult::Continue(context))
+        Ok(HandlerResult::Continue)
     }))
 }
 
