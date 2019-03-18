@@ -8,6 +8,44 @@ use futures::{future, Future, Poll};
 use serde::de::DeserializeOwned;
 use std::{fmt::Debug, sync::Arc};
 
+/// An API config
+#[derive(Debug)]
+pub struct Config {
+    token: String,
+    proxy: Option<String>,
+}
+
+impl Config {
+    /// Creates a new config with given token
+    pub fn new<S: Into<String>>(token: S) -> Self {
+        Self {
+            token: token.into(),
+            proxy: None,
+        }
+    }
+
+    /// Sets a proxy to config
+    ///
+    /// Proxy format:
+    /// * http://[user:password]host:port
+    /// * https://[user:password]@host:port
+    /// * socks4://userid@host:port
+    /// * socks5://[user:password]@host:port
+    pub fn proxy<S: Into<String>>(mut self, proxy: S) -> Self {
+        self.proxy = Some(proxy.into());
+        self
+    }
+}
+
+impl<S> From<S> for Config
+where
+    S: Into<String>,
+{
+    fn from(token: S) -> Self {
+        Config::new(token.into())
+    }
+}
+
 /// Telegram Bot API client
 #[derive(Clone)]
 pub struct Api {
@@ -16,30 +54,16 @@ pub struct Api {
 }
 
 impl Api {
-    /// Creates a client
-    ///
-    /// # Arguments
-    ///
-    /// * token - Bot API token
-    /// * proxy - Optional proxy
-    ///
-    /// Proxy format:
-    /// * http://[user:password]host:port
-    /// * https://[user:password]@host:port
-    /// * socks4://userid@host:port
-    /// * socks5://[user:password]@host:port
-    pub fn new<T, P>(token: T, proxy: Option<P>) -> Result<Self, Error>
-    where
-        T: Into<String>,
-        P: AsRef<str>,
-    {
+    /// Creates a new client
+    pub fn new<C: Into<Config>>(config: C) -> Result<Self, Error> {
+        let config = config.into();
         Ok(Api {
-            executor: Arc::new(if let Some(proxy) = proxy {
-                proxy_executor(proxy.as_ref())?
+            executor: Arc::new(if let Some(ref proxy) = config.proxy {
+                proxy_executor(proxy)?
             } else {
                 default_executor()?
             }),
-            token: token.into(),
+            token: config.token,
         })
     }
 
