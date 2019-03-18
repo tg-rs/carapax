@@ -7,7 +7,7 @@ use tgbot::{
     handle_updates,
     methods::SendMessage,
     types::{Update, UpdateKind},
-    Api, UpdateHandler, UpdateMethod,
+    Api, Config, UpdateHandler, UpdateMethod,
 };
 
 struct Handler {
@@ -36,6 +36,10 @@ fn main() {
 
     let token = env::var("TGBOT_TOKEN").expect("TGBOT_TOKEN is not set");
     let proxy = env::var("TGBOT_PROXY").ok();
-    let api = Api::new(token, proxy).expect("Failed to create API");
+    let mut config = Config::new(token);
+    if let Some(proxy) = proxy {
+        config = config.proxy(proxy);
+    }
+    let api = Api::new(config).expect("Failed to create API");
     tokio::run(handle_updates(UpdateMethod::poll(api.clone()), Handler { api }));
 }
