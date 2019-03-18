@@ -7,7 +7,7 @@ use futures::{task, Async, Future, Poll};
 use std::sync::Arc;
 use tgbot::{types::Update, Api, UpdateHandler};
 
-/// Defines how to handle errors in middlewares and handlers
+/// Defines how to deal with errors in handlers
 #[derive(Debug, Clone, Copy)]
 pub enum ErrorStrategy {
     /// Ignore any error in a handler or middleware and write it to log
