@@ -23,7 +23,8 @@ carapax = "0.1"
 See [examples](https://github.com/tg-rs/carapax/tree/0.1.0/examples) directory.
 
 # Changelog
-See [CHANGELOG.md](CHANGELOG.md).
+
+See [CHANGELOG.md](CHANGELOG.md)
 
 # LICENSE
 
