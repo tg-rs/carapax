@@ -24,9 +24,7 @@ See [examples](https://github.com/tg-rs/carapax/tree/0.1.0/examples) directory.
 
 # Changelog
 
-# 0.1.0 (12.03.2019)
-
-- First release.
+See [CHANGELOG.md](CHANGELOG.md)
 
 # LICENSE
 
