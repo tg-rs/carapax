@@ -21,7 +21,8 @@ tgbot = "0.3"
 See [examples](https://github.com/tg-rs/tgbot/tree/0.3.0/examples) directory.
 
 # Changelog
-See [CHANGELOG.md](CHANGELOG.md).
+
+See [CHANGELOG.md](CHANGELOG.md)
 
 # LICENSE
 
