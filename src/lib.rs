@@ -9,11 +9,11 @@ use std::{
 pub use nonzero_ext::nonzero;
 
 /// Limits number of updates per time
-pub struct RateLimitMiddleware {
+pub struct RateLimitHandler {
     rate_limiter: RateLimiter,
 }
 
-impl RateLimitMiddleware {
+impl RateLimitHandler {
     /// Limit all updates
     ///
     /// # Arguments
@@ -21,8 +21,11 @@ impl RateLimitMiddleware {
     /// - capacity - Number of updates
     /// - seconds - Duration in seconds
     pub fn direct(capacity: NonZeroU32, seconds: u64) -> Self {
-        RateLimitMiddleware {
-            rate_limiter: RateLimiter::Direct(DirectRateLimiter::new(capacity, Duration::from_secs(seconds))),
+        Self {
+            rate_limiter: RateLimiter::Direct(Arc::new(Mutex::new(DirectRateLimiter::new(
+                capacity,
+                Duration::from_secs(seconds),
+            )))),
         }
     }
 
@@ -36,7 +39,7 @@ impl RateLimitMiddleware {
     /// - on_missing - Allow or deny update when user or chat not found
     ///                (got an update from channel or inline query, etc...)
     pub fn keyed(key: RateLimitKey, capacity: NonZeroU32, seconds: u64, on_missing: bool) -> Self {
-        RateLimitMiddleware {
+        Self {
             rate_limiter: RateLimiter::Keyed {
                 limiter: Arc::new(Mutex::new(KeyedRateLimiter::new(
                     capacity,
@@ -49,10 +52,10 @@ impl RateLimitMiddleware {
     }
 }
 
-impl<C> Middleware<C> for RateLimitMiddleware {
-    fn before(&mut self, _context: &mut C, update: &Update) -> MiddlewareFuture {
+impl UpdateHandler for RateLimitHandler {
+    fn handle(&self, _context: &mut Context, update: &Update) -> HandlerFuture {
         let should_pass = match self.rate_limiter {
-            RateLimiter::Direct(ref mut limiter) => limiter.check().is_ok(),
+            RateLimiter::Direct(ref limiter) => limiter.lock().unwrap().check().is_ok(),
             RateLimiter::Keyed {
                 ref limiter,
                 key,
@@ -71,16 +74,16 @@ impl<C> Middleware<C> for RateLimitMiddleware {
             }
         };
         if should_pass {
-            MiddlewareResult::Continue
+            HandlerResult::Continue
         } else {
-            MiddlewareResult::Stop
+            HandlerResult::Stop
         }
         .into()
     }
 }
 
 enum RateLimiter {
-    Direct(DirectRateLimiter<GCRA>),
+    Direct(Arc<Mutex<DirectRateLimiter<GCRA>>>),
     Keyed {
         limiter: Arc<Mutex<KeyedRateLimiter<Integer, GCRA>>>,
         key: RateLimitKey,

@@ -1,6 +1,6 @@
 # CARAPAX-RATELIMIT
 
-Rate limit middleware for [carapax](https://github.com/tg-rs/carapax)
+Rate limit handler for [carapax](https://github.com/tg-rs/carapax)
 
 [![Travis](https://img.shields.io/travis/tg-rs/carapax-ratelimit.svg?style=flat-square)](https://travis-ci.org/tg-rs/carapax-ratelimit)
 [![Version](https://img.shields.io/crates/v/carapax-ratelimit.svg?style=flat-square)](https://crates.io/crates/carapax-ratelimit)
@@ -21,7 +21,7 @@ carapax-ratelimit = "0.1"
 use carapax_ratelimit::{RateLimitMiddleware, nonzero};
 // take 1 update per 5 seconds
 let rate_limit = RateLimitMiddleware::direct(nonzero!(1u32), 5);
-app.add_middleware(rate_limit)
+app.add_handler(Handler::update(rate_limit))
 ```
 
 # LICENSE

@@ -1,6 +1,6 @@
 [package]
 name = "carapax-ratelimit"
-description = "Rate limit middleware for carapax"
+description = "Rate limit handler for carapax"
 version = "0.1.0"
 authors = ["Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2018"
@@ -13,6 +13,6 @@ repository = "https://github.com/tg-rs/carapax-ratelimit"
 travis-ci = { repository = "tg-rs/carapax-ratelimit", branch = "master" }
 
 [dependencies]
-carapax = { git = "https://github.com/tg-rs/carapax", rev = "38cf4aa" }
+carapax = { git = "https://github.com/tg-rs/carapax", rev = "78895bc" }
 nonzero_ext = "0.1"
 ratelimit_meter = "4.0"
