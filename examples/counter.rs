@@ -3,7 +3,7 @@ fn main() {
     use carapax::prelude::*;
     use carapax_session::{
         session_handler,
-        store::{RedisSessionStore, Session, SessionStore},
+        store::{redis::RedisSessionStore, Session, SessionStore},
     };
     use dotenv::dotenv;
     use env_logger;
