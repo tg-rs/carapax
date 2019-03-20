@@ -1,6 +1,6 @@
 # CARAPAX-ACCESS
 
-Access middleware for [carapax](https://github.com/tg-rs/carapax)
+Access handler for [carapax](https://github.com/tg-rs/carapax)
 
 [![Travis](https://img.shields.io/travis/tg-rs/carapax-access.svg?style=flat-square)](https://travis-ci.org/tg-rs/carapax-access)
 [![Version](https://img.shields.io/crates/v/carapax-access.svg?style=flat-square)](https://crates.io/crates/carapax-access)

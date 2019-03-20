@@ -7,14 +7,14 @@ struct MockPolicy {
     result: bool,
 }
 
-impl AccessPolicy<()> for MockPolicy {
-    fn is_granted(&mut self, _: &mut (), _update: &Update) -> AccessPolicyFuture {
+impl AccessPolicy for MockPolicy {
+    fn is_granted(&self, _context: &mut Context, _update: &Update) -> AccessPolicyFuture {
         self.result.into()
     }
 }
 
 #[test]
-fn test_middleware() {
+fn test_handler() {
     let update: Update = from_str(
         r#"{
             "update_id": 1,
@@ -30,12 +30,13 @@ fn test_middleware() {
     .unwrap();
     for &result in &[true, false] {
         let policy = MockPolicy { result };
-        let mut middleware = AccessMiddleware::new(policy);
-        let middleware_result = middleware.before(&mut (), &update).wait().unwrap();
+        let handler = AccessHandler::new(policy);
+        let mut context = Context::default();
+        let middleware_result = handler.handle(&mut context, &update).wait().unwrap();
         if result {
-            assert_eq!(middleware_result, MiddlewareResult::Continue);
+            assert_eq!(middleware_result, HandlerResult::Continue);
         } else {
-            assert_eq!(middleware_result, MiddlewareResult::Stop);
+            assert_eq!(middleware_result, HandlerResult::Stop);
         }
     }
 }
@@ -45,10 +46,11 @@ fn test_in_memory_policy() {
     macro_rules! check_access {
         ($rules:expr, $updates:expr) => {{
             for rules in $rules {
-                let mut policy = InMemoryAccessPolicy::new(rules);
+                let policy = InMemoryAccessPolicy::new(rules);
                 for (flag, update) in $updates {
                     let update: Update = from_str(update).unwrap();
-                    let is_granted = policy.is_granted(&mut (), &update).wait().unwrap();
+                    let mut context = Context::default();
+                    let is_granted = policy.is_granted(&mut context, &update).wait().unwrap();
                     assert_eq!(is_granted, *flag);
                 }
             }

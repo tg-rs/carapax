@@ -1,6 +1,6 @@
 [package]
 name = "carapax-access"
-description = "Access middleware for carapax"
+description = "Access handler for carapax"
 version = "0.1.0"
 authors = ["Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2018"
@@ -15,7 +15,7 @@ travis-ci = { repository = "tg-rs/carapax-access", branch = "master" }
 [dependencies]
 failure = "0.1"
 futures = "0.1"
-carapax = { git = "https://github.com/tg-rs/carapax", rev = "38cf4aa" }
+carapax = { git = "https://github.com/tg-rs/carapax", rev = "d2e412b667e7a184f8c75ede16cedf7cddd56ed3" }
 log = "0.4"
 
 [dev-dependencies]

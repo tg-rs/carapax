@@ -6,9 +6,9 @@ use futures::{future, Future, Poll};
 /// An access policy
 ///
 /// Decides whether update is allowed or not
-pub trait AccessPolicy<C> {
+pub trait AccessPolicy {
     /// Return true if update is allowed and false otherwise
-    fn is_granted(&mut self, context: &mut C, update: &Update) -> AccessPolicyFuture;
+    fn is_granted(&self, context: &mut Context, update: &Update) -> AccessPolicyFuture;
 }
 
 /// Access policy future
@@ -66,8 +66,8 @@ impl InMemoryAccessPolicy {
     }
 }
 
-impl<C> AccessPolicy<C> for InMemoryAccessPolicy {
-    fn is_granted(&mut self, _context: &mut C, update: &Update) -> AccessPolicyFuture {
+impl AccessPolicy for InMemoryAccessPolicy {
+    fn is_granted(&self, _context: &mut Context, update: &Update) -> AccessPolicyFuture {
         let mut result = false;
         for rule in &self.rules {
             if rule.accepts(&update) {

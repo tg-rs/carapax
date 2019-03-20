@@ -1,8 +1,8 @@
-mod middleware;
+mod handler;
 mod policy;
 mod rules;
 
 #[cfg(test)]
 mod tests;
 
-pub use self::{middleware::*, policy::*, rules::*};
+pub use self::{handler::*, policy::*, rules::*};
