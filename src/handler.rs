@@ -112,6 +112,7 @@ impl Handler {
 }
 
 /// Result of a handler
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HandlerResult {
     /// Continue propagation
     ///
