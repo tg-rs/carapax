@@ -17,12 +17,7 @@ carapax-ratelimit = "0.1"
 
 # Example
 
-```rust
-use carapax_ratelimit::{RateLimitMiddleware, nonzero};
-// take 1 update per 5 seconds
-let rate_limit = RateLimitMiddleware::direct(nonzero!(1u32), 5);
-app.add_handler(Handler::update(rate_limit))
-```
+See [examples](./examples/) directory.
 
 # LICENSE
 

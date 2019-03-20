@@ -16,3 +16,9 @@ travis-ci = { repository = "tg-rs/carapax-ratelimit", branch = "master" }
 carapax = { git = "https://github.com/tg-rs/carapax", rev = "78895bc" }
 nonzero_ext = "0.1"
 ratelimit_meter = "4.0"
+
+[dev-dependencies]
+dotenv = "0.13.0"
+env_logger = "0.6.1"
+log = "0.4.6"
+tokio = "0.1.17"
