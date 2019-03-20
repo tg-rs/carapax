@@ -1,6 +1,6 @@
 # CARAPAX-SESSION
 
-Session middleware for [carapax](https://github.com/tg-rs/carapax)
+Session handler for [carapax](https://github.com/tg-rs/carapax)
 
 [![Travis](https://img.shields.io/travis/tg-rs/carapax-session.svg?style=flat-square)](https://travis-ci.org/tg-rs/carapax-session)
 [![Version](https://img.shields.io/crates/v/carapax-session.svg?style=flat-square)](https://crates.io/crates/carapax-session)
@@ -12,16 +12,12 @@ Session middleware for [carapax](https://github.com/tg-rs/carapax)
 
 ```toml
 [dependencies]
-carapax-session = "0.1"
+carapax-session = {version = "0.1", features = ["redis-store"]}
 ```
 
 # Example
 
-```rust
-use carapax_session::SessionMiddleware;
-let session = SessionMiddleware::new();
-app.add_middleware(session);
-```
+See [examples](./examples/) directory.
 
 # LICENSE
 
