@@ -18,6 +18,7 @@ anymap = "0.12.0"
 failure = "0.1.5"
 futures = "0.1.23"
 log = "0.4.6"
+regex = "1.1.0"
 shellwords = "1.0.0"
 tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "7759363" }
 tokio-executor = "0.1.5"
