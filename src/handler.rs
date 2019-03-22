@@ -1,10 +1,11 @@
 use crate::context::Context;
 use failure::Error;
 use futures::{future, Future, Poll};
+use regex::Regex;
 use shellwords::{split, MismatchedQuotes};
 use std::{collections::HashMap, string::FromUtf16Error};
 use tgbot::types::{
-    CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update, UpdateKind,
+    CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Text, Update, UpdateKind,
 };
 
 /// A regular update handler
@@ -337,6 +338,131 @@ where
     }
 }
 
+/// Rule for text handler
+pub trait TextRule {
+    /// Whether handler should accept message with given text
+    fn accepts(&self, text: &Text) -> bool;
+}
+
+#[doc(hidden)]
+pub struct TextRuleContains {
+    substring: String,
+}
+
+impl TextRule for TextRuleContains {
+    fn accepts(&self, text: &Text) -> bool {
+        text.data.contains(&self.substring)
+    }
+}
+
+#[doc(hidden)]
+pub struct TextRuleEquals {
+    text: String,
+}
+
+impl TextRule for TextRuleEquals {
+    fn accepts(&self, text: &Text) -> bool {
+        text.data == self.text
+    }
+}
+
+#[doc(hidden)]
+pub struct TextRuleMatches {
+    pattern: Regex,
+}
+
+impl TextRule for TextRuleMatches {
+    fn accepts(&self, text: &Text) -> bool {
+        self.pattern.is_match(&text.data)
+    }
+}
+
+impl<F> TextRule for F
+where
+    F: Fn(&Text) -> bool,
+{
+    fn accepts(&self, text: &Text) -> bool {
+        (self)(text)
+    }
+}
+
+/// A rules based message text handler
+pub struct TextHandler<R, H> {
+    rule: R,
+    handler: H,
+}
+
+impl<R, H> TextHandler<R, H>
+where
+    R: TextRule,
+    H: MessageHandler,
+{
+    /// Creates a new handler
+    pub fn new(rule: R, handler: H) -> Self {
+        Self { rule, handler }
+    }
+}
+
+impl<H> TextHandler<TextRuleContains, H>
+where
+    H: MessageHandler,
+{
+    /// Create a handler for messages contains given text
+    pub fn contains<S>(text: S, handler: H) -> Self
+    where
+        S: Into<String>,
+    {
+        Self::new(TextRuleContains { substring: text.into() }, handler)
+    }
+}
+
+impl<H> TextHandler<TextRuleEquals, H>
+where
+    H: MessageHandler,
+{
+    /// Create a handler for messages equals given text
+    pub fn equals<S>(text: S, handler: H) -> Self
+    where
+        S: Into<String>,
+    {
+        Self::new(TextRuleEquals { text: text.into() }, handler)
+    }
+}
+
+impl<H> TextHandler<TextRuleMatches, H>
+where
+    H: MessageHandler,
+{
+    /// Create a handler for messages matches given text
+    ///
+    /// See [regex](https://docs.rs/regex) crate for more information about patterns
+    pub fn matches<S>(pattern: S, handler: H) -> Result<Self, Error>
+    where
+        S: AsRef<str>,
+    {
+        Ok(Self::new(
+            TextRuleMatches {
+                pattern: Regex::new(pattern.as_ref())?,
+            },
+            handler,
+        ))
+    }
+}
+
+impl<R, H> MessageHandler for TextHandler<R, H>
+where
+    R: TextRule,
+    H: MessageHandler,
+{
+    fn handle(&self, context: &mut Context, message: &Message) -> HandlerFuture {
+        if message.get_text().map(|text| self.rule.accepts(text)).unwrap_or(false) {
+            self.handler.handle(context, message)
+        } else {
+            HandlerResult::Continue.into()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -663,5 +789,75 @@ mod tests {
         let context = dispatcher.dispatch(update.clone()).wait().unwrap();
         let args = context.get::<Args>();
         assert_eq!(args.items, vec![String::from("arg1 v"), String::from("arg2")]);
+    }
+
+    #[test]
+    fn test_text_handler() {
+        for (update, handler) in vec![
+            (
+                r#"{
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 1111,
+                        "date": 0,
+                        "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                        "chat": {"id": 1, "type": "private", "first_name": "test"},
+                        "text": "test substring contains"
+                    }
+                }"#,
+                Handler::message(TextHandler::contains("substring", handle_message)),
+            ),
+            (
+                r#"{
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 1111,
+                        "date": 0,
+                        "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                        "chat": {"id": 1, "type": "private", "first_name": "test"},
+                        "text": "test equals"
+                    }
+                }"#,
+                Handler::message(TextHandler::contains("test equals", handle_message)),
+            ),
+            (
+                r#"{
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 1111,
+                        "date": 0,
+                        "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                        "chat": {"id": 1, "type": "private", "first_name": "test"},
+                        "text": "test matches"
+                    }
+                }"#,
+                Handler::message(TextHandler::matches("matches$", handle_message).unwrap()),
+            ),
+            (
+                r#"{
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 1111,
+                        "date": 0,
+                        "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                        "chat": {"id": 1, "type": "private", "first_name": "test"},
+                        "text": "test predicate"
+                    }
+                }"#,
+                Handler::message(TextHandler::new(
+                    |text: &Text| text.data.contains("predicate"),
+                    handle_message,
+                )),
+            ),
+        ] {
+            let update = parse_update(update);
+            let dispatcher = Dispatcher::new(
+                Api::new("token", None::<&str>).unwrap(),
+                vec![Handler::update(setup_context), handler],
+                ErrorStrategy::Abort,
+            );
+            let context = dispatcher.dispatch(update).wait().unwrap();
+            assert_eq!(context.get::<Counter>().get_calls(), 1);
+        }
     }
 }
