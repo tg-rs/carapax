@@ -30,7 +30,10 @@ script:
     fi
   - cargo clippy --all-targets --all-features -- -D warnings
   - cargo test
-  - cargo doc
+  - |
+    if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
+      cargo doc
+    fi
 before_cache:
   - |
     if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
@@ -46,3 +49,4 @@ deploy:
   local-dir: target/doc
   on:
     branch: master
+    rust: nightly
