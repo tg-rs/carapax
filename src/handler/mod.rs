@@ -1,6 +1,5 @@
 use crate::types::Update;
-use futures::future::Either;
-use futures::{Future, Stream};
+use futures::{future::Either, Future, Stream};
 use hyper::Server;
 use std::net::SocketAddr;
 
