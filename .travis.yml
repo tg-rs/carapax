@@ -30,6 +30,7 @@ script:
     fi
   - cargo clippy --all-targets --all-features -- -D warnings
   - cargo test
+  - cargo doc
 before_cache:
   - |
     if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
@@ -37,3 +38,11 @@ before_cache:
       grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" > lcov.info;
       bash <(curl -s https://codecov.io/bash) -f lcov.info;
     fi
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN
+  keep-history: true
+  local-dir: target/doc
+  on:
+    branch: master
