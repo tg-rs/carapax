@@ -387,54 +387,58 @@ where
 }
 
 /// A rules based message text handler
-pub struct TextHandler<R> {
+pub struct TextHandler<R, H> {
     rule: R,
-    handler: Box<MessageHandler + Send + Sync>,
+    handler: H,
 }
 
-impl<R> TextHandler<R> {
+impl<R, H> TextHandler<R, H>
+where
+    R: TextRule,
+    H: MessageHandler,
+{
     /// Creates a new handler
-    pub fn new<H>(rule: R, handler: H) -> TextHandler<R>
-    where
-        H: MessageHandler + Send + Sync + 'static,
-    {
-        Self {
-            rule,
-            handler: Box::new(handler),
-        }
+    pub fn new(rule: R, handler: H) -> Self {
+        Self { rule, handler }
     }
 }
 
-impl TextHandler<TextRuleContains> {
+impl<H> TextHandler<TextRuleContains, H>
+where
+    H: MessageHandler,
+{
     /// Create a handler for messages contains given text
-    pub fn contains<S, H>(text: S, handler: H) -> Self
+    pub fn contains<S>(text: S, handler: H) -> Self
     where
         S: Into<String>,
-        H: MessageHandler + Send + Sync + 'static,
     {
         Self::new(TextRuleContains { substring: text.into() }, handler)
     }
 }
 
-impl TextHandler<TextRuleEquals> {
+impl<H> TextHandler<TextRuleEquals, H>
+where
+    H: MessageHandler,
+{
     /// Create a handler for messages equals given text
-    pub fn equals<S, H>(text: S, handler: H) -> Self
+    pub fn equals<S>(text: S, handler: H) -> Self
     where
         S: Into<String>,
-        H: MessageHandler + Send + Sync + 'static,
     {
         Self::new(TextRuleEquals { text: text.into() }, handler)
     }
 }
 
-impl TextHandler<TextRuleMatches> {
+impl<H> TextHandler<TextRuleMatches, H>
+where
+    H: MessageHandler,
+{
     /// Create a handler for messages matches given text
     ///
     /// See [regex](https://docs.rs/regex) crate for more information about patterns
-    pub fn matches<S, H>(pattern: S, handler: H) -> Result<Self, Error>
+    pub fn matches<S>(pattern: S, handler: H) -> Result<Self, Error>
     where
         S: AsRef<str>,
-        H: MessageHandler + Send + Sync + 'static,
     {
         Ok(Self::new(
             TextRuleMatches {
@@ -445,9 +449,10 @@ impl TextHandler<TextRuleMatches> {
     }
 }
 
-impl<R> MessageHandler for TextHandler<R>
+impl<R, H> MessageHandler for TextHandler<R, H>
 where
     R: TextRule,
+    H: MessageHandler,
 {
     fn handle(&self, context: &mut Context, message: &Message) -> HandlerFuture {
         if message.get_text().map(|text| self.rule.accepts(text)).unwrap_or(false) {
