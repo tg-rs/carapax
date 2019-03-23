@@ -9,6 +9,10 @@ license = "MIT"
 documentation = "https://docs.rs/carapax-access"
 repository = "https://github.com/tg-rs/carapax-access"
 
+[badges]
+travis-ci = { repository = "tg-rs/tg-rs", branch = "master" }
+codecov = { repository = "tg-rs/tg-rs" }
+
 [dependencies]
 failure = "0.1"
 futures = "0.1"

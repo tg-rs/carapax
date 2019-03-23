@@ -22,11 +22,12 @@ fn main() {
         } else {
             match args[0].parse::<usize>() {
                 Ok(x) => x,
-                Err(err) =>
+                Err(err) => {
                     return HandlerFuture::new(
                         api.execute(&SendMessage::new(chat_id, err.to_string()))
                             .and_then(|_| Ok(HandlerResult::Stop)),
-                    ),
+                    )
+                }
             }
         };
         HandlerFuture::new(session.set("counter", &val).and_then(move |()| {
@@ -45,11 +46,12 @@ fn main() {
         } else {
             match args[0].parse::<usize>() {
                 Ok(x) => x,
-                Err(err) =>
+                Err(err) => {
                     return HandlerFuture::new(
                         api.execute(&SendMessage::new(chat_id, err.to_string()))
                             .and_then(|_| Ok(HandlerResult::Stop)),
-                    ),
+                    )
+                }
             }
         };
         HandlerFuture::new(session.expire("counter", seconds).and_then(move |()| {

@@ -213,8 +213,9 @@ impl Principal {
         match self {
             Principal::User(principal) => principal.accepts(&update),
             Principal::Chat(principal) => principal.accepts(&update),
-            Principal::ChatUser(chat_principal, user_principal) =>
-                chat_principal.accepts(&update) && user_principal.accepts(&update),
+            Principal::ChatUser(chat_principal, user_principal) => {
+                chat_principal.accepts(&update) && user_principal.accepts(&update)
+            }
             Principal::All => true,
         }
     }
