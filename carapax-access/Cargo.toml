@@ -1,0 +1,26 @@
+[package]
+name = "carapax-access"
+description = "Access handler for carapax"
+version = "0.1.0"
+authors = ["Ross Nomann <rossnomann@protonmail.com>"]
+edition = "2018"
+readme = "README.md"
+license = "MIT"
+documentation = "https://docs.rs/carapax-access"
+repository = "https://github.com/tg-rs/carapax-access"
+
+[badges]
+travis-ci = { repository = "tg-rs/carapax-access", branch = "master" }
+
+[dependencies]
+failure = "0.1"
+futures = "0.1"
+carapax = { git = "https://github.com/tg-rs/carapax", rev = "d2e412b667e7a184f8c75ede16cedf7cddd56ed3" }
+log = "0.4"
+
+[dev-dependencies]
+dotenv = "0.13.0"
+env_logger = "0.6.1"
+log = "0.4.6"
+serde_json = "1.0"
+tokio = "0.1.17"
