@@ -9,10 +9,6 @@ license = "MIT"
 documentation = "https://docs.rs/carapax-ratelimit"
 repository = "https://github.com/tg-rs/carapax-ratelimit"
 
-[badges]
-travis-ci = { repository = "tg-rs/tg-rs", branch = "master" }
-codecov = { repository = "tg-rs/tg-rs" }
-
 [dependencies]
 carapax = { path = "../carapax" }
 nonzero_ext = "0.1"

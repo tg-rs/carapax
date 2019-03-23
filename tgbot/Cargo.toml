@@ -9,10 +9,6 @@ license = "MIT"
 documentation = "https://docs.rs/tgbot"
 repository = "https://github.com/tg-rs/tgbot"
 
-[badges]
-travis-ci = { repository = "tg-rs/tg-rs", branch = "master" }
-codecov = { repository = "tg-rs/tg-rs" }
-
 [dependencies]
 derive_more = "0.14.0"
 failure = "0.1.5"

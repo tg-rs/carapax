@@ -9,10 +9,6 @@ license = "MIT"
 documentation = "https://docs.rs/carapax-session"
 repository = "https://github.com/tg-rs/carapax-session"
 
-[badges]
-travis-ci = { repository = "tg-rs/tg-rs", branch = "master" }
-codecov = { repository = "tg-rs/tg-rs" }
-
 [features]
 redis-store = ["redis", "serde_json"]
 
