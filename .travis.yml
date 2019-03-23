@@ -1,28 +1,32 @@
 sudo: false
 cache: cargo
 language: rust
-rust:
-  - stable
-  - beta
-  - nightly
 
 matrix:
   allow_failures:
-    - rust: beta
     - rust: nightly
   fast_finish: true
+
+script: cargo test --all-targets --all-features
 
 jobs:
   include:
     - stage: rustfmt
+      rust: stable
       before_script: rustup component add rustfmt
       script: cargo fmt -- --check
     - stage: clippy
+      rust: stable
       before_script: rustup component add clippy
       script: cargo clippy --all-targets --all-features -- -D warnings
     - stage: test
-      script: cargo test --all-targets --all-features
+      rust: stable
+    - stage: test
+      rust: beta
+    - stage: test
+      rust: nightly
     - stage: doc
+      rust: nightly
       script: cargo doc --all --all-features
       deploy:
         provider: pages
@@ -32,8 +36,8 @@ jobs:
         local-dir: target/doc
         on:
           branch: master
-      rust: nightly
     - stage: coverage
+      rust: nightly
       before_script:
         - cargo install grcov -f
         - export CARGO_INCREMENTAL=0
@@ -42,7 +46,6 @@ jobs:
         - zip -0 ccov.zip `find . \( -name "*.gc*" \) -print`;
         - grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" > lcov.info;
         - bash <(curl -s https://codecov.io/bash) -f lcov.info;
-      rust: nightly
 
 stages:
   - rustfmt
