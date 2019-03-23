@@ -17,7 +17,12 @@ fn main() {
     let proxy = env::var("CARAPAX_PROXY").ok();
     let username = env::var("CARAPAX_DENY_USERNAME").expect("CARAPAX_DENY_USERNAME");
 
-    let api = Api::new(token, proxy).unwrap();
+    let mut config = Config::new(token);
+    if let Some(proxy) = proxy {
+        config = config.proxy(proxy);
+    }
+
+    let api = Api::new(config).unwrap();
 
     // Deny from all except for @username (specify without @)
     let rule = AccessRule::allow_user(username);

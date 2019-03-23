@@ -561,7 +561,7 @@ mod tests {
     #[test]
     fn test_dispatch_message() {
         let dispatcher = Dispatcher::new(
-            Api::new("token", None::<&str>).unwrap(),
+            Api::new("token").unwrap(),
             vec![
                 Handler::update(setup_context),
                 Handler::message(handle_message),
@@ -621,7 +621,7 @@ mod tests {
     #[test]
     fn test_dispatch_inline_query() {
         let dispatcher = Dispatcher::new(
-            Api::new("token", None::<&str>).unwrap(),
+            Api::new("token").unwrap(),
             vec![
                 Handler::update(setup_context),
                 Handler::inline_query(handle_inline_query),
@@ -649,7 +649,7 @@ mod tests {
     #[test]
     fn test_dispatch_chosen_inline_result() {
         let dispatcher = Dispatcher::new(
-            Api::new("token", None::<&str>).unwrap(),
+            Api::new("token").unwrap(),
             vec![
                 Handler::update(setup_context),
                 Handler::chosen_inline_result(handle_chose_inline_result),
@@ -676,7 +676,7 @@ mod tests {
     #[test]
     fn test_dispatch_callback_query() {
         let dispatcher = Dispatcher::new(
-            Api::new("token", None::<&str>).unwrap(),
+            Api::new("token").unwrap(),
             vec![
                 Handler::update(setup_context),
                 Handler::callback_query(handle_callback_query),
@@ -702,7 +702,7 @@ mod tests {
     #[test]
     fn test_dispatch_shipping_query() {
         let dispatcher = Dispatcher::new(
-            Api::new("token", None::<&str>).unwrap(),
+            Api::new("token").unwrap(),
             vec![
                 Handler::update(setup_context),
                 Handler::shipping_query(handle_shipping_query),
@@ -737,7 +737,7 @@ mod tests {
     #[test]
     fn test_dispatch_pre_checkout_query() {
         let dispatcher = Dispatcher::new(
-            Api::new("token", None::<&str>).unwrap(),
+            Api::new("token").unwrap(),
             vec![
                 Handler::update(setup_context),
                 Handler::pre_checkout_query(handle_precheckout_query),
@@ -782,7 +782,7 @@ mod tests {
         );
         let commands = CommandsHandler::default().add_handler("/testcommand", command_handler);
         let dispatcher = Dispatcher::new(
-            Api::new("token", None::<&str>).unwrap(),
+            Api::new("token").unwrap(),
             vec![Handler::update(setup_context), Handler::message(commands)],
             ErrorStrategy::Abort,
         );
@@ -852,7 +852,7 @@ mod tests {
         ] {
             let update = parse_update(update);
             let dispatcher = Dispatcher::new(
-                Api::new("token", None::<&str>).unwrap(),
+                Api::new("token").unwrap(),
                 vec![Handler::update(setup_context), handler],
                 ErrorStrategy::Abort,
             );

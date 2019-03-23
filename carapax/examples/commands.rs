@@ -34,7 +34,12 @@ fn main() {
     let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
     let proxy = env::var("CARAPAX_PROXY").ok();
 
-    let api = Api::new(token, proxy).unwrap();
+    let mut config = Config::new(token);
+    if let Some(proxy) = proxy {
+        config = config.proxy(proxy);
+    }
+
+    let api = Api::new(config).unwrap();
     let app = App::new();
 
     tokio::run(

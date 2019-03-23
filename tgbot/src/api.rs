@@ -9,7 +9,7 @@ use serde::de::DeserializeOwned;
 use std::{fmt::Debug, sync::Arc};
 
 /// An API config
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Config {
     token: String,
     proxy: Option<String>,

@@ -199,7 +199,7 @@ mod tests {
 
         // Aborted
         let dispatcher = Dispatcher::new(
-            Api::new("token", None::<&str>).unwrap(),
+            Api::new("token").unwrap(),
             vec![
                 Handler::update(setup_context),
                 Handler::update(handle_update_err),
@@ -212,7 +212,7 @@ mod tests {
 
         // Ignored
         let dispatcher = Dispatcher::new(
-            Api::new("token", None::<&str>).unwrap(),
+            Api::new("token").unwrap(),
             vec![
                 Handler::update(setup_context),
                 Handler::update(handle_update_err),

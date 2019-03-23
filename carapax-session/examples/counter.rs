@@ -90,7 +90,12 @@ fn main() {
     let proxy = env::var("CARAPAX_PROXY").ok();
     let redis_url = env::var("CARAPAX_REDIS_URL").expect("CARAPAX_REDIS_URL is not set");
 
-    let api = Api::new(token, proxy).unwrap();
+    let mut config = Config::new(token);
+    if let Some(proxy) = proxy {
+        config = config.proxy(proxy);
+    }
+
+    let api = Api::new(config).unwrap();
     tokio::run(lazy(|| {
         let commands = CommandsHandler::default()
             .add_handler("/set", handle_set)
