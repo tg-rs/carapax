@@ -2,13 +2,11 @@
 
 A Telegram Bot Framework
 
-[![Travis](https://img.shields.io/travis/tg-rs/carapax.svg?style=flat-square)](https://travis-ci.org/tg-rs/carapax)
-[![Codecov](https://img.shields.io/codecov/c/github/tg-rs/carapax.svg?style=flat-square)](https://codecov.io/gh/tg-rs/carapax)
 [![Version](https://img.shields.io/crates/v/carapax.svg?style=flat-square)](https://crates.io/crates/carapax)
 [![Downloads](https://img.shields.io/crates/d/carapax.svg?style=flat-square)](https://crates.io/crates/carapax)
-[![Release Documentation](https://img.shields.io/badge/docs-release-brightgreen.svg?style=flat-square)](https://docs.rs/carapax/)
-[![Master Documentation](https://img.shields.io/badge/docs-master-brightgreen.svg?style=flat-square)](https://tg-rs.github.io/carapax/carapax/index.html)
-[![License](https://img.shields.io/crates/l/carapax.svg?style=flat-square)](./LICENSE)
+[![Release Documentation](https://img.shields.io/badge/docs-release-brightgreen.svg?style=flat-square)](https://docs.rs/carapax)
+[![Master Documentation](https://img.shields.io/badge/docs-master-brightgreen.svg?style=flat-square)](https://tg-rs.github.io/tg-rs/carapax)
+[![License](https://img.shields.io/crates/l/carapax.svg?style=flat-square)](LICENSE)
 
 Name comes from [Carapace](https://en.wikipedia.org/wiki/Carapace) (carapax in latin).
 
@@ -16,12 +14,12 @@ Name comes from [Carapace](https://en.wikipedia.org/wiki/Carapace) (carapax in l
 
 ```toml
 [dependencies]
-carapax = "0.1"
+carapax = "0.2"
 ```
 
 # Example
 
-See [examples](https://github.com/tg-rs/carapax/tree/0.1.0/examples) directory.
+See [examples](https://github.com/tg-rs/tg-rs/tree/0.2.0/carapax/examples) directory.
 
 # Changelog
 

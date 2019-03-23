@@ -9,10 +9,6 @@ license = "MIT"
 documentation = "https://docs.rs/carapax"
 repository = "https://github.com/tg-rs/carapax"
 
-[badges]
-travis-ci = { repository = "tg-rs/carapax", branch = "master" }
-codecov = { repository = "tg-rs/carapax" }
-
 [dependencies]
 anymap = "0.12.0"
 failure = "0.1.5"
@@ -20,7 +16,7 @@ futures = "0.1.23"
 log = "0.4.6"
 regex = "1.0.5"
 shellwords = "1.0.0"
-tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "7759363" }
+tgbot = { path = "../tgbot" }
 tokio-executor = "0.1.5"
 
 [dev-dependencies]

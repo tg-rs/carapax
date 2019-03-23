@@ -37,7 +37,7 @@ script:
 before_cache:
   - |
     if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
-      zip -0 ccov.zip `find . \( -name "carapax*.gc*" \) -print`;
+      zip -0 ccov.zip `find . \( -name "*.gc*" \) -print`;
       grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" > lcov.info;
       bash <(curl -s https://codecov.io/bash) -f lcov.info;
     fi

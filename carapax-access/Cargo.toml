@@ -9,13 +9,10 @@ license = "MIT"
 documentation = "https://docs.rs/carapax-access"
 repository = "https://github.com/tg-rs/carapax-access"
 
-[badges]
-travis-ci = { repository = "tg-rs/carapax-access", branch = "master" }
-
 [dependencies]
 failure = "0.1"
 futures = "0.1"
-carapax = { git = "https://github.com/tg-rs/carapax", rev = "d2e412b667e7a184f8c75ede16cedf7cddd56ed3" }
+carapax = { path = "../carapax" }
 log = "0.4"
 
 [dev-dependencies]
