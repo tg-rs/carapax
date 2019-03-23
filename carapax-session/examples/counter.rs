@@ -26,7 +26,7 @@ fn main() {
                     return HandlerFuture::new(
                         api.execute(&SendMessage::new(chat_id, err.to_string()))
                             .and_then(|_| Ok(HandlerResult::Stop)),
-                    )
+                    );
                 }
             }
         };
@@ -50,7 +50,7 @@ fn main() {
                     return HandlerFuture::new(
                         api.execute(&SendMessage::new(chat_id, err.to_string()))
                             .and_then(|_| Ok(HandlerResult::Stop)),
-                    )
+                    );
                 }
             }
         };
