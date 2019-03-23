@@ -17,7 +17,6 @@ fn test_serialize() {
     assert_eq!(j, json!({"force_reply":true,"selective":false}));
 
     let markup: ReplyMarkup = vec![vec![
-        InlineKeyboardButton::new("test"),
         InlineKeyboardButton::with_url("url", "tg://user?id=1"),
         InlineKeyboardButton::with_callback_data("cd", "cd"),
         InlineKeyboardButton::with_switch_inline_query("siq", "siq"),
@@ -29,7 +28,18 @@ fn test_serialize() {
     let j = serde_json::to_value(&markup).unwrap();
     assert_eq!(
         j,
-        json!({"inline_keyboard":[[{"text":"test"},{"text":"url","url":"tg://user?id=1"},{"text":"cd","callback_data":"cd"},{"text":"siq","switch_inline_query":"siq"},{"text":"siqcc","switch_inline_query_current_chat":"siqcc"},{"text":"cg","callback_game":""},{"text":"pay","pay":true}]]})
+        json!({
+            "inline_keyboard": [
+                [
+                    {"text":"url","url":"tg://user?id=1"},
+                    {"text":"cd","callback_data":"cd"},
+                    {"text":"siq","switch_inline_query":"siq"},
+                    {"text":"siqcc","switch_inline_query_current_chat":"siqcc"},
+                    {"text":"cg","callback_game":""},
+                    {"text":"pay","pay":true}
+                ]
+            ]
+        })
     );
 
     let row = vec![
@@ -37,7 +47,15 @@ fn test_serialize() {
         KeyboardButton::new("request contact").request_contact(),
         KeyboardButton::new("request location").request_location(),
     ];
-    let serialized_kb = json!({"keyboard":[[{"text":"test"},{"text":"request contact","request_contact":true},{"text":"request location","request_location":true}]]});
+    let serialized_kb = json!({
+        "keyboard": [
+            [
+                {"text":"test"},
+                {"text":"request contact","request_contact":true},
+                {"text":"request location","request_location":true}
+            ]
+        ]
+    });
     let markup: ReplyMarkup = vec![row.clone()].into();
     let j = serde_json::to_value(&markup).unwrap();
     assert_eq!(j, serialized_kb);

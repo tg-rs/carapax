@@ -46,19 +46,6 @@ pub struct InlineKeyboardButton {
 }
 
 impl InlineKeyboardButton {
-    /// Returns a plain keyboard button
-    pub fn new<S: Into<String>>(text: S) -> Self {
-        InlineKeyboardButton {
-            text: text.into(),
-            url: None,
-            callback_data: None,
-            switch_inline_query: None,
-            switch_inline_query_current_chat: None,
-            callback_game: None,
-            pay: None,
-        }
-    }
-
     /// HTTP or tg:// url to be opened when button is pressed
     pub fn with_url<S: Into<String>>(text: S, url: S) -> Self {
         InlineKeyboardButton {
