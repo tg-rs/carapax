@@ -1,0 +1,31 @@
+[package]
+name = "carapax-session"
+description = "Session handler for carapax"
+version = "0.1.0"
+authors = ["Ross Nomann <rossnomann@protonmail.com>"]
+edition = "2018"
+readme = "README.md"
+license = "MIT"
+documentation = "https://docs.rs/carapax-session"
+repository = "https://github.com/tg-rs/carapax-session"
+
+[badges]
+travis-ci = { repository = "tg-rs/carapax-session", branch = "master" }
+
+[features]
+redis-store = ["redis", "serde_json"]
+
+[dependencies]
+carapax = { git = "https://github.com/tg-rs/carapax", rev = "78895bc" }
+failure = "0.1.5"
+futures = "0.1.25"
+serde = "1.0.89"
+
+redis = { version = "0.10.0", optional = true }
+serde_json = { version = "1.0.39", optional = true }
+
+[dev-dependencies]
+dotenv = "0.13.0"
+env_logger = "0.6.1"
+log = "0.4.6"
+tokio = "0.1.17"

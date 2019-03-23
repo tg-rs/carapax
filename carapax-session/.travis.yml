@@ -1,0 +1,16 @@
+sudo: false
+language: rust
+cache: cargo
+rust:
+  - stable
+  - beta
+  - nightly
+before_script:
+  - rustup component add clippy
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+script:
+  - cargo clippy --all-targets --all-features -- -D warnings
+  - cargo test --all-features
