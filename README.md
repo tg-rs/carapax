@@ -1,23 +1,11 @@
-# tgbot
+# Project layout
 
+- [tbot](tgbot) - A Telegram Bot API client
+- [carapax](carapax) - A Telegram Bot framework
+- [carapax-access](carapax-access) - An access handler for carapax
+- [carapax-ratelimit](carapax-ratelimit) - A ratelimit handler for carapax
+- [carapax-session](carapax-session) - A session handler for carapax
 
-
-# carapax
-
-
-
-# carapax-access
-
-
-
-# carapax-ratelimit
-
-
-
-# carapax-session
-
-
-
-# Code of conduct
+# Code of Conduct
 
 See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).

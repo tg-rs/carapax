@@ -1,3 +1,5 @@
+# Changelog
+
 ## 0.3.0 (12.03.2019)
 
 - Dispatcher moved to [carapax](https://github.com/tg-rs/carapax).
