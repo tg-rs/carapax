@@ -7,7 +7,7 @@ edition = "2018"
 readme = "README.md"
 license = "MIT"
 documentation = "https://docs.rs/carapax-ratelimit"
-repository = "https://github.com/tg-rs/carapax-ratelimit"
+repository = "https://github.com/tg-rs/tg-rs"
 
 [dependencies]
 carapax = { path = "../carapax" }
