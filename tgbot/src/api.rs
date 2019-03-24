@@ -27,10 +27,10 @@ impl Config {
     /// Sets a proxy to config
     ///
     /// Proxy format:
-    /// * http://[user:password]host:port
-    /// * https://[user:password]@host:port
+    /// * http://\[user:password\]@host:port
+    /// * https://\[user:password\]@host:port
     /// * socks4://userid@host:port
-    /// * socks5://[user:password]@host:port
+    /// * socks5://\[user:password\]@host:port
     pub fn proxy<S: Into<String>>(mut self, proxy: S) -> Self {
         self.proxy = Some(proxy.into());
         self
