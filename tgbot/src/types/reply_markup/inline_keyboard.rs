@@ -1,3 +1,4 @@
+use failure::Error;
 use serde::Serialize;
 
 /// Inline keyboard that appears right next to the message it belongs to
@@ -70,6 +71,21 @@ impl InlineKeyboardButton {
             callback_game: None,
             pay: None,
         }
+    }
+
+    /// Same as with_callback_data, but takes a serializable type
+    ///
+    /// Data will be serialized using serde_json
+    pub fn with_callback_data_struct<S: Into<String>, D: Serialize>(text: S, callback_data: &D) -> Result<Self, Error> {
+        Ok(InlineKeyboardButton {
+            text: text.into(),
+            url: None,
+            callback_data: Some(serde_json::to_string(callback_data)?),
+            switch_inline_query: None,
+            switch_inline_query_current_chat: None,
+            callback_game: None,
+            pay: None,
+        })
     }
 
     /// Pressing the button will prompt the user to select one of their chats,

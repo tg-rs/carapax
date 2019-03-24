@@ -1,5 +1,6 @@
 use crate::types::{message::Message, user::User};
-use serde::Deserialize;
+use failure::Error;
+use serde::{de::DeserializeOwned, Deserialize};
 
 /// Incoming callback query from a callback button in an inline keyboard
 ///
@@ -32,4 +33,14 @@ pub struct CallbackQuery {
     /// Short name of a Game to be returned,
     /// serves as the unique identifier for the game
     pub game_short_name: Option<String>,
+}
+
+impl CallbackQuery {
+    /// Parses callback data using serde_json
+    pub fn parse_data<T: DeserializeOwned>(&self) -> Result<Option<T>, Error> {
+        Ok(match self.data {
+            Some(ref data) => Some(serde_json::from_str(data)?),
+            None => None,
+        })
+    }
 }

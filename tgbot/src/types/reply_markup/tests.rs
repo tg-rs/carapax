@@ -1,6 +1,11 @@
 use crate::types::reply_markup::*;
-
+use serde::Serialize;
 use serde_json::json;
+
+#[derive(Serialize)]
+struct CallbackData {
+    value: String,
+}
 
 #[test]
 fn test_serialize() {
@@ -16,9 +21,14 @@ fn test_serialize() {
     let j = serde_json::to_value(&markup).unwrap();
     assert_eq!(j, json!({"force_reply":true,"selective":false}));
 
+    let callback_data = CallbackData {
+        value: String::from("cdstruct"),
+    };
+
     let markup: ReplyMarkup = vec![vec![
         InlineKeyboardButton::with_url("url", "tg://user?id=1"),
         InlineKeyboardButton::with_callback_data("cd", "cd"),
+        InlineKeyboardButton::with_callback_data_struct("cd", &callback_data).unwrap(),
         InlineKeyboardButton::with_switch_inline_query("siq", "siq"),
         InlineKeyboardButton::with_switch_inline_query_current_chat("siqcc", "siqcc"),
         InlineKeyboardButton::with_callback_game("cg"),
@@ -33,6 +43,7 @@ fn test_serialize() {
                 [
                     {"text":"url","url":"tg://user?id=1"},
                     {"text":"cd","callback_data":"cd"},
+                    {"text":"cd","callback_data":"{\"value\":\"cdstruct\"}"},
                     {"text":"siq","switch_inline_query":"siq"},
                     {"text":"siqcc","switch_inline_query_current_chat":"siqcc"},
                     {"text":"cg","callback_game":""},
