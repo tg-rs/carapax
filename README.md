@@ -5,7 +5,7 @@
 
 ## Project layout
 
-- [tbot](tgbot) - A Telegram Bot API client
+- [tgbot](tgbot) - A Telegram Bot API client
 - [carapax](carapax) - A Telegram Bot framework
 - [carapax-access](carapax-access) - An access handler for carapax
 - [carapax-ratelimit](carapax-ratelimit) - A ratelimit handler for carapax
