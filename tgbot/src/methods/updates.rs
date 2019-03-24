@@ -210,9 +210,9 @@ mod tests {
 
     #[test]
     fn test_serialize_get_updates() {
-        let req = GetUpdates::default().get_request().unwrap().build("token");
+        let req = GetUpdates::default().get_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(req.url, String::from("https://api.telegram.org/bottoken/getUpdates"));
+        assert_eq!(req.url, String::from("host/bottoken/getUpdates"));
         match req.body {
             RequestBody::Json(data) => {
                 assert_eq!(String::from_utf8(data).unwrap(), String::from(r#"{}"#));
@@ -237,7 +237,7 @@ mod tests {
             .add_allowed_update(AllowedUpdate::ShippingQuery)
             .get_request()
             .unwrap()
-            .build("token");
+            .build("host", "token");
         match req.body {
             RequestBody::Json(data) => {
                 let data: Value = serde_json::from_slice(&data).unwrap();;
@@ -271,9 +271,9 @@ mod tests {
 
     #[test]
     fn test_serialize_set_webhook() {
-        let req = SetWebhook::new("url").get_request().unwrap().build("token");
+        let req = SetWebhook::new("url").get_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(req.url, String::from("https://api.telegram.org/bottoken/setWebhook"));
+        assert_eq!(req.url, String::from("host/bottoken/setWebhook"));
         match req.body {
             RequestBody::Json(data) => {
                 assert_eq!(String::from_utf8(data).unwrap(), String::from(r#"{"url":"url"}"#));
@@ -284,9 +284,9 @@ mod tests {
 
     #[test]
     fn test_serialize_delete_webhook() {
-        let req = DeleteWebhook.get_request().unwrap().build("token");
+        let req = DeleteWebhook.get_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Get);
-        assert_eq!(req.url, String::from("https://api.telegram.org/bottoken/deleteWebhook"));
+        assert_eq!(req.url, String::from("host/bottoken/deleteWebhook"));
         match req.body {
             RequestBody::Empty => {}
             data => panic!("Unexpected request data: {:?}", data),
@@ -295,12 +295,9 @@ mod tests {
 
     #[test]
     fn test_serialize_get_webhook_info() {
-        let req = GetWebhookInfo.get_request().unwrap().build("token");
+        let req = GetWebhookInfo.get_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Get);
-        assert_eq!(
-            req.url,
-            String::from("https://api.telegram.org/bottoken/getWebhookInfo")
-        );
+        assert_eq!(req.url, String::from("host/bottoken/getWebhookInfo"));
         match req.body {
             RequestBody::Empty => {}
             data => panic!("Unexpected request data: {:?}", data),

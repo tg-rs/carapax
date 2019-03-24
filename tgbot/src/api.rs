@@ -8,9 +8,12 @@ use futures::{future, Future, Poll};
 use serde::de::DeserializeOwned;
 use std::{fmt::Debug, sync::Arc};
 
+const DEFAULT_HOST: &str = "https://api.telegram.org";
+
 /// An API config
 #[derive(Debug, Clone)]
 pub struct Config {
+    host: Option<String>,
     token: String,
     proxy: Option<String>,
 }
@@ -20,8 +23,17 @@ impl Config {
     pub fn new<S: Into<String>>(token: S) -> Self {
         Self {
             token: token.into(),
+            host: None,
             proxy: None,
         }
+    }
+
+    /// Sets an API host
+    ///
+    /// https://api.telegram.org is used by default
+    pub fn host<S: Into<String>>(mut self, host: S) -> Self {
+        self.host = Some(host.into());
+        self
     }
 
     /// Sets a proxy to config
@@ -50,6 +62,7 @@ where
 #[derive(Clone)]
 pub struct Api {
     executor: Arc<Box<Executor>>,
+    host: String,
     token: String,
 }
 
@@ -63,6 +76,7 @@ impl Api {
             } else {
                 default_executor()?
             }),
+            host: config.host.unwrap_or_else(|| String::from(DEFAULT_HOST)),
             token: config.token,
         })
     }
@@ -75,15 +89,19 @@ impl Api {
         let executor = self.executor.clone();
         ApiFuture {
             inner: Box::new(
-                future::result(method.get_request().map(|builder| builder.build(&self.token)))
-                    .and_then(move |req| executor.execute(req).from_err())
-                    .and_then(|data| future::result(serde_json::from_slice::<Response<M::Response>>(&data)).from_err())
-                    .and_then(|rep| {
-                        future::result(match rep {
-                            Response::Success(obj) => Ok(obj),
-                            Response::Error(err) => Err(err.into()),
-                        })
-                    }),
+                future::result(
+                    method
+                        .get_request()
+                        .map(|builder| builder.build(&self.host, &self.token)),
+                )
+                .and_then(move |req| executor.execute(req).from_err())
+                .and_then(|data| future::result(serde_json::from_slice::<Response<M::Response>>(&data)).from_err())
+                .and_then(|rep| {
+                    future::result(match rep {
+                        Response::Success(obj) => Ok(obj),
+                        Response::Error(err) => Err(err.into()),
+                    })
+                }),
             ),
         }
     }

@@ -1,8 +1,5 @@
 use failure::Error;
 use serde::ser::Serialize;
-use std::fmt::Display;
-
-const BASE_URL: &str = "https://api.telegram.org";
 
 /// Represents an API method
 pub trait Method {
@@ -22,26 +19,26 @@ pub struct RequestBuilder {
 }
 
 impl RequestBuilder {
-    pub(crate) fn json(path: &'static str, s: &impl Serialize) -> Result<RequestBuilder, Error> {
+    pub(crate) fn json<S: Into<String>>(path: S, s: &impl Serialize) -> Result<RequestBuilder, Error> {
         Ok(RequestBuilder {
             method: RequestMethod::Post,
             body: RequestBody::Json(serde_json::to_vec(s)?),
-            url: RequestUrl(path),
+            url: RequestUrl(path.into()),
         })
     }
 
-    pub(crate) fn empty(path: &'static str) -> Result<RequestBuilder, Error> {
+    pub(crate) fn empty<S: Into<String>>(path: S) -> Result<RequestBuilder, Error> {
         Ok(RequestBuilder {
             method: RequestMethod::Get,
             body: RequestBody::Empty,
-            url: RequestUrl(path),
+            url: RequestUrl(path.into()),
         })
     }
 
-    pub(crate) fn build(self, token: &str) -> Request {
+    pub(crate) fn build(self, base_url: &str, token: &str) -> Request {
         Request {
             method: self.method,
-            url: self.url.build(token),
+            url: self.url.build(base_url, token),
             body: self.body,
         }
     }
@@ -62,11 +59,11 @@ pub(crate) enum RequestMethod {
 }
 
 #[derive(Clone, Debug)]
-struct RequestUrl(&'static str);
+struct RequestUrl(String);
 
 impl RequestUrl {
-    fn build(&self, token: impl Display) -> String {
-        format!("{}/bot{}/{}", BASE_URL, token, self.0)
+    fn build(&self, base_url: &str, token: &str) -> String {
+        format!("{}/bot{}/{}", base_url, token, self.0)
     }
 }
 
