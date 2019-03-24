@@ -1,6 +1,6 @@
 use crate::{
     executor::{default_executor, proxy_executor, Executor},
-    methods::Method,
+    methods::{Method, RequestBuilder},
     types::Response,
 };
 use failure::Error;
@@ -79,6 +79,22 @@ impl Api {
             host: config.host.unwrap_or_else(|| String::from(DEFAULT_HOST)),
             token: config.token,
         })
+    }
+
+    /// Downloads a file
+    ///
+    /// Use getFile method in order get file_path
+    pub fn download_file<P: AsRef<str>>(&self, file_path: P) -> ApiFuture<Vec<u8>> {
+        let executor = self.executor.clone();
+        ApiFuture {
+            inner: Box::new(
+                future::result(
+                    RequestBuilder::empty(file_path.as_ref())
+                        .map(|builder| builder.build(&format!("{}/file", &self.host), &self.token)),
+                )
+                .and_then(move |req| executor.execute(req).from_err()),
+            ),
+        }
     }
 
     /// Executes a method
