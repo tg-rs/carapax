@@ -1,4 +1,4 @@
-use crate::methods::Request;
+use crate::request::Request;
 use failure::Error;
 use futures::Future;
 

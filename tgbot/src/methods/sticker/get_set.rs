@@ -1,4 +1,4 @@
-use crate::{methods::method::*, types::StickerSet};
+use crate::{methods::Method, request::RequestBuilder, types::StickerSet};
 use failure::Error;
 use serde::Serialize;
 

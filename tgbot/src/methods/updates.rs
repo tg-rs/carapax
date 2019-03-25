@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{AllowedUpdate, Integer, Update, WebhookInfo},
 };
 use failure::Error;
@@ -206,6 +207,7 @@ impl Method for GetWebhookInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::request::{RequestBody, RequestMethod};
     use serde_json::Value;
 
     #[test]

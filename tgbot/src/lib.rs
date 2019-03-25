@@ -6,6 +6,7 @@ mod api;
 mod executor;
 mod handler;
 mod never;
+mod request;
 
 /// Methods available in the Bot API
 pub mod methods;

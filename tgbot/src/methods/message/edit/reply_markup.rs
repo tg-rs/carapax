@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{ChatId, EditMessageResult, InlineKeyboardMarkup, Integer},
 };
 use failure::Error;

@@ -1,6 +1,7 @@
 use crate::{
     executor::{default_executor, proxy_executor, Executor},
-    methods::{Method, RequestBuilder},
+    methods::Method,
+    request::RequestBuilder,
     types::Response,
 };
 use failure::Error;

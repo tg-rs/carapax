@@ -1,6 +1,6 @@
 use crate::{
     executor::Executor,
-    methods::{Request, RequestBody, RequestMethod},
+    request::{Request, RequestBody, RequestMethod},
 };
 use failure::Error;
 use futures::{future, Future, Stream};

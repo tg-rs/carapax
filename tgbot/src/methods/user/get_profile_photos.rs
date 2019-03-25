@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{Integer, UserProfilePhotos},
 };
 use failure::Error;
