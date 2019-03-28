@@ -18,3 +18,12 @@ pub enum ParseMode {
     /// Markdown
     Markdown,
 }
+
+impl ToString for ParseMode {
+    fn to_string(&self) -> String {
+        String::from(match self {
+            ParseMode::Html => "HTML",
+            ParseMode::Markdown => "Markdown",
+        })
+    }
+}

@@ -180,6 +180,15 @@ pub enum ChatId {
     Id(Integer),
 }
 
+impl ToString for ChatId {
+    fn to_string(&self) -> String {
+        match self {
+            ChatId::Username(username) => username.clone(),
+            ChatId::Id(chat_id) => chat_id.to_string(),
+        }
+    }
+}
+
 impl Serialize for ChatId {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
