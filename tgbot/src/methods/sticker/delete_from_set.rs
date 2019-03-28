@@ -24,7 +24,7 @@ impl DeleteStickerFromSet {
 impl Method for DeleteStickerFromSet {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("deleteStickerFromSet", &self)
     }
 }

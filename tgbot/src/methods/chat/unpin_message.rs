@@ -29,7 +29,7 @@ impl UnpinChatMessage {
 impl Method for UnpinChatMessage {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("unpinChatMessage", &self)
     }
 }

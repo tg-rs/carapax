@@ -22,7 +22,7 @@ impl UpdateHandler for Handler {
 
         macro_rules! execute {
             ($method:expr) => {
-                self.api.spawn(self.api.execute(&$method).then(|x| {
+                self.api.spawn(self.api.execute($method).then(|x| {
                     log::info!("sendMessage result: {:?}\n", x);
                     Ok::<(), ()>(())
                 }));

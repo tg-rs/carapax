@@ -55,7 +55,7 @@ impl KickChatMember {
 impl Method for KickChatMember {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("kickChatMember", &self)
     }
 }

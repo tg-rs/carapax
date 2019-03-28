@@ -51,7 +51,7 @@ impl AddStickerToSet {
 impl Method for AddStickerToSet {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("addStickerToSet", &self)
     }
 }

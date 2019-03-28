@@ -8,7 +8,7 @@ pub struct GetMe;
 impl Method for GetMe {
     type Response = User;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::empty("getMe")
     }
 }

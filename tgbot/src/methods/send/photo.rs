@@ -84,7 +84,7 @@ impl SendPhoto {
 impl Method for SendPhoto {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendPhoto", &self)
     }
 }

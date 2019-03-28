@@ -98,7 +98,7 @@ impl SendVideoNote {
 impl Method for SendVideoNote {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendVideoNote", &self)
     }
 }

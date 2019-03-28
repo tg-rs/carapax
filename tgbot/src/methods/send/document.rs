@@ -103,7 +103,7 @@ impl SendDocument {
 impl Method for SendDocument {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendDocument", &self)
     }
 }
