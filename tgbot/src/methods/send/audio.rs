@@ -1,10 +1,9 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
-    types::{ChatId, Integer, Message, ParseMode, ReplyMarkup},
+    request::{Form, RequestBuilder},
+    types::{ChatId, InputFile, Integer, Message, ParseMode, ReplyMarkup},
 };
 use failure::Error;
-use serde::Serialize;
 
 /// Send audio files
 ///
@@ -12,28 +11,9 @@ use serde::Serialize;
 /// Bots can currently send audio files of up to 50 MB in size, this limit may be changed in the future
 ///
 /// For sending voice messages, use the sendVoice method instead
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct SendAudio {
-    chat_id: ChatId,
-    audio: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    caption: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    parse_mode: Option<ParseMode>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    duration: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    performer: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    title: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    thumb: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    disable_notification: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_to_message_id: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_markup: Option<ReplyMarkup>,
+    form: Form,
 }
 
 impl SendAudio {
@@ -43,52 +23,40 @@ impl SendAudio {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * audio - Audio file to send
-    ///           Pass a file_id as String to send an audio file that exists on the Telegram servers (recommended),
-    ///           pass an HTTP URL as a String for Telegram to get an audio file from the Internet,
-    ///           or upload a new one using multipart/form-data
-    pub fn new<C: Into<ChatId>, S: Into<String>>(chat_id: C, audio: S) -> Self {
-        SendAudio {
-            chat_id: chat_id.into(),
-            audio: audio.into(),
-            caption: None,
-            parse_mode: None,
-            duration: None,
-            performer: None,
-            title: None,
-            thumb: None,
-            disable_notification: None,
-            reply_to_message_id: None,
-            reply_markup: None,
-        }
+    pub fn new<C: Into<ChatId>>(chat_id: C, audio: InputFile) -> Self {
+        let mut form = Form::new();
+        form.set_field("chat_id", chat_id.into());
+        form.set_field("audio", audio);
+        SendAudio { form }
     }
 
     /// Sets audio caption (0-1024 characters)
-    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
-        self.caption = Some(caption.into());
+    pub fn caption<S: Into<String>>(mut self, value: S) -> Self {
+        self.form.set_field("caption", value.into());
         self
     }
 
     /// Sets parse mode
-    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
-        self.parse_mode = Some(parse_mode);
+    pub fn parse_mode(mut self, value: ParseMode) -> Self {
+        self.form.set_field("parse_mode", value);
         self
     }
 
     /// Sets duration of the audio in seconds
-    pub fn duration(mut self, duration: Integer) -> Self {
-        self.duration = Some(duration);
+    pub fn duration(mut self, value: Integer) -> Self {
+        self.form.set_field("duration", value);
         self
     }
 
     /// Sets performer
-    pub fn performer<S: Into<String>>(mut self, performer: S) -> Self {
-        self.performer = Some(performer.into());
+    pub fn performer<S: Into<String>>(mut self, value: S) -> Self {
+        self.form.set_field("performer", value.into());
         self
     }
 
     /// Sets track name
-    pub fn title<S: Into<String>>(mut self, title: S) -> Self {
-        self.title = Some(title.into());
+    pub fn title<S: Into<String>>(mut self, value: S) -> Self {
+        self.form.set_field("title", value.into());
         self
     }
 
@@ -101,29 +69,30 @@ impl SendAudio {
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>” if the thumbnail
     /// was uploaded using multipart/form-data under <file_attach_name>
-    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
-        self.thumb = Some(thumb.into());
+    pub fn thumb(mut self, value: InputFile) -> Self {
+        self.form.set_field("thumb", value);
         self
     }
 
     /// Sends the message silently
     ///
     /// Users will receive a notification with no sound
-    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
-        self.disable_notification = Some(disable_notification);
+    pub fn disable_notification(mut self, value: bool) -> Self {
+        self.form.set_field("disable_notification", value);
         self
     }
 
     /// If the message is a reply, ID of the original message
-    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
-        self.reply_to_message_id = Some(reply_to_message_id);
+    pub fn reply_to_message_id(mut self, value: Integer) -> Self {
+        self.form.set_field("reply_to_message_id", value);
         self
     }
 
     /// Additional interface options
-    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, reply_markup: R) -> Self {
-        self.reply_markup = Some(reply_markup.into());
-        self
+    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, value: R) -> Result<Self, Error> {
+        let value = serde_json::to_string(&value.into())?;
+        self.form.set_field("reply_markup", value);
+        Ok(self)
     }
 }
 
@@ -131,6 +100,6 @@ impl Method for SendAudio {
     type Response = Message;
 
     fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("sendAudio", &self)
+        RequestBuilder::form("sendAudio", self.form)
     }
 }
