@@ -1,6 +1,10 @@
 use failure::Error;
 use serde::ser::Serialize;
 
+mod form;
+
+pub(crate) use self::form::*;
+
 /// A request builder
 #[derive(Debug)]
 pub struct RequestBuilder {
@@ -10,6 +14,14 @@ pub struct RequestBuilder {
 }
 
 impl RequestBuilder {
+    pub(crate) fn form<S: Into<String>>(path: S, form: Form) -> Result<RequestBuilder, Error> {
+        Ok(RequestBuilder {
+            method: RequestMethod::Post,
+            body: RequestBody::Form(form),
+            path: path.into(),
+        })
+    }
+
     pub(crate) fn json<S: Into<String>>(path: S, s: &impl Serialize) -> Result<RequestBuilder, Error> {
         Ok(RequestBuilder {
             method: RequestMethod::Post,
@@ -50,6 +62,7 @@ pub(crate) enum RequestMethod {
 
 #[derive(Debug)]
 pub(crate) enum RequestBody {
+    Form(Form),
     Json(Vec<u8>),
     Empty,
 }
