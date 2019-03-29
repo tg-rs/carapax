@@ -85,31 +85,30 @@ impl UpdateHandler for Handler {
                     }
                     _ => {}
                 }
-            } else {
-                if let MessageData::Document { data, .. } = message.data {
-                    // Resend document by file id (you also can send a document using URL)
-                    execute!(SendDocument::new(chat_id, InputFile::file_id(data.file_id)));
-                } else if let Some(text) = message.get_text() {
-                    match text.data.as_str() {
-                        // Send animation by URL (you also can send animation using a file_id)
-                        "/gif" => execute!(SendAnimation::new(chat_id, InputFile::url(self.gif_url.clone()))),
-                        "/photo" => {
-                            let markup = vec![vec![InlineKeyboardButton::with_callback_data("test", "cb-data")]];
-                            execute!(SendPhoto::new(chat_id, InputFile::path(self.photo_path.clone()))
-                                .reply_markup(markup)
-                                .unwrap())
-                        }
-                        "/text" => {
-                            let document = Cursor::new(b"Hello World!");
-                            let reader = InputFileReader::new(document).info(("hello.txt", mime::TEXT_PLAIN));
-                            execute!(SendDocument::new(chat_id, reader)
-                                .thumb(InputFile::path(self.document_thumb_path.clone())))
-                        }
-                        "/video" => execute!(SendVideo::new(chat_id, InputFile::path(self.video_path.clone()))),
-                        // The same way for other file types...
-                        _ => {}
-                    };
-                }
+            } else if let MessageData::Document { data, .. } = message.data {
+                // Resend document by file id (you also can send a document using URL)
+                execute!(SendDocument::new(chat_id, InputFile::file_id(data.file_id)));
+            } else if let Some(text) = message.get_text() {
+                match text.data.as_str() {
+                    // Send animation by URL (you also can send animation using a file_id)
+                    "/gif" => execute!(SendAnimation::new(chat_id, InputFile::url(self.gif_url.clone()))),
+                    "/photo" => {
+                        let markup = vec![vec![InlineKeyboardButton::with_callback_data("test", "cb-data")]];
+                        execute!(SendPhoto::new(chat_id, InputFile::path(self.photo_path.clone()))
+                            .reply_markup(markup)
+                            .unwrap())
+                    }
+                    "/text" => {
+                        let document = Cursor::new(b"Hello World!");
+                        let reader = InputFileReader::new(document).info(("hello.txt", mime::TEXT_PLAIN));
+                        execute!(
+                            SendDocument::new(chat_id, reader).thumb(InputFile::path(self.document_thumb_path.clone()))
+                        )
+                    }
+                    "/video" => execute!(SendVideo::new(chat_id, InputFile::path(self.video_path.clone()))),
+                    // The same way for other file types...
+                    _ => {}
+                };
             }
         }
     }

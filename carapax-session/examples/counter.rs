@@ -24,14 +24,14 @@ fn main() {
                 Ok(x) => x,
                 Err(err) => {
                     return HandlerFuture::new(
-                        api.execute(&SendMessage::new(chat_id, err.to_string()))
+                        api.execute(SendMessage::new(chat_id, err.to_string()))
                             .and_then(|_| Ok(HandlerResult::Stop)),
                     );
                 }
             }
         };
         HandlerFuture::new(session.set("counter", &val).and_then(move |()| {
-            api.execute(&SendMessage::new(chat_id, "OK"))
+            api.execute(SendMessage::new(chat_id, "OK"))
                 .and_then(|_| Ok(HandlerResult::Stop))
         }))
     }
@@ -48,14 +48,14 @@ fn main() {
                 Ok(x) => x,
                 Err(err) => {
                     return HandlerFuture::new(
-                        api.execute(&SendMessage::new(chat_id, err.to_string()))
+                        api.execute(SendMessage::new(chat_id, err.to_string()))
                             .and_then(|_| Ok(HandlerResult::Stop)),
                     );
                 }
             }
         };
         HandlerFuture::new(session.expire("counter", seconds).and_then(move |()| {
-            api.execute(&SendMessage::new(chat_id, "OK"))
+            api.execute(SendMessage::new(chat_id, "OK"))
                 .and_then(|_| Ok(HandlerResult::Stop))
         }))
     }
@@ -66,7 +66,7 @@ fn main() {
         let api = context.get::<Api>().clone();
         let chat_id = message.get_chat_id();
         HandlerFuture::new(session.del("counter").and_then(move |()| {
-            api.execute(&SendMessage::new(chat_id, "OK"))
+            api.execute(SendMessage::new(chat_id, "OK"))
                 .and_then(|_| Ok(HandlerResult::Stop))
         }))
     }
@@ -79,7 +79,7 @@ fn main() {
         HandlerFuture::new(session.get::<usize>("counter").and_then(move |val| {
             let val = val.unwrap_or(0) + 1;
             session.set("counter", &val).and_then(move |()| {
-                api.execute(&SendMessage::new(chat_id, format!("Count: {}", val)))
+                api.execute(SendMessage::new(chat_id, format!("Count: {}", val)))
                     .and_then(|_| Ok(HandlerResult::Continue))
             })
         }))
