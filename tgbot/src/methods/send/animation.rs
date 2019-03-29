@@ -20,10 +20,14 @@ impl SendAnimation {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * animation - Animation to send
-    pub fn new<C: Into<ChatId>>(chat_id: C, animation: InputFile) -> Self {
+    pub fn new<C, A>(chat_id: C, animation: A) -> Self
+    where
+        C: Into<ChatId>,
+        A: Into<InputFile>,
+    {
         let mut form = Form::new();
         form.set_field("chat_id", chat_id.into());
-        form.set_field("animation", animation);
+        form.set_field("animation", animation.into());
         SendAnimation { form }
     }
 
@@ -53,8 +57,11 @@ impl SendAnimation {
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>”
     /// if the thumbnail was uploaded using multipart/form-data under <file_attach_name>
-    pub fn thumb(mut self, value: InputFile) -> Self {
-        self.form.set_field("thumb", value);
+    pub fn thumb<V>(mut self, value: V) -> Self
+    where
+        V: Into<InputFile>,
+    {
+        self.form.set_field("thumb", value.into());
         self
     }
 

@@ -29,10 +29,12 @@ pub struct MediaGroup {
 
 impl MediaGroup {
     /// Adds a photo or video to group
-    pub fn add_item<I>(mut self, file: InputFile, info: I) -> Self
+    pub fn add_item<I, F>(mut self, file: F, info: I) -> Self
     where
         MediaGroupItem: From<(String, I)>,
+        F: Into<InputFile>,
     {
+        let file = file.into();
         let media = match &file.kind {
             InputFileKind::Id(text) | InputFileKind::Url(text) => text.clone(),
             _ => {
@@ -98,12 +100,13 @@ pub struct InputMedia {
 
 impl InputMedia {
     /// Creates a new input media
-    pub fn new<K>(file: InputFile, info: K) -> Result<InputMedia, Error>
+    pub fn new<F, K>(file: F, info: K) -> Result<InputMedia, Error>
     where
+        F: Into<InputFile>,
         InputMediaKind: From<(String, K)>,
     {
+        let file = file.into();
         let mut fields = HashMap::new();
-
         let media = match file.kind {
             InputFileKind::Id(text) | InputFileKind::Url(text) => text,
             _ => {

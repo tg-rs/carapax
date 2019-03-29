@@ -30,17 +30,18 @@ impl CreateNewStickerSet {
     ///                 must be up to 512 kilobytes in size, dimensions must not exceed 512px,
     ///                 and either width or height must be exactly 512px
     /// * emojis - One or more emoji corresponding to the sticker
-    pub fn new<N, T, E>(user_id: Integer, name: N, title: T, png_sticker: InputFile, emojis: E) -> Self
+    pub fn new<N, T, P, E>(user_id: Integer, name: N, title: T, png_sticker: P, emojis: E) -> Self
     where
         N: Into<String>,
         T: Into<String>,
+        P: Into<InputFile>,
         E: Into<String>,
     {
         let mut form = Form::new();
         form.set_field("user_id", user_id);
         form.set_field("name", name.into());
         form.set_field("title", title.into());
-        form.set_field("png_sticker", png_sticker);
+        form.set_field("png_sticker", png_sticker.into());
         form.set_field("emojis", emojis.into());
         CreateNewStickerSet { form }
     }

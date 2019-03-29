@@ -23,10 +23,14 @@ impl SendVoice {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * voice - Audio file to send
-    pub fn new<C: Into<ChatId>, S: Into<String>>(chat_id: C, voice: InputFile) -> Self {
+    pub fn new<C, V>(chat_id: C, voice: V) -> Self
+    where
+        C: Into<ChatId>,
+        V: Into<InputFile>,
+    {
         let mut form = Form::new();
         form.set_field("chat_id", chat_id.into());
-        form.set_field("voice", voice);
+        form.set_field("voice", voice.into());
         SendVoice { form }
     }
 

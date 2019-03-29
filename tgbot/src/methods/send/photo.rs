@@ -18,10 +18,14 @@ impl SendPhoto {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * photo - Photo to send
-    pub fn new<C: Into<ChatId>>(chat_id: C, photo: InputFile) -> Self {
+    pub fn new<C, P>(chat_id: C, photo: P) -> Self
+    where
+        C: Into<ChatId>,
+        P: Into<InputFile>,
+    {
         let mut form = Form::new();
         form.set_field("chat_id", chat_id.into());
-        form.set_field("photo", photo);
+        form.set_field("photo", photo.into());
         Self { form }
     }
 

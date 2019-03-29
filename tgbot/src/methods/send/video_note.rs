@@ -20,10 +20,14 @@ impl SendVideoNote {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * video_note - Video note to send
-    pub fn new<C: Into<ChatId>, S: Into<String>>(chat_id: C, video_note: InputFile) -> Self {
+    pub fn new<C, V>(chat_id: C, video_note: V) -> Self
+    where
+        C: Into<ChatId>,
+        V: Into<InputFile>,
+    {
         let mut form = Form::new();
         form.set_field("chat_id", chat_id.into());
-        form.set_field("video_note", video_note);
+        form.set_field("video_note", video_note.into());
         SendVideoNote { form }
     }
 
@@ -47,8 +51,11 @@ impl SendVideoNote {
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>” if the thumbnail was
     /// uploaded using multipart/form-data under <file_attach_name>
-    pub fn thumb(mut self, value: InputFile) -> Self {
-        self.form.set_field("thumb", value);
+    pub fn thumb<V>(mut self, value: V) -> Self
+    where
+        V: Into<InputFile>,
+    {
+        self.form.set_field("thumb", value.into());
         self
     }
 

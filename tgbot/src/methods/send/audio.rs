@@ -23,10 +23,14 @@ impl SendAudio {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * audio - Audio file to send
-    pub fn new<C: Into<ChatId>>(chat_id: C, audio: InputFile) -> Self {
+    pub fn new<C, A>(chat_id: C, audio: A) -> Self
+    where
+        C: Into<ChatId>,
+        A: Into<InputFile>,
+    {
         let mut form = Form::new();
         form.set_field("chat_id", chat_id.into());
-        form.set_field("audio", audio);
+        form.set_field("audio", audio.into());
         SendAudio { form }
     }
 
@@ -69,8 +73,11 @@ impl SendAudio {
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>” if the thumbnail
     /// was uploaded using multipart/form-data under <file_attach_name>
-    pub fn thumb(mut self, value: InputFile) -> Self {
-        self.form.set_field("thumb", value);
+    pub fn thumb<V>(mut self, value: V) -> Self
+    where
+        V: Into<InputFile>,
+    {
+        self.form.set_field("thumb", value.into());
         self
     }
 

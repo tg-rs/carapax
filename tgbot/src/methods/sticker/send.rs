@@ -21,10 +21,14 @@ impl SendSticker {
     ///             Pass a file_id as String to send a file that exists on the Telegram servers (recommended),
     ///             pass an HTTP URL as a String for Telegram to get a .webp file from the Internet,
     ///             or upload a new one using multipart/form-data
-    pub fn new<C: Into<ChatId>>(chat_id: C, sticker: InputFile) -> Self {
+    pub fn new<C, S>(chat_id: C, sticker: S) -> Self
+    where
+        C: Into<ChatId>,
+        S: Into<InputFile>,
+    {
         let mut form = Form::new();
         form.set_field("chat_id", chat_id.into());
-        form.set_field("sticker", sticker);
+        form.set_field("sticker", sticker.into());
         SendSticker { form }
     }
 
