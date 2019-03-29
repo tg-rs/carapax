@@ -1,10 +1,9 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::{Form, RequestBuilder},
     types::{ChatId, EditMessageResult, InlineKeyboardMarkup, InputMedia, Integer},
 };
 use failure::Error;
-use serde::Serialize;
 
 /// Edit audio, document, photo, or video messages
 ///
@@ -12,17 +11,9 @@ use serde::Serialize;
 /// Otherwise, message type can be changed arbitrarily
 /// When inline message is edited, new file can't be uploaded
 /// Use previously uploaded file via its file_id or specify a URL
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct EditMessageMedia {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    chat_id: Option<ChatId>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    message_id: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    inline_message_id: Option<String>,
-    media: InputMedia,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_markup: Option<InlineKeyboardMarkup>,
+    form: Form,
 }
 
 impl EditMessageMedia {
@@ -34,13 +25,13 @@ impl EditMessageMedia {
     /// * message_id - Identifier of the sent message
     /// * media - New media content of the message
     pub fn new<C: Into<ChatId>>(chat_id: C, message_id: Integer, media: InputMedia) -> Self {
-        EditMessageMedia {
-            chat_id: Some(chat_id.into()),
-            message_id: Some(message_id),
-            inline_message_id: None,
-            media,
-            reply_markup: None,
+        let mut form = Form::new();
+        form.set_field("chat_id", chat_id.into());
+        form.set_field("message_id", message_id);
+        for (k, v) in media.into_form() {
+            form.set_field(k, v);
         }
+        EditMessageMedia { form }
     }
 
     /// Creates a new EditMessageMedia
@@ -50,19 +41,19 @@ impl EditMessageMedia {
     /// * inline_message_id - Identifier of the inline message
     /// * media - New media content of the message
     pub fn with_inline_message_id<S: Into<String>>(inline_message_id: S, media: InputMedia) -> Self {
-        EditMessageMedia {
-            chat_id: None,
-            message_id: None,
-            inline_message_id: Some(inline_message_id.into()),
-            media,
-            reply_markup: None,
+        let mut form = Form::new();
+        form.set_field("inline_message_id", inline_message_id.into());
+        for (k, v) in media.into_form() {
+            form.set_field(k, v);
         }
+        EditMessageMedia { form }
     }
 
     /// New inline keyboard
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Self {
-        self.reply_markup = Some(reply_markup.into());
-        self
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Result<Self, Error> {
+        let reply_markup = serde_json::to_string(&reply_markup.into())?;
+        self.form.set_field("reply_markup", reply_markup);
+        Ok(self)
     }
 }
 
@@ -70,6 +61,6 @@ impl Method for EditMessageMedia {
     type Response = EditMessageResult;
 
     fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("editMessageMedia", &self)
+        RequestBuilder::form("editMessageMedia", self.form)
     }
 }

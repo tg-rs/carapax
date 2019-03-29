@@ -6,7 +6,7 @@ use std::env;
 use tgbot::{
     handle_updates,
     methods::SendMediaGroup,
-    types::{InputFile, MediaGroup, Update},
+    types::{InputFile, InputMediaPhoto, InputMediaVideo, MediaGroup, Update},
     Api, Config, UpdateHandler, UpdateMethod,
 };
 
@@ -21,13 +21,19 @@ impl UpdateHandler for Handler {
     fn handle(&mut self, update: Update) {
         log::info!("got an update: {:?}\n", update);
         if let Some(chat_id) = update.get_chat_id() {
-            let mut media = MediaGroup::default();
-            let photo_info = media.add_photo(InputFile::url(self.photo_url.clone()));
-            photo_info.caption("Photo 01");
-            let photo_info = media.add_photo(InputFile::path(self.photo_path.clone()));
-            photo_info.caption("Photo 02");
-            let video_info = media.add_video(InputFile::path(self.video_path.clone()));
-            video_info.caption("Video 01");
+            let media = MediaGroup::default()
+                .add_item(
+                    InputFile::url(self.photo_url.clone()),
+                    InputMediaPhoto::default().caption("Photo 01"),
+                )
+                .add_item(
+                    InputFile::path(self.photo_path.clone()),
+                    InputMediaPhoto::default().caption("Photo 02"),
+                )
+                .add_item(
+                    InputFile::path(self.video_path.clone()),
+                    InputMediaVideo::default().caption("Video 01"),
+                );
             let method = SendMediaGroup::new(chat_id, media).unwrap();
             self.api.spawn(self.api.execute(method).then(|x| {
                 log::info!("sendMessage result: {:?}\n", x);
