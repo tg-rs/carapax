@@ -1,20 +1,14 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
-    types::{ChatId, Integer, MediaGroupItem, Message},
+    request::{Form, RequestBuilder},
+    types::{ChatId, Integer, MediaGroup, Message},
 };
 use failure::Error;
-use serde::Serialize;
 
 /// Send a group of photos or videos as an album
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct SendMediaGroup {
-    chat_id: ChatId,
-    media: Vec<MediaGroupItem>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    disable_notification: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_to_message_id: Option<Integer>,
+    form: Form,
 }
 
 impl SendMediaGroup {
@@ -22,26 +16,26 @@ impl SendMediaGroup {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * media - Photos and videos to be sent, must include 2–10 items
-    pub fn new<C: Into<ChatId>>(chat_id: C, media: Vec<MediaGroupItem>) -> Self {
-        SendMediaGroup {
-            chat_id: chat_id.into(),
-            media,
-            disable_notification: None,
-            reply_to_message_id: None,
+    pub fn new<C: Into<ChatId>>(chat_id: C, media: MediaGroup) -> Result<Self, Error> {
+        let mut form = Form::new();
+        form.set_field("chat_id", chat_id.into());
+        for (k, v) in media.into_form()? {
+            form.set_field(k, v);
         }
+        Ok(SendMediaGroup { form })
     }
 
     /// Sends the messages silently
     ///
     /// Users will receive a notification with no sound
-    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
-        self.disable_notification = Some(disable_notification);
+    pub fn disable_notification(mut self, value: bool) -> Self {
+        self.form.set_field("disable_notification", value);
         self
     }
 
     /// If the messages are a reply, ID of the original message
-    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
-        self.reply_to_message_id = Some(reply_to_message_id);
+    pub fn reply_to_message_id(mut self, value: Integer) -> Self {
+        self.form.set_field("reply_to_message_id", value);
         self
     }
 }
@@ -50,6 +44,6 @@ impl Method for SendMediaGroup {
     type Response = Vec<Message>;
 
     fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("sendMediaGroup", &self)
+        RequestBuilder::form("sendMediaGroup", self.form)
     }
 }
