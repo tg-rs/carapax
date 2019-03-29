@@ -39,13 +39,15 @@ impl UpdateHandler for Handler {
             let chat_id = message.get_chat_id();
             if let Some(reply_to) = message.reply_to {
                 match reply_to.data {
-                    // Set caption and keep file_id
-                    MessageData::Animation(animation) => {
+                    // Change animation to document
+                    MessageData::Animation(_) => {
                         execute!(EditMessageMedia::new(
                             chat_id,
                             reply_to.id,
-                            InputMedia::new(
-                                InputFile::file_id(animation.file_id),
+                            InputMedia::with_thumb(
+                                InputFileReader::new(Cursor::new(b"Hello World!"))
+                                    .info(("hello.txt", mime::TEXT_PLAIN)),
+                                InputFile::path(self.document_thumb_path.clone()),
                                 InputMediaAnimation::default().caption("test")
                             )
                             .unwrap()
@@ -100,7 +102,7 @@ impl UpdateHandler for Handler {
                         "/text" => {
                             let document = Cursor::new(b"Hello World!");
                             let reader = InputFileReader::new(document).info(("hello.txt", mime::TEXT_PLAIN));
-                            execute!(SendDocument::new(chat_id, InputFile::reader(reader))
+                            execute!(SendDocument::new(chat_id, reader)
                                 .thumb(InputFile::path(self.document_thumb_path.clone())))
                         }
                         "/video" => execute!(SendVideo::new(chat_id, InputFile::path(self.video_path.clone()))),

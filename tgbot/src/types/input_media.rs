@@ -6,18 +6,18 @@ use failure::{Error, Fail};
 use serde::Serialize;
 use std::collections::HashMap;
 
-const MIN_GROUP_FILES: usize = 2;
-const MAX_GROUP_FILES: usize = 10;
+const MIN_GROUP_ATTACHMENTS: usize = 2;
+const MAX_GROUP_ATTACHMENTS: usize = 10;
 
 /// A media group error
 #[derive(Debug, Fail)]
 pub enum MediaGroupError {
     /// Media group contains not enough files
-    #[fail(display = "Media group must contain at least {} files", _0)]
-    NotEnoughFiles(usize),
+    #[fail(display = "Media group must contain at least {} attachments", _0)]
+    NotEnoughAttachments(usize),
     /// Media group contains too many files
-    #[fail(display = "Media group must contain no more than {} files", _0)]
-    TooManyFiles(usize),
+    #[fail(display = "Media group must contain no more than {} attachments", _0)]
+    TooManyAttachments(usize),
 }
 
 /// Group of photos and/or videos to be sent
@@ -34,8 +34,26 @@ impl MediaGroup {
         MediaGroupItem: From<(String, I)>,
         F: Into<InputFile>,
     {
-        let file = file.into();
-        let media = match &file.kind {
+        let file = self.add_file(file.into());
+        self.items.push(MediaGroupItem::from((file, info)));
+        self
+    }
+
+    /// Adds an item with thumbnail
+    pub fn add_item_with_thumb<F, T, I>(mut self, file: F, thumb: T, info: I) -> Self
+    where
+        F: Into<InputFile>,
+        T: Into<InputFile>,
+        MediaGroupItem: From<(String, String, I)>,
+    {
+        let file = self.add_file(file.into());
+        let thumb = self.add_file(thumb.into());
+        self.items.push(MediaGroupItem::from((file, thumb, info)));
+        self
+    }
+
+    fn add_file(&mut self, file: InputFile) -> String {
+        match &file.kind {
             InputFileKind::Id(text) | InputFileKind::Url(text) => text.clone(),
             _ => {
                 let idx = self.files.len();
@@ -43,18 +61,16 @@ impl MediaGroup {
                 self.files.insert(key.clone(), file);
                 format!("attach://{}", key)
             }
-        };
-        self.items.push(MediaGroupItem::from((media, info)));
-        self
+        }
     }
 
     pub(crate) fn into_form(self) -> Result<HashMap<String, FormValue>, Error> {
         let total_files = self.items.len();
-        if total_files < MIN_GROUP_FILES {
-            return Err(MediaGroupError::NotEnoughFiles(MIN_GROUP_FILES).into());
+        if total_files < MIN_GROUP_ATTACHMENTS {
+            return Err(MediaGroupError::NotEnoughAttachments(MIN_GROUP_ATTACHMENTS).into());
         }
-        if total_files > MAX_GROUP_FILES {
-            return Err(MediaGroupError::TooManyFiles(MAX_GROUP_FILES).into());
+        if total_files > MAX_GROUP_ATTACHMENTS {
+            return Err(MediaGroupError::TooManyAttachments(MAX_GROUP_ATTACHMENTS).into());
         }
         let mut fields: HashMap<String, FormValue> = self.files.into_iter().map(|(k, v)| (k, v.into())).collect();
         fields.insert(String::from("media"), serde_json::to_string(&self.items)?.into());
@@ -75,6 +91,8 @@ pub enum MediaGroupItem {
     #[serde(rename = "video")]
     Video {
         media: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        thumb: Option<String>,
         #[serde(flatten)]
         info: InputMediaVideo,
     },
@@ -88,7 +106,21 @@ impl From<(String, InputMediaPhoto)> for MediaGroupItem {
 
 impl From<(String, InputMediaVideo)> for MediaGroupItem {
     fn from((media, info): (String, InputMediaVideo)) -> Self {
-        MediaGroupItem::Video { media, info }
+        MediaGroupItem::Video {
+            media,
+            info,
+            thumb: None,
+        }
+    }
+}
+
+impl From<(String, String, InputMediaVideo)> for MediaGroupItem {
+    fn from((media, thumb, info): (String, String, InputMediaVideo)) -> Self {
+        MediaGroupItem::Video {
+            media,
+            info,
+            thumb: Some(thumb),
+        }
     }
 }
 
@@ -105,22 +137,41 @@ impl InputMedia {
         F: Into<InputFile>,
         InputMediaKind: From<(String, K)>,
     {
-        let file = file.into();
-        let mut fields = HashMap::new();
-        let media = match file.kind {
+        let mut result = Self::default();
+        let file = result.add_file("tgbot_im_file", file.into());
+        result.add_info(InputMediaKind::from((file, info)))?;
+        Ok(result)
+    }
+
+    /// Creates a new input media with thumbnail
+    pub fn with_thumb<F, T, K>(file: F, thumb: T, info: K) -> Result<InputMedia, Error>
+    where
+        F: Into<InputFile>,
+        T: Into<InputFile>,
+        InputMediaKind: From<(String, String, K)>,
+    {
+        let mut result = Self::default();
+        let file = result.add_file("tgbot_im_file", file.into());
+        let thumb = result.add_file("tgbot_im_thumb", thumb.into());
+        result.add_info(InputMediaKind::from((file, thumb, info)))?;
+        Ok(result)
+    }
+
+    fn add_file<S: Into<String>>(&mut self, key: S, file: InputFile) -> String {
+        let key = key.into();
+        match file.kind {
             InputFileKind::Id(text) | InputFileKind::Url(text) => text,
             _ => {
-                let field = String::from("tgbot_im_file");
-                fields.insert(field.clone(), file.into());
-                format!("attach://{}", field)
+                self.fields.insert(key.clone(), file.into());
+                format!("attach://{}", key)
             }
-        };
+        }
+    }
 
-        let media = InputMediaKind::from((media, info));
-        let media = serde_json::to_string(&media)?;
-        fields.insert(String::from("media"), media.into());
-
-        Ok(Self { fields })
+    fn add_info(&mut self, info: InputMediaKind) -> Result<(), Error> {
+        let info = serde_json::to_string(&info)?;
+        self.fields.insert(String::from("media"), info.into());
+        Ok(())
     }
 
     pub(crate) fn into_form(self) -> HashMap<String, FormValue> {
@@ -135,18 +186,24 @@ pub enum InputMediaKind {
     #[serde(rename = "animation")]
     Animation {
         media: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        thumb: Option<String>,
         #[serde(flatten)]
         info: InputMediaAnimation,
     },
     #[serde(rename = "audio")]
     Audio {
         media: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        thumb: Option<String>,
         #[serde(flatten)]
         info: InputMediaAudio,
     },
     #[serde(rename = "document")]
     Document {
         media: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        thumb: Option<String>,
         #[serde(flatten)]
         info: InputMediaDocument,
     },
@@ -159,40 +216,63 @@ pub enum InputMediaKind {
     #[serde(rename = "video")]
     Video {
         media: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        thumb: Option<String>,
         #[serde(flatten)]
         info: InputMediaVideo,
     },
 }
 
-impl From<(String, InputMediaAnimation)> for InputMediaKind {
-    fn from((media, info): (String, InputMediaAnimation)) -> Self {
-        InputMediaKind::Animation { media, info }
-    }
+macro_rules! convert_media_kind {
+    (
+        $($to:ident(thumb $from:ty)),*
+    ) => {
+        $(
+            impl From<(String, $from)> for InputMediaKind {
+                fn from((media, info): (String, $from)) -> Self {
+                    InputMediaKind::$to {
+                        media,
+                        info,
+                        thumb: None,
+                    }
+                }
+            }
+
+            impl From<(String, String, $from)> for InputMediaKind {
+                fn from((media, thumb, info): (String, String, $from)) -> Self {
+                    InputMediaKind::$to {
+                        media,
+                        info,
+                        thumb: Some(thumb),
+                    }
+                }
+            }
+        )*
+    };
+    (
+        $($to:ident($from:ty)),*
+    ) => {
+        $(
+            impl From<(String, $from)> for InputMediaKind {
+                fn from((media, info): (String, $from)) -> Self {
+                    InputMediaKind::$to {
+                        media,
+                        info,
+                    }
+                }
+            }
+        )*
+    };
 }
 
-impl From<(String, InputMediaAudio)> for InputMediaKind {
-    fn from((media, info): (String, InputMediaAudio)) -> Self {
-        InputMediaKind::Audio { media, info }
-    }
-}
+convert_media_kind!(
+    Animation(thumb InputMediaAnimation),
+    Audio(thumb InputMediaAudio),
+    Document(thumb InputMediaDocument),
+    Video(thumb InputMediaVideo)
+);
 
-impl From<(String, InputMediaDocument)> for InputMediaKind {
-    fn from((media, info): (String, InputMediaDocument)) -> Self {
-        InputMediaKind::Document { media, info }
-    }
-}
-
-impl From<(String, InputMediaPhoto)> for InputMediaKind {
-    fn from((media, info): (String, InputMediaPhoto)) -> Self {
-        InputMediaKind::Photo { media, info }
-    }
-}
-
-impl From<(String, InputMediaVideo)> for InputMediaKind {
-    fn from((media, info): (String, InputMediaVideo)) -> Self {
-        InputMediaKind::Video { media, info }
-    }
-}
+convert_media_kind!(Photo(InputMediaPhoto));
 
 /// Animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent
 #[derive(Clone, Default, Debug, Serialize)]
@@ -261,8 +341,6 @@ impl InputMediaAnimation {
 #[derive(Clone, Default, Debug, Serialize)]
 pub struct InputMediaAudio {
     #[serde(skip_serializing_if = "Option::is_none")]
-    thumb: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     caption: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     parse_mode: Option<ParseMode>,
@@ -275,20 +353,6 @@ pub struct InputMediaAudio {
 }
 
 impl InputMediaAudio {
-    /// Set a thumbnail
-    ///
-    /// The thumbnail should be in JPEG format and less than 200 kB in size
-    /// A thumbnail‘s width and height should not exceed 90
-    /// Ignored if the file is not uploaded using multipart/form-data
-    /// Thumbnails can’t be reused and can be only uploaded
-    /// as a new file, so you can pass “attach://<file_attach_name>”
-    /// if the thumbnail was uploaded using multipart/form-data
-    /// under <file_attach_name>
-    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
-        self.thumb = Some(thumb.into());
-        self
-    }
-
     /// Caption of the audio to be sent, 0-1024 characters
     pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
@@ -324,28 +388,12 @@ impl InputMediaAudio {
 #[derive(Clone, Default, Debug, Serialize)]
 pub struct InputMediaDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
-    thumb: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     caption: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     parse_mode: Option<ParseMode>,
 }
 
 impl InputMediaDocument {
-    /// Set a thumbnail
-    ///
-    /// The thumbnail should be in JPEG format and less than 200 kB in size
-    /// A thumbnail‘s width and height should not exceed 90
-    /// Ignored if the file is not uploaded using multipart/form-data
-    /// Thumbnails can’t be reused and can be only uploaded
-    /// as a new file, so you can pass “attach://<file_attach_name>”
-    /// if the thumbnail was uploaded using multipart/form-data
-    /// under <file_attach_name>
-    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
-        self.thumb = Some(thumb.into());
-        self
-    }
-
     /// Caption of the document to be sent, 0-1024 characters
     pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
@@ -386,8 +434,6 @@ impl InputMediaPhoto {
 #[derive(Clone, Default, Debug, Serialize)]
 pub struct InputMediaVideo {
     #[serde(skip_serializing_if = "Option::is_none")]
-    thumb: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     caption: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     parse_mode: Option<ParseMode>,
@@ -402,20 +448,6 @@ pub struct InputMediaVideo {
 }
 
 impl InputMediaVideo {
-    /// Set a thumbnail
-    ///
-    /// The thumbnail should be in JPEG format and less than 200 kB in size
-    /// A thumbnail‘s width and height should not exceed 90
-    /// Ignored if the file is not uploaded using multipart/form-data
-    /// Thumbnails can’t be reused and can be only uploaded
-    /// as a new file, so you can pass “attach://<file_attach_name>”
-    /// if the thumbnail was uploaded using multipart/form-data
-    /// under <file_attach_name>
-    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
-        self.thumb = Some(thumb.into());
-        self
-    }
-
     /// Caption of the video to be sent, 0-1024 characters
     pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
         self.caption = Some(caption.into());
