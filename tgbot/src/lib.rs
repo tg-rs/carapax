@@ -19,3 +19,5 @@ pub mod prelude;
 
 pub use self::{api::*, handler::*};
 use never::Never;
+
+pub use mime;
