@@ -1,6 +1,9 @@
-use crate::{methods::Method, request::RequestBuilder, types::ChatId};
+use crate::{
+    methods::Method,
+    request::{Form, RequestBuilder},
+    types::{ChatId, InputFile},
+};
 use failure::Error;
-use serde::Serialize;
 
 /// Set a new profile photo for the chat
 ///
@@ -10,10 +13,9 @@ use serde::Serialize;
 ///
 /// Note: In regular groups (non-supergroups), this method will only work
 /// if the ‘All Members Are Admins’ setting is off in the target group
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct SetChatPhoto {
-    chat_id: ChatId,
-    photo: String,
+    form: Form,
 }
 
 impl SetChatPhoto {
@@ -22,12 +24,12 @@ impl SetChatPhoto {
     /// # Arguments
     ///
     /// * chat_id - Unique identifier for the target chat
-    /// * photo - New chat photo, uploaded using multipart/form-data
-    pub fn new<C: Into<ChatId>, S: Into<String>>(chat_id: C, photo: S) -> Self {
-        SetChatPhoto {
-            chat_id: chat_id.into(),
-            photo: photo.into(),
-        }
+    /// * photo - New chat photo, uploaded using multipart/form-data (url and file_id are not supported)
+    pub fn new<C: Into<ChatId>>(chat_id: C, photo: InputFile) -> Self {
+        let mut form = Form::new();
+        form.set_field("chat_id", chat_id.into());
+        form.set_field("photo", photo);
+        SetChatPhoto { form }
     }
 }
 
@@ -35,6 +37,6 @@ impl Method for SetChatPhoto {
     type Response = bool;
 
     fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("setChatPhoto", &self)
+        RequestBuilder::form("setChatPhoto", self.form)
     }
 }
