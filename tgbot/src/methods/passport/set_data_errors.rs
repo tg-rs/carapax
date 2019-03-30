@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{Integer, PassportElementError},
 };
 use failure::Error;
@@ -38,7 +39,7 @@ impl SetPassportDataErrors {
 impl Method for SetPassportDataErrors {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("setPassportDataErrors", &self)
     }
 }

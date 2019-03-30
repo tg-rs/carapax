@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{Chat, ChatId},
 };
 use failure::Error;
@@ -27,7 +28,7 @@ impl GetChat {
 impl Method for GetChat {
     type Response = Chat;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getChat", &self)
     }
 }

@@ -1,9 +1,9 @@
 use crate::{
-    methods::method::*,
-    types::{ChatId, Integer, Message, ParseMode, ReplyMarkup},
+    methods::Method,
+    request::{Form, RequestBuilder},
+    types::{ChatId, InputFile, Integer, Message, ParseMode, ReplyMarkup},
 };
 use failure::Error;
-use serde::Serialize;
 
 /// Send audio files, if you want Telegram clients to display the file as a playable voice message
 ///
@@ -11,22 +11,9 @@ use serde::Serialize;
 /// (other formats may be sent as Audio or Document)
 /// Bots can currently send voice messages of up to 50 MB in size,
 /// this limit may be changed in the future
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct SendVoice {
-    chat_id: ChatId,
-    voice: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    caption: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    parse_mode: Option<ParseMode>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    duration: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    disable_notification: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_to_message_id: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_markup: Option<ReplyMarkup>,
+    form: Form,
 }
 
 impl SendVoice {
@@ -36,64 +23,60 @@ impl SendVoice {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * voice - Audio file to send
-    ///           Pass a file_id as String to send a file that exists on the Telegram servers (recommended),
-    ///           pass an HTTP URL as a String for Telegram to get a file from the Internet,
-    ///           or upload a new one using multipart/form-data
-    pub fn new<C: Into<ChatId>, S: Into<String>>(chat_id: C, voice: S) -> Self {
-        SendVoice {
-            chat_id: chat_id.into(),
-            voice: voice.into(),
-            caption: None,
-            parse_mode: None,
-            duration: None,
-            disable_notification: None,
-            reply_to_message_id: None,
-            reply_markup: None,
-        }
+    pub fn new<C, V>(chat_id: C, voice: V) -> Self
+    where
+        C: Into<ChatId>,
+        V: Into<InputFile>,
+    {
+        let mut form = Form::new();
+        form.insert_field("chat_id", chat_id.into());
+        form.insert_field("voice", voice.into());
+        SendVoice { form }
     }
 
     /// Voice message caption, 0-1024 characters
-    pub fn caption<S: Into<String>>(mut self, caption: S) -> Self {
-        self.caption = Some(caption.into());
+    pub fn caption<S: Into<String>>(mut self, value: S) -> Self {
+        self.form.insert_field("caption", value.into());
         self
     }
 
     /// Sets a parse mode
-    pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
-        self.parse_mode = Some(parse_mode);
+    pub fn parse_mode(mut self, value: ParseMode) -> Self {
+        self.form.insert_field("parse_mode", value);
         self
     }
 
     /// Duration of the voice message in seconds
-    pub fn duration(mut self, duration: Integer) -> Self {
-        self.duration = Some(duration);
+    pub fn duration(mut self, value: Integer) -> Self {
+        self.form.insert_field("duration", value);
         self
     }
 
     // Sends the message silently
     /// Users will receive a notification with no sound
-    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
-        self.disable_notification = Some(disable_notification);
+    pub fn disable_notification(mut self, value: bool) -> Self {
+        self.form.insert_field("disable_notification", value);
         self
     }
 
     /// If the message is a reply, ID of the original message
-    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
-        self.reply_to_message_id = Some(reply_to_message_id);
+    pub fn reply_to_message_id(mut self, value: Integer) -> Self {
+        self.form.insert_field("reply_to_message_id", value);
         self
     }
 
     /// Additional interface options
-    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, reply_markup: R) -> Self {
-        self.reply_markup = Some(reply_markup.into());
-        self
+    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, value: R) -> Result<Self, Error> {
+        let value = serde_json::to_string(&value.into())?;
+        self.form.insert_field("reply_markup", value);
+        Ok(self)
     }
 }
 
 impl Method for SendVoice {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("sendVoice", &self)
+    fn into_request(self) -> Result<RequestBuilder, Error> {
+        RequestBuilder::form("sendVoice", self.form)
     }
 }

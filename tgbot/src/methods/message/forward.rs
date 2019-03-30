@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{ChatId, Integer, Message},
 };
 use failure::Error;
@@ -44,7 +45,7 @@ impl ForwardMessage {
 impl Method for ForwardMessage {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("forwardMessage", &self)
     }
 }

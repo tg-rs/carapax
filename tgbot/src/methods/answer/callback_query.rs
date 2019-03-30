@@ -1,4 +1,4 @@
-use crate::{methods::method::*, types::Integer};
+use crate::{methods::Method, request::RequestBuilder, types::Integer};
 use failure::Error;
 use serde::Serialize;
 
@@ -78,7 +78,7 @@ impl AnswerCallbackQuery {
 impl Method for AnswerCallbackQuery {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("answerCallbackQuery", &self)
     }
 }

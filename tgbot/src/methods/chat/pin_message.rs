@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{ChatId, Integer},
 };
 use failure::Error;
@@ -45,7 +46,7 @@ impl PinChatMessage {
 impl Method for PinChatMessage {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("pinChatMessage", &self)
     }
 }

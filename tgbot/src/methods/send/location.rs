@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{ChatId, Float, Integer, Message, ReplyMarkup},
 };
 use failure::Error;
@@ -73,7 +74,7 @@ impl SendLocation {
 impl Method for SendLocation {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendLocation", &self)
     }
 }

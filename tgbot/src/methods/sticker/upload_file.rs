@@ -1,15 +1,14 @@
 use crate::{
-    methods::method::*,
-    types::{File, Integer},
+    methods::Method,
+    request::{Form, RequestBuilder},
+    types::{File, InputFile, Integer},
 };
 use failure::Error;
-use serde::Serialize;
 
 /// Upload a .png file with a sticker for later use in createNewStickerSet and addStickerToSet methods
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct UploadStickerFile {
-    user_id: Integer,
-    png_sticker: String,
+    form: Form,
 }
 
 impl UploadStickerFile {
@@ -20,18 +19,21 @@ impl UploadStickerFile {
     /// * user_id - User identifier of sticker file owner
     /// * png_sticker - Png image with the sticker, must be up to 512 kilobytes in size,
     ///                 dimensions must not exceed 512px, and either width or height must be exactly 512px
-    pub fn new<S: Into<String>>(user_id: Integer, png_sticker: S) -> Self {
-        UploadStickerFile {
-            user_id,
-            png_sticker: png_sticker.into(),
-        }
+    pub fn new<P>(user_id: Integer, png_sticker: P) -> Self
+    where
+        P: Into<InputFile>,
+    {
+        let mut form = Form::new();
+        form.insert_field("user_id", user_id);
+        form.insert_field("png_sticker", png_sticker.into());
+        UploadStickerFile { form }
     }
 }
 
 impl Method for UploadStickerFile {
     type Response = File;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("uploadStickerFile", &self)
+    fn into_request(self) -> Result<RequestBuilder, Error> {
+        RequestBuilder::form("uploadStickerFile", self.form)
     }
 }

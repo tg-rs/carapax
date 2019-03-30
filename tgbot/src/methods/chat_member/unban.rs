@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{ChatId, Integer},
 };
 use failure::Error;
@@ -35,7 +36,7 @@ impl UnbanChatMember {
 impl Method for UnbanChatMember {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("unbanChatMember", &self)
     }
 }

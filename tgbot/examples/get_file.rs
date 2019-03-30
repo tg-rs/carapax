@@ -19,23 +19,25 @@ struct Handler {
 
 fn handle_document(api: &Api, document: Document) -> Box<Future<Item = (), Error = Error> + Send> {
     let api = api.clone();
-    let method = GetFile::new(document.file_id.as_str());
-    Box::new(api.execute(&method).and_then(move |file| {
-        let file_path = file.file_path.unwrap();
-        api.download_file(file_path).and_then(move |data| {
-            println!("Name: {:?}", document.file_name);
-            println!("Mime-Type: {:?}", document.mime_type);
-            println!("Document size: {:?}", document.file_size);
-            println!("Downloaded size: {:?}", data.len());
-            File::create(format!(
-                "/tmp/tgbot-get-file-{}",
-                document.file_name.unwrap_or_else(|| String::from("unknown"))
-            ))
-            .and_then(move |mut file| file.poll_write(&data))
-            .map(|_| ())
-            .from_err()
-        })
-    }))
+    Box::new(
+        api.execute(GetFile::new(document.file_id.as_str()))
+            .and_then(move |file| {
+                let file_path = file.file_path.unwrap();
+                api.download_file(file_path).and_then(move |data| {
+                    println!("Name: {:?}", document.file_name);
+                    println!("Mime-Type: {:?}", document.mime_type);
+                    println!("Document size: {:?}", document.file_size);
+                    println!("Downloaded size: {:?}", data.len());
+                    File::create(format!(
+                        "/tmp/tgbot-get-file-{}",
+                        document.file_name.unwrap_or_else(|| String::from("unknown"))
+                    ))
+                    .and_then(move |mut file| file.poll_write(&data))
+                    .map(|_| ())
+                    .from_err()
+                })
+            }),
+    )
 }
 
 impl UpdateHandler for Handler {

@@ -1,6 +1,7 @@
 use crate::{
     executor::{default_executor, proxy_executor, Executor},
-    methods::{Method, RequestBuilder},
+    methods::Method,
+    request::RequestBuilder,
     types::Response,
 };
 use failure::Error;
@@ -98,7 +99,7 @@ impl Api {
     }
 
     /// Executes a method
-    pub fn execute<M: Method>(&self, method: &M) -> ApiFuture<M::Response>
+    pub fn execute<M: Method>(&self, method: M) -> ApiFuture<M::Response>
     where
         M::Response: DeserializeOwned + Send + 'static,
     {
@@ -107,7 +108,7 @@ impl Api {
             inner: Box::new(
                 future::result(
                     method
-                        .get_request()
+                        .into_request()
                         .map(|builder| builder.build(&self.host, &self.token)),
                 )
                 .and_then(move |req| executor.execute(req).from_err())

@@ -1,4 +1,4 @@
-use crate::{methods::method::*, types::User};
+use crate::{methods::Method, request::RequestBuilder, types::User};
 use failure::Error;
 
 /// Returns basic information about the bot in form of a User object
@@ -8,7 +8,7 @@ pub struct GetMe;
 impl Method for GetMe {
     type Response = User;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::empty("getMe")
     }
 }

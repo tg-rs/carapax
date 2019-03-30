@@ -1,6 +1,6 @@
 use crate::{
     executor::Executor,
-    methods::{Request, RequestBody, RequestMethod},
+    request::{Request, RequestBody, RequestMethod},
 };
 use failure::Error;
 use futures::{future, Future, Stream};
@@ -8,6 +8,7 @@ use hyper::{
     client::{connect::Connect, Client, HttpConnector},
     Body, Request as HttpRequest,
 };
+use hyper_multipart_rfc7578::client::multipart::{Body as MultipartBody, Form as MultipartForm};
 use hyper_proxy::{Intercept as HttpProxyIntercept, Proxy as HttpProxy, ProxyConnector as HttpProxyConnector};
 use hyper_socks2::{Auth as SocksAuth, Proxy as SocksProxy};
 use hyper_tls::HttpsConnector;
@@ -39,6 +40,9 @@ impl<C: Connect + 'static> Executor for HyperExecutor<C> {
         let client = self.client.clone();
         Box::new(
             future::result(match req.body {
+                RequestBody::Form(form) => {
+                    MultipartForm::from(form).set_body_convert::<Body, MultipartBody>(&mut builder)
+                }
                 RequestBody::Json(data) => {
                     if log_enabled!(Debug) {
                         debug!("Post JSON data: {}", String::from_utf8_lossy(&data));

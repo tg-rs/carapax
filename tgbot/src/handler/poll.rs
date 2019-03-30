@@ -81,7 +81,7 @@ impl Stream for UpdatesStream {
                 self.request = Some(Box::new(
                     self.api
                         .execute(
-                            &GetUpdates::default()
+                            GetUpdates::default()
                                 .offset(options.offset + 1)
                                 .limit(options.limit)
                                 .timeout(options.poll_timeout)

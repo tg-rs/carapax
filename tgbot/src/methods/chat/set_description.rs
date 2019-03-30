@@ -1,4 +1,4 @@
-use crate::{methods::method::*, types::ChatId};
+use crate::{methods::Method, request::RequestBuilder, types::ChatId};
 use failure::Error;
 use serde::Serialize;
 
@@ -36,7 +36,7 @@ impl SetChatDescription {
 impl Method for SetChatDescription {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("setChatDescription", &self)
     }
 }

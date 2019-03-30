@@ -1,21 +1,14 @@
 use crate::{
-    methods::method::*,
-    types::{ChatId, Integer, Message, ReplyMarkup},
+    methods::Method,
+    request::{Form, RequestBuilder},
+    types::{ChatId, InputFile, Integer, Message, ReplyMarkup},
 };
 use failure::Error;
-use serde::Serialize;
 
 /// Send .webp sticker
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct SendSticker {
-    chat_id: ChatId,
-    sticker: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    disable_notification: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_to_message_id: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_markup: Option<ReplyMarkup>,
+    form: Form,
 }
 
 impl SendSticker {
@@ -28,40 +21,43 @@ impl SendSticker {
     ///             Pass a file_id as String to send a file that exists on the Telegram servers (recommended),
     ///             pass an HTTP URL as a String for Telegram to get a .webp file from the Internet,
     ///             or upload a new one using multipart/form-data
-    pub fn new<C: Into<ChatId>, S: Into<String>>(chat_id: C, sticker: S) -> Self {
-        SendSticker {
-            chat_id: chat_id.into(),
-            sticker: sticker.into(),
-            disable_notification: None,
-            reply_to_message_id: None,
-            reply_markup: None,
-        }
+    pub fn new<C, S>(chat_id: C, sticker: S) -> Self
+    where
+        C: Into<ChatId>,
+        S: Into<InputFile>,
+    {
+        let mut form = Form::new();
+        form.insert_field("chat_id", chat_id.into());
+        form.insert_field("sticker", sticker.into());
+        SendSticker { form }
     }
 
-    // Sends the message silently
+    /// Sends the message silently
+    ///
     /// Users will receive a notification with no sound
-    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
-        self.disable_notification = Some(disable_notification);
+    pub fn disable_notification(mut self, value: bool) -> Self {
+        self.form.insert_field("disable_notification", value);
         self
     }
 
     /// If the message is a reply, ID of the original message
-    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
-        self.reply_to_message_id = Some(reply_to_message_id);
+    pub fn reply_to_message_id(mut self, value: Integer) -> Self {
+        self.form.insert_field("reply_to_message_id", value);
         self
     }
 
     /// Additional interface options
-    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, reply_markup: R) -> Self {
-        self.reply_markup = Some(reply_markup.into());
-        self
+    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, value: R) -> Result<Self, Error> {
+        let value = serde_json::to_string(&value.into())?;
+        self.form.insert_field("reply_markup", value);
+        Ok(self)
     }
 }
 
 impl Method for SendSticker {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("sendSticker", &self)
+    fn into_request(self) -> Result<RequestBuilder, Error> {
+        RequestBuilder::form("sendSticker", self.form)
     }
 }

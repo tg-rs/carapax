@@ -1,4 +1,4 @@
-use crate::{methods::method::*, types::StickerSet};
+use crate::{methods::Method, request::RequestBuilder, types::StickerSet};
 use failure::Error;
 use serde::Serialize;
 
@@ -22,7 +22,7 @@ impl GetStickerSet {
 impl Method for GetStickerSet {
     type Response = StickerSet;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getStickerSet", &self)
     }
 }

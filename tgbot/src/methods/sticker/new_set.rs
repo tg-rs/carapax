@@ -1,24 +1,16 @@
 use crate::{
-    methods::method::*,
-    types::{Integer, MaskPosition},
+    methods::Method,
+    request::{Form, RequestBuilder},
+    types::{InputFile, Integer, MaskPosition},
 };
 use failure::Error;
-use serde::Serialize;
 
 /// Create new sticker set owned by a user
 ///
 /// The bot will be able to edit the created sticker set
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct CreateNewStickerSet {
-    user_id: Integer,
-    name: String,
-    title: String,
-    png_sticker: String,
-    emojis: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    contains_masks: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    mask_position: Option<MaskPosition>,
+    form: Form,
 }
 
 impl CreateNewStickerSet {
@@ -37,39 +29,41 @@ impl CreateNewStickerSet {
     /// * png_sticker - Png image with the sticker,
     ///                 must be up to 512 kilobytes in size, dimensions must not exceed 512px,
     ///                 and either width or height must be exactly 512px
-    ///                 Pass a file_id as a String to send a file that already exists on the Telegram servers,
-    ///                 pass an HTTP URL as a String for Telegram to get a file from the Internet,
-    ///                 or upload a new one using multipart/form-data
     /// * emojis - One or more emoji corresponding to the sticker
-    pub fn new<S: Into<String>>(user_id: Integer, name: S, title: S, png_sticker: S, emojis: S) -> Self {
-        CreateNewStickerSet {
-            user_id,
-            name: name.into(),
-            title: title.into(),
-            png_sticker: png_sticker.into(),
-            emojis: emojis.into(),
-            contains_masks: None,
-            mask_position: None,
-        }
+    pub fn new<N, T, P, E>(user_id: Integer, name: N, title: T, png_sticker: P, emojis: E) -> Self
+    where
+        N: Into<String>,
+        T: Into<String>,
+        P: Into<InputFile>,
+        E: Into<String>,
+    {
+        let mut form = Form::new();
+        form.insert_field("user_id", user_id);
+        form.insert_field("name", name.into());
+        form.insert_field("title", title.into());
+        form.insert_field("png_sticker", png_sticker.into());
+        form.insert_field("emojis", emojis.into());
+        CreateNewStickerSet { form }
     }
 
     /// Pass True, if a set of mask stickers should be created
-    pub fn contains_masks(mut self, contains_masks: bool) -> Self {
-        self.contains_masks = Some(contains_masks);
+    pub fn contains_masks(mut self, value: bool) -> Self {
+        self.form.insert_field("contains_masks", value);
         self
     }
 
     /// Position where the mask should be placed on faces
-    pub fn mask_position(mut self, mask_position: MaskPosition) -> Self {
-        self.mask_position = Some(mask_position);
-        self
+    pub fn mask_position(mut self, value: MaskPosition) -> Result<Self, Error> {
+        let value = serde_json::to_string(&value)?;
+        self.form.insert_field("mask_position", value);
+        Ok(self)
     }
 }
 
 impl Method for CreateNewStickerSet {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("createNewStickerSet", &self)
+    fn into_request(self) -> Result<RequestBuilder, Error> {
+        RequestBuilder::form("createNewStickerSet", self.form)
     }
 }

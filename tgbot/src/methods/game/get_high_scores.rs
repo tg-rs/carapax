@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{GameHighScore, Integer},
 };
 use failure::Error;
@@ -59,7 +60,7 @@ impl GetGameHighScores {
 impl Method for GetGameHighScores {
     type Response = Vec<GameHighScore>;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getGameHighScores", &self)
     }
 }

@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{InlineKeyboardMarkup, Integer, LabeledPrice, Message},
 };
 use failure::Error;
@@ -206,7 +207,7 @@ impl SendInvoice {
 impl Method for SendInvoice {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendInvoice", &self)
     }
 }

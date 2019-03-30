@@ -1,4 +1,4 @@
-use crate::methods::method::*;
+use crate::{methods::Method, request::RequestBuilder};
 use failure::Error;
 use serde::Serialize;
 
@@ -48,7 +48,7 @@ impl AnswerPreCheckoutQuery {
 impl Method for AnswerPreCheckoutQuery {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("answerPreCheckoutQuery", &self)
     }
 }

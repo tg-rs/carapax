@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{InlineQueryResult, Integer},
 };
 use failure::Error;
@@ -97,7 +98,7 @@ impl AnswerInlineQuery {
 impl Method for AnswerInlineQuery {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("answerInlineQuery", &self)
     }
 }

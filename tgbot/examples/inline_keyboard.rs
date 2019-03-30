@@ -38,7 +38,7 @@ fn handle_update(api: &Api, update: Update) -> Option<ApiFuture<Message>> {
                         // You also can use with_callback_data in order to pass a plain string
                         InlineKeyboardButton::with_callback_data_struct("button", &callback_data).unwrap(),
                     ]]);
-                    return Some(api.execute(&method));
+                    return Some(api.execute(method));
                 }
             }
         }
@@ -48,7 +48,7 @@ fn handle_update(api: &Api, update: Update) -> Option<ApiFuture<Message>> {
                 // or query.data if you have passed a plain string
                 let data = query.parse_data::<CallbackData>().unwrap().unwrap();
                 let method = SendMessage::new(chat_id, data.value);
-                return Some(api.execute(&method));
+                return Some(api.execute(method));
             }
         }
         _ => {}

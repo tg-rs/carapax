@@ -1,4 +1,4 @@
-use crate::{methods::method::*, types::File};
+use crate::{methods::Method, request::RequestBuilder, types::File};
 use failure::Error;
 use serde::Serialize;
 
@@ -36,7 +36,7 @@ impl GetFile {
 impl Method for GetFile {
     type Response = File;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getFile", &self)
     }
 }

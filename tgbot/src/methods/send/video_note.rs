@@ -1,29 +1,16 @@
 use crate::{
-    methods::method::*,
-    types::{ChatId, Integer, Message, ReplyMarkup},
+    methods::Method,
+    request::{Form, RequestBuilder},
+    types::{ChatId, InputFile, Integer, Message, ReplyMarkup},
 };
 use failure::Error;
-use serde::Serialize;
 
 /// Send video message
 ///
 /// As of v.4.0, Telegram clients support rounded square mp4 videos of up to 1 minute long
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct SendVideoNote {
-    chat_id: ChatId,
-    video_note: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    duration: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    length: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    thumb: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    disable_notification: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_to_message_id: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_markup: Option<ReplyMarkup>,
+    form: Form,
 }
 
 impl SendVideoNote {
@@ -33,31 +20,26 @@ impl SendVideoNote {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * video_note - Video note to send
-    ///                Pass a file_id as String to send a video note that exists on the Telegram servers (recommended)
-    ///                or upload a new video using multipart/form-data
-    ///                Sending video notes by a URL is currently unsupported
-    pub fn new<C: Into<ChatId>, S: Into<String>>(chat_id: C, video_note: S) -> Self {
-        SendVideoNote {
-            chat_id: chat_id.into(),
-            video_note: video_note.into(),
-            duration: None,
-            length: None,
-            thumb: None,
-            disable_notification: None,
-            reply_to_message_id: None,
-            reply_markup: None,
-        }
+    pub fn new<C, V>(chat_id: C, video_note: V) -> Self
+    where
+        C: Into<ChatId>,
+        V: Into<InputFile>,
+    {
+        let mut form = Form::new();
+        form.insert_field("chat_id", chat_id.into());
+        form.insert_field("video_note", video_note.into());
+        SendVideoNote { form }
     }
 
     /// Duration of sent video in seconds
-    pub fn duration(mut self, duration: Integer) -> Self {
-        self.duration = Some(duration);
+    pub fn duration(mut self, value: Integer) -> Self {
+        self.form.insert_field("duration", value);
         self
     }
 
     /// Video width and height, i.e. diameter of the video message
-    pub fn length(mut self, length: Integer) -> Self {
-        self.length = Some(length);
+    pub fn length(mut self, value: Integer) -> Self {
+        self.form.insert_field("length", value);
         self
     }
 
@@ -69,35 +51,39 @@ impl SendVideoNote {
     /// Thumbnails can’t be reused and can be only uploaded as a new file,
     /// so you can pass “attach://<file_attach_name>” if the thumbnail was
     /// uploaded using multipart/form-data under <file_attach_name>
-    pub fn thumb<S: Into<String>>(mut self, thumb: S) -> Self {
-        self.thumb = Some(thumb.into());
+    pub fn thumb<V>(mut self, value: V) -> Self
+    where
+        V: Into<InputFile>,
+    {
+        self.form.insert_field("thumb", value.into());
         self
     }
 
     // Sends the message silently
     /// Users will receive a notification with no sound
-    pub fn disable_notification(mut self, disable_notification: bool) -> Self {
-        self.disable_notification = Some(disable_notification);
+    pub fn disable_notification(mut self, value: bool) -> Self {
+        self.form.insert_field("disable_notification", value);
         self
     }
 
     /// If the message is a reply, ID of the original message
-    pub fn reply_to_message_id(mut self, reply_to_message_id: Integer) -> Self {
-        self.reply_to_message_id = Some(reply_to_message_id);
+    pub fn reply_to_message_id(mut self, value: Integer) -> Self {
+        self.form.insert_field("reply_to_message_id", value);
         self
     }
 
     /// Additional interface options
-    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, reply_markup: R) -> Self {
-        self.reply_markup = Some(reply_markup.into());
-        self
+    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, value: R) -> Result<Self, Error> {
+        let value = serde_json::to_string(&value.into())?;
+        self.form.insert_field("reply_markup", value);
+        Ok(self)
     }
 }
 
 impl Method for SendVideoNote {
     type Response = Message;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("sendVideoNote", &self)
+    fn into_request(self) -> Result<RequestBuilder, Error> {
+        RequestBuilder::form("sendVideoNote", self.form)
     }
 }

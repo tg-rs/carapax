@@ -11,7 +11,7 @@ fn handle_message(context: &mut Context, message: &Message) -> HandlerFuture {
         let chat_id = message.get_chat_id();
         let method = SendMessage::new(chat_id, text.data.clone());
         let api = context.get::<Api>();
-        return HandlerFuture::new(api.execute(&method).then(|x| {
+        return HandlerFuture::new(api.execute(method).then(|x| {
             log::info!("sendMessage result: {:?}\n", x);
             Ok(HandlerResult::Continue)
         }));

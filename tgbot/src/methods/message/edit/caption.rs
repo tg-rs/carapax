@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{ChatId, EditMessageResult, InlineKeyboardMarkup, Integer, ParseMode},
 };
 use failure::Error;
@@ -78,7 +79,7 @@ impl EditMessageCaption {
 impl Method for EditMessageCaption {
     type Response = EditMessageResult;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("editMessageCaption", &self)
     }
 }

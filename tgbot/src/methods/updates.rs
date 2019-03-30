@@ -1,5 +1,6 @@
 use crate::{
-    methods::method::*,
+    methods::Method,
+    request::RequestBuilder,
     types::{AllowedUpdate, Integer, Update, WebhookInfo},
 };
 use failure::Error;
@@ -24,7 +25,7 @@ pub struct GetUpdates {
 impl Method for GetUpdates {
     type Response = Vec<Update>;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("getUpdates", &self)
     }
 }
@@ -172,7 +173,7 @@ impl SetWebhook {
 impl Method for SetWebhook {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("setWebhook", &self)
     }
 }
@@ -186,7 +187,7 @@ pub struct DeleteWebhook;
 impl Method for DeleteWebhook {
     type Response = bool;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::empty("deleteWebhook")
     }
 }
@@ -198,7 +199,7 @@ pub struct GetWebhookInfo;
 impl Method for GetWebhookInfo {
     type Response = WebhookInfo;
 
-    fn get_request(&self) -> Result<RequestBuilder, Error> {
+    fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::empty("getWebhookInfo")
     }
 }
@@ -206,11 +207,12 @@ impl Method for GetWebhookInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::request::{RequestBody, RequestMethod};
     use serde_json::Value;
 
     #[test]
     fn test_serialize_get_updates() {
-        let req = GetUpdates::default().get_request().unwrap().build("host", "token");
+        let req = GetUpdates::default().into_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Post);
         assert_eq!(req.url, String::from("host/bottoken/getUpdates"));
         match req.body {
@@ -235,7 +237,7 @@ mod tests {
             .add_allowed_update(AllowedUpdate::CallbackQuery)
             .add_allowed_update(AllowedUpdate::PreCheckoutQuery)
             .add_allowed_update(AllowedUpdate::ShippingQuery)
-            .get_request()
+            .into_request()
             .unwrap()
             .build("host", "token");
         match req.body {
@@ -271,7 +273,7 @@ mod tests {
 
     #[test]
     fn test_serialize_set_webhook() {
-        let req = SetWebhook::new("url").get_request().unwrap().build("host", "token");
+        let req = SetWebhook::new("url").into_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Post);
         assert_eq!(req.url, String::from("host/bottoken/setWebhook"));
         match req.body {
@@ -284,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_serialize_delete_webhook() {
-        let req = DeleteWebhook.get_request().unwrap().build("host", "token");
+        let req = DeleteWebhook.into_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Get);
         assert_eq!(req.url, String::from("host/bottoken/deleteWebhook"));
         match req.body {
@@ -295,7 +297,7 @@ mod tests {
 
     #[test]
     fn test_serialize_get_webhook_info() {
-        let req = GetWebhookInfo.get_request().unwrap().build("host", "token");
+        let req = GetWebhookInfo.into_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Get);
         assert_eq!(req.url, String::from("host/bottoken/getWebhookInfo"));
         match req.body {
