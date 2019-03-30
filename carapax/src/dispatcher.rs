@@ -133,7 +133,7 @@ impl Future for DispatcherFuture {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use serde_json::{from_value, json};
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -164,10 +164,6 @@ mod tests {
         HandlerResult::Continue.into()
     }
 
-    fn parse_update(data: &str) -> Update {
-        serde_json::from_str(data).unwrap()
-    }
-
     #[derive(Debug, Fail)]
     #[fail(display = "Test error")]
     struct ErrorMock;
@@ -184,8 +180,8 @@ mod tests {
 
     #[test]
     fn test_error_strategy() {
-        let update = parse_update(
-            r#"{
+        let update: Update = from_value(json!(
+            {
                 "update_id": 1,
                 "message": {
                     "message_id": 1111,
@@ -194,8 +190,9 @@ mod tests {
                     "chat": {"id": 1, "type": "private", "first_name": "test"},
                     "text": "test"
                 }
-            }"#,
-        );
+            }
+        ))
+        .unwrap();
 
         // Aborted
         let dispatcher = Dispatcher::new(

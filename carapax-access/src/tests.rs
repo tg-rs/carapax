@@ -1,7 +1,7 @@
 use crate::*;
 use carapax::prelude::*;
 use futures::Future;
-use serde_json::from_str;
+use serde_json::{from_value, json};
 
 struct MockPolicy {
     result: bool,
@@ -15,8 +15,8 @@ impl AccessPolicy for MockPolicy {
 
 #[test]
 fn test_handler() {
-    let update: Update = from_str(
-        r#"{
+    let update: Update = from_value(json!(
+        {
             "update_id": 1,
             "message": {
                 "message_id": 1,
@@ -25,8 +25,8 @@ fn test_handler() {
                 "chat": {"id": 1, "type": "private", "first_name": "test", "username": "username1"},
                 "text": "test middleware"
             }
-        }"#,
-    )
+        }
+    ))
     .unwrap();
     for &result in &[true, false] {
         let policy = MockPolicy { result };
@@ -48,10 +48,10 @@ fn test_in_memory_policy() {
             for rules in $rules {
                 let policy = InMemoryAccessPolicy::new(rules);
                 for (flag, update) in $updates {
-                    let update: Update = from_str(update).unwrap();
+                    let update: Update = from_value(update).unwrap();
                     let mut context = Context::default();
                     let is_granted = policy.is_granted(&mut context, &update).wait().unwrap();
-                    assert_eq!(is_granted, *flag);
+                    assert_eq!(is_granted, flag);
                 }
             }
         }};
@@ -64,10 +64,10 @@ fn test_in_memory_policy() {
             vec![AccessRule::deny_user(2), AccessRule::allow_all()],
             vec![AccessRule::deny_user("username2"), AccessRule::allow_all()],
         ],
-        &[
+        vec![
             (
                 true,
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 1,
@@ -76,11 +76,11 @@ fn test_in_memory_policy() {
                         "chat": {"id": 1, "type": "private", "first_name": "test", "username": "username1"},
                         "text": "test allowed for user #1"
                     }
-                }"#
+                })
             ),
             (
                 false,
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 2,
@@ -89,7 +89,7 @@ fn test_in_memory_policy() {
                         "chat": {"id": 2, "type": "private", "first_name": "test", "username": "username2"},
                         "text": "test denied for user #2"
                     }
-                }"#
+                })
             )
         ]
     );
@@ -101,10 +101,10 @@ fn test_in_memory_policy() {
             vec![AccessRule::deny_chat(2), AccessRule::allow_all()],
             vec![AccessRule::deny_chat("username2"), AccessRule::allow_all()],
         ],
-        &[
+        vec![
             (
                 true,
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 1,
@@ -113,11 +113,11 @@ fn test_in_memory_policy() {
                         "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username1"},
                         "text": "test allowed for chat #1"
                     }
-                }"#
+                })
             ),
             (
                 false,
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 2,
@@ -126,7 +126,7 @@ fn test_in_memory_policy() {
                         "chat": {"id": 2, "type": "supergroup", "title": "test", "username": "username2"},
                         "text": "test denied for chat #2"
                     }
-                }"#
+                })
             )
         ]
     );
@@ -148,10 +148,10 @@ fn test_in_memory_policy() {
                 AccessRule::allow_all()
             ],
         ],
-        &[
+        vec![
             (
                 true,
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 1,
@@ -160,11 +160,11 @@ fn test_in_memory_policy() {
                         "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username1"},
                         "text": "test allowed for user in chat"
                     }
-                }"#
+                })
             ),
             (
                 false,
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 2,
@@ -173,11 +173,11 @@ fn test_in_memory_policy() {
                         "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username1"},
                         "text": "test denied for user in chat"
                     }
-                }"#
+                })
             ),
             (
                 false,
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 2,
@@ -186,7 +186,7 @@ fn test_in_memory_policy() {
                         "chat": {"id": 4, "type": "supergroup", "title": "test", "username": "username4"},
                         "text": "test denied for chat and user"
                     }
-                }"#
+                })
             )
         ]
     );

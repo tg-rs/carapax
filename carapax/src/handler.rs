@@ -466,8 +466,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::dispatcher::{Dispatcher, ErrorStrategy};
+    use serde_json::{from_value, json};
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -554,10 +554,6 @@ mod tests {
         HandlerResult::Continue.into()
     }
 
-    fn parse_update(data: &str) -> Update {
-        serde_json::from_str(data).unwrap()
-    }
-
     #[test]
     fn test_dispatch_message() {
         let dispatcher = Dispatcher::new(
@@ -569,8 +565,8 @@ mod tests {
             ],
             ErrorStrategy::Abort,
         );
-        for data in &[
-            r#"{
+        for data in vec![
+            json!({
                 "update_id": 1,
                 "message": {
                     "message_id": 1111,
@@ -579,8 +575,8 @@ mod tests {
                     "chat": {"id": 1, "type": "private", "first_name": "test"},
                     "text": "test message from private chat"
                 }
-            }"#,
-            r#"{
+            }),
+            json!({
                 "update_id": 1,
                 "edited_message": {
                     "message_id": 1111,
@@ -590,8 +586,8 @@ mod tests {
                     "text": "test edited message from private chat",
                     "edit_date": 1213
                 }
-            }"#,
-            r#"{
+            }),
+            json!({
                 "update_id": 1,
                 "channel_post": {
                     "message_id": 1111,
@@ -600,8 +596,8 @@ mod tests {
                     "chat": {"id": 1, "type": "channel", "title": "channeltitle", "username": "channelusername"},
                     "text": "test message from channel"
                 }
-            }"#,
-            r#"{
+            }),
+            json!({
                 "update_id": 1,
                 "edited_channel_post": {
                     "message_id": 1111,
@@ -610,9 +606,9 @@ mod tests {
                     "text": "test edited message from channel",
                     "edit_date": 1213
                 }
-            }"#,
+            }),
         ] {
-            let update = parse_update(data);
+            let update = from_value(data).unwrap();
             let context = dispatcher.dispatch(update).wait().unwrap();
             assert_eq!(context.get::<Counter>().get_calls(), 2);
         }
@@ -629,19 +625,18 @@ mod tests {
             ],
             ErrorStrategy::Abort,
         );
-        let update = parse_update(
-            r#"
-                {
-                    "update_id": 1,
-                    "inline_query": {
-                        "id": "id",
-                        "from": {"id": 1, "is_bot": false, "first_name": "test"},
-                        "query": "query",
-                        "offset": "offset"
-                    }
+        let update = from_value(json!(
+            {
+                "update_id": 1,
+                "inline_query": {
+                    "id": "id",
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "query": "query",
+                    "offset": "offset"
                 }
-            "#,
-        );
+            }
+        ))
+        .unwrap();
         let context = dispatcher.dispatch(update).wait().unwrap();
         assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
@@ -657,18 +652,17 @@ mod tests {
             ],
             ErrorStrategy::Abort,
         );
-        let update = parse_update(
-            r#"
-                {
-                    "update_id": 1,
-                    "chosen_inline_result": {
-                        "result_id": "id",
-                        "from": {"id": 1, "is_bot": false, "first_name": "test"},
-                        "query": "query"
-                    }
+        let update = from_value(json!(
+            {
+                "update_id": 1,
+                "chosen_inline_result": {
+                    "result_id": "id",
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "query": "query"
                 }
-            "#,
-        );
+            }
+        ))
+        .unwrap();
         let context = dispatcher.dispatch(update).wait().unwrap();
         assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
@@ -684,17 +678,16 @@ mod tests {
             ],
             ErrorStrategy::Abort,
         );
-        let update = parse_update(
-            r#"
-                {
-                    "update_id": 1,
-                    "callback_query": {
-                        "id": "id",
-                        "from": {"id": 1, "is_bot": false, "first_name": "test"}
-                    }
+        let update = from_value(json!(
+            {
+                "update_id": 1,
+                "callback_query": {
+                    "id": "id",
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"}
                 }
-            "#,
-        );
+            }
+        ))
+        .unwrap();
         let context = dispatcher.dispatch(update).wait().unwrap();
         assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
@@ -710,26 +703,25 @@ mod tests {
             ],
             ErrorStrategy::Abort,
         );
-        let update = parse_update(
-            r#"
-                {
-                    "update_id": 1,
-                    "shipping_query": {
-                        "id": "id",
-                        "from": {"id": 1, "is_bot": false, "first_name": "test"},
-                        "invoice_payload": "payload",
-                        "shipping_address": {
-                            "country_code": "RU",
-                            "state": "State",
-                            "city": "City",
-                            "street_line1": "Line 1",
-                            "street_line2": "Line 2",
-                            "post_code": "Post Code"
-                        }
+        let update = from_value(json!(
+            {
+                "update_id": 1,
+                "shipping_query": {
+                    "id": "id",
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "invoice_payload": "payload",
+                    "shipping_address": {
+                        "country_code": "RU",
+                        "state": "State",
+                        "city": "City",
+                        "street_line1": "Line 1",
+                        "street_line2": "Line 2",
+                        "post_code": "Post Code"
                     }
                 }
-            "#,
-        );
+            }
+        ))
+        .unwrap();
         let context = dispatcher.dispatch(update).wait().unwrap();
         assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
@@ -745,28 +737,27 @@ mod tests {
             ],
             ErrorStrategy::Abort,
         );
-        let update = parse_update(
-            r#"
-                {
-                    "update_id": 1,
-                    "pre_checkout_query": {
-                        "id": "id",
-                        "from": {"id": 1, "is_bot": false, "first_name": "test"},
-                        "currency": "RUB",
-                        "total_amount": 145,
-                        "invoice_payload": "payload"
-                    }
+        let update = from_value(json!(
+            {
+                "update_id": 1,
+                "pre_checkout_query": {
+                    "id": "id",
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "currency": "RUB",
+                    "total_amount": 145,
+                    "invoice_payload": "payload"
                 }
-            "#,
-        );
+            }
+        ))
+        .unwrap();
         let context = dispatcher.dispatch(update).wait().unwrap();
         assert_eq!(context.get::<Counter>().get_calls(), 2);
     }
 
     #[test]
     fn test_commands_handler() {
-        let update = parse_update(
-            r#"{
+        let update: Update = from_value(json!(
+            {
                 "update_id": 1,
                 "message": {
                     "message_id": 1111,
@@ -778,8 +769,9 @@ mod tests {
                         {"type": "bot_command", "offset": 0, "length": 12}
                     ]
                 }
-            }"#,
-        );
+            }
+        ))
+        .unwrap();
         let commands = CommandsHandler::default().add_handler("/testcommand", command_handler);
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
@@ -795,7 +787,7 @@ mod tests {
     fn test_text_handler() {
         for (update, handler) in vec![
             (
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 1111,
@@ -804,11 +796,11 @@ mod tests {
                         "chat": {"id": 1, "type": "private", "first_name": "test"},
                         "text": "test substring contains"
                     }
-                }"#,
+                }),
                 Handler::message(TextHandler::contains("substring", handle_message)),
             ),
             (
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 1111,
@@ -817,11 +809,11 @@ mod tests {
                         "chat": {"id": 1, "type": "private", "first_name": "test"},
                         "text": "test equals"
                     }
-                }"#,
+                }),
                 Handler::message(TextHandler::contains("test equals", handle_message)),
             ),
             (
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 1111,
@@ -830,11 +822,11 @@ mod tests {
                         "chat": {"id": 1, "type": "private", "first_name": "test"},
                         "text": "test matches"
                     }
-                }"#,
+                }),
                 Handler::message(TextHandler::matches("matches$", handle_message).unwrap()),
             ),
             (
-                r#"{
+                json!({
                     "update_id": 1,
                     "message": {
                         "message_id": 1111,
@@ -843,14 +835,14 @@ mod tests {
                         "chat": {"id": 1, "type": "private", "first_name": "test"},
                         "text": "test predicate"
                     }
-                }"#,
+                }),
                 Handler::message(TextHandler::new(
                     |text: &Text| text.data.contains("predicate"),
                     handle_message,
                 )),
             ),
         ] {
-            let update = parse_update(update);
+            let update = from_value(update).unwrap();
             let dispatcher = Dispatcher::new(
                 Api::new("token").unwrap(),
                 vec![Handler::update(setup_context), handler],
