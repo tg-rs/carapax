@@ -40,14 +40,16 @@ impl Form {
     {
         self.fields.insert(name.into(), value.into());
     }
+}
 
-    pub(crate) fn into_multipart(self) -> MultipartForm<'static> {
-        let mut form = MultipartForm::default();
-        for (field_name, field_value) in self.fields {
+impl From<Form> for MultipartForm<'static> {
+    fn from(form: Form) -> Self {
+        let mut result = MultipartForm::default();
+        for (field_name, field_value) in form.fields {
             match field_value {
-                FormValue::Text(text) => form.add_text(field_name, text),
+                FormValue::Text(text) => result.add_text(field_name, text),
                 FormValue::File(file) => match file.kind {
-                    InputFileKind::Path(path) => form.add_file(field_name, path).unwrap(),
+                    InputFileKind::Path(path) => result.add_file(field_name, path).unwrap(),
                     InputFileKind::Reader(InputFileReader {
                         reader,
                         info: file_info,
@@ -55,18 +57,18 @@ impl Form {
                         Some(InputFileInfo {
                             name: file_name,
                             mime_type: Some(mime_type),
-                        }) => form.add_reader_file_with_mime(field_name, reader, file_name, mime_type),
+                        }) => result.add_reader_file_with_mime(field_name, reader, file_name, mime_type),
                         Some(InputFileInfo {
                             name: file_name,
                             mime_type: None,
-                        }) => form.add_reader_file(field_name, reader, file_name),
-                        None => form.add_reader(field_name, reader),
+                        }) => result.add_reader_file(field_name, reader, file_name),
+                        None => result.add_reader(field_name, reader),
                     },
-                    InputFileKind::Id(file_id) => form.add_text(field_name, file_id),
-                    InputFileKind::Url(url) => form.add_text(field_name, url),
+                    InputFileKind::Id(file_id) => result.add_text(field_name, file_id),
+                    InputFileKind::Url(url) => result.add_text(field_name, url),
                 },
             }
         }
-        form
+        result
     }
 }
