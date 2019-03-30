@@ -232,7 +232,7 @@ fn test_deserialize_message_forward() {
     }) = msg.forward
     {
         assert_eq!(date, 0);
-        assert_eq!(message_id, 1);
+        assert_eq!(message_id, Some(1));
         assert_eq!(chat.id, 1);
         assert_eq!(chat.title, String::from("test"));
         assert_eq!(signature, Some(String::from("test")));

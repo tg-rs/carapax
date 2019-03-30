@@ -126,7 +126,7 @@ impl Message {
                 date,
                 from: ForwardFrom::User(user),
             }),
-            (Some(date), None, Some(Chat::Channel(chat)), Some(message_id), signature) => Some(Forward {
+            (Some(date), None, Some(Chat::Channel(chat)), message_id, signature) => Some(Forward {
                 date,
                 from: ForwardFrom::Channel {
                     chat,

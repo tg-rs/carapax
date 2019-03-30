@@ -19,7 +19,7 @@ pub enum ForwardFrom {
         /// Information about the original chat
         chat: ChannelChat,
         /// Identifier of the original message in the channel
-        message_id: Integer,
+        message_id: Option<Integer>,
         /// Signature of the post author if present
         signature: Option<String>,
     },
