@@ -27,8 +27,8 @@ impl SendDocument {
         D: Into<InputFile>,
     {
         let mut form = Form::new();
-        form.set_field("chat_id", chat_id.into());
-        form.set_field("document", document.into());
+        form.insert_field("chat_id", chat_id.into());
+        form.insert_field("document", document.into());
         SendDocument { form }
     }
 
@@ -44,7 +44,7 @@ impl SendDocument {
     where
         V: Into<InputFile>,
     {
-        self.form.set_field("thumb", value.into());
+        self.form.insert_field("thumb", value.into());
         self
     }
 
@@ -53,13 +53,13 @@ impl SendDocument {
     /// May also be used when resending documents by file_id
     /// 0-1024 characters
     pub fn caption<S: Into<String>>(mut self, value: S) -> Self {
-        self.form.set_field("caption", value.into());
+        self.form.insert_field("caption", value.into());
         self
     }
 
     /// Parse mode
     pub fn parse_mode(mut self, parse_mode: ParseMode) -> Self {
-        self.form.set_field("parse_mode", parse_mode);
+        self.form.insert_field("parse_mode", parse_mode);
         self
     }
 
@@ -67,20 +67,20 @@ impl SendDocument {
     ///
     /// Users will receive a notification with no sound
     pub fn disable_notification(mut self, value: bool) -> Self {
-        self.form.set_field("disable_notification", value);
+        self.form.insert_field("disable_notification", value);
         self
     }
 
     /// If the message is a reply, ID of the original message
     pub fn reply_to_message_id(mut self, value: Integer) -> Self {
-        self.form.set_field("reply_to_message_id", value);
+        self.form.insert_field("reply_to_message_id", value);
         self
     }
 
     /// Additional interface options
     pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, value: R) -> Result<Self, Error> {
         let value = serde_json::to_string(&value.into())?;
-        self.form.set_field("reply_markup", value);
+        self.form.insert_field("reply_markup", value);
         Ok(self)
     }
 }

@@ -24,8 +24,8 @@ impl SendPhoto {
         P: Into<InputFile>,
     {
         let mut form = Form::new();
-        form.set_field("chat_id", chat_id.into());
-        form.set_field("photo", photo.into());
+        form.insert_field("chat_id", chat_id.into());
+        form.insert_field("photo", photo.into());
         Self { form }
     }
 
@@ -34,13 +34,13 @@ impl SendPhoto {
     /// May also be used when resending photos by file_id
     /// 0-1024 characters
     pub fn caption<S: Into<String>>(mut self, value: S) -> Self {
-        self.form.set_field("caption", value.into());
+        self.form.insert_field("caption", value.into());
         self
     }
 
     /// Sets a parse mode
     pub fn parse_mode(mut self, value: ParseMode) -> Self {
-        self.form.set_field("parse_mode", value);
+        self.form.insert_field("parse_mode", value);
         self
     }
 
@@ -48,20 +48,20 @@ impl SendPhoto {
     ///
     /// Users will receive a notification with no sound
     pub fn disable_notification(mut self, value: bool) -> Self {
-        self.form.set_field("disable_notification", value.to_string());
+        self.form.insert_field("disable_notification", value.to_string());
         self
     }
 
     /// If the message is a reply, ID of the original message
     pub fn reply_to_message_id(mut self, value: Integer) -> Self {
-        self.form.set_field("reply_to_message_id", value.to_string());
+        self.form.insert_field("reply_to_message_id", value.to_string());
         self
     }
 
     /// Additional interface options
     pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, value: R) -> Result<Self, Error> {
         let value = serde_json::to_string(&value.into())?;
-        self.form.set_field("reply_markup", value);
+        self.form.insert_field("reply_markup", value);
         Ok(self)
     }
 }

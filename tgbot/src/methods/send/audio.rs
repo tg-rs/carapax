@@ -29,38 +29,38 @@ impl SendAudio {
         A: Into<InputFile>,
     {
         let mut form = Form::new();
-        form.set_field("chat_id", chat_id.into());
-        form.set_field("audio", audio.into());
+        form.insert_field("chat_id", chat_id.into());
+        form.insert_field("audio", audio.into());
         SendAudio { form }
     }
 
     /// Sets audio caption (0-1024 characters)
     pub fn caption<S: Into<String>>(mut self, value: S) -> Self {
-        self.form.set_field("caption", value.into());
+        self.form.insert_field("caption", value.into());
         self
     }
 
     /// Sets parse mode
     pub fn parse_mode(mut self, value: ParseMode) -> Self {
-        self.form.set_field("parse_mode", value);
+        self.form.insert_field("parse_mode", value);
         self
     }
 
     /// Sets duration of the audio in seconds
     pub fn duration(mut self, value: Integer) -> Self {
-        self.form.set_field("duration", value);
+        self.form.insert_field("duration", value);
         self
     }
 
     /// Sets performer
     pub fn performer<S: Into<String>>(mut self, value: S) -> Self {
-        self.form.set_field("performer", value.into());
+        self.form.insert_field("performer", value.into());
         self
     }
 
     /// Sets track name
     pub fn title<S: Into<String>>(mut self, value: S) -> Self {
-        self.form.set_field("title", value.into());
+        self.form.insert_field("title", value.into());
         self
     }
 
@@ -77,7 +77,7 @@ impl SendAudio {
     where
         V: Into<InputFile>,
     {
-        self.form.set_field("thumb", value.into());
+        self.form.insert_field("thumb", value.into());
         self
     }
 
@@ -85,20 +85,20 @@ impl SendAudio {
     ///
     /// Users will receive a notification with no sound
     pub fn disable_notification(mut self, value: bool) -> Self {
-        self.form.set_field("disable_notification", value);
+        self.form.insert_field("disable_notification", value);
         self
     }
 
     /// If the message is a reply, ID of the original message
     pub fn reply_to_message_id(mut self, value: Integer) -> Self {
-        self.form.set_field("reply_to_message_id", value);
+        self.form.insert_field("reply_to_message_id", value);
         self
     }
 
     /// Additional interface options
     pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, value: R) -> Result<Self, Error> {
         let value = serde_json::to_string(&value.into())?;
-        self.form.set_field("reply_markup", value);
+        self.form.insert_field("reply_markup", value);
         Ok(self)
     }
 }

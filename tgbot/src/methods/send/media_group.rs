@@ -18,9 +18,9 @@ impl SendMediaGroup {
     /// * media - Photos and videos to be sent, must include 2–10 items
     pub fn new<C: Into<ChatId>>(chat_id: C, media: MediaGroup) -> Result<Self, Error> {
         let mut form = Form::new();
-        form.set_field("chat_id", chat_id.into());
+        form.insert_field("chat_id", chat_id.into());
         for (k, v) in media.into_form()? {
-            form.set_field(k, v);
+            form.insert_field(k, v);
         }
         Ok(SendMediaGroup { form })
     }
@@ -29,13 +29,13 @@ impl SendMediaGroup {
     ///
     /// Users will receive a notification with no sound
     pub fn disable_notification(mut self, value: bool) -> Self {
-        self.form.set_field("disable_notification", value);
+        self.form.insert_field("disable_notification", value);
         self
     }
 
     /// If the messages are a reply, ID of the original message
     pub fn reply_to_message_id(mut self, value: Integer) -> Self {
-        self.form.set_field("reply_to_message_id", value);
+        self.form.insert_field("reply_to_message_id", value);
         self
     }
 }

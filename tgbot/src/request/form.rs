@@ -33,7 +33,7 @@ impl Form {
         Self { fields: HashMap::new() }
     }
 
-    pub(crate) fn set_field<N, V>(&mut self, name: N, value: V)
+    pub(crate) fn insert_field<N, V>(&mut self, name: N, value: V)
     where
         N: Into<String>,
         V: Into<FormValue>,

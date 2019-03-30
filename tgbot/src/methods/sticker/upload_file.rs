@@ -24,8 +24,8 @@ impl UploadStickerFile {
         P: Into<InputFile>,
     {
         let mut form = Form::new();
-        form.set_field("user_id", user_id);
-        form.set_field("png_sticker", png_sticker.into());
+        form.insert_field("user_id", user_id);
+        form.insert_field("png_sticker", png_sticker.into());
         UploadStickerFile { form }
     }
 }

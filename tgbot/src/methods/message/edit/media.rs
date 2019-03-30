@@ -26,10 +26,10 @@ impl EditMessageMedia {
     /// * media - New media content of the message
     pub fn new<C: Into<ChatId>>(chat_id: C, message_id: Integer, media: InputMedia) -> Self {
         let mut form = Form::new();
-        form.set_field("chat_id", chat_id.into());
-        form.set_field("message_id", message_id);
+        form.insert_field("chat_id", chat_id.into());
+        form.insert_field("message_id", message_id);
         for (k, v) in media.into_form() {
-            form.set_field(k, v);
+            form.insert_field(k, v);
         }
         EditMessageMedia { form }
     }
@@ -42,9 +42,9 @@ impl EditMessageMedia {
     /// * media - New media content of the message
     pub fn with_inline_message_id<S: Into<String>>(inline_message_id: S, media: InputMedia) -> Self {
         let mut form = Form::new();
-        form.set_field("inline_message_id", inline_message_id.into());
+        form.insert_field("inline_message_id", inline_message_id.into());
         for (k, v) in media.into_form() {
-            form.set_field(k, v);
+            form.insert_field(k, v);
         }
         EditMessageMedia { form }
     }
@@ -52,7 +52,7 @@ impl EditMessageMedia {
     /// New inline keyboard
     pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Result<Self, Error> {
         let reply_markup = serde_json::to_string(&reply_markup.into())?;
-        self.form.set_field("reply_markup", reply_markup);
+        self.form.insert_field("reply_markup", reply_markup);
         Ok(self)
     }
 }
