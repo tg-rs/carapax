@@ -1,0 +1,24 @@
+[package]
+name = "carapax-i18n"
+description = "An i18n handler for carapax"
+version = "0.1.0"
+authors = ["Arsenii Lyashenko <arsenylyashenko.3@gmail.com>"]
+edition = "2018"
+readme = "README.md"
+license = "MIT"
+documentation = "https://docs.rs/carapax-i18n"
+repository = "https://github.com/tg-rs/tg-rs"
+categories = ["internationalization"]
+keywords = ["carapax", "telegram"]
+exclude = ["tests/**"]
+
+[dependencies]
+carapax = { path = "../carapax" }
+gettext = "0.3.0"
+
+[dev-dependencies]
+serde_json = "1.0.39"
+futures = "0.1.25"
+tokio = "0.1.7"
+dotenv = "0.13.0"
+env_logger = "0.6.0"
