@@ -1,20 +1,15 @@
-#[cfg(feature = "redis-store")]
+#[cfg(feature = "fs-store")]
 fn main() {
     use carapax::prelude::*;
-    use carapax_session::{
-        session_handler,
-        store::{redis::RedisSessionStore, Session, SessionStore},
-    };
+    use carapax_session::{session_handler, store::fs::FsSessionStore, Session};
     use dotenv::dotenv;
     use env_logger;
-    use futures::{future::lazy, Future};
+    use futures::Future;
     use std::env;
-
-    const SESSION_NAMESPACE: &str = "carapax-session";
 
     fn handle_set(context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
-        let session = context.get::<Session<RedisSessionStore>>().clone();
+        let session = context.get::<Session<FsSessionStore>>().clone();
         let api = context.get::<Api>().clone();
         let chat_id = message.get_chat_id();
         let val = if args.is_empty() {
@@ -38,7 +33,7 @@ fn main() {
 
     fn handle_expire(context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
-        let session = context.get::<Session<RedisSessionStore>>().clone();
+        let session = context.get::<Session<FsSessionStore>>().clone();
         let api = context.get::<Api>().clone();
         let chat_id = message.get_chat_id();
         let seconds = if args.is_empty() {
@@ -62,7 +57,7 @@ fn main() {
 
     fn handle_reset(context: &mut Context, message: &Message, _args: Vec<String>) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
-        let session = context.get::<Session<RedisSessionStore>>().clone();
+        let session = context.get::<Session<FsSessionStore>>().clone();
         let api = context.get::<Api>().clone();
         let chat_id = message.get_chat_id();
         HandlerFuture::new(session.del("counter").and_then(move |()| {
@@ -73,7 +68,7 @@ fn main() {
 
     fn handle_message(context: &mut Context, message: &Message) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
-        let session = context.get::<Session<RedisSessionStore>>().clone();
+        let session = context.get::<Session<FsSessionStore>>().clone();
         let api = context.get::<Api>().clone();
         let chat_id = message.get_chat_id();
         HandlerFuture::new(session.get::<usize>("counter").and_then(move |val| {
@@ -90,7 +85,6 @@ fn main() {
 
     let token = env::var("TGRS_TOKEN").expect("TGRS_TOKEN is not set");
     let proxy = env::var("TGRS_PROXY").ok();
-    let redis_url = env::var("TGRS_REDIS_URL").expect("TGRS_REDIS_URL is not set");
 
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
@@ -98,26 +92,21 @@ fn main() {
     }
 
     let api = Api::new(config).unwrap();
-    tokio::run(lazy(|| {
-        let commands = CommandsHandler::default()
-            .add_handler("/set", handle_set)
-            .add_handler("/reset", handle_reset)
-            .add_handler("/expire", handle_expire);
-        RedisSessionStore::open(redis_url, SESSION_NAMESPACE)
-            .map_err(|err| {
-                log::error!("Failed to create store: {:?}", err);
-            })
-            .and_then(|store| {
-                App::new()
-                    .add_handler(session_handler(store))
-                    .add_handler(Handler::message(commands))
-                    .add_handler(Handler::message(handle_message))
-                    .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api)))
-            })
-    }));
+    let store = FsSessionStore::new("/tmp/carapax-session");
+    let commands = CommandsHandler::default()
+        .add_handler("/set", handle_set)
+        .add_handler("/reset", handle_reset)
+        .add_handler("/expire", handle_expire);
+    tokio::run(
+        App::new()
+            .add_handler(session_handler(store))
+            .add_handler(Handler::message(commands))
+            .add_handler(Handler::message(handle_message))
+            .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
+    );
 }
 
-#[cfg(not(feature = "redis-store"))]
+#[cfg(not(feature = "fs-store"))]
 fn main() {
-    println!(r#"Please enable "redis-store" feature"#);
+    println!(r#"Please enable "fs-store" feature"#);
 }

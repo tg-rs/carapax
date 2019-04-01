@@ -10,6 +10,7 @@ documentation = "https://docs.rs/carapax-session"
 repository = "https://github.com/tg-rs/tg-rs"
 
 [features]
+fs-store = ["tokio-fs", "serde_json"]
 redis-store = ["redis", "serde_json"]
 
 [dependencies]
@@ -18,7 +19,13 @@ failure = "0.1.5"
 futures = "0.1.25"
 serde = "1.0.89"
 
+# fs-store
+tokio-fs = {version = "0.1.6", optional = true}
+
+# redis-store
 redis = { version = "0.10.0", optional = true }
+
+# fs-store redis-store
 serde_json = { version = "1.0.39", optional = true }
 
 [dev-dependencies]

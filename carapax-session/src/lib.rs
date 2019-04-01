@@ -6,9 +6,9 @@ use carapax::Handler;
 use store::SessionStore;
 
 mod handler;
-mod namespace;
+mod session;
 
-pub use self::namespace::SessionNamespace;
+pub use self::session::{Session, SessionKey};
 
 /// Contains session store implementations
 pub mod store;

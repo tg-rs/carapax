@@ -1,6 +1,6 @@
 use crate::{
-    namespace::SessionNamespace,
-    store::{Session, SessionStore},
+    session::{Session, SessionKey},
+    store::SessionStore,
 };
 use carapax::prelude::*;
 use std::sync::Arc;
@@ -23,7 +23,7 @@ where
     S: SessionStore + Send + Sync + 'static,
 {
     fn handle(&self, context: &mut Context, update: &Update) -> HandlerFuture {
-        let namespace = SessionNamespace::from_update(update);
+        let namespace = SessionKey::from_update(update);
         context.set(Session::new(namespace, self.store.clone()));
         HandlerResult::Continue.into()
     }

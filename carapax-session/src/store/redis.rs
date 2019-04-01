@@ -1,4 +1,4 @@
-use crate::{namespace::SessionNamespace, store::SessionStore};
+use crate::{session::SessionKey, store::SessionStore};
 use failure::Error;
 use futures::{future::err, Future};
 use redis::{r#async::SharedConnection, Client, Cmd, FromRedisValue};
@@ -10,11 +10,16 @@ use serde::{de::DeserializeOwned, Serialize};
 #[derive(Clone)]
 pub struct RedisSessionStore {
     conn: SharedConnection,
-    namespace: SessionNamespace,
+    namespace: String,
 }
 
 impl RedisSessionStore {
     /// Use this method to create a new store
+    ///
+    /// # Arguments
+    ///
+    /// - params - Redis URL (`redis://[:<passwd>@]<hostname>[:port][/<db>]`)
+    /// - namespace - A prefix string for keys
     pub fn open<P: AsRef<str>, N: Into<String>>(
         params: P,
         namespace: N,
@@ -27,9 +32,13 @@ impl RedisSessionStore {
                     .from_err()
                     .map(|conn| RedisSessionStore {
                         conn,
-                        namespace: SessionNamespace::new(namespace),
+                        namespace: namespace.into(),
                     })
             })
+    }
+
+    fn format_key(&self, key: SessionKey) -> String {
+        format!("{}-{}", self.namespace, key.to_string())
     }
 
     fn query<V>(&self, cmd: Cmd) -> Box<Future<Item = V, Error = Error> + Send>
@@ -41,12 +50,12 @@ impl RedisSessionStore {
 }
 
 impl SessionStore for RedisSessionStore {
-    fn get<O>(&self, key: &str) -> Box<Future<Item = Option<O>, Error = Error> + Send>
+    fn get<O>(&self, key: SessionKey) -> Box<Future<Item = Option<O>, Error = Error> + Send>
     where
         O: DeserializeOwned + Send + 'static,
     {
         let mut cmd = redis::cmd("GET");
-        cmd.arg(self.namespace.format_key(key));
+        cmd.arg(self.format_key(key));
         Box::new(self.query::<Option<String>>(cmd).and_then(|val| {
             Ok(match val {
                 Some(val) => serde_json::from_str(&val)?,
@@ -55,14 +64,14 @@ impl SessionStore for RedisSessionStore {
         }))
     }
 
-    fn set<I>(&self, key: &str, val: &I) -> Box<Future<Item = (), Error = Error> + Send>
+    fn set<I>(&self, key: SessionKey, val: &I) -> Box<Future<Item = (), Error = Error> + Send>
     where
         I: Serialize,
     {
         match serde_json::to_string(val) {
             Ok(val) => {
                 let mut cmd = redis::cmd("SET");
-                cmd.arg(self.namespace.format_key(key));
+                cmd.arg(self.format_key(key));
                 cmd.arg(val);
                 self.query(cmd)
             }
@@ -70,16 +79,16 @@ impl SessionStore for RedisSessionStore {
         }
     }
 
-    fn expire(&self, key: &str, seconds: usize) -> Box<Future<Item = (), Error = Error> + Send> {
+    fn expire(&self, key: SessionKey, seconds: usize) -> Box<Future<Item = (), Error = Error> + Send> {
         let mut cmd = redis::cmd("EXPIRE");
-        cmd.arg(self.namespace.format_key(key));
+        cmd.arg(self.format_key(key));
         cmd.arg(seconds);
         self.query(cmd)
     }
 
-    fn del(&self, key: &str) -> Box<Future<Item = (), Error = Error> + Send> {
+    fn del(&self, key: SessionKey) -> Box<Future<Item = (), Error = Error> + Send> {
         let mut cmd = redis::cmd("DEL");
-        cmd.arg(self.namespace.format_key(key));
+        cmd.arg(self.format_key(key));
         self.query(cmd)
     }
 }
