@@ -26,3 +26,24 @@ pub struct UserProfilePhotos {
     /// Requested profile pictures (in up to 4 sizes each)
     pub photos: Vec<Vec<PhotoSize>>,
 }
+
+/// User ID
+#[derive(Clone, Debug)]
+pub enum UserId {
+    /// @username of a user
+    Username(String),
+    /// ID of a user
+    Id(Integer),
+}
+
+impl From<&str> for UserId {
+    fn from(username: &str) -> UserId {
+        UserId::Username(String::from(username))
+    }
+}
+
+impl From<Integer> for UserId {
+    fn from(id: Integer) -> UserId {
+        UserId::Id(id)
+    }
+}
