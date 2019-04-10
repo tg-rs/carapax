@@ -74,7 +74,7 @@ fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let token = env::var("TGRS_TOKEN").expect("TGBOT_TOKEN is not set");
+    let token = env::var("TGRS_TOKEN").expect("TGRS_TOKEN is not set");
     let proxy = env::var("TGRS_PROXY").ok();
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
