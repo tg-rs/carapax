@@ -1,14 +1,21 @@
-use crate::{session::SessionKey, store::SessionStore};
+use crate::{
+    gc::GarbageCollector,
+    session::{SessionKey, SessionLifetime},
+    store::{
+        data::{Data, DataRef},
+        SessionStore,
+    },
+};
 use failure::{Error, Fail};
 use futures::{
     future::{self, Either},
-    Future,
+    Future, Stream,
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_json::Value as JsonValue;
-use std::time::SystemTime;
-use std::{io::ErrorKind as IoErrorKind, path::PathBuf};
+use serde::{de::DeserializeOwned, Serialize};
+use std::{io::ErrorKind as IoErrorKind, path::PathBuf, time::SystemTime};
 use tokio_fs as fs;
+
+const CREATE_TIME_MARKER: &str = ".__created";
 
 /// File system session store
 ///
@@ -16,12 +23,11 @@ use tokio_fs as fs;
 #[derive(Clone)]
 pub struct FsSessionStore {
     root: PathBuf,
+    session_lifetime: SessionLifetime,
 }
 
 #[derive(Debug, Fail)]
 enum KeyError {
-    #[fail(display = "Session key is empty")]
-    Empty,
     #[fail(display = "Key path occupied: {:?}", _0)]
     PathOccupied(PathBuf),
 }
@@ -32,38 +38,52 @@ impl FsSessionStore {
     /// # Arguments
     ///
     /// - root - A directory to store session data
-    pub fn new<P>(root: P) -> Self
+    pub fn open<P>(root: P) -> Box<Future<Item = Self, Error = Error> + Send>
     where
         P: Into<PathBuf>,
     {
-        Self { root: root.into() }
+        let root = root.into();
+        Box::new(fs::create_dir_all(root.clone()).from_err().and_then(move |_| {
+            Ok(Self {
+                root,
+                session_lifetime: SessionLifetime::default(),
+            })
+        }))
+    }
+
+    /// Sets session lifetime
+    ///
+    /// You need to spawn a GC in order to remove old sessions
+    /// (see [spawn_gc](../../fn.spawn_gc.html))
+    pub fn with_lifetime<L>(mut self, lifetime: L) -> Self
+    where
+        L: Into<SessionLifetime>,
+    {
+        self.session_lifetime = lifetime.into();
+        self
     }
 
     fn key_to_path(&self, key: SessionKey) -> Box<Future<Item = PathBuf, Error = Error> + Send> {
-        let mut key_root = self.root.clone();
-        let parts = key.into_inner();
-        let parts_len = parts.len();
-        let file_name = match parts_len {
-            0 => return Box::new(future::err(KeyError::Empty.into())),
-            1 => parts[0].clone(),
-            _ => {
-                for i in parts.iter().take(parts_len - 2) {
-                    key_root = key_root.join(i)
-                }
-                parts[parts_len - 1].clone()
-            }
-        };
-        let file_path = key_root.join(file_name).with_extension("json");
+        let key_root = self.root.clone().join(key.namespace());
+        let file_path = key_root.join(key.name()).with_extension("json");
         let key_root_clone = key_root.clone();
         Box::new(
             fs::metadata(key_root.clone())
                 .then(move |result| match result {
-                    Ok(metadata) => Either::A(future::ok(metadata)),
+                    Ok(metadata) => Either::A(future::ok::<_, Error>(metadata)),
                     Err(err) => match err.kind() {
-                        IoErrorKind::NotFound => Either::B(
-                            fs::create_dir_all(key_root.clone()).and_then(move |()| fs::metadata(key_root.clone())),
-                        ),
-                        _ => Either::A(future::err(err)),
+                        IoErrorKind::NotFound => {
+                            Either::B(fs::create_dir_all(key_root.clone()).from_err().and_then(move |()| {
+                                future::result(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH))
+                                    .from_err()
+                                    .and_then(|now| {
+                                        fs::write(key_root.join(CREATE_TIME_MARKER), format!("{}", now.as_secs()))
+                                            .and_then(move |_| fs::metadata(key_root.clone()))
+                                            .from_err()
+                                    })
+                            }))
+                        }
+                        _ => Either::A(future::err(err.into())),
                     },
                 })
                 .from_err()
@@ -75,60 +95,6 @@ impl FsSessionStore {
                     }
                 }),
         )
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-struct Data {
-    expires_at: Option<u64>,
-    value: JsonValue,
-}
-
-impl Data {
-    fn set_lifetime(&mut self, lifetime: u64) -> Result<(), Error> {
-        self.expires_at = Some(
-            SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .map(|x| x.as_secs() + lifetime)?,
-        );
-        Ok(())
-    }
-
-    fn is_expired(&self) -> Result<bool, Error> {
-        Ok(match self.expires_at {
-            Some(expires_at) => {
-                let now = SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .map(|x| x.as_secs())?;
-                expires_at < now
-            }
-            None => false,
-        })
-    }
-
-    fn parse_value<T: DeserializeOwned>(mut self) -> Result<T, Error> {
-        Ok(serde_json::from_value(self.value.take())?)
-    }
-}
-
-#[derive(Serialize)]
-struct DataRef<'a, T>
-where
-    T: Serialize + 'a,
-{
-    expires_at: Option<u64>,
-    value: &'a T,
-}
-
-impl<'a, T> DataRef<'a, T>
-where
-    T: Serialize + 'a,
-{
-    fn new(value: &'a T) -> Self {
-        Self {
-            value,
-            expires_at: None,
-        }
     }
 }
 
@@ -190,5 +156,49 @@ impl SessionStore for FsSessionStore {
             self.key_to_path(key)
                 .and_then(|file_path| fs::remove_file(file_path).from_err()),
         )
+    }
+}
+
+impl GarbageCollector for FsSessionStore {
+    fn collect(&self) -> Box<Future<Item = (), Error = Error> + Send> {
+        let lifetime = match self.session_lifetime {
+            SessionLifetime::Forever => return Box::new(future::ok(())),
+            SessionLifetime::Duration(duration) => duration.as_secs(),
+        };
+        let now = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+            Ok(duration) => duration.as_secs(),
+            Err(err) => return Box::new(future::err(err.into())),
+        };
+        Box::new(fs::read_dir(self.root.clone()).from_err().and_then(move |stream| {
+            stream.from_err().for_each(move |session_dir| {
+                let session_path = session_dir.path();
+                fs::read(session_path.clone().join(CREATE_TIME_MARKER))
+                    .from_err()
+                    .and_then(move |data| {
+                        future::result(String::from_utf8(data))
+                            .from_err()
+                            .and_then(move |timestamp| {
+                                future::result(timestamp.parse::<u64>())
+                                    .from_err()
+                                    .and_then(move |timestamp| {
+                                        if now - timestamp >= lifetime {
+                                            Either::A(
+                                                fs::read_dir(session_path.clone())
+                                                    .and_then(|stream| {
+                                                        stream.for_each(|session_file| {
+                                                            fs::remove_file(session_file.path())
+                                                        })
+                                                    })
+                                                    .and_then(|_| fs::remove_dir(session_path))
+                                                    .from_err(),
+                                            )
+                                        } else {
+                                            Either::B(future::ok(()))
+                                        }
+                                    })
+                            })
+                    })
+            })
+        }))
     }
 }

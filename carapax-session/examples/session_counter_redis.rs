@@ -104,7 +104,9 @@ fn main() {
             .map_err(|err| {
                 log::error!("Failed to create store: {:?}", err);
             })
-            .and_then(|store| {
+            .and_then(|mut store| {
+                // set session lifetime to 10 seconds
+                store = store.with_lifetime(10);
                 App::new()
                     .add_handler(session_handler(store))
                     .add_handler(Handler::message(commands))

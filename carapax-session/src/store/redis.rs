@@ -1,6 +1,15 @@
-use crate::{session::SessionKey, store::SessionStore};
+use crate::{
+    session::{SessionKey, SessionLifetime},
+    store::{
+        data::{Data, DataRef},
+        SessionStore,
+    },
+};
 use failure::Error;
-use futures::{future::err, Future};
+use futures::{
+    future::{self, Either},
+    Future,
+};
 use redis::{r#async::SharedConnection, Client, Cmd, FromRedisValue};
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -11,6 +20,7 @@ use serde::{de::DeserializeOwned, Serialize};
 pub struct RedisSessionStore {
     conn: SharedConnection,
     namespace: String,
+    lifetime: SessionLifetime,
 }
 
 impl RedisSessionStore {
@@ -24,7 +34,7 @@ impl RedisSessionStore {
         params: P,
         namespace: N,
     ) -> impl Future<Item = RedisSessionStore, Error = Error> {
-        futures::future::result(Client::open(params.as_ref()))
+        future::result(Client::open(params.as_ref()))
             .from_err()
             .and_then(|client| {
                 client
@@ -33,12 +43,25 @@ impl RedisSessionStore {
                     .map(|conn| RedisSessionStore {
                         conn,
                         namespace: namespace.into(),
+                        lifetime: SessionLifetime::default(),
                     })
             })
     }
 
-    fn format_key(&self, key: SessionKey) -> String {
-        format!("{}-{}", self.namespace, key.to_string())
+    /// Sets session lifetime
+    ///
+    /// This store does not implement GarbageCollector but,
+    /// thanks to redis, you still can set session lifetime
+    pub fn with_lifetime<L>(mut self, lifetime: L) -> Self
+    where
+        L: Into<SessionLifetime>,
+    {
+        self.lifetime = lifetime.into();
+        self
+    }
+
+    fn format_namespace(&self, key: &SessionKey) -> String {
+        format!("{}-{}", self.namespace, key.namespace())
     }
 
     fn query<V>(&self, cmd: Cmd) -> Box<Future<Item = V, Error = Error> + Send>
@@ -54,11 +77,19 @@ impl SessionStore for RedisSessionStore {
     where
         O: DeserializeOwned + Send + 'static,
     {
-        let mut cmd = redis::cmd("GET");
-        cmd.arg(self.format_key(key));
+        let mut cmd = redis::cmd("HGET");
+        cmd.arg(self.format_namespace(&key));
+        cmd.arg(key.name());
         Box::new(self.query::<Option<String>>(cmd).and_then(|val| {
             Ok(match val {
-                Some(val) => serde_json::from_str(&val)?,
+                Some(val) => {
+                    let data: Data = serde_json::from_str(&val)?;
+                    if data.is_expired()? {
+                        None
+                    } else {
+                        Some(data.parse_value()?)
+                    }
+                }
                 None => None,
             })
         }))
@@ -68,27 +99,82 @@ impl SessionStore for RedisSessionStore {
     where
         I: Serialize,
     {
-        match serde_json::to_string(val) {
+        match serde_json::to_string(&DataRef::new(val)) {
             Ok(val) => {
-                let mut cmd = redis::cmd("SET");
-                cmd.arg(self.format_key(key));
-                cmd.arg(val);
-                self.query(cmd)
+                let namespace = self.format_namespace(&key);
+                let mut hlen_cmd = redis::cmd("HLEN");
+                hlen_cmd.arg(&namespace);
+                let lifetime = self.lifetime;
+                Box::new(hlen_cmd.query_async(self.conn.clone()).from_err().and_then(
+                    move |(conn, hlen_val): (SharedConnection, i64)| {
+                        let mut hset_cmd = redis::cmd("HSET");
+                        hset_cmd.arg(&namespace);
+                        hset_cmd.arg(key.name());
+                        hset_cmd.arg(val);
+                        hset_cmd.query_async(conn).from_err().and_then(move |(conn, ())| {
+                            let duration = if hlen_val == 0 {
+                                match lifetime {
+                                    SessionLifetime::Forever => None,
+                                    SessionLifetime::Duration(duration) => Some(duration.as_secs()),
+                                }
+                            } else {
+                                None
+                            };
+                            if let Some(duration) = duration {
+                                let mut expire_cmd = redis::cmd("EXPIRE");
+                                expire_cmd.arg(&namespace);
+                                expire_cmd.arg(duration);
+                                Either::A(
+                                    expire_cmd
+                                        .query_async(conn)
+                                        .from_err()
+                                        .map(|(_conn, _n): (SharedConnection, i64)| ()),
+                                )
+                            } else {
+                                Either::B(future::ok(()))
+                            }
+                        })
+                    },
+                ))
             }
-            Err(e) => Box::new(err(e.into())),
+            Err(err) => Box::new(future::err(err.into())),
         }
     }
 
     fn expire(&self, key: SessionKey, seconds: usize) -> Box<Future<Item = (), Error = Error> + Send> {
-        let mut cmd = redis::cmd("EXPIRE");
-        cmd.arg(self.format_key(key));
-        cmd.arg(seconds);
-        self.query(cmd)
+        let mut hget_cmd = redis::cmd("HGET");
+        let namespace = self.format_namespace(&key);
+        hget_cmd.arg(namespace.clone());
+        hget_cmd.arg(key.name());
+        Box::new(hget_cmd.query_async(self.conn.clone()).from_err().and_then(
+            move |(conn, val): (SharedConnection, Option<String>)| match val {
+                Some(val) => Either::A(future::result(serde_json::from_str::<Data>(&val)).from_err().and_then(
+                    move |mut data| {
+                        future::result(data.set_lifetime(seconds as u64)).and_then(move |()| {
+                            future::result(serde_json::to_string(&data))
+                                .from_err()
+                                .and_then(move |val| {
+                                    let mut hset_cmd = redis::cmd("HSET");
+                                    hset_cmd.arg(&namespace);
+                                    hset_cmd.arg(key.name());
+                                    hset_cmd.arg(val);
+                                    hset_cmd
+                                        .query_async(conn)
+                                        .from_err()
+                                        .and_then(move |(_conn, ())| Ok(()))
+                                })
+                        })
+                    },
+                )),
+                None => Either::B(future::ok(())),
+            },
+        ))
     }
 
     fn del(&self, key: SessionKey) -> Box<Future<Item = (), Error = Error> + Send> {
-        let mut cmd = redis::cmd("DEL");
-        cmd.arg(self.format_key(key));
+        let mut cmd = redis::cmd("HDEL");
+        cmd.arg(self.format_namespace(&key));
+        cmd.arg(key.name());
         self.query(cmd)
     }
 }

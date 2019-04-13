@@ -1,11 +1,11 @@
 #[cfg(feature = "fs-store")]
 fn main() {
     use carapax::prelude::*;
-    use carapax_session::{session_handler, store::fs::FsSessionStore, Session};
+    use carapax_session::{session_handler, spawn_gc, store::fs::FsSessionStore, Session};
     use dotenv::dotenv;
     use env_logger;
-    use futures::Future;
-    use std::env;
+    use futures::{future, Future};
+    use std::{env, time::Duration};
 
     fn handle_set(context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
@@ -92,18 +92,23 @@ fn main() {
     }
 
     let api = Api::new(config).unwrap();
-    let store = FsSessionStore::new("/tmp/carapax-session");
     let commands = CommandsHandler::default()
         .add_handler("/set", handle_set)
         .add_handler("/reset", handle_reset)
         .add_handler("/expire", handle_expire);
-    tokio::run(
-        App::new()
-            .add_handler(session_handler(store))
-            .add_handler(Handler::message(commands))
-            .add_handler(Handler::message(handle_message))
-            .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
-    );
+    tokio::run(future::lazy(|| {
+        FsSessionStore::open("/tmp/carapax-session")
+            .map_err(|e| log::error!("Failed to create session store: {:?}", e))
+            .and_then(|mut store| {
+                store = store.with_lifetime(10);
+                spawn_gc(Duration::from_secs(10), store.clone());
+                App::new()
+                    .add_handler(session_handler(store))
+                    .add_handler(Handler::message(commands))
+                    .add_handler(Handler::message(handle_message))
+                    .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api)))
+            })
+    }));
 }
 
 #[cfg(not(feature = "fs-store"))]

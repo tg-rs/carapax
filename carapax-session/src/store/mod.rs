@@ -3,6 +3,8 @@ use failure::Error;
 use futures::Future;
 use serde::{de::DeserializeOwned, Serialize};
 
+mod data;
+
 /// File system session store
 ///
 /// Available with enabled "fs-store" feature
