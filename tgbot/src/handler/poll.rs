@@ -4,7 +4,7 @@ use crate::{
     types::{AllowedUpdate, Integer, ResponseError, Update},
 };
 use failure::Error;
-use futures::{try_ready, Async, Future, Poll, Stream};
+use futures::{task, try_ready, Async, Future, Poll, Stream};
 use log::error;
 use std::{
     cmp::max,
@@ -76,6 +76,7 @@ impl Stream for UpdatesStream {
                 UpdateState::BufferedResults(buffered) => {
                     if let Some(update) = buffered.pop_front() {
                         self.options.offset = max(self.options.offset, update.id);
+                        task::current().notify();
                         return Ok(Async::Ready(Some(update)));
                     } else {
                         self.state.switch_to_request(&self.api, &self.options);
