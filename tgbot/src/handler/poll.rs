@@ -18,18 +18,18 @@ const DEFAULT_LIMIT: Integer = 100;
 const DEFAULT_POLL_TIMEOUT: Duration = Duration::from_secs(10);
 const DEFAULT_ERROR_TIMEOUT: Duration = Duration::from_secs(5);
 
-enum UpdateState {
+enum State {
     BufferedResults(VecDeque<Update>),
     Running(ApiFuture<Vec<Update>>),
     Idling(tokio_timer::Delay),
 }
 
 /// Updates stream used for long polling
-#[must_use = "streams must be polled to produce results"]
+#[must_use = "streams do nothing unless polled"]
 pub struct UpdatesStream {
     api: Api,
     options: UpdatesStreamOptions,
-    state: UpdateState,
+    state: State,
 }
 
 fn make_request(api: &Api, options: &UpdatesStreamOptions) -> ApiFuture<Vec<Update>> {
@@ -42,7 +42,7 @@ fn make_request(api: &Api, options: &UpdatesStreamOptions) -> ApiFuture<Vec<Upda
     )
 }
 
-impl UpdateState {
+impl State {
     fn switch_to_idle(&mut self, err: Error) {
         error!("An error has occurred while getting updates: {:?}", err);
         let error_timeout = err
@@ -53,16 +53,16 @@ impl UpdateState {
                     .and_then(|parameters| parameters.retry_after.map(|count| Duration::from_secs(count as u64)))
             })
             .unwrap_or(DEFAULT_ERROR_TIMEOUT);
-        mem::replace(self, UpdateState::Idling(sleep(error_timeout)));
+        mem::replace(self, State::Idling(sleep(error_timeout)));
     }
 
     fn switch_to_request(&mut self, api: &Api, options: &UpdatesStreamOptions) {
         let fut = make_request(api, options);
-        mem::replace(self, UpdateState::Running(fut));
+        mem::replace(self, State::Running(fut));
     }
 
     fn switch_to_buffered(&mut self, items: impl IntoIterator<Item = Update>) {
-        mem::replace(self, UpdateState::BufferedResults(items.into_iter().collect()));
+        mem::replace(self, State::BufferedResults(items.into_iter().collect()));
     }
 }
 
@@ -73,7 +73,7 @@ impl Stream for UpdatesStream {
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         loop {
             match &mut self.state {
-                UpdateState::BufferedResults(buffered) => {
+                State::BufferedResults(buffered) => {
                     if let Some(update) = buffered.pop_front() {
                         self.options.offset = max(self.options.offset, update.id);
                         task::current().notify();
@@ -82,12 +82,12 @@ impl Stream for UpdatesStream {
                         self.state.switch_to_request(&self.api, &self.options);
                     }
                 }
-                UpdateState::Running(request_fut) => match request_fut.poll() {
+                State::Running(request_fut) => match request_fut.poll() {
                     Ok(Async::NotReady) => return Ok(Async::NotReady),
                     Ok(Async::Ready(items)) => self.state.switch_to_buffered(items),
                     Err(err) => self.state.switch_to_idle(err),
                 },
-                UpdateState::Idling(delay_fut) => {
+                State::Idling(delay_fut) => {
                     // Timer errors are unrecoverable.
                     try_ready!(delay_fut.poll());
                     self.state.switch_to_request(&self.api, &self.options)
@@ -101,7 +101,7 @@ impl UpdatesStream {
     /// Creates a new updates stream
     pub fn new(api: Api) -> Self {
         let options = UpdatesStreamOptions::default();
-        let state = UpdateState::Running(make_request(&api, &options));
+        let state = State::Running(make_request(&api, &options));
         UpdatesStream { api, options, state }
     }
 
