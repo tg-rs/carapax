@@ -3,7 +3,7 @@ use crate::{
     handler::{Handler, HandlerFuture, HandlerResult},
 };
 use failure::Error;
-use futures::{task, Async, Future, Poll};
+use futures::{Async, Future, Poll};
 use std::sync::Arc;
 use tgbot::{types::Update, Api, UpdateHandler};
 
@@ -20,6 +20,23 @@ pub(crate) struct Dispatcher {
     api: Api,
     handlers: Arc<Vec<Handler>>,
     error_strategy: ErrorStrategy,
+}
+
+struct HandlersQueue {
+    handlers: Arc<Vec<Handler>>,
+    current: usize,
+}
+
+impl HandlersQueue {
+    fn new(handlers: Arc<Vec<Handler>>) -> Self {
+        HandlersQueue { handlers, current: 0 }
+    }
+
+    fn next(&mut self) -> Option<&Handler> {
+        let handler = self.handlers.get(self.current);
+        self.current += 1;
+        handler
+    }
 }
 
 impl Dispatcher {
@@ -51,11 +68,10 @@ impl UpdateHandler for Dispatcher {
 
 #[must_use = "futures do nothing unless polled"]
 pub(crate) struct DispatcherFuture {
-    handlers: Arc<Vec<Handler>>,
+    handlers: HandlersQueue,
     context: Option<Context>,
     error_strategy: ErrorStrategy,
     update: Update,
-    handler_idx: usize,
     handler: Option<HandlerFuture>,
 }
 
@@ -66,20 +82,31 @@ impl DispatcherFuture {
         error_strategy: ErrorStrategy,
         update: Update,
     ) -> DispatcherFuture {
-        DispatcherFuture {
-            handlers,
+        let mut fut = DispatcherFuture {
+            handlers: HandlersQueue::new(handlers),
             context: Some(context),
             error_strategy,
             update,
-            handler_idx: 0,
             handler: None,
-        }
+        };
+        fut.switch_to_next_handler();
+        fut
     }
 }
 
 impl DispatcherFuture {
     fn take_context(&mut self) -> Context {
-        self.context.take().expect("Surprise! Context lost...")
+        self.context.take().expect("Polled after completion")
+    }
+
+    fn switch_to_next_handler(&mut self) {
+        let ctx = self.context.as_mut().expect("No context");
+        let update = &self.update;
+        self.handler = self.handlers.next().map(|handler| handler.handle(ctx, update));
+    }
+
+    fn stop(&mut self) {
+        self.handler = None;
     }
 }
 
@@ -88,44 +115,23 @@ impl Future for DispatcherFuture {
     type Error = (Error, Context);
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        match self.handler {
-            Some(ref mut f) => match f.poll() {
-                Ok(Async::Ready(HandlerResult::Continue)) => {
-                    self.handler_idx += 1;
-                    self.handler = None;
-                    task::current().notify();
-                    Ok(Async::NotReady)
-                }
-                Ok(Async::Ready(HandlerResult::Stop)) => Ok(Async::Ready(self.take_context())),
-                Ok(Async::NotReady) => {
-                    task::current().notify();
-                    Ok(Async::NotReady)
-                }
+        loop {
+            let handler = match self.handler.as_mut() {
+                Some(handler) => handler,
+                None => return Ok(Async::Ready(self.take_context())),
+            };
+            match handler.poll() {
+                Ok(Async::NotReady) => return Ok(Async::NotReady),
+                Ok(Async::Ready(HandlerResult::Continue)) => self.switch_to_next_handler(),
+                Ok(Async::Ready(HandlerResult::Stop)) => self.stop(),
                 Err(err) => match self.error_strategy {
-                    ErrorStrategy::Abort => Err((err, self.take_context())),
+                    ErrorStrategy::Abort => return Err((err, self.take_context())),
                     ErrorStrategy::Ignore => {
-                        log::error!("An error has occurred in after middleware: {:?}", err);
-                        self.handler_idx += 1;
-                        self.handler = None;
-                        task::current().notify();
-                        Ok(Async::NotReady)
+                        log::warn!("An error has occurred in a handler: {:?}", err);
+                        self.switch_to_next_handler();
                     }
                 },
-            },
-            None => match self.handlers.get(self.handler_idx) {
-                Some(handler) => {
-                    self.handler = Some(handler.handle(
-                        match self.context {
-                            Some(ref mut context) => context,
-                            None => panic!("Suprise! Context lost..."),
-                        },
-                        &self.update,
-                    ));
-                    task::current().notify();
-                    Ok(Async::NotReady)
-                }
-                None => Ok(Async::Ready(self.take_context())),
-            },
+            }
         }
     }
 }

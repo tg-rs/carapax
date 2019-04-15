@@ -1,14 +1,15 @@
 use crate::{
-    api::Api,
+    api::{Api, ApiFuture},
     methods::GetUpdates,
     types::{AllowedUpdate, Integer, ResponseError, Update},
 };
 use failure::Error;
-use futures::{task, Async, Future, Poll, Stream};
+use futures::{task, try_ready, Async, Future, Poll, Stream};
 use log::error;
 use std::{
     cmp::max,
     collections::{HashSet, VecDeque},
+    mem,
     time::Duration,
 };
 use tokio_timer::sleep;
@@ -17,23 +18,91 @@ const DEFAULT_LIMIT: Integer = 100;
 const DEFAULT_POLL_TIMEOUT: Duration = Duration::from_secs(10);
 const DEFAULT_ERROR_TIMEOUT: Duration = Duration::from_secs(5);
 
+enum State {
+    BufferedResults(VecDeque<Update>),
+    Running(ApiFuture<Vec<Update>>),
+    Idling(tokio_timer::Delay),
+}
+
 /// Updates stream used for long polling
+#[must_use = "streams do nothing unless polled"]
 pub struct UpdatesStream {
     api: Api,
     options: UpdatesStreamOptions,
-    items: VecDeque<Update>,
-    request: Option<Box<Future<Item = Option<Vec<Update>>, Error = Error> + Send>>,
+    state: State,
+}
+
+fn make_request(api: &Api, options: &UpdatesStreamOptions) -> ApiFuture<Vec<Update>> {
+    api.execute(
+        GetUpdates::default()
+            .offset(options.offset + 1)
+            .limit(options.limit)
+            .timeout(options.poll_timeout)
+            .allowed_updates(options.allowed_updates.clone()),
+    )
+}
+
+impl State {
+    fn switch_to_idle(&mut self, err: Error) {
+        error!("An error has occurred while getting updates: {:?}", err);
+        let error_timeout = err
+            .downcast::<ResponseError>()
+            .ok()
+            .and_then(|err| {
+                err.parameters
+                    .and_then(|parameters| parameters.retry_after.map(|count| Duration::from_secs(count as u64)))
+            })
+            .unwrap_or(DEFAULT_ERROR_TIMEOUT);
+        mem::replace(self, State::Idling(sleep(error_timeout)));
+    }
+
+    fn switch_to_request(&mut self, api: &Api, options: &UpdatesStreamOptions) {
+        let fut = make_request(api, options);
+        mem::replace(self, State::Running(fut));
+    }
+
+    fn switch_to_buffered(&mut self, items: impl IntoIterator<Item = Update>) {
+        mem::replace(self, State::BufferedResults(items.into_iter().collect()));
+    }
+}
+
+impl Stream for UpdatesStream {
+    type Item = Update;
+    type Error = Error;
+
+    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
+        loop {
+            match &mut self.state {
+                State::BufferedResults(buffered) => {
+                    if let Some(update) = buffered.pop_front() {
+                        self.options.offset = max(self.options.offset, update.id);
+                        task::current().notify();
+                        return Ok(Async::Ready(Some(update)));
+                    } else {
+                        self.state.switch_to_request(&self.api, &self.options);
+                    }
+                }
+                State::Running(request_fut) => match request_fut.poll() {
+                    Ok(Async::NotReady) => return Ok(Async::NotReady),
+                    Ok(Async::Ready(items)) => self.state.switch_to_buffered(items),
+                    Err(err) => self.state.switch_to_idle(err),
+                },
+                State::Idling(delay_fut) => {
+                    // Timer errors are unrecoverable.
+                    try_ready!(delay_fut.poll());
+                    self.state.switch_to_request(&self.api, &self.options)
+                }
+            }
+        }
+    }
 }
 
 impl UpdatesStream {
     /// Creates a new updates stream
     pub fn new(api: Api) -> Self {
-        UpdatesStream {
-            api,
-            options: UpdatesStreamOptions::default(),
-            items: VecDeque::new(),
-            request: None,
-        }
+        let options = UpdatesStreamOptions::default();
+        let state = State::Running(make_request(&api, &options));
+        UpdatesStream { api, options, state }
     }
 
     /// Set options
@@ -46,70 +115,6 @@ impl UpdatesStream {
 impl From<Api> for UpdatesStream {
     fn from(api: Api) -> UpdatesStream {
         UpdatesStream::new(api)
-    }
-}
-
-impl Stream for UpdatesStream {
-    type Item = Update;
-    type Error = Error;
-
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        if let Some(update) = self.items.pop_front() {
-            return Ok(Async::Ready(Some(update)));
-        }
-
-        let options = &mut self.options;
-
-        let should_request = match self.request {
-            Some(ref mut request) => match request.poll() {
-                Ok(Async::Ready(Some(items))) => {
-                    for i in items {
-                        options.offset = max(options.offset, i.id);
-                        self.items.push_back(i);
-                    }
-                    Ok(())
-                }
-                Ok(Async::Ready(None)) => Ok(()),
-                Ok(Async::NotReady) => return Ok(Async::NotReady),
-                Err(err) => Err(err),
-            },
-            None => Ok(()),
-        };
-
-        match should_request {
-            Ok(()) => {
-                self.request = Some(Box::new(
-                    self.api
-                        .execute(
-                            GetUpdates::default()
-                                .offset(options.offset + 1)
-                                .limit(options.limit)
-                                .timeout(options.poll_timeout)
-                                .allowed_updates(options.allowed_updates.clone()),
-                        )
-                        .map(Some),
-                ));
-            }
-            Err(err) => {
-                error!("An error has occurred while getting updates: {:?}", err);
-
-                options.error_timeout = err
-                    .downcast::<ResponseError>()
-                    .ok()
-                    .and_then(|err| {
-                        err.parameters.and_then(|parameters| {
-                            parameters.retry_after.map(|count| Duration::from_secs(count as u64))
-                        })
-                    })
-                    .unwrap_or(DEFAULT_ERROR_TIMEOUT);
-
-                self.request = Some(Box::new(sleep(options.error_timeout).from_err().map(|()| None)));
-            }
-        };
-
-        task::current().notify();
-
-        Ok(Async::NotReady)
     }
 }
 
