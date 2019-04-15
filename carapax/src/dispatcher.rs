@@ -127,7 +127,7 @@ impl Future for DispatcherFuture {
                 Err(err) => match self.error_strategy {
                     ErrorStrategy::Abort => return Err((err, self.take_context())),
                     ErrorStrategy::Ignore => {
-                        log::warn!("An error has occurred in after middleware: {:?}", err);
+                        log::warn!("An error has occurred in a handler: {:?}", err);
                         self.switch_to_next_handler();
                     }
                 },
