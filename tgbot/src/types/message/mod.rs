@@ -223,6 +223,7 @@ impl Message {
         message!(NewChatTitle(new_chat_title));
         message!(PassportData(passport_data));
         message!(Photo(photo, caption));
+        message!(Poll(poll));
         message!(Sticker(sticker));
         message!(SuccessfulPayment(successful_payment));
         message!(SupergroupChatCreated(supergroup_chat_created, flag));
