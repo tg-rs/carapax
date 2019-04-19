@@ -120,19 +120,19 @@ impl SessionStore for RedisSessionStore {
                             } else {
                                 None
                             };
-                            if let Some(duration) = duration {
-                                let mut expire_cmd = redis::cmd("EXPIRE");
-                                expire_cmd.arg(&namespace);
-                                expire_cmd.arg(duration);
-                                Either::A(
-                                    expire_cmd
-                                        .query_async(conn)
-                                        .from_err()
-                                        .map(|(_conn, _n): (SharedConnection, i64)| ()),
-                                )
-                            } else {
-                                Either::B(future::ok(()))
-                            }
+                            duration
+                                .map(|duration| {
+                                    let mut expire_cmd = redis::cmd("EXPIRE");
+                                    expire_cmd.arg(&namespace);
+                                    expire_cmd.arg(duration);
+                                    Either::A(
+                                        expire_cmd
+                                            .query_async(conn)
+                                            .from_err()
+                                            .map(|(_conn, _n): (SharedConnection, i64)| ()),
+                                    )
+                                })
+                                .unwrap_or_else(|| Either::B(future::ok(())))
                         })
                     },
                 ))
@@ -147,26 +147,24 @@ impl SessionStore for RedisSessionStore {
         hget_cmd.arg(namespace.clone());
         hget_cmd.arg(key.name());
         Box::new(hget_cmd.query_async(self.conn.clone()).from_err().and_then(
-            move |(conn, val): (SharedConnection, Option<String>)| match val {
-                Some(val) => Either::A(future::result(serde_json::from_str::<Data>(&val)).from_err().and_then(
-                    move |mut data| {
-                        future::result(data.set_lifetime(seconds as u64)).and_then(move |()| {
-                            future::result(serde_json::to_string(&data))
-                                .from_err()
-                                .and_then(move |val| {
-                                    let mut hset_cmd = redis::cmd("HSET");
-                                    hset_cmd.arg(&namespace);
-                                    hset_cmd.arg(key.name());
-                                    hset_cmd.arg(val);
-                                    hset_cmd
-                                        .query_async(conn)
-                                        .from_err()
-                                        .and_then(move |(_conn, ())| Ok(()))
-                                })
-                        })
-                    },
-                )),
-                None => Either::B(future::ok(())),
+            move |(conn, val): (SharedConnection, Option<String>)| {
+                match val {
+                    Some(val) => Either::A(
+                        future::result(serde_json::from_str::<Data>(&val))
+                            .from_err()
+                            .and_then(move |mut data| data.set_lifetime(seconds as u64).map(|()| data))
+                            .and_then(|data| serde_json::to_string(&data).map_err(Error::from))
+                            .and_then(move |val| {
+                                let mut hset_cmd = redis::cmd("HSET");
+                                hset_cmd.arg(&namespace);
+                                hset_cmd.arg(key.name());
+                                hset_cmd.arg(val);
+                                hset_cmd.query_async(conn).from_err()
+                            })
+                            .and_then(|(_conn, ())| Ok(())),
+                    ),
+                    None => Either::B(future::ok(())),
+                }
             },
         ))
     }

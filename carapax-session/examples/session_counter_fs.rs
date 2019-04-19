@@ -3,7 +3,6 @@ fn main() {
     use carapax::prelude::*;
     use carapax_session::{session_handler, spawn_gc, store::fs::FsSessionStore, Session};
     use dotenv::dotenv;
-    use env_logger;
     use futures::{future, Future};
     use std::{env, time::Duration};
 

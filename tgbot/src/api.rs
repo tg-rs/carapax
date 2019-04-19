@@ -93,7 +93,7 @@ impl Api {
                     RequestBuilder::empty(file_path.as_ref())
                         .map(|builder| builder.build(&format!("{}/file", &self.host), &self.token)),
                 )
-                .and_then(move |req| executor.execute(req).from_err()),
+                .and_then(move |req| executor.execute(req)),
             ),
         }
     }
@@ -111,13 +111,11 @@ impl Api {
                         .into_request()
                         .map(|builder| builder.build(&self.host, &self.token)),
                 )
-                .and_then(move |req| executor.execute(req).from_err())
-                .and_then(|data| future::result(serde_json::from_slice::<Response<M::Response>>(&data)).from_err())
-                .and_then(|rep| {
-                    future::result(match rep {
-                        Response::Success(obj) => Ok(obj),
-                        Response::Error(err) => Err(err.into()),
-                    })
+                .and_then(move |req| executor.execute(req))
+                .and_then(|data| serde_json::from_slice::<Response<M::Response>>(&data).map_err(Error::from))
+                .and_then(|rep| match rep {
+                    Response::Success(obj) => Ok(obj),
+                    Response::Error(err) => Err(err.into()),
                 }),
             ),
         }

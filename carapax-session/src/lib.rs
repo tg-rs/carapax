@@ -9,8 +9,10 @@ mod gc;
 mod handler;
 mod session;
 
-pub use self::gc::{spawn_gc, GarbageCollector};
-pub use self::session::{Session, SessionKey, SessionLifetime};
+pub use self::{
+    gc::{spawn_gc, GarbageCollector},
+    session::{Session, SessionKey, SessionLifetime},
+};
 
 /// Contains session store implementations
 pub mod store;

@@ -52,23 +52,18 @@ impl<C: Connect + 'static> Executor for HyperExecutor<C> {
                 }
                 RequestBody::Empty => builder.body(Body::empty()),
             })
-            .map_err(Error::from)
+            .from_err()
             .and_then(move |http_req| client.request(http_req).map_err(Error::from))
             .and_then(|rep| {
-                Stream::fold(
-                    rep.into_body().from_err(),
-                    Vec::new(),
-                    |mut out, chunk| -> Result<Vec<u8>, Error> {
-                        out.extend_from_slice(&chunk);
-                        Ok(out)
-                    },
-                )
-                .and_then(|body| {
-                    if log_enabled!(Debug) {
-                        debug!("Got response: {}", String::from_utf8_lossy(&body));
-                    }
-                    Ok(body)
+                Stream::fold(rep.into_body().from_err(), Vec::new(), |mut out, chunk| {
+                    out.extend_from_slice(&chunk);
+                    Ok::<_, Error>(out)
                 })
+            })
+            .inspect(|body| {
+                if log_enabled!(Debug) {
+                    debug!("Got response: {}", String::from_utf8_lossy(&body));
+                }
             }),
         )
     }
