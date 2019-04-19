@@ -10,8 +10,7 @@ use tgbot::{
     types::{Document, MessageData, Update, UpdateKind},
     Api, Config, UpdateHandler, UpdateMethod,
 };
-use tokio::fs::File;
-use tokio::io::AsyncWrite;
+use tokio::{fs::File, io::AsyncWrite};
 
 struct Handler {
     api: Api,
@@ -23,19 +22,20 @@ fn handle_document(api: &Api, document: Document) -> Box<Future<Item = (), Error
         api.execute(GetFile::new(document.file_id.as_str()))
             .and_then(move |file| {
                 let file_path = file.file_path.unwrap();
-                api.download_file(file_path).and_then(move |data| {
-                    println!("Name: {:?}", document.file_name);
-                    println!("Mime-Type: {:?}", document.mime_type);
-                    println!("Document size: {:?}", document.file_size);
-                    println!("Downloaded size: {:?}", data.len());
-                    File::create(format!(
-                        "/tmp/tgbot-get-file-{}",
-                        document.file_name.unwrap_or_else(|| String::from("unknown"))
-                    ))
-                    .and_then(move |mut file| file.poll_write(&data))
-                    .map(|_| ())
-                    .from_err()
-                })
+                api.download_file(file_path)
+            })
+            .and_then(move |data| {
+                println!("Name: {:?}", document.file_name);
+                println!("Mime-Type: {:?}", document.mime_type);
+                println!("Document size: {:?}", document.file_size);
+                println!("Downloaded size: {:?}", data.len());
+                File::create(format!(
+                    "/tmp/tgbot-get-file-{}",
+                    document.file_name.unwrap_or_else(|| String::from("unknown"))
+                ))
+                .and_then(move |mut file| file.poll_write(&data))
+                .map(|_| ())
+                .from_err()
             }),
     )
 }

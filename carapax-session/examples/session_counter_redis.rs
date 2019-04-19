@@ -3,7 +3,6 @@ fn main() {
     use carapax::prelude::*;
     use carapax_session::{session_handler, store::redis::RedisSessionStore, Session};
     use dotenv::dotenv;
-    use env_logger;
     use futures::{future::lazy, Future};
     use std::env;
 

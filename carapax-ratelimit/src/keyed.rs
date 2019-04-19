@@ -1,7 +1,7 @@
 use carapax::prelude::*;
 use ratelimit_meter::{KeyedRateLimiter, GCRA};
-use std::hash::Hash;
 use std::{
+    hash::Hash,
     num::NonZeroU32,
     sync::{Arc, Mutex},
     time::Duration,

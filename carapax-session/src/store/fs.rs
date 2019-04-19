@@ -70,28 +70,30 @@ impl FsSessionStore {
         Box::new(
             fs::metadata(key_root.clone())
                 .then(move |result| match result {
-                    Ok(metadata) => Either::A(future::ok::<_, Error>(metadata)),
+                    Ok(metadata) => Either::A(future::ok(metadata)),
                     Err(err) => match err.kind() {
-                        IoErrorKind::NotFound => {
-                            Either::B(fs::create_dir_all(key_root.clone()).from_err().and_then(move |()| {
-                                future::result(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH))
-                                    .from_err()
-                                    .and_then(|now| {
-                                        fs::write(key_root.join(CREATE_TIME_MARKER), format!("{}", now.as_secs()))
-                                            .and_then(move |_| fs::metadata(key_root.clone()))
-                                            .from_err()
-                                    })
-                            }))
-                        }
+                        IoErrorKind::NotFound => Either::B(
+                            fs::create_dir_all(key_root.clone())
+                                .from_err()
+                                .and_then(move |()| {
+                                    SystemTime::now()
+                                        .duration_since(SystemTime::UNIX_EPOCH)
+                                        .map_err(Error::from)
+                                })
+                                .and_then(|now| {
+                                    fs::write(key_root.join(CREATE_TIME_MARKER), format!("{}", now.as_secs()))
+                                        .and_then(move |_| fs::metadata(key_root.clone()))
+                                        .from_err()
+                                }),
+                        ),
                         _ => Either::A(future::err(err.into())),
                     },
                 })
-                .from_err()
                 .and_then(move |metadata| {
                     if metadata.is_dir() {
-                        Either::A(future::ok(file_path))
+                        Ok(file_path)
                     } else {
-                        Either::B(future::err(Error::from(KeyError::PathOccupied(key_root_clone))))
+                        Err(Error::from(KeyError::PathOccupied(key_root_clone)))
                     }
                 }),
         )
@@ -138,16 +140,10 @@ impl SessionStore for FsSessionStore {
         Box::new(self.key_to_path(key).and_then(move |file_path| {
             fs::read(file_path.clone())
                 .from_err()
-                .and_then(move |data| match serde_json::from_slice::<Data>(&data) {
-                    Ok(mut data) => match data.set_lifetime(seconds as u64) {
-                        Ok(()) => match serde_json::to_vec(&data) {
-                            Ok(data) => Either::A(fs::write(file_path, data).from_err().map(|_| ())),
-                            Err(err) => Either::B(future::err(err.into())),
-                        },
-                        Err(err) => Either::B(future::err(err)),
-                    },
-                    Err(err) => Either::B(future::err(err.into())),
-                })
+                .and_then(|data| serde_json::from_slice::<Data>(&data).map_err(Error::from))
+                .and_then(move |mut data| data.set_lifetime(seconds as u64).map(|()| data))
+                .and_then(|data| serde_json::to_vec(&data).map_err(Error::from))
+                .and_then(|data| fs::write(file_path, data).from_err().map(|_| ()))
         }))
     }
 
@@ -174,29 +170,21 @@ impl GarbageCollector for FsSessionStore {
                 let session_path = session_dir.path();
                 fs::read(session_path.clone().join(CREATE_TIME_MARKER))
                     .from_err()
-                    .and_then(move |data| {
-                        future::result(String::from_utf8(data))
-                            .from_err()
-                            .and_then(move |timestamp| {
-                                future::result(timestamp.parse::<u64>())
-                                    .from_err()
-                                    .and_then(move |timestamp| {
-                                        if now - timestamp >= lifetime {
-                                            Either::A(
-                                                fs::read_dir(session_path.clone())
-                                                    .and_then(|stream| {
-                                                        stream.for_each(|session_file| {
-                                                            fs::remove_file(session_file.path())
-                                                        })
-                                                    })
-                                                    .and_then(|_| fs::remove_dir(session_path))
-                                                    .from_err(),
-                                            )
-                                        } else {
-                                            Either::B(future::ok(()))
-                                        }
+                    .and_then(move |data| String::from_utf8(data).map_err(Error::from))
+                    .and_then(move |timestamp| timestamp.parse::<u64>().map_err(Error::from))
+                    .and_then(move |timestamp| {
+                        if now - timestamp >= lifetime {
+                            Either::A(
+                                fs::read_dir(session_path.clone())
+                                    .and_then(|stream| {
+                                        stream.for_each(|session_file| fs::remove_file(session_file.path()))
                                     })
-                            })
+                                    .and_then(|_| fs::remove_dir(session_path))
+                                    .from_err(),
+                            )
+                        } else {
+                            Either::B(future::ok(()))
+                        }
                     })
             })
         }))
