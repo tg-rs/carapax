@@ -49,6 +49,7 @@ pub struct RawChatMember {
     pub can_send_media_messages: Option<bool>,
     pub can_send_other_messages: Option<bool>,
     pub can_add_web_page_previews: Option<bool>,
+    pub is_member: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
