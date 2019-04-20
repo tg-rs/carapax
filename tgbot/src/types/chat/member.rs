@@ -35,6 +35,16 @@ impl ChatMember {
             Restricted(ref restricted) => &restricted.user,
         }
     }
+
+    /// Whether a user is a member of the chat
+    pub fn is_member(&self) -> bool {
+        use self::ChatMember::*;
+        match self {
+            Administrator(_) | Creator(_) | Member(_) => true,
+            Kicked(_) | Left(_) => false,
+            Restricted(ref restricted) => restricted.is_member,
+        }
+    }
 }
 
 impl<'de> Deserialize<'de> for ChatMember {
