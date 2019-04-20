@@ -2,7 +2,7 @@ use crate::{methods::Method, request::RequestBuilder, types::ChatId};
 use failure::Error;
 use serde::Serialize;
 
-/// Unpin a message in a supergroup or a channel
+/// Unpin a message in a group, supergroup or a channel
 ///
 /// The bot must be an administrator in the chat
 /// for this to work and must have
