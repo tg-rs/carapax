@@ -9,6 +9,7 @@ use crate::types::{
     passport::PassportData,
     payments::{Invoice, SuccessfulPayment},
     photo_size::PhotoSize,
+    poll::Poll,
     primitive::Integer,
     stickers::Sticker,
     user::User,
@@ -84,6 +85,8 @@ pub enum MessageData {
         /// Photos
         data: Vec<PhotoSize>,
     },
+    /// Message is a native poll, information about the poll
+    Poll(Poll),
     /// Message is a sticker, information about the sticker
     Sticker(Sticker),
     /// Message is a service message about a successful payment, information about the payment

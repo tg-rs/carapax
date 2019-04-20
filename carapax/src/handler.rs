@@ -1,11 +1,12 @@
 use crate::context::Context;
 use failure::Error;
-use futures::{future, Future, Poll};
+use futures::{future, Future};
 use regex::Regex;
 use shellwords::{split, MismatchedQuotes};
 use std::{collections::HashMap, string::FromUtf16Error};
 use tgbot::types::{
-    CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Text, Update, UpdateKind,
+    CallbackQuery, ChosenInlineResult, InlineQuery, Message, Poll, PreCheckoutQuery, ShippingQuery, Text, Update,
+    UpdateKind,
 };
 
 /// A regular update handler
@@ -66,6 +67,14 @@ impl Handler {
         Self::new(HandlerKind::PreCheckoutQuery(Box::new(handler)))
     }
 
+    /// Create poll handler
+    pub fn poll<H>(handler: H) -> Self
+    where
+        H: PollHandler + Send + Sync + 'static,
+    {
+        Self::new(HandlerKind::Poll(Box::new(handler)))
+    }
+
     /// Create a regular update handler
     pub fn update<H>(handler: H) -> Self
     where
@@ -83,6 +92,7 @@ enum HandlerKind {
     ShippingQuery(Box<ShippingQueryHandler + Send + Sync>),
     PreCheckoutQuery(Box<PreCheckoutQueryHandler + Send + Sync>),
     Update(Box<UpdateHandler + Send + Sync>),
+    Poll(Box<PollHandler + Send + Sync>),
 }
 
 impl Handler {
@@ -107,6 +117,7 @@ impl Handler {
             UpdateKind::CallbackQuery(ref val) => handle!(CallbackQuery(val)),
             UpdateKind::ShippingQuery(ref val) => handle!(ShippingQuery(val)),
             UpdateKind::PreCheckoutQuery(ref val) => handle!(PreCheckoutQuery(val)),
+            UpdateKind::Poll(ref val) => handle!(Poll(val)),
         }
         HandlerResult::Continue.into()
     }
@@ -160,7 +171,7 @@ impl Future for HandlerFuture {
     type Item = HandlerResult;
     type Error = Error;
 
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+    fn poll(&mut self) -> futures::Poll<Self::Item, Self::Error> {
         self.inner.poll()
     }
 }
@@ -226,6 +237,16 @@ pub trait PreCheckoutQueryHandler {
 }
 
 impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
+
+/// A poll handler
+///
+/// Bots receive only updates about polls, which are sent or stopped by the bot
+pub trait PollHandler {
+    /// Handles a poll
+    fn handle(&self, context: &mut Context, poll: &Poll) -> HandlerFuture;
+}
+
+impl_func!(PollHandler(Poll));
 
 /// A regular update handler
 pub trait UpdateHandler {
@@ -549,6 +570,11 @@ mod tests {
         HandlerResult::Continue.into()
     }
 
+    fn handle_poll(context: &mut Context, _poll: &Poll) -> HandlerFuture {
+        context.get::<Counter>().inc_calls();
+        HandlerResult::Continue.into()
+    }
+
     fn handle_update(context: &mut Context, _update: &Update) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
         HandlerResult::Continue.into()
@@ -746,6 +772,36 @@ mod tests {
                     "currency": "RUB",
                     "total_amount": 145,
                     "invoice_payload": "payload"
+                }
+            }
+        ))
+        .unwrap();
+        let context = dispatcher.dispatch(update).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 2);
+    }
+
+    #[test]
+    fn test_dispatch_poll() {
+        let dispatcher = Dispatcher::new(
+            Api::new("token").unwrap(),
+            vec![
+                Handler::update(setup_context),
+                Handler::poll(handle_poll),
+                Handler::update(handle_update),
+            ],
+            ErrorStrategy::Abort,
+        );
+        let update = from_value(json!(
+            {
+                "update_id": 1,
+                "poll": {
+                    "id": "id",
+                    "question": "test poll",
+                    "options": [
+                        {"text": "opt 1", "voter_count": 1},
+                        {"text": "opt 2", "voter_count": 2}
+                    ],
+                    "is_closed": false
                 }
             }
         ))

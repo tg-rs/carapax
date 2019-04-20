@@ -6,7 +6,7 @@ use crate::{
 use failure::Error;
 use serde::Serialize;
 
-/// Pin a message in a supergroup or a channel
+/// Pin a message in a group, supergroup or a channel
 ///
 /// The bot must be an administrator in the chat for this
 /// to work and must have the ‘can_pin_messages’ admin right

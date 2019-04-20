@@ -155,7 +155,8 @@ fn test_deserialize_chat_member_restricted() {
         "can_send_messages": true,
         "can_send_media_messages": false,
         "can_send_other_messages": true,
-        "can_add_web_page_previews": false
+        "can_add_web_page_previews": false,
+        "is_member": true
     });
     let restricted: ChatMember = serde_json::from_value(restricted).unwrap();
     if let ChatMember::Restricted(ref restricted) = restricted {
@@ -170,6 +171,7 @@ fn test_deserialize_chat_member_restricted() {
         assert_eq!(restricted.can_send_media_messages, false);
         assert_eq!(restricted.can_send_other_messages, true);
         assert_eq!(restricted.can_add_web_page_previews, false);
+        assert_eq!(restricted.is_member, true);
     } else {
         panic!("Unexpected chat member: {:?}", restricted);
     }

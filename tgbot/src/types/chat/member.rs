@@ -35,6 +35,16 @@ impl ChatMember {
             Restricted(ref restricted) => &restricted.user,
         }
     }
+
+    /// Whether a user is a member of the chat
+    pub fn is_member(&self) -> bool {
+        use self::ChatMember::*;
+        match self {
+            Administrator(_) | Creator(_) | Member(_) => true,
+            Kicked(_) | Left(_) => false,
+            Restricted(ref restricted) => restricted.is_member,
+        }
+    }
 }
 
 impl<'de> Deserialize<'de> for ChatMember {
@@ -78,6 +88,7 @@ impl<'de> Deserialize<'de> for ChatMember {
                 can_send_media_messages: required!(can_send_media_messages),
                 can_send_other_messages: required!(can_send_other_messages),
                 can_add_web_page_previews: required!(can_add_web_page_previews),
+                is_member: required!(is_member),
             }),
         })
     }
@@ -147,4 +158,7 @@ pub struct ChatMemberRestricted {
     /// True, if user may add web page previews
     /// to his messages, implies can_send_media_messages
     pub can_add_web_page_previews: bool,
+    /// True, if the user is a member
+    /// of the chat at the moment of the request
+    pub is_member: bool,
 }

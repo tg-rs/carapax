@@ -3,6 +3,7 @@ use crate::types::{
     inline_mode::{ChosenInlineResult, InlineQuery},
     message::Message,
     payments::{PreCheckoutQuery, ShippingQuery},
+    poll::Poll,
     primitive::Integer,
     user::User,
 };
@@ -58,6 +59,7 @@ impl Update {
             UpdateKind::CallbackQuery(ref query) => &query.from,
             UpdateKind::ShippingQuery(ref query) => &query.from,
             UpdateKind::PreCheckoutQuery(ref query) => &query.from,
+            UpdateKind::Poll(_) => return None,
         })
     }
 }
@@ -87,6 +89,8 @@ pub enum UpdateKind {
     ShippingQuery(ShippingQuery),
     /// New incoming pre-checkout query. Contains full information about checkout
     PreCheckoutQuery(PreCheckoutQuery),
+    /// New poll state. Bots receive only updates about polls, which are sent or stopped by the bot
+    Poll(Poll),
 }
 
 impl<'de> Deserialize<'de> for Update {
@@ -115,6 +119,8 @@ impl<'de> Deserialize<'de> for Update {
                 UpdateKind::ShippingQuery(data)
             } else if let Some(data) = raw.pre_checkout_query {
                 UpdateKind::PreCheckoutQuery(data)
+            } else if let Some(data) = raw.poll {
+                UpdateKind::Poll(data)
             } else {
                 return Err(D::Error::custom("Can not detect update kind"));
             },
@@ -186,6 +192,7 @@ struct RawUpdate {
     callback_query: Option<CallbackQuery>,
     shipping_query: Option<ShippingQuery>,
     pre_checkout_query: Option<PreCheckoutQuery>,
+    poll: Option<Poll>,
 }
 
 #[cfg(test)]

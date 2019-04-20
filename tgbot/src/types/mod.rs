@@ -13,6 +13,7 @@ mod message;
 mod passport;
 mod payments;
 mod photo_size;
+mod poll;
 mod primitive;
 mod reply_markup;
 mod response;
@@ -26,6 +27,6 @@ mod voice;
 
 pub use self::{
     animation::*, audio::*, callback_query::*, chat::*, contact::*, document::*, file::*, games::*, inline_mode::*,
-    input_media::*, location::*, message::*, passport::*, payments::*, photo_size::*, primitive::*, reply_markup::*,
-    response::*, stickers::*, update::*, user::*, venue::*, video::*, video_note::*, voice::*,
+    input_media::*, location::*, message::*, passport::*, payments::*, photo_size::*, poll::*, primitive::*,
+    reply_markup::*, response::*, stickers::*, update::*, user::*, venue::*, video::*, video_note::*, voice::*,
 };
