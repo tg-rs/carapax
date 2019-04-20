@@ -14,12 +14,14 @@ pub struct Forward {
 pub enum ForwardFrom {
     /// Information about user
     User(User),
+    /// Name of user who has hidden link to account
+    HiddenUser(String),
     /// Information about channel
     Channel {
         /// Information about the original chat
         chat: ChannelChat,
         /// Identifier of the original message in the channel
-        message_id: Option<Integer>,
+        message_id: Integer,
         /// Signature of the post author if present
         signature: Option<String>,
     },

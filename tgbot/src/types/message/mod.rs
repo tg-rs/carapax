@@ -121,12 +121,17 @@ impl Message {
             raw.forward_from_chat,
             raw.forward_from_message_id,
             raw.forward_signature,
+            raw.forward_sender_name,
         ) {
-            (Some(date), Some(user), None, None, None) => Some(Forward {
+            (Some(date), Some(user), None, None, None, None) => Some(Forward {
                 date,
                 from: ForwardFrom::User(user),
             }),
-            (Some(date), None, Some(Chat::Channel(chat)), message_id, signature) => Some(Forward {
+            (Some(date), None, None, None, None, Some(sender_name)) => Some(Forward {
+                date,
+                from: ForwardFrom::HiddenUser(sender_name),
+            }),
+            (Some(date), None, Some(Chat::Channel(chat)), Some(message_id), signature, None) => Some(Forward {
                 date,
                 from: ForwardFrom::Channel {
                     chat,
@@ -134,7 +139,7 @@ impl Message {
                     signature,
                 },
             }),
-            (None, None, None, None, None) => None,
+            (None, None, None, None, None, None) => None,
             _ => return Err(ParseError::BadForward),
         };
 

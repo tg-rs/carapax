@@ -30,6 +30,7 @@ pub(super) struct RawMessage {
     pub forward_from_chat: Option<Chat>,
     pub forward_from_message_id: Option<Integer>,
     pub forward_signature: Option<String>,
+    pub forward_sender_name: Option<String>,
     pub forward_date: Option<Integer>,
     pub reply_to_message: Option<Box<RawMessage>>,
     pub edit_date: Option<Integer>,
