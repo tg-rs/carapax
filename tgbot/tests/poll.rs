@@ -1,3 +1,4 @@
+use dotenv::dotenv;
 use futures::Stream;
 use mockito::{mock, server_url, Matcher};
 use serde_json::json;
@@ -6,6 +7,8 @@ use tokio::runtime::current_thread::block_on_all;
 
 #[test]
 fn poll() {
+    dotenv().ok();
+    env_logger::init();
     let _m = mock("POST", "/bottoken/getUpdates")
         .match_body(Matcher::Json(json!({
             "offset": 1,
@@ -38,7 +41,6 @@ fn poll() {
             .unwrap(),
         )
         .create();
-    env_logger::init();
     let api = Api::new(Config::new("token").host(server_url())).unwrap();
     let f = UpdatesStream::from(api).should_retry(false).take(1).collect();
     let updates = block_on_all(f).unwrap();
