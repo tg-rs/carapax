@@ -15,7 +15,7 @@ fn main() {
 
     let token = env::var("TGRS_TOKEN").expect("TGRS_TOKEN is not set");
     let proxy = env::var("TGRS_PROXY").ok();
-    let username = env::var("TGRS_DENY_USERNAME").expect("TGRS_DENY_USERNAME");
+    let username = env::var("TGRS_ACCESS_USERNAME").expect("TGRS_ACCESS_USERNAME");
 
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {

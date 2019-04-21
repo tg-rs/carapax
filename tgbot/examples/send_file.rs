@@ -122,7 +122,7 @@ fn main() {
     let proxy = env::var("TGRS_PROXY").ok();
     let gif_url = env::var("TGRS_GIF_URL").expect("TGRS_GIF_URL is not set");
     let photo_path = env::var("TGRS_PHOTO_PATH").expect("TGRS_PHOTO_PATH is not set");
-    let video_path = env::var("TGRS_VIDEO_PATH").expect("TGRS_PHOTO_PATH is not set");
+    let video_path = env::var("TGRS_VIDEO_PATH").expect("TGRS_VIDEO_PATH is not set");
     let document_thumb_path = env::var("TGRS_DOCUMENT_THUMB_PATH").expect("TGRS_DOCUMENT_THUMB_PATH is not set");
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
