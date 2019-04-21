@@ -30,6 +30,7 @@ pub struct UpdatesStream {
     api: Api,
     options: UpdatesStreamOptions,
     state: State,
+    should_retry: bool,
 }
 
 fn make_request(api: &Api, options: &UpdatesStreamOptions) -> ApiFuture<Vec<Update>> {
@@ -44,7 +45,11 @@ fn make_request(api: &Api, options: &UpdatesStreamOptions) -> ApiFuture<Vec<Upda
 
 impl State {
     fn switch_to_idle(&mut self, err: Error) {
-        error!("An error has occurred while getting updates: {:?}", err);
+        error!(
+            "An error has occurred while getting updates: {:?}\n{:?}",
+            err,
+            err.backtrace()
+        );
         let error_timeout = err
             .downcast::<ResponseError>()
             .ok()
@@ -85,7 +90,13 @@ impl Stream for UpdatesStream {
                 State::Running(request_fut) => match request_fut.poll() {
                     Ok(Async::NotReady) => return Ok(Async::NotReady),
                     Ok(Async::Ready(items)) => self.state.switch_to_buffered(items),
-                    Err(err) => self.state.switch_to_idle(err),
+                    Err(err) => {
+                        if self.should_retry {
+                            self.state.switch_to_idle(err)
+                        } else {
+                            return Err(err);
+                        }
+                    }
                 },
                 State::Idling(delay_fut) => {
                     // Timer errors are unrecoverable.
@@ -102,7 +113,20 @@ impl UpdatesStream {
     pub fn new(api: Api) -> Self {
         let options = UpdatesStreamOptions::default();
         let state = State::Running(make_request(&api, &options));
-        UpdatesStream { api, options, state }
+        UpdatesStream {
+            api,
+            options,
+            state,
+            should_retry: true,
+        }
+    }
+
+    /// Should retry request when an error has occurred
+    ///
+    /// Default value is true
+    pub fn should_retry(mut self, value: bool) -> Self {
+        self.should_retry = value;
+        self
     }
 
     /// Set options
