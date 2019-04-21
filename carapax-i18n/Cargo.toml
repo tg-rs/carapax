@@ -8,9 +8,7 @@ readme = "README.md"
 license = "MIT"
 documentation = "https://docs.rs/carapax-i18n"
 repository = "https://github.com/tg-rs/tg-rs"
-categories = ["internationalization"]
-keywords = ["carapax", "telegram"]
-exclude = ["tests/**"]
+exclude = ["data/**"]
 
 [dependencies]
 carapax = { path = "../carapax" }

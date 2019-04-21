@@ -1,12 +1,11 @@
 use carapax::prelude::*;
-use carapax_i18n::{I18nHandler, Translator, UserLocaleResolver};
+use carapax_i18n::{Catalog, I18nHandler, Translator, UserLocaleResolver};
 use dotenv::dotenv;
 use env_logger;
 use futures::future::Future;
-use gettext::Catalog;
 use std::env;
 
-const EN: &[u8] = include_bytes!("../tests/en.mo");
+const RU: &[u8] = include_bytes!("../data/ru.mo");
 
 fn handle_message(context: &mut Context, message: &Message) -> HandlerFuture {
     let api: &Api = context.get();
@@ -35,12 +34,11 @@ fn main() {
 
     let api = Api::new(config).unwrap();
 
-    let catalog = Catalog::parse(EN).unwrap();
-    let english = Translator::new("en", catalog);
+    let ru = Translator::new("ru", Catalog::parse(RU).unwrap());
 
     tokio::run(
         App::new()
-            .add_handler(Handler::update(I18nHandler::new(UserLocaleResolver, english)))
+            .add_handler(Handler::update(I18nHandler::new(UserLocaleResolver, ru)))
             .add_handler(Handler::message(handle_message))
             .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
     )

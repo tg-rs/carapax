@@ -9,6 +9,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Plural-Forms: nplurals=3; plural=(n == 1 ? 0 : n == 2 ? 1 : 2);\n"
 
+msgid "Hello, stranger!"
+msgstr "Приветствую тебя, странник..."
+
 msgid "Apple"
 msgstr "Яблоко"
 
