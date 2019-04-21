@@ -57,12 +57,12 @@ fn main() {
         }
         "list" => {
             // Limit updates for specific chat id or user id
-            let user_id = env::var("TG_RS_RATE_LIMIT_USER_ID").expect("TG_RS_RATE_LIMIT_USER_ID is not set");
+            let user_id = env::var("TGRS_RATE_LIMIT_USER_ID").expect("TGRS_RATE_LIMIT_USER_ID is not set");
             let user_id = match user_id.parse::<Integer>() {
                 Ok(user_id) => UserId::Id(user_id),
                 Err(_) => UserId::Username(user_id),
             };
-            let chat_id = env::var("TG_RS_RATE_LIMIT_CHAT_ID").expect("TG_RS_RATE_LIMIT_CHAT_ID is not set");
+            let chat_id = env::var("TGRS_RATE_LIMIT_CHAT_ID").expect("TGRS_RATE_LIMIT_CHAT_ID is not set");
             let chat_id = match chat_id.parse::<Integer>() {
                 Ok(chat_id) => ChatId::Id(chat_id),
                 Err(_) => ChatId::Username(chat_id),
