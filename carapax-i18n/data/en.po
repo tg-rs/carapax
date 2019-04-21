@@ -1,0 +1,22 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: carapax-i18n\n"
+"PO-Revision-Date: 2019-03-27 12:27+0300\n"
+"Last-Translator: ark0f <arsenylyashenko.3@gmail.com>\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Apple"
+msgstr "Apple"
+
+msgid "{} apple"
+msgid_plural "{} apples"
+msgstr[0] "{} apple"
+msgstr[1] "{} apples"
+
+msgctxt "context"
+msgid "This is context"
+msgstr "This is context"
