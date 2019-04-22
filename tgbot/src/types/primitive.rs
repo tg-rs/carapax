@@ -27,3 +27,16 @@ impl ToString for ParseMode {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_mode() {
+        assert_eq!(serde_json::to_string(&ParseMode::Html).unwrap(), r#""HTML""#);
+        assert_eq!(serde_json::to_string(&ParseMode::Markdown).unwrap(), r#""Markdown""#);
+        assert_eq!(ParseMode::Html.to_string(), "HTML");
+        assert_eq!(ParseMode::Markdown.to_string(), "Markdown");
+    }
+}
