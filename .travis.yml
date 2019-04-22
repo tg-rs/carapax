@@ -43,21 +43,15 @@ jobs:
     - name: coverage
       stage: util
       rust: nightly
-      before_script:
-        - cargo install grcov -f
-        - export CARGO_INCREMENTAL=0
-        - export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+      addons:
+        apt:
+          packages:
+            - libssl-dev
       before_cache:
-        - zip -0 ccov.zip `find . \( -name "*.gc*" \) -print`;
-        - >
-            grcov ccov.zip -s . -t lcov --llvm --branch
-            --ignore-not-existing
-            --ignore-dir "/*"
-            --ignore-dir "*/examples/**"
-            --ignore-dir "*/tests/**"
-            --ignore-dir "**/tests.rs"
-            > lcov.info;
-        - bash <(curl -s https://codecov.io/bash) -f lcov.info;
+        - RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin -f
+      after_success:
+        - cargo tarpaulin --all --all-features --ignore-tests --out Xml
+        - bash <(curl -s https://codecov.io/bash)
 
 stages:
   - check
