@@ -73,3 +73,62 @@ struct RawResponse<T> {
     result: Option<T>,
     parameters: Option<ResponseParameters>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[derive(Clone, Debug, Deserialize)]
+    struct Object {
+        name: String,
+    }
+
+    #[test]
+    fn parse() {
+        let success: Response<Object> = serde_json::from_value(json!({
+            "ok": true,
+            "result": {"name": "test" }
+        }))
+        .unwrap();
+
+        if let Response::Success(ref obj) = success {
+            assert_eq!(obj.name, String::from("test"));
+        } else {
+            panic!("Unexpected response: {:?}", success);
+        }
+
+        let error: Response<Object> = serde_json::from_value(json!({
+            "ok": false,
+            "description": "test err",
+            "error_code": 1,
+            "parameters": {
+                "migrate_to_chat_id": 2,
+                "retry_after": 3
+            }
+        }))
+        .unwrap();
+        if let Response::Error(err) = error {
+            assert_eq!(err.description, String::from("test err"));
+            assert_eq!(err.error_code.unwrap(), 1);
+            let params = err.parameters.unwrap();
+            assert_eq!(params.migrate_to_chat_id.unwrap(), 2);
+            assert_eq!(params.retry_after.unwrap(), 3);
+        } else {
+            panic!("Unexpected response: {:?}", success);
+        }
+
+        let error: Response<Object> = serde_json::from_value(json!({
+            "ok": false,
+            "description": "test err"
+        }))
+        .unwrap();
+        if let Response::Error(err) = error {
+            assert_eq!(err.description, String::from("test err"));
+            assert!(err.error_code.is_none());
+            assert!(err.parameters.is_none());
+        } else {
+            panic!("Unexpected response: {:?}", success);
+        }
+    }
+}
