@@ -54,6 +54,7 @@ mod tests {
             ..
         }) = update.kind
         {
+            assert_eq!(caption.unwrap().data, String::from("test caption"));
             assert_eq!(data.file_id, String::from("voice file id"));
             assert_eq!(data.duration, 123);
             assert_eq!(data.mime_type.unwrap(), String::from("audio/ogg"));
@@ -96,6 +97,7 @@ mod tests {
             ..
         }) = update.kind
         {
+            assert!(caption.is_none());
             assert_eq!(data.file_id, String::from("voice file id"));
             assert_eq!(data.duration, 123);
         } else {
