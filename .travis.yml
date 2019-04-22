@@ -11,12 +11,14 @@ script: cargo test --all-targets --all-features
 
 jobs:
   include:
-    - stage: rustfmt
+    - name: rustfmt
+      stage: check
       rust: stable
       before_script: rustup component add rustfmt
       script: cargo fmt -- --check
-    # Until clippy will be fixed
-    #- stage: clippy
+    # Until clippy is fixed
+    #- name: clippy
+    #  stage: check
     #  rust: stable
     #  before_script: rustup component add clippy
     #  script: cargo clippy --all-targets --all-features -- -D warnings
@@ -26,7 +28,8 @@ jobs:
       rust: beta
     - stage: test
       rust: nightly
-    - stage: doc
+    - name: docs
+      stage: util
       rust: nightly
       script: cargo doc --all --all-features
       deploy:
@@ -37,20 +40,26 @@ jobs:
         local-dir: target/doc
         on:
           branch: master
-    - stage: coverage
+    - name: coverage
+      stage: util
       rust: nightly
       before_script:
         - cargo install grcov -f
         - export CARGO_INCREMENTAL=0
         - export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
-      script:
+      before_cache:
         - zip -0 ccov.zip `find . \( -name "*.gc*" \) -print`;
-        - grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" > lcov.info;
+        - >
+            grcov ccov.zip -s . -t lcov --llvm --branch
+            --ignore-not-existing
+            --ignore-dir "/*"
+            --ignore-dir "*/examples/**"
+            --ignore-dir "*/tests/**"
+            --ignore-dir "**/tests.rs"
+            > lcov.info;
         - bash <(curl -s https://codecov.io/bash) -f lcov.info;
 
 stages:
-  - rustfmt
-  #- clippy
+  - check
   - test
-  - doc
-  - coverage
+  - util
