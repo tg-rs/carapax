@@ -110,7 +110,6 @@ mod tests {
                     "username": "Testusername",
                     "is_bot": false
                 },
-                "caption": "test caption",
                 "animation": {
                     "file_id": "AwADBAADbXXXXXXXXXXXGBdhD2l6_XX",
                     "width": 200,
