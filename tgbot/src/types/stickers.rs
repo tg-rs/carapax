@@ -81,123 +81,113 @@ pub struct StickerSet {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::float_cmp)]
     use super::*;
-    use crate::types::{Message, MessageData, Update, UpdateKind};
 
     #[test]
-    fn parse_full() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 10000,
-            "message": {
-                "date": 1441645532,
-                "chat": {
-                    "last_name": "Test Lastname",
-                    "type": "private",
-                    "id": 1111111,
-                    "first_name": "Test Firstname",
-                    "username": "Testusername"
-                },
-                "message_id": 1365,
-                "from": {
-                    "last_name": "Test Lastname",
-                    "id": 1111111,
-                    "first_name": "Test Firstname",
-                    "username": "Testusername",
-                    "is_bot": false
-                },
-                "caption": "test caption",
-                "sticker": {
-                    "file_id": "test file id",
-                    "width": 512,
-                    "height": 512,
-                    "thumb": {
-                        "file_id": "AdddddUuUUUUccccUUmm_PPP",
-                        "width": 24,
-                        "height": 24,
-                        "file_size": 12324
-                    },
-                    "emoji": ":D",
-                    "set_name": "sticker set name",
-                    "mask_position": {
-                        "point": "forehead",
-                        "x_shift": 1.0,
-                        "y_shift": 2.0,
-                        "scale": 3.0,
-                    },
-                    "file_size": 1234,
-                }
-            }
+    fn deserialize_sticker_full() {
+        let data: Sticker = serde_json::from_value(serde_json::json!({
+            "file_id": "test file id",
+            "width": 512,
+            "height": 512,
+            "thumb": {
+                "file_id": "AdddddUuUUUUccccUUmm_PPP",
+                "width": 24,
+                "height": 24,
+                "file_size": 12324
+            },
+            "emoji": ":D",
+            "set_name": "sticker set name",
+            "mask_position": {
+                "point": "forehead",
+                "x_shift": 3.0,
+                "y_shift": 2.0,
+                "scale": 3.0,
+            },
+            "file_size": 1234
         }))
         .unwrap();
-        if let UpdateKind::Message(Message {
-            data: MessageData::Sticker(data),
-            ..
-        }) = update.kind
-        {
-            assert_eq!(data.file_id, String::from("test file id"));
-            assert_eq!(data.width, 512);
-            assert_eq!(data.height, 512);
 
-            let thumb = data.thumb.unwrap();
-            assert_eq!(thumb.file_id, String::from("AdddddUuUUUUccccUUmm_PPP"));
-            assert_eq!(thumb.width, 24);
-            assert_eq!(thumb.height, 24);
-            assert_eq!(thumb.file_size.unwrap(), 12324);
+        assert_eq!(data.file_id, "test file id");
+        assert_eq!(data.width, 512);
+        assert_eq!(data.height, 512);
 
-            assert_eq!(data.emoji.unwrap(), String::from(":D"));
-            assert_eq!(data.set_name.unwrap(), String::from("sticker set name"));
+        let thumb = data.thumb.unwrap();
+        assert_eq!(thumb.file_id, "AdddddUuUUUUccccUUmm_PPP");
+        assert_eq!(thumb.width, 24);
+        assert_eq!(thumb.height, 24);
+        assert_eq!(thumb.file_size.unwrap(), 12324);
 
-            let mask_position = data.mask_position.unwrap();
-            assert_eq!(mask_position.point, MaskPositionPoint::Forehead);
-            assert_eq!(mask_position.x_shift, 1.0);
-            assert_eq!(mask_position.y_shift, 2.0);
-            assert_eq!(mask_position.scale, 3.0);
+        assert_eq!(data.emoji.unwrap(), ":D");
+        assert_eq!(data.set_name.unwrap(), "sticker set name");
 
-            assert_eq!(data.file_size.unwrap(), 1234);
-        } else {
-            panic!("Unexpected update {:?}", update);
-        }
+        let mask_position = data.mask_position.unwrap();
+        assert_eq!(mask_position.point, MaskPositionPoint::Forehead);
+        assert_eq!(mask_position.x_shift, 3.0);
+        assert_eq!(mask_position.y_shift, 2.0);
+        assert_eq!(mask_position.scale, 3.0);
+
+        assert_eq!(data.file_size.unwrap(), 1234);
     }
 
     #[test]
-    fn parse_partial() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 10000,
-            "message": {
-                "date": 1441645532,
-                "chat": {
-                    "last_name": "Test Lastname",
-                    "type": "private",
-                    "id": 1111111,
-                    "first_name": "Test Firstname",
-                    "username": "Testusername"
-                },
-                "message_id": 1365,
-                "from": {
-                    "last_name": "Test Lastname",
-                    "id": 1111111,
-                    "first_name": "Test Firstname",
-                    "username": "Testusername",
-                    "is_bot": false
-                },
-                "sticker": {
-                    "file_id": "test file id",
-                    "width": 512,
-                    "height": 512,
-                }
-            }
+    fn deserialize_sticker_partial() {
+        let data: Sticker = serde_json::from_value(serde_json::json!({
+            "file_id": "test file id",
+            "width": 512,
+            "height": 512
         }))
         .unwrap();
-        if let UpdateKind::Message(Message {
-            data: MessageData::Sticker(data),
-            ..
-        }) = update.kind
-        {
-            assert_eq!(data.file_id, String::from("test file id"));
-            assert_eq!(data.width, 512);
-            assert_eq!(data.height, 512);
-        } else {
-            panic!("Unexpected update {:?}", update);
-        }
+
+        assert_eq!(data.file_id, "test file id");
+        assert_eq!(data.width, 512);
+        assert_eq!(data.height, 512);
+        assert!(data.thumb.is_none());
+        assert!(data.emoji.is_none());
+        assert!(data.set_name.is_none());
+        assert!(data.file_size.is_none());
+    }
+
+    #[test]
+    fn mask_position_point() {
+        assert_eq!(
+            serde_json::to_string(&MaskPositionPoint::Forehead).unwrap(),
+            r#""forehead""#
+        );
+        assert_eq!(serde_json::to_string(&MaskPositionPoint::Eyes).unwrap(), r#""eyes""#);
+        assert_eq!(serde_json::to_string(&MaskPositionPoint::Mouth).unwrap(), r#""mouth""#);
+        assert_eq!(serde_json::to_string(&MaskPositionPoint::Chin).unwrap(), r#""chin""#);
+
+        assert_eq!(
+            serde_json::from_str::<MaskPositionPoint>(r#""forehead""#).unwrap(),
+            MaskPositionPoint::Forehead
+        );
+        assert_eq!(
+            serde_json::from_str::<MaskPositionPoint>(r#""eyes""#).unwrap(),
+            MaskPositionPoint::Eyes
+        );
+        assert_eq!(
+            serde_json::from_str::<MaskPositionPoint>(r#""mouth""#).unwrap(),
+            MaskPositionPoint::Mouth
+        );
+        assert_eq!(
+            serde_json::from_str::<MaskPositionPoint>(r#""chin""#).unwrap(),
+            MaskPositionPoint::Chin
+        );
+    }
+
+    #[test]
+    fn deserialize_sticker_set() {
+        let data: StickerSet = serde_json::from_value(serde_json::json!({
+            "name": "test",
+            "title": "test",
+            "contains_masks": false,
+            "stickers": []
+        }))
+        .unwrap();
+        assert_eq!(data.name, "test");
+        assert_eq!(data.title, "test");
+        assert!(!data.contains_masks);
+        assert!(data.stickers.is_empty());
     }
 }

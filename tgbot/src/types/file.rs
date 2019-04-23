@@ -73,6 +73,12 @@ pub struct InputFileReader {
     pub(crate) info: Option<InputFileInfo>,
 }
 
+impl fmt::Debug for InputFileReader {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        write!(out, "InputFileReader(reader: ..., info: {:?})", self.info)
+    }
+}
+
 impl InputFileReader {
     /// Creates a new file reader
     pub fn new<R>(reader: R) -> Self
@@ -149,10 +155,10 @@ pub(crate) enum InputFileKind {
 impl fmt::Debug for InputFileKind {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            InputFileKind::Id(ref s) => write!(out, "InputFile::Id({:?})", s),
-            InputFileKind::Url(ref s) => write!(out, "InputFile::Url({:?})", s),
-            InputFileKind::Path(ref s) => write!(out, "InputFile::Path({:?})", s),
-            InputFileKind::Reader(_) => write!(out, "InputFile::Reader(...)"),
+            InputFileKind::Id(ref s) => write!(out, "InputFileKind::Id({:?})", s),
+            InputFileKind::Url(ref s) => write!(out, "InputFileKind::Url({:?})", s),
+            InputFileKind::Path(ref s) => write!(out, "InputFileKind::Path({:?})", s),
+            InputFileKind::Reader(ref r) => write!(out, "InputFileKind::Reader({:?})", r),
         }
     }
 }
@@ -160,5 +166,74 @@ impl fmt::Debug for InputFileKind {
 impl From<InputFileReader> for InputFile {
     fn from(reader: InputFileReader) -> Self {
         Self::reader(reader)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn deserialize_file_full() {
+        let data: File = serde_json::from_value(serde_json::json!({
+            "file_id": "id",
+            "file_size": 123,
+            "file_path": "path"
+        }))
+        .unwrap();
+        assert_eq!(data.file_id, "id");
+        assert_eq!(data.file_size.unwrap(), 123);
+        assert_eq!(data.file_path.unwrap(), "path");
+    }
+
+    #[test]
+    fn deserialize_file_partial() {
+        let data: File = serde_json::from_value(serde_json::json!({
+            "file_id": "id"
+        }))
+        .unwrap();
+        assert_eq!(data.file_id, "id");
+        assert!(data.file_size.is_none());
+        assert!(data.file_path.is_none());
+    }
+
+    #[test]
+    fn input_file() {
+        let id = InputFile::file_id("file-id");
+        assert_eq!(format!("{:?}", id.kind), r#"InputFileKind::Id("file-id")"#);
+        let url = InputFile::url("http://example.com/archive.zip");
+        assert_eq!(
+            format!("{:?}", url.kind),
+            r#"InputFileKind::Url("http://example.com/archive.zip")"#
+        );
+        let path = InputFile::path("/home/user/data/archive.zip");
+        assert_eq!(
+            format!("{:?}", path.kind),
+            r#"InputFileKind::Path("/home/user/data/archive.zip")"#
+        );
+
+        let reader = InputFileReader::from(Cursor::new(b"data")).info(("name", mime::TEXT_PLAIN));
+        let reader = InputFile::reader(reader);
+        assert!(format!("{:?}", reader.kind).starts_with("InputFileKind::Reader("));
+    }
+
+    #[test]
+    fn input_file_info() {
+        let info = InputFileInfo::from("name");
+        assert_eq!(info.name, "name");
+        assert!(info.mime_type.is_none());
+
+        let info = InputFileInfo::from(("name", mime::TEXT_PLAIN));
+        assert_eq!(info.name, "name");
+        assert_eq!(info.mime_type.unwrap(), mime::TEXT_PLAIN);
+
+        let info = InputFileInfo::from(String::from("name"));
+        assert_eq!(info.name, "name");
+        assert!(info.mime_type.is_none());
+
+        let info = InputFileInfo::from((String::from("name"), mime::TEXT_PLAIN));
+        assert_eq!(info.name, "name");
+        assert_eq!(info.mime_type.unwrap(), mime::TEXT_PLAIN);
     }
 }

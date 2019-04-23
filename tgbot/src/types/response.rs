@@ -85,7 +85,7 @@ mod tests {
     }
 
     #[test]
-    fn parse() {
+    fn deserialize() {
         let success: Response<Object> = serde_json::from_value(json!({
             "ok": true,
             "result": {"name": "test" }

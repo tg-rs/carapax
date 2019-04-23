@@ -4,7 +4,7 @@ use crate::types::{
     chat::Chat,
     contact::Contact,
     document::Document,
-    games::Game,
+    game::Game,
     location::Location,
     passport::PassportData,
     payments::{Invoice, SuccessfulPayment},

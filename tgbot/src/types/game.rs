@@ -72,16 +72,65 @@ pub struct GameHighScore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
+
     #[test]
-    fn test_deserialize_game() {
-        let input = json!({
+    fn deserialize_game_full() {
+        let game: Game = serde_json::from_value(serde_json::json!({
+            "title": "title",
+            "description": "description",
+            "photo": [
+                {
+                    "file_id": "photo file id",
+                    "width": 200,
+                    "height": 200
+                }
+            ],
+            "text": "text",
+            "animation": {
+                "file_id": "animation file id",
+                "width": 200,
+                "height": 200,
+                "duration": 24
+            }
+        }))
+        .unwrap();
+        assert_eq!(game.title, "title");
+        assert_eq!(game.description, "description");
+        assert_eq!(game.photo.len(), 1);
+        assert_eq!(game.photo[0].file_id, "photo file id");
+        assert_eq!(game.text.unwrap().data, "text");
+        assert_eq!(game.animation.unwrap().file_id, "animation file id");
+    }
+
+    #[test]
+    fn deserialize_game_partial() {
+        let game: Game = serde_json::from_value(serde_json::json!({
             "title": "title",
             "description": "description",
             "photo": []
-        });
-        let game: Game = serde_json::from_value(input).unwrap();
-        assert_eq!(game.title, String::from("title"));
-        assert_eq!(game.description, String::from("description"));
+        }))
+        .unwrap();
+        assert_eq!(game.title, "title");
+        assert_eq!(game.description, "description");
+        assert_eq!(game.photo.len(), 0);
+        assert!(game.text.is_none());
+        assert!(game.animation.is_none());
+    }
+
+    #[test]
+    fn deserialize_game_high_score() {
+        let score: GameHighScore = serde_json::from_value(serde_json::json!({
+            "position": 1,
+            "user": {
+                "id": 2,
+                "first_name": "test",
+                "is_bot": false
+            },
+            "score": 3
+        }))
+        .unwrap();
+        assert_eq!(score.position, 1);
+        assert_eq!(score.user.id, 2);
+        assert_eq!(score.score, 3);
     }
 }

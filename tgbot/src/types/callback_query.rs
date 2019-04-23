@@ -44,3 +44,71 @@ impl CallbackQuery {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Clone, Debug, Deserialize)]
+    struct QueryData {
+        k: String,
+    }
+
+    #[test]
+    fn deserialize_full() {
+        let mut data: CallbackQuery = serde_json::from_value(serde_json::json!({
+            "id": "test",
+            "from": {
+                "id": 1,
+                "first_name": "test",
+                "is_bot": false
+            },
+            "message": {
+                "message_id": 2,
+                "date": 0,
+                "from": {"id": 3, "first_name": "firstname", "is_bot": false},
+                "chat": {"id": 4, "type": "supergroup", "title": "supergrouptitle"},
+                "text": "test"
+            },
+            "inline_message_id": "inline message id",
+            "chat_instance": "chat instance",
+            "data": "{\"k\": \"v\"}",
+            "game_short_name": "game short name"
+        }))
+        .unwrap();
+        assert_eq!(data.id, "test");
+        assert_eq!(data.from.id, 1);
+        assert_eq!(data.from.first_name, "test");
+        assert_eq!(data.from.is_bot, false);
+        assert_eq!(data.message.take().unwrap().id, 2);
+        assert_eq!(data.inline_message_id.take().unwrap(), "inline message id");
+        assert_eq!(data.chat_instance.take().unwrap(), "chat instance");
+        assert_eq!(data.data.take().unwrap(), r#"{"k": "v"}"#);
+        assert_eq!(data.game_short_name.take().unwrap(), "game short name");
+        data.data = Some(String::from(r#"{"k": "v"}"#));
+        let parsed_query_data: QueryData = data.parse_data().unwrap().unwrap();
+        assert_eq!(parsed_query_data.k, "v");
+    }
+
+    #[test]
+    fn deserialize_partial() {
+        let data: CallbackQuery = serde_json::from_value(serde_json::json!({
+            "id": "test",
+            "from": {
+                "id": 1,
+                "first_name": "test",
+                "is_bot": false
+            }
+        }))
+        .unwrap();
+        assert_eq!(data.id, "test");
+        assert_eq!(data.from.id, 1);
+        assert_eq!(data.from.first_name, "test");
+        assert_eq!(data.from.is_bot, false);
+        assert!(data.message.is_none());
+        assert!(data.inline_message_id.is_none());
+        assert!(data.chat_instance.is_none());
+        assert!(data.data.is_none());
+        assert!(data.game_short_name.is_none());
+    }
+}

@@ -5,7 +5,7 @@ mod chat;
 mod contact;
 mod document;
 mod file;
-mod games;
+mod game;
 mod inline_mode;
 mod input_media;
 mod location;
@@ -26,7 +26,7 @@ mod video_note;
 mod voice;
 
 pub use self::{
-    animation::*, audio::*, callback_query::*, chat::*, contact::*, document::*, file::*, games::*, inline_mode::*,
+    animation::*, audio::*, callback_query::*, chat::*, contact::*, document::*, file::*, game::*, inline_mode::*,
     input_media::*, location::*, message::*, passport::*, payments::*, photo_size::*, poll::*, primitive::*,
     reply_markup::*, response::*, stickers::*, update::*, user::*, venue::*, video::*, video_note::*, voice::*,
 };

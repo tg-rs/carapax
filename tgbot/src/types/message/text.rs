@@ -177,3 +177,243 @@ pub(crate) enum ParseTextError {
     #[fail(display = "Can not get UTF-16 text data: {}", _0)]
     FromUtf16(#[cause] FromUtf16Error),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::{Message, MessageData, User};
+    use serde_json::json;
+
+    #[test]
+    fn deserialize_message_entities() {
+        let input = json!({
+            "message_id": 1, "date": 0,
+            "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+            "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+            "text": "bold /botcommand $cashtag code u@h.z #hashtag italic @mention phone pre textlink textmention url",
+            "entities": [
+                {"type": "bold", "offset": 0, "length": 4},
+                {"type": "bot_command", "offset": 5, "length": 11},
+                {"type": "cashtag", "offset": 17, "length": 8},
+                {"type": "code", "offset": 26, "length": 4},
+                {"type": "email", "offset": 31, "length": 5},
+                {"type": "hashtag", "offset": 37, "length": 8},
+                {"type": "italic", "offset": 46, "length": 6},
+                {"type": "mention", "offset": 53, "length": 8},
+                {"type": "phone_number", "offset": 62, "length": 5},
+                {"type": "pre", "offset": 68, "length": 3},
+                {"type": "text_link", "offset": 72, "length": 8, "url": "https://example.com"},
+                {
+                    "type": "text_mention",
+                    "offset": 81,
+                    "length": 11,
+                    "user": {
+                        "id": 1,
+                        "first_name": "test",
+                        "is_bot": false
+                    }
+                },
+                {"type": "url", "offset": 93, "length": 3}
+            ]
+        });
+        let msg: Message = serde_json::from_value(input).unwrap();
+        assert_eq!(msg.commands.unwrap().len(), 1);
+        if let MessageData::Text(text) = msg.data {
+            let entities = text.entities.unwrap();
+            assert_eq!(
+                vec![
+                    TextEntity::Bold(TextEntityData {
+                        data: String::from("bold"),
+                        offset: 0,
+                        length: 4
+                    }),
+                    TextEntity::BotCommand(BotCommand {
+                        command: String::from("/botcommand"),
+                        bot_name: None,
+                        data: TextEntityData {
+                            data: String::from("/botcommand"),
+                            offset: 5,
+                            length: 11
+                        }
+                    }),
+                    TextEntity::Cashtag(TextEntityData {
+                        data: String::from("$cashtag"),
+                        offset: 17,
+                        length: 8
+                    }),
+                    TextEntity::Code(TextEntityData {
+                        data: String::from("code"),
+                        offset: 26,
+                        length: 4
+                    }),
+                    TextEntity::Email(TextEntityData {
+                        data: String::from("u@h.z"),
+                        offset: 31,
+                        length: 5
+                    }),
+                    TextEntity::Hashtag(TextEntityData {
+                        data: String::from("#hashtag"),
+                        offset: 37,
+                        length: 8
+                    }),
+                    TextEntity::Italic(TextEntityData {
+                        data: String::from("italic"),
+                        offset: 46,
+                        length: 6
+                    }),
+                    TextEntity::Mention(TextEntityData {
+                        data: String::from("@mention"),
+                        offset: 53,
+                        length: 8
+                    }),
+                    TextEntity::PhoneNumber(TextEntityData {
+                        data: String::from("phone"),
+                        offset: 62,
+                        length: 5
+                    }),
+                    TextEntity::Pre(TextEntityData {
+                        data: String::from("pre"),
+                        offset: 68,
+                        length: 3
+                    }),
+                    TextEntity::TextLink(TextLink {
+                        data: TextEntityData {
+                            data: String::from("textlink"),
+                            offset: 72,
+                            length: 8
+                        },
+                        url: String::from("https://example.com")
+                    }),
+                    TextEntity::TextMention(TextMention {
+                        data: TextEntityData {
+                            data: String::from("textmention"),
+                            offset: 81,
+                            length: 11
+                        },
+                        user: User {
+                            id: 1,
+                            is_bot: false,
+                            first_name: String::from("test"),
+                            last_name: None,
+                            username: None,
+                            language_code: None
+                        }
+                    }),
+                    TextEntity::Url(TextEntityData {
+                        data: String::from("url"),
+                        offset: 93,
+                        length: 3
+                    })
+                ],
+                entities
+            );
+        } else {
+            panic!("Unexpected message data: {:?}", msg.data);
+        }
+    }
+
+    #[test]
+    fn deserialize_message_bad_entities() {
+        for (input, error) in vec![
+            (
+                json!({
+                    "message_id": 1, "date": 0,
+                    "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                    "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                    "text": "bad offset",
+                    "entities": [
+                        {
+                            "type": "bold",
+                            "offset": -1,
+                            "length": 1
+                        }
+                    ]
+                }),
+                "Failed to parse text: Offset \"-1\" is out of text bounds",
+            ),
+            (
+                json!({
+                    "message_id": 1, "date": 0,
+                    "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                    "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                    "text": "bad offset",
+                    "entities": [
+                        {
+                            "type": "bold",
+                            "offset": 11,
+                            "length": 1
+                        }
+                    ]
+                }),
+                "Failed to parse text: Offset \"11\" is out of text bounds",
+            ),
+            (
+                json!({
+                    "message_id": 1, "date": 0,
+                    "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                    "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                    "text": "bad offset",
+                    "entities": [
+                        {
+                            "type": "bold",
+                            "offset": 0,
+                            "length": -1
+                        }
+                    ]
+                }),
+                "Failed to parse text: Length \"-1\" is out of text bounds",
+            ),
+            (
+                json!({
+                    "message_id": 1, "date": 0,
+                    "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                    "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                    "text": "bad offset",
+                    "entities": [
+                        {
+                            "type": "bold",
+                            "offset": 0,
+                            "length": 11
+                        }
+                    ]
+                }),
+                "Failed to parse text: Length \"11\" is out of text bounds",
+            ),
+            (
+                json!({
+                    "message_id": 1, "date": 0,
+                    "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                    "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                    "text": "bad offset",
+                    "entities": [
+                        {
+                            "type": "text_link",
+                            "offset": 0,
+                            "length": 2
+                        }
+                    ]
+                }),
+                "Failed to parse text: URL is required for text_link entity",
+            ),
+            (
+                json!({
+                    "message_id": 1, "date": 0,
+                    "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                    "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+                    "text": "bad offset",
+                    "entities": [
+                        {
+                            "type": "text_mention",
+                            "offset": 0,
+                            "length": 2
+                        }
+                    ]
+                }),
+                "Failed to parse text: User is required for text_mention entity",
+            ),
+        ] {
+            let err = serde_json::from_value::<Message>(input).unwrap_err();
+            assert_eq!(err.to_string(), error.to_string());
+        }
+    }
+}

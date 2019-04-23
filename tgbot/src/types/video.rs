@@ -22,113 +22,57 @@ pub struct Video {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::{Message, MessageData, Update, UpdateKind};
+    use super::*;
 
     #[test]
-    fn parse_full() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 10000,
-            "message": {
-                "date": 1441645532,
-                "chat": {
-                    "last_name": "Test Lastname",
-                    "type": "private",
-                    "id": 1111111,
-                    "first_name": "Test Firstname",
-                    "username": "Testusername"
-                },
-                "message_id": 1365,
-                "from": {
-                    "last_name": "Test Lastname",
-                    "id": 1111111,
-                    "first_name": "Test Firstname",
-                    "username": "Testusername",
-                    "is_bot": false
-                },
-                "caption": "test caption",
-                "video": {
-                    "file_id": "test video file id",
-                    "width": 1,
-                    "height": 2,
-                    "duration": 3,
-                    "thumb": {
-                        "file_id": "AdddddUuUUUUccccUUmm_PPP",
-                        "width": 24,
-                        "height": 24,
-                        "file_size": 12324
-                    },
-                    "mime_type": "video/mpeg",
-                    "file_size": 4,
-                }
-            }
+    fn deserialize_full() {
+        let data: Video = serde_json::from_value(serde_json::json!({
+            "file_id": "test video file id",
+            "width": 1,
+            "height": 2,
+            "duration": 3,
+            "thumb": {
+                "file_id": "AdddddUuUUUUccccUUmm_PPP",
+                "width": 24,
+                "height": 24,
+                "file_size": 12324
+            },
+            "mime_type": "video/mpeg",
+            "file_size": 4
         }))
         .unwrap();
-        if let UpdateKind::Message(Message {
-            data: MessageData::Video { caption, data },
-            ..
-        }) = update.kind
-        {
-            assert_eq!(caption.unwrap().data, String::from("test caption"));
-            assert_eq!(data.file_id, String::from("test video file id"));
-            assert_eq!(data.width, 1);
-            assert_eq!(data.height, 2);
-            assert_eq!(data.duration, 3);
 
-            let thumb = data.thumb.unwrap();
-            assert_eq!(thumb.file_id, String::from("AdddddUuUUUUccccUUmm_PPP"));
-            assert_eq!(thumb.width, 24);
-            assert_eq!(thumb.height, 24);
-            assert_eq!(thumb.file_size.unwrap(), 12324);
+        assert_eq!(data.file_id, "test video file id");
+        assert_eq!(data.width, 1);
+        assert_eq!(data.height, 2);
+        assert_eq!(data.duration, 3);
 
-            assert_eq!(data.mime_type.unwrap(), String::from("video/mpeg"));
-            assert_eq!(data.file_size.unwrap(), 4);
-        } else {
-            panic!("Unexpected update {:?}", update);
-        }
+        let thumb = data.thumb.unwrap();
+        assert_eq!(thumb.file_id, "AdddddUuUUUUccccUUmm_PPP");
+        assert_eq!(thumb.width, 24);
+        assert_eq!(thumb.height, 24);
+        assert_eq!(thumb.file_size.unwrap(), 12324);
+
+        assert_eq!(data.mime_type.unwrap(), "video/mpeg");
+        assert_eq!(data.file_size.unwrap(), 4);
     }
 
     #[test]
-    fn parse_partial() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 10000,
-            "message": {
-                "date": 1441645532,
-                "chat": {
-                    "last_name": "Test Lastname",
-                    "type": "private",
-                    "id": 1111111,
-                    "first_name": "Test Firstname",
-                    "username": "Testusername"
-                },
-                "message_id": 1365,
-                "from": {
-                    "last_name": "Test Lastname",
-                    "id": 1111111,
-                    "first_name": "Test Firstname",
-                    "username": "Testusername",
-                    "is_bot": false
-                },
-                "video": {
-                    "file_id": "test video file id",
-                    "width": 1,
-                    "height": 2,
-                    "duration": 3
-                }
-            }
+    fn deserialize_partial() {
+        let data: Video = serde_json::from_value(serde_json::json!({
+            "file_id": "test video file id",
+            "width": 1,
+            "height": 2,
+            "duration": 3
         }))
         .unwrap();
-        if let UpdateKind::Message(Message {
-            data: MessageData::Video { caption, data },
-            ..
-        }) = update.kind
-        {
-            assert!(caption.is_none());
-            assert_eq!(data.file_id, String::from("test video file id"));
-            assert_eq!(data.width, 1);
-            assert_eq!(data.height, 2);
-            assert_eq!(data.duration, 3);
-        } else {
-            panic!("Unexpected update {:?}", update);
-        }
+
+        assert_eq!(data.file_id, "test video file id");
+        assert_eq!(data.width, 1);
+        assert_eq!(data.height, 2);
+        assert_eq!(data.duration, 3);
+        assert!(data.thumb.is_none());
+        assert!(data.mime_type.is_none());
+        assert!(data.file_size.is_none());
     }
 }
