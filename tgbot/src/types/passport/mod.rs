@@ -3,8 +3,6 @@ use serde::Deserialize;
 
 mod element;
 mod error;
-#[cfg(test)]
-mod tests;
 
 pub use self::{element::*, error::*};
 
@@ -50,4 +48,112 @@ pub struct EncryptedCredentials {
     /// with the bot's public RSA key,
     /// required for data decryption
     pub secret: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_data() {
+        let data: PassportData = serde_json::from_value(serde_json::json!({
+            "data": [
+                {
+                    "type": "address",
+                    "data": "d",
+                    "hash": "h"
+                },
+                {
+                    "type": "bank_statement",
+                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "hash": "h"
+                },
+                {
+                    "type": "driver_license",
+                    "data": "d",
+                    "front_side": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "reverse_side": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "selfie": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "hash": "h"
+                },
+                {
+                    "type": "email",
+                    "email": "u@h.z",
+                    "hash": "h"
+                },
+                {
+                    "type": "identity_card",
+                    "data": "d",
+                    "front_side": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "reverse_side": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "selfie": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "hash": "h"
+                },
+                {
+                    "type": "internal_passport",
+                    "data": "d",
+                    "front_side": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "selfie": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "hash": "h"
+                },
+                {
+                    "type": "passport",
+                    "data": "d",
+                    "front_side": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "selfie": {"file_id": "f", "file_size": 1, "file_date": 0},
+                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "hash": "h"
+                },
+                {
+                    "type": "passport_registration",
+                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "hash": "h"
+                },
+                {
+                    "type": "personal_details",
+                    "data": "d",
+                    "hash": "h"
+                },
+                {
+                    "type": "phone_number",
+                    "phone_number": "+79270000000",
+                    "hash": "h"
+                },
+                {
+                    "type": "rental_agreement",
+                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "hash": "h"
+                },
+                {
+                    "type": "temporary_registration",
+                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "hash": "h"
+                },
+                {
+                    "type": "utility_bill",
+                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "hash": "h"
+                }
+            ],
+            "credentials": {
+                "data": "d",
+                "hash": "h",
+                "secret": "s"
+            }
+        }))
+        .unwrap();
+        assert_eq!(data.credentials.data, String::from("d"));
+        assert_eq!(data.credentials.hash, String::from("h"));
+        assert_eq!(data.credentials.secret, String::from("s"));
+        assert_eq!(data.data.len(), 13);
+    }
+
 }
