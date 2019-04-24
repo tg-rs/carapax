@@ -214,7 +214,7 @@ mod tests {
         );
 
         let reader = InputFileReader::from(Cursor::new(b"data")).info(("name", mime::TEXT_PLAIN));
-        let reader = InputFile::reader(reader);
+        let reader = InputFile::from(reader);
         assert!(format!("{:?}", reader.kind).starts_with("InputFileKind::Reader("));
     }
 
