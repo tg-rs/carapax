@@ -163,3 +163,49 @@ impl InlineKeyboardButton {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::ReplyMarkup;
+
+    #[derive(Serialize)]
+    struct CallbackData {
+        value: String,
+    }
+
+    #[test]
+    fn serialize() {
+        let callback_data = CallbackData {
+            value: String::from("cdstruct"),
+        };
+
+        let markup: ReplyMarkup = vec![vec![
+            InlineKeyboardButton::with_url("url", "tg://user?id=1"),
+            InlineKeyboardButton::with_callback_data("cd", "cd"),
+            InlineKeyboardButton::with_callback_data_struct("cd", &callback_data).unwrap(),
+            InlineKeyboardButton::with_switch_inline_query("siq", "siq"),
+            InlineKeyboardButton::with_switch_inline_query_current_chat("siqcc", "siqcc"),
+            InlineKeyboardButton::with_callback_game("cg"),
+            InlineKeyboardButton::with_pay("pay"),
+        ]]
+        .into();
+        let data = serde_json::to_value(&markup).unwrap();
+        assert_eq!(
+            data,
+            serde_json::json!({
+                "inline_keyboard": [
+                    [
+                        {"text":"url","url":"tg://user?id=1"},
+                        {"text":"cd","callback_data":"cd"},
+                        {"text":"cd","callback_data":"{\"value\":\"cdstruct\"}"},
+                        {"text":"siq","switch_inline_query":"siq"},
+                        {"text":"siqcc","switch_inline_query_current_chat":"siqcc"},
+                        {"text":"cg","callback_game":""},
+                        {"text":"pay","pay":true}
+                    ]
+                ]
+            })
+        );
+    }
+}

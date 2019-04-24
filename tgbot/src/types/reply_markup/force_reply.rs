@@ -38,3 +38,24 @@ impl ForceReply {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::ReplyMarkup;
+
+    #[test]
+    fn serialize() {
+        let markup: ReplyMarkup = ForceReply::new(true).into();
+        let data = serde_json::to_value(&markup).unwrap();
+        assert_eq!(data, serde_json::json!({"force_reply":true}));
+
+        let markup: ReplyMarkup = ForceReply::new(true).selective(true).into();
+        let data = serde_json::to_value(&markup).unwrap();
+        assert_eq!(data, serde_json::json!({"force_reply":true,"selective":true}));
+
+        let markup: ReplyMarkup = ForceReply::new(true).selective(false).into();
+        let data = serde_json::to_value(&markup).unwrap();
+        assert_eq!(data, serde_json::json!({"force_reply":true,"selective":false}));
+    }
+}

@@ -155,3 +155,58 @@ impl ReplyKeyboardRemove {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::ReplyMarkup;
+
+    #[test]
+    fn serialize() {
+        let row = vec![
+            KeyboardButton::new("test"),
+            KeyboardButton::new("request contact").request_contact(),
+            KeyboardButton::new("request location").request_location(),
+        ];
+
+        let markup = ReplyKeyboardMarkup::from(vec![row.clone()])
+            .one_time_keyboard(true)
+            .selective(true)
+            .resize_keyboard(true);
+        let data = serde_json::to_value(&ReplyMarkup::from(markup)).unwrap();
+        assert_eq!(
+            data,
+            serde_json::json!({
+                "keyboard": [
+                    [
+                        {"text":"test"},
+                        {"text":"request contact","request_contact":true},
+                        {"text":"request location","request_location":true}
+                    ]
+                ],
+                "resize_keyboard": true,
+                "one_time_keyboard": true,
+                "selective": true
+            })
+        );
+
+        let markup: ReplyMarkup = ReplyKeyboardMarkup::default().row(row).into();
+        let data = serde_json::to_value(&markup).unwrap();
+        assert_eq!(
+            data,
+            serde_json::json!({
+                "keyboard": [
+                    [
+                        {"text":"test"},
+                        {"text":"request contact","request_contact":true},
+                        {"text":"request location","request_location":true}
+                    ]
+                ]
+            })
+        );
+
+        let markup: ReplyMarkup = ReplyKeyboardRemove::default().selective(true).into();
+        let j = serde_json::to_value(&markup).unwrap();
+        assert_eq!(j, serde_json::json!({"remove_keyboard":true,"selective":true}));
+    }
+}

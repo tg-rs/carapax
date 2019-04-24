@@ -3,8 +3,6 @@ use serde::Serialize;
 mod force_reply;
 mod inline_keyboard;
 mod reply_keyboard;
-#[cfg(test)]
-mod tests;
 
 pub use self::{force_reply::*, inline_keyboard::*, reply_keyboard::*};
 
