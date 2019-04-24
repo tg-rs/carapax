@@ -8,8 +8,6 @@ use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 mod member;
 mod photo;
 mod raw;
-#[cfg(test)]
-mod tests;
 
 pub use self::{
     member::{ChatMember, ChatMemberAdministrator, ChatMemberKicked, ChatMemberRestricted},
@@ -207,6 +205,12 @@ impl From<&str> for ChatId {
     }
 }
 
+impl From<String> for ChatId {
+    fn from(username: String) -> ChatId {
+        ChatId::Username(username)
+    }
+}
+
 impl From<Integer> for ChatId {
     fn from(id: Integer) -> ChatId {
         ChatId::Id(id)
@@ -246,4 +250,314 @@ pub enum ChatAction {
     /// For video notes
     #[serde(rename = "upload_video_note")]
     UploadVideoNote,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_channel() {
+        let chat: Chat = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "type": "channel",
+            "title": "channeltitle",
+            "username": "channelusername",
+            "photo": {
+                "small_file_id": "smallfileid",
+                "big_file_id": "bigfileid"
+            },
+            "description": "channeldescription",
+            "invite_link": "channelinvitelink",
+            "pinned_message": {
+                "message_id": 1,
+                "date": 0,
+                "chat": {
+                    "id": 1,
+                    "type": "channel",
+                    "title": "channeltitle"
+                },
+                "text": "test"
+            }
+        }))
+        .unwrap();
+        if let Chat::Channel(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, "channeltitle");
+            assert_eq!(chat.username.unwrap(), "channelusername");
+            let photo = chat.photo.unwrap();
+            assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.big_file_id, "bigfileid");
+            assert_eq!(chat.description.unwrap(), "channeldescription");
+            assert_eq!(chat.invite_link.unwrap(), "channelinvitelink");
+            assert!(chat.pinned_message.is_some());
+        } else {
+            panic!("Unexpected chat: {:?}", chat);
+        }
+
+        let chat: Chat = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "type": "channel",
+            "title": "channeltitle"
+        }))
+        .unwrap();
+        if let Chat::Channel(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, "channeltitle");
+            assert!(chat.username.is_none());
+            assert!(chat.photo.is_none());
+            assert!(chat.description.is_none());
+            assert!(chat.invite_link.is_none());
+            assert!(chat.pinned_message.is_none());
+        } else {
+            panic!("Unexpected chat: {:?}", chat);
+        }
+    }
+
+    #[test]
+    fn deserialize_group() {
+        let chat: Chat = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "type": "group",
+            "title": "grouptitle",
+            "all_members_are_administrators": true,
+            "photo": {
+                "small_file_id": "smallfileid",
+                "big_file_id": "bigfileid"
+            },
+            "invite_link": "groupinvitelink",
+            "pinned_message": {
+                "message_id": 1,
+                "date": 0,
+                "chat": {
+                    "id": 1,
+                    "type": "group",
+                    "title": "grouptitle",
+                    "all_members_are_administrators": true
+                },
+                "from": {
+                    "id": 1,
+                    "is_bot": false,
+                    "first_name": "user"
+                },
+                "text": "test"
+            }
+        }))
+        .unwrap();
+        if let Chat::Group(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, "grouptitle");
+            assert!(chat.all_members_are_administrators);
+            let photo = chat.photo.unwrap();
+            assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.big_file_id, "bigfileid");
+            assert_eq!(chat.invite_link.unwrap(), "groupinvitelink");
+            assert!(chat.pinned_message.is_some());
+        } else {
+            panic!("Unexpected chat: {:?}", chat);
+        }
+
+        let chat: Chat = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "type": "group",
+            "title": "grouptitle",
+            "all_members_are_administrators": false
+        }))
+        .unwrap();
+        if let Chat::Group(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, "grouptitle");
+            assert!(!chat.all_members_are_administrators);
+            assert!(chat.photo.is_none());
+            assert!(chat.invite_link.is_none());
+            assert!(chat.pinned_message.is_none());
+        } else {
+            panic!("Unexpected chat: {:?}", chat);
+        }
+    }
+
+    #[test]
+    fn deserialize_private() {
+        let chat: Chat = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "type": "private",
+            "username": "testusername",
+            "first_name": "testfirstname",
+            "last_name": "testlastname",
+            "photo": {
+                "small_file_id": "smallfileid",
+                "big_file_id": "bigfileid"
+            }
+        }))
+        .unwrap();
+        if let Chat::Private(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.username.unwrap(), "testusername");
+            assert_eq!(chat.first_name, "testfirstname");
+            assert_eq!(chat.last_name.unwrap(), "testlastname");
+            let photo = chat.photo.unwrap();
+            assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.big_file_id, "bigfileid");
+        } else {
+            panic!("Unexpected chat: {:?}", chat)
+        }
+
+        let chat: Chat = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "type": "private",
+            "first_name": "testfirstname"
+        }))
+        .unwrap();
+        if let Chat::Private(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert!(chat.username.is_none());
+            assert_eq!(chat.first_name, "testfirstname");
+            assert!(chat.last_name.is_none());
+            assert!(chat.photo.is_none());
+        } else {
+            panic!("Unexpected chat: {:?}", chat)
+        }
+    }
+
+    #[test]
+    fn deserialize_supergroup() {
+        let chat: Chat = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "type": "supergroup",
+            "title": "supergrouptitle",
+            "username": "supergroupusername",
+            "photo": {
+                "small_file_id": "smallfileid",
+                "big_file_id": "bigfileid"
+            },
+            "description": "supergroupdescription",
+            "invite_link": "supergroupinvitelink",
+            "sticker_set_name": "supergroupstickersetname",
+            "can_set_sticker_set": true,
+            "pinned_message": {
+                "message_id": 1,
+                "date": 0,
+                "chat": {
+                    "id": 1,
+                    "type": "supergroup",
+                    "title": "supergrouptitle",
+                    "username": "supergroupusername"
+                },
+                "from": {
+                    "id": 1,
+                    "is_bot": false,
+                    "first_name": "user"
+                },
+                "text": "test"
+            }
+        }))
+        .unwrap();
+        if let Chat::Supergroup(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, "supergrouptitle");
+            assert_eq!(chat.username.unwrap(), "supergroupusername");
+            let photo = chat.photo.unwrap();
+            assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.big_file_id, "bigfileid");
+            assert_eq!(chat.description.unwrap(), "supergroupdescription");
+            assert_eq!(chat.invite_link.unwrap(), "supergroupinvitelink");
+            assert_eq!(chat.sticker_set_name.unwrap(), "supergroupstickersetname");
+            assert!(chat.can_set_sticker_set.unwrap());
+            assert!(chat.pinned_message.is_some());
+        } else {
+            panic!("Unexpected chat: {:?}", chat)
+        }
+
+        let chat: Chat = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "type": "supergroup",
+            "title": "supergrouptitle",
+            "username": "supergroupusername"
+        }))
+        .unwrap();
+        if let Chat::Supergroup(chat) = chat {
+            assert_eq!(chat.id, 1);
+            assert_eq!(chat.title, "supergrouptitle");
+            assert_eq!(chat.username.unwrap(), "supergroupusername");
+            assert!(chat.photo.is_none());
+            assert!(chat.description.is_none());
+            assert!(chat.invite_link.is_none());
+            assert!(chat.sticker_set_name.is_none());
+            assert!(chat.can_set_sticker_set.is_none());
+            assert!(chat.pinned_message.is_none());
+        } else {
+            panic!("Unexpected chat: {:?}", chat)
+        }
+    }
+
+    #[test]
+    fn chat_id() {
+        let chat_id = ChatId::from(1);
+        if let ChatId::Id(chat_id) = chat_id {
+            assert_eq!(chat_id, 1);
+        } else {
+            panic!("Unexpected chat id: {:?}", chat_id);
+        }
+        assert_eq!(serde_json::to_string(&chat_id).unwrap(), r#"1"#);
+        assert_eq!(chat_id.to_string(), "1");
+
+        let chat_id = ChatId::from("username");
+        if let ChatId::Username(ref username) = chat_id {
+            assert_eq!(username, "username");
+        } else {
+            panic!("Unexpected chat id: {:?}", chat_id);
+        }
+        assert_eq!(serde_json::to_string(&chat_id).unwrap(), r#""username""#);
+        assert_eq!(chat_id.to_string(), "username");
+
+        let chat_id = ChatId::from(String::from("username"));
+        if let ChatId::Username(ref username) = chat_id {
+            assert_eq!(username, "username");
+        } else {
+            panic!("Unexpected chat id: {:?}", chat_id);
+        }
+        assert_eq!(serde_json::to_string(&chat_id).unwrap(), r#""username""#);
+        assert_eq!(chat_id.to_string(), "username");
+    }
+
+    #[test]
+    fn chat_action() {
+        assert_eq!(
+            serde_json::to_string(&ChatAction::FindLocation).unwrap(),
+            r#""find_location""#
+        );
+        assert_eq!(
+            serde_json::to_string(&ChatAction::RecordAudio).unwrap(),
+            r#""record_audio""#
+        );
+        assert_eq!(
+            serde_json::to_string(&ChatAction::RecordVideo).unwrap(),
+            r#""record_video""#
+        );
+        assert_eq!(
+            serde_json::to_string(&ChatAction::RecordVideoNote).unwrap(),
+            r#""record_video_note""#
+        );
+        assert_eq!(serde_json::to_string(&ChatAction::Typing).unwrap(), r#""typing""#);
+        assert_eq!(
+            serde_json::to_string(&ChatAction::UploadAudio).unwrap(),
+            r#""upload_audio""#
+        );
+        assert_eq!(
+            serde_json::to_string(&ChatAction::UploadDocument).unwrap(),
+            r#""upload_document""#
+        );
+        assert_eq!(
+            serde_json::to_string(&ChatAction::UploadPhoto).unwrap(),
+            r#""upload_photo""#
+        );
+        assert_eq!(
+            serde_json::to_string(&ChatAction::UploadVideo).unwrap(),
+            r#""upload_video""#
+        );
+        assert_eq!(
+            serde_json::to_string(&ChatAction::UploadVideoNote).unwrap(),
+            r#""upload_video_note""#
+        );
+    }
 }

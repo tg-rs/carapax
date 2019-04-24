@@ -162,3 +162,195 @@ pub struct ChatMemberRestricted {
     /// of the chat at the moment of the request
     pub is_member: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_chat_member_admin() {
+        let mut admin: ChatMember = serde_json::from_value(serde_json::json!({
+            "status": "administrator",
+            "user": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "firstname",
+                "last_name": "lastname",
+                "username": "username",
+                "language_code": "RU"
+            },
+            "can_be_edited": true,
+            "can_change_info": false,
+            "can_post_messages": true,
+            "can_edit_messages": false,
+            "can_delete_messages": true,
+            "can_invite_users": false,
+            "can_restrict_members": true,
+            "can_pin_messages": false,
+            "can_promote_members": true
+        }))
+        .unwrap();
+        assert!(admin.is_member());
+        assert_eq!(admin.user().id, 1);
+        if let ChatMember::Administrator(ref mut admin) = admin {
+            assert_eq!(admin.user.id, 1);
+            assert_eq!(admin.user.is_bot, false);
+            assert_eq!(admin.user.first_name, "firstname");
+            assert_eq!(admin.user.last_name.take().unwrap(), "lastname");
+            assert_eq!(admin.user.username.take().unwrap(), "username");
+            assert_eq!(admin.user.language_code.take().unwrap(), "RU");
+            assert_eq!(admin.can_be_edited, true);
+            assert_eq!(admin.can_change_info, false);
+            assert_eq!(admin.can_post_messages, true);
+            assert_eq!(admin.can_edit_messages, false);
+            assert_eq!(admin.can_delete_messages, true);
+            assert_eq!(admin.can_invite_users, false);
+            assert_eq!(admin.can_restrict_members, true);
+            assert_eq!(admin.can_pin_messages, false);
+            assert_eq!(admin.can_promote_members, true);
+        } else {
+            panic!("Unexpected chat member: {:?}", admin);
+        }
+    }
+
+    #[test]
+    fn deserialize_chat_member_creator() {
+        let creator: ChatMember = serde_json::from_value(serde_json::json!({
+            "status": "creator",
+            "user": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "firstname"
+            }
+        }))
+        .unwrap();
+        assert!(creator.is_member());
+        assert_eq!(creator.user().id, 1);
+        if let ChatMember::Creator(ref creator) = creator {
+            assert_eq!(creator.id, 1);
+            assert_eq!(creator.is_bot, false);
+            assert_eq!(creator.first_name, String::from("firstname"));
+            assert_eq!(creator.last_name, None);
+            assert_eq!(creator.username, None);
+            assert_eq!(creator.language_code, None);
+        } else {
+            panic!("Unexpected chat member: {:?}", creator);
+        }
+    }
+
+    #[test]
+    fn deserialize_chat_member_kicked() {
+        let mut kicked: ChatMember = serde_json::from_value(serde_json::json!({
+            "status": "kicked",
+            "user": {
+                "id": 1,
+                "is_bot": true,
+                "first_name": "firstname",
+                "last_name": "lastname",
+                "username": "username"
+            },
+            "until_date": 0
+        }))
+        .unwrap();
+        assert!(!kicked.is_member());
+        assert_eq!(kicked.user().id, 1);
+        if let ChatMember::Kicked(ref mut kicked) = kicked {
+            assert_eq!(kicked.user.id, 1);
+            assert_eq!(kicked.user.is_bot, true);
+            assert_eq!(kicked.user.first_name, "firstname");
+            assert_eq!(kicked.user.last_name.take().unwrap(), "lastname");
+            assert_eq!(kicked.user.username.take().unwrap(), "username");
+            assert!(kicked.user.language_code.is_none());
+            assert_eq!(kicked.until_date, 0);
+        } else {
+            panic!("Unexpected chat member: {:?}", kicked);
+        }
+    }
+
+    #[test]
+    fn deserialize_chat_member_left() {
+        let left: ChatMember = serde_json::from_value(serde_json::json!({
+            "status": "left",
+            "user": {
+                "id": 1,
+                "is_bot": true,
+                "first_name": "firstname"
+            }
+        }))
+        .unwrap();
+        assert!(!left.is_member());
+        assert_eq!(left.user().id, 1);
+        if let ChatMember::Left(ref left) = left {
+            assert_eq!(left.id, 1);
+            assert_eq!(left.is_bot, true);
+            assert_eq!(left.first_name, "firstname");
+            assert!(left.last_name.is_none());
+            assert!(left.username.is_none());
+            assert!(left.language_code.is_none());
+        } else {
+            panic!("Unexpected chat member: {:?}", left);
+        }
+    }
+
+    #[test]
+    fn deserialize_chat_member_plain() {
+        let plain: ChatMember = serde_json::from_value(serde_json::json!({
+            "status": "member",
+            "user": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "firstname"
+            }
+        }))
+        .unwrap();
+        assert!(plain.is_member());
+        assert_eq!(plain.user().id, 1);
+        if let ChatMember::Member(ref plain) = plain {
+            assert_eq!(plain.id, 1);
+            assert_eq!(plain.is_bot, false);
+            assert_eq!(plain.first_name, "firstname");
+            assert!(plain.last_name.is_none());
+            assert!(plain.username.is_none());
+            assert!(plain.language_code.is_none());
+        } else {
+            panic!("Unexpected chat member: {:?}", plain);
+        }
+    }
+
+    #[test]
+    fn deserialize_chat_member_restricted() {
+        let restricted: ChatMember = serde_json::from_value(serde_json::json!({
+            "status": "restricted",
+            "user": {
+                "id": 1,
+                "is_bot": true,
+                "first_name": "firstname"
+            },
+            "until_date": 0,
+            "can_send_messages": true,
+            "can_send_media_messages": false,
+            "can_send_other_messages": true,
+            "can_add_web_page_previews": false,
+            "is_member": true
+        }))
+        .unwrap();
+        assert_eq!(restricted.user().id, 1);
+        assert!(restricted.is_member());
+        if let ChatMember::Restricted(ref restricted) = restricted {
+            assert_eq!(restricted.user.id, 1);
+            assert_eq!(restricted.user.is_bot, true);
+            assert_eq!(restricted.user.first_name, "firstname");
+            assert!(restricted.user.last_name.is_none());
+            assert!(restricted.user.username.is_none());
+            assert!(restricted.user.language_code.is_none());
+            assert_eq!(restricted.until_date, 0);
+            assert!(restricted.can_send_messages);
+            assert!(!restricted.can_send_media_messages);
+            assert!(restricted.can_send_other_messages);
+            assert!(!restricted.can_add_web_page_previews);
+            assert!(restricted.is_member);
+        } else {
+            panic!("Unexpected chat member: {:?}", restricted);
+        }
+    }
+}
