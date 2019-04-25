@@ -16,12 +16,11 @@ jobs:
       rust: stable
       before_script: rustup component add rustfmt
       script: cargo fmt -- --check
-    # Until clippy is fixed
-    #- name: clippy
-    #  stage: check
-    #  rust: stable
-    #  before_script: rustup component add clippy
-    #  script: cargo clippy --all-targets --all-features -- -D warnings
+    - name: clippy
+      stage: check
+      rust: stable
+      before_script: rustup component add clippy
+      script: cargo clippy --all-targets --all-features -- -D warnings
     - stage: test
       rust: stable
     - stage: test
