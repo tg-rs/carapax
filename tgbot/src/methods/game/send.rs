@@ -64,3 +64,36 @@ impl Method for SendGame {
         RequestBuilder::json("sendGame", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::InlineKeyboardButton,
+    };
+    use serde_json::Value;
+
+    #[test]
+    fn send_game() {
+        let request = SendGame::new(1, "name")
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendGame");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["game_short_name"], "name");
+            assert_eq!(data["disable_notification"], true);
+            assert_eq!(data["reply_to_message_id"], 1);
+            assert_eq!(data["reply_markup"]["inline_keyboard"][0][0]["text"], "text");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

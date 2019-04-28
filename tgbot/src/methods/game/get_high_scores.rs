@@ -64,3 +64,42 @@ impl Method for GetGameHighScores {
         RequestBuilder::json("getGameHighScores", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn get_game_high_scores() {
+        let request = GetGameHighScores::new(1, 2, 3)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/getGameHighScores");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["user_id"], 1);
+            assert_eq!(data["chat_id"], 2);
+            assert_eq!(data["message_id"], 3);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+
+        let request = GetGameHighScores::with_inline_message_id(1, "msg-id")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/getGameHighScores");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["user_id"], 1);
+            assert_eq!(data["inline_message_id"], "msg-id");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}
