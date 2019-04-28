@@ -43,3 +43,27 @@ impl Method for SetPassportDataErrors {
         RequestBuilder::json("setPassportDataErrors", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn set_passport_data_errors() {
+        let request = SetPassportDataErrors::new(1, vec![])
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/setPassportDataErrors");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["user_id"], 1);
+            assert!(data["errors"].as_array().unwrap().is_empty());
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}
