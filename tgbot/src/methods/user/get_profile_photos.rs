@@ -55,3 +55,30 @@ impl Method for GetUserProfilePhotos {
         RequestBuilder::json("getUserProfilePhotos", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn get_user_profile_photos() {
+        let request = GetUserProfilePhotos::new(1)
+            .offset(5)
+            .limit(10)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/getUserProfilePhotos");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["user_id"], 1);
+            assert_eq!(data["offset"], 5);
+            assert_eq!(data["limit"], 10);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}
