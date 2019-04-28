@@ -40,3 +40,25 @@ impl Method for GetFile {
         RequestBuilder::json("getFile", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+
+    #[test]
+    fn get_file() {
+        let request = GetFile::new("file-id")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/getFile");
+        if let RequestBody::Json(data) = request.body {
+            let data = String::from_utf8(data).unwrap();
+            assert_eq!(data, r#"{"file_id":"file-id"}"#);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}
