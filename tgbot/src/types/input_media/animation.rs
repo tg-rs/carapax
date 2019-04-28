@@ -63,3 +63,37 @@ impl InputMediaAnimation {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn serialize() {
+        assert_eq!(
+            serde_json::to_value(
+                InputMediaAnimation::default()
+                    .thumb("attach://thumb.jpg")
+                    .caption("caption")
+                    .parse_mode(ParseMode::Markdown)
+                    .width(200)
+                    .height(200)
+                    .duration(10)
+            )
+            .unwrap(),
+            serde_json::json!({
+                "thumb": "attach://thumb.jpg",
+                "caption": "caption",
+                "parse_mode": "Markdown",
+                "width": 200,
+                "height": 200,
+                "duration": 10
+            })
+        );
+
+        assert_eq!(
+            serde_json::to_value(InputMediaAnimation::default()).unwrap(),
+            serde_json::json!({})
+        );
+    }
+}

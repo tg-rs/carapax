@@ -47,3 +47,35 @@ impl InputMediaAudio {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn serialize() {
+        assert_eq!(
+            serde_json::to_value(
+                InputMediaAudio::default()
+                    .caption("caption")
+                    .parse_mode(ParseMode::Markdown)
+                    .duration(10)
+                    .performer("test performer")
+                    .title("test title")
+            )
+            .unwrap(),
+            serde_json::json!({
+                "caption": "caption",
+                "parse_mode": "Markdown",
+                "duration": 10,
+                "performer": "test performer",
+                "title": "test title"
+            })
+        );
+
+        assert_eq!(
+            serde_json::to_value(InputMediaAudio::default()).unwrap(),
+            serde_json::json!({})
+        );
+    }
+}

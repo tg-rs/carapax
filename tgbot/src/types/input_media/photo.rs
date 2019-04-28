@@ -23,3 +23,29 @@ impl InputMediaPhoto {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn serialize() {
+        assert_eq!(
+            serde_json::to_value(
+                InputMediaPhoto::default()
+                    .caption("caption")
+                    .parse_mode(ParseMode::Markdown)
+            )
+            .unwrap(),
+            serde_json::json!({
+                "caption": "caption",
+                "parse_mode": "Markdown"
+            })
+        );
+
+        assert_eq!(
+            serde_json::to_value(InputMediaPhoto::default()).unwrap(),
+            serde_json::json!({})
+        );
+    }
+}

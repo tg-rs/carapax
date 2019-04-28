@@ -55,3 +55,37 @@ impl InputMediaVideo {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn serialize() {
+        assert_eq!(
+            serde_json::to_value(
+                InputMediaVideo::default()
+                    .caption("caption")
+                    .parse_mode(ParseMode::Markdown)
+                    .width(200)
+                    .height(200)
+                    .duration(100)
+                    .supports_streaming(true)
+            )
+            .unwrap(),
+            serde_json::json!({
+                "caption": "caption",
+                "parse_mode": "Markdown",
+                "width": 200,
+                "height": 200,
+                "duration": 100,
+                "supports_streaming": true
+            })
+        );
+
+        assert_eq!(
+            serde_json::to_value(InputMediaVideo::default()).unwrap(),
+            serde_json::json!({})
+        );
+    }
+}
