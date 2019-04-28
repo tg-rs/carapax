@@ -117,7 +117,7 @@ mod tests {
     use serde_json::Value;
 
     #[test]
-    fn restrict_chat_member() {
+    fn restrict_chat_member_restrict_all() {
         let request = RestrictChatMember::new(1, 2)
             .restrict_all()
             .until_date(100)
@@ -138,7 +138,10 @@ mod tests {
         } else {
             panic!("Unexpected request body: {:?}", request.body);
         }
+    }
 
+    #[test]
+    fn restrict_chat_member_allow_all() {
         let request = RestrictChatMember::new(1, 2)
             .allow_all()
             .until_date(100)
@@ -159,7 +162,10 @@ mod tests {
         } else {
             panic!("Unexpected request body: {:?}", request.body);
         }
+    }
 
+    #[test]
+    fn restrict_chat_member_custom() {
         let request = RestrictChatMember::new(1, 2)
             .can_send_messages(true)
             .can_send_media_messages(false)

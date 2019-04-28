@@ -146,7 +146,7 @@ mod tests {
     use serde_json::Value;
 
     #[test]
-    fn promote_chat_member() {
+    fn promote_chat_member_promote_all() {
         let request = PromoteChatMember::new(1, 2)
             .promote_all()
             .into_request()
@@ -169,7 +169,10 @@ mod tests {
         } else {
             panic!("Unexpected request body: {:?}", request.body);
         }
+    }
 
+    #[test]
+    fn promote_chat_member_demote_all() {
         let request = PromoteChatMember::new(1, 2)
             .demote_all()
             .into_request()
@@ -192,7 +195,10 @@ mod tests {
         } else {
             panic!("Unexpected request body: {:?}", request.body);
         }
+    }
 
+    #[test]
+    fn promote_chat_member_custom() {
         let request = PromoteChatMember::new(1, 2)
             .can_change_info(true)
             .can_post_messages(false)
