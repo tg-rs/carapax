@@ -50,3 +50,29 @@ impl Method for PinChatMessage {
         RequestBuilder::json("pinChatMessage", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn pin_chat_message() {
+        let request = PinChatMessage::new(1, 2)
+            .disable_notification(true)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/pinChatMessage");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["message_id"], 2);
+            assert_eq!(data["disable_notification"], true);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

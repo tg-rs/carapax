@@ -28,3 +28,23 @@ impl Method for LeaveChat {
         RequestBuilder::json("leaveChat", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn leave_chat() {
+        let request = LeaveChat::new(1).into_request().unwrap().build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/leaveChat");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

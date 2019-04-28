@@ -44,3 +44,25 @@ impl Method for SetChatPhoto {
         RequestBuilder::form("setChatPhoto", self.form)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+
+    #[test]
+    fn set_chat_photo() {
+        let request = SetChatPhoto::new(1, InputFile::file_id("sticker-id"))
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/setChatPhoto");
+        if let RequestBody::Form(form) = request.body {
+            assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
+            assert!(form.fields["photo"].get_file().is_some());
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

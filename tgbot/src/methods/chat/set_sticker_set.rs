@@ -37,3 +37,27 @@ impl Method for SetChatStickerSet {
         RequestBuilder::json("setChatStickerSet", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn set_chat_sticker_set() {
+        let request = SetChatStickerSet::new(1, "name")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/setChatStickerSet");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["sticker_set_name"], "name");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

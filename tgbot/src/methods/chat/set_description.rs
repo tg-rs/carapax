@@ -40,3 +40,28 @@ impl Method for SetChatDescription {
         RequestBuilder::json("setChatDescription", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn set_chat_description() {
+        let request = SetChatDescription::new(1)
+            .description("desc")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/setChatDescription");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["description"], "desc");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}
