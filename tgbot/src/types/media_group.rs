@@ -123,3 +123,79 @@ pub enum MediaGroupError {
     #[fail(display = "Media group must contain no more than {} attachments", _0)]
     TooManyAttachments(usize),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::InputFileReader;
+    use std::io::Cursor;
+
+    #[test]
+    fn media_group() {
+        let group = MediaGroup::default()
+            .add_item(InputFileReader::from(Cursor::new("test")), InputMediaPhoto::default())
+            .add_item(InputFileReader::from(Cursor::new("test")), InputMediaVideo::default())
+            .add_item_with_thumb(
+                InputFile::file_id("file-id"),
+                InputFile::url("thumb-url"),
+                InputMediaVideo::default(),
+            )
+            .into_form()
+            .unwrap();
+        assert!(group.get("media").is_some());
+        assert!(group.get("tgbot_im_file_0").is_some());
+        assert!(group.get("tgbot_im_file_1").is_some());
+
+        let err = MediaGroup::default().into_form().unwrap_err();
+        assert_eq!(err.to_string(), "Media group must contain at least 2 attachments");
+
+        let mut group = MediaGroup::default();
+        for _ in 0..11 {
+            group = group.add_item(InputFile::file_id("file-id"), InputMediaPhoto::default());
+        }
+        let err = group.into_form().unwrap_err();
+        assert_eq!(err.to_string(), "Media group must contain no more than 10 attachments");
+    }
+
+    #[test]
+    fn media_group_item() {
+        assert_eq!(
+            serde_json::to_value(MediaGroupItem::from((
+                String::from("file-id"),
+                String::from("thumb-id"),
+                InputMediaVideo::default().caption("test"),
+            )))
+            .unwrap(),
+            serde_json::json!({
+                "type": "video",
+                "media": "file-id",
+                "thumb": "thumb-id",
+                "caption": "test"
+            })
+        );
+        assert_eq!(
+            serde_json::to_value(MediaGroupItem::from((
+                String::from("file-id"),
+                InputMediaVideo::default().caption("test")
+            )))
+            .unwrap(),
+            serde_json::json!({
+                "type": "video",
+                "media": "file-id",
+                "caption": "test"
+            })
+        );
+        assert_eq!(
+            serde_json::to_value(MediaGroupItem::from((
+                String::from("file-id"),
+                InputMediaPhoto::default().caption("test")
+            )))
+            .unwrap(),
+            serde_json::json!({
+                "type": "photo",
+                "media": "file-id",
+                "caption": "test"
+            })
+        );
+    }
+}
