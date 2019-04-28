@@ -88,3 +88,51 @@ impl Method for EditMessageText {
         RequestBuilder::json("editMessageText", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::InlineKeyboardButton,
+    };
+    use serde_json::Value;
+
+    #[test]
+    fn edit_message_text() {
+        let request = EditMessageText::new(1, 2, "text")
+            .parse_mode(ParseMode::Markdown)
+            .disable_web_page_preview(true)
+            .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/editMessageText");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["message_id"], 2);
+            assert_eq!(data["text"], "text");
+            assert_eq!(data["parse_mode"], "Markdown");
+            assert_eq!(data["disable_web_page_preview"], true);
+            assert_eq!(data["reply_markup"]["inline_keyboard"][0][0]["text"], "text");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+
+        let request = EditMessageText::with_inline_message_id("msg-id", "text")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/editMessageText");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["inline_message_id"], "msg-id");
+            assert_eq!(data["text"], "text");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

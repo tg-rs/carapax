@@ -64,3 +64,52 @@ impl Method for EditMessageMedia {
         RequestBuilder::form("editMessageMedia", self.form)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::{InlineKeyboardButton, InputFile, InputMediaPhoto},
+    };
+
+    #[test]
+    fn edit_message_media() {
+        let request = EditMessageMedia::new(
+            1,
+            2,
+            InputMedia::new(InputFile::file_id("file-id"), InputMediaPhoto::default()).unwrap(),
+        )
+        .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
+        .unwrap()
+        .into_request()
+        .unwrap()
+        .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/editMessageMedia");
+        if let RequestBody::Form(form) = request.body {
+            assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
+            assert_eq!(form.fields["message_id"].get_text().unwrap(), "2");
+            assert!(form.fields.get("media").is_some());
+            assert!(form.fields.get("reply_markup").is_some());
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+
+        let request = EditMessageMedia::with_inline_message_id(
+            "msg-id",
+            InputMedia::new(InputFile::file_id("file-id"), InputMediaPhoto::default()).unwrap(),
+        )
+        .into_request()
+        .unwrap()
+        .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/editMessageMedia");
+        if let RequestBody::Form(form) = request.body {
+            assert_eq!(form.fields["inline_message_id"].get_text().unwrap(), "msg-id");
+            assert!(form.fields.get("media").is_some());
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

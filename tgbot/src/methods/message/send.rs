@@ -82,3 +82,39 @@ impl Method for SendMessage {
         RequestBuilder::json("sendMessage", &self)
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::ForceReply,
+    };
+    use serde_json::Value;
+
+    #[test]
+    fn send_message() {
+        let request = SendMessage::new(1, "text")
+            .parse_mode(ParseMode::Markdown)
+            .disable_web_page_preview(true)
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(ForceReply::new(true))
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendMessage");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["text"], "text");
+            assert_eq!(data["parse_mode"], "Markdown");
+            assert_eq!(data["disable_web_page_preview"], true);
+            assert_eq!(data["disable_notification"], true);
+            assert_eq!(data["reply_to_message_id"], 1);
+            assert_eq!(data["reply_markup"]["force_reply"], true);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

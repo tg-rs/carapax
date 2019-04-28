@@ -44,3 +44,27 @@ impl Method for DeleteMessage {
         RequestBuilder::json("deleteMessage", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn delete_message() {
+        let request = DeleteMessage::new(1, 2)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/deleteMessage");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["message_id"], 2);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}
