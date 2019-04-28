@@ -51,3 +51,38 @@ impl Method for AddStickerToSet {
         RequestBuilder::form("addStickerToSet", self.form)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::{MaskPosition, MaskPositionPoint},
+    };
+
+    #[test]
+    fn add_sticker_to_set() {
+        let request = AddStickerToSet::new(1, "name", InputFile::file_id("sticker-id"), "^_^")
+            .mask_position(MaskPosition {
+                point: MaskPositionPoint::Forehead,
+                x_shift: 1.0,
+                y_shift: 2.0,
+                scale: 3.0,
+            })
+            .unwrap()
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/addStickerToSet");
+        if let RequestBody::Form(form) = request.body {
+            assert_eq!(form.fields["user_id"].get_text().unwrap(), "1");
+            assert_eq!(form.fields["name"].get_text().unwrap(), "name");
+            assert!(form.fields["png_sticker"].get_file().is_some());
+            assert_eq!(form.fields["emojis"].get_text().unwrap(), "^_^");
+            assert!(form.fields["mask_position"].get_text().is_some());
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

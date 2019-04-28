@@ -61,3 +61,38 @@ impl Method for SendSticker {
         RequestBuilder::form("sendSticker", self.form)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::ForceReply,
+    };
+
+    #[test]
+    fn send_sticker() {
+        let request = SendSticker::new(1, InputFile::file_id("sticker-id"))
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(ForceReply::new(true))
+            .unwrap()
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendSticker");
+        if let RequestBody::Form(form) = request.body {
+            assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
+            assert!(form.fields["sticker"].get_file().is_some());
+            assert_eq!(form.fields["disable_notification"].get_text().unwrap(), "true");
+            assert_eq!(form.fields["reply_to_message_id"].get_text().unwrap(), "1");
+            assert_eq!(
+                form.fields["reply_markup"].get_text().unwrap(),
+                r#"{"force_reply":true}"#
+            );
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

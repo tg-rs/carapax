@@ -37,3 +37,25 @@ impl Method for UploadStickerFile {
         RequestBuilder::form("uploadStickerFile", self.form)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+
+    #[test]
+    fn add_sticker_to_set() {
+        let request = UploadStickerFile::new(1, InputFile::file_id("sticker-id"))
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/uploadStickerFile");
+        if let RequestBody::Form(form) = request.body {
+            assert_eq!(form.fields["user_id"].get_text().unwrap(), "1");
+            assert!(form.fields["png_sticker"].get_file().is_some());
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

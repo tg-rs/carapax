@@ -28,3 +28,26 @@ impl Method for DeleteStickerFromSet {
         RequestBuilder::json("deleteStickerFromSet", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn delete_sticker_from_set() {
+        let request = DeleteStickerFromSet::new("sticker")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/deleteStickerFromSet");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["sticker"], "sticker");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

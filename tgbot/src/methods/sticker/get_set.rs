@@ -26,3 +26,26 @@ impl Method for GetStickerSet {
         RequestBuilder::json("getStickerSet", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn get_sticker_set() {
+        let request = GetStickerSet::new("name")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/getStickerSet");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["name"], "name");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

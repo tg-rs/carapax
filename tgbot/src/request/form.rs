@@ -8,6 +8,24 @@ pub(crate) enum FormValue {
     File(InputFile),
 }
 
+impl FormValue {
+    #[cfg(test)]
+    pub(crate) fn get_text(&self) -> Option<&str> {
+        match self {
+            FormValue::Text(ref text) => Some(text),
+            FormValue::File(_) => None,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn get_file(&self) -> Option<&InputFile> {
+        match self {
+            FormValue::Text(_) => None,
+            FormValue::File(ref file) => Some(file),
+        }
+    }
+}
+
 impl<T> From<T> for FormValue
 where
     T: ToString,
@@ -25,7 +43,7 @@ impl From<InputFile> for FormValue {
 
 #[derive(Debug)]
 pub(crate) struct Form {
-    fields: HashMap<String, FormValue>,
+    pub(crate) fields: HashMap<String, FormValue>,
 }
 
 impl Form {
