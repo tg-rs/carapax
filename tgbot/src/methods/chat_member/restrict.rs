@@ -109,3 +109,79 @@ impl Method for RestrictChatMember {
         RequestBuilder::json("restrictChatMember", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn restrict_chat_member() {
+        let request = RestrictChatMember::new(1, 2)
+            .restrict_all()
+            .until_date(100)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/restrictChatMember");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["user_id"], 2);
+            assert_eq!(data["until_date"], 100);
+            assert_eq!(data["can_send_messages"], false);
+            assert_eq!(data["can_send_media_messages"], false);
+            assert_eq!(data["can_send_other_messages"], false);
+            assert_eq!(data["can_add_web_page_previews"], false);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+
+        let request = RestrictChatMember::new(1, 2)
+            .allow_all()
+            .until_date(100)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/restrictChatMember");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["user_id"], 2);
+            assert_eq!(data["until_date"], 100);
+            assert_eq!(data["can_send_messages"], true);
+            assert_eq!(data["can_send_media_messages"], true);
+            assert_eq!(data["can_send_other_messages"], true);
+            assert_eq!(data["can_add_web_page_previews"], true);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+
+        let request = RestrictChatMember::new(1, 2)
+            .can_send_messages(true)
+            .can_send_media_messages(false)
+            .can_send_other_messages(true)
+            .can_add_web_page_previews(false)
+            .until_date(100)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/restrictChatMember");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["user_id"], 2);
+            assert_eq!(data["until_date"], 100);
+            assert_eq!(data["can_send_messages"], true);
+            assert_eq!(data["can_send_media_messages"], false);
+            assert_eq!(data["can_send_other_messages"], true);
+            assert_eq!(data["can_add_web_page_previews"], false);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

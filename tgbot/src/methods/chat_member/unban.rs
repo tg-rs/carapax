@@ -40,3 +40,27 @@ impl Method for UnbanChatMember {
         RequestBuilder::json("unbanChatMember", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn unban_chat_member() {
+        let request = UnbanChatMember::new(1, 2)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/unbanChatMember");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["user_id"], 2);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

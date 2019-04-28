@@ -138,3 +138,89 @@ impl Method for PromoteChatMember {
         RequestBuilder::json("promoteChatMember", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn promote_chat_member() {
+        let request = PromoteChatMember::new(1, 2)
+            .promote_all()
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/promoteChatMember");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["user_id"], 2);
+            assert_eq!(data["can_change_info"], true);
+            assert_eq!(data["can_post_messages"], true);
+            assert_eq!(data["can_edit_messages"], true);
+            assert_eq!(data["can_delete_messages"], true);
+            assert_eq!(data["can_invite_users"], true);
+            assert_eq!(data["can_restrict_members"], true);
+            assert_eq!(data["can_pin_messages"], true);
+            assert_eq!(data["can_promote_members"], true);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+
+        let request = PromoteChatMember::new(1, 2)
+            .demote_all()
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/promoteChatMember");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["user_id"], 2);
+            assert_eq!(data["can_change_info"], false);
+            assert_eq!(data["can_post_messages"], false);
+            assert_eq!(data["can_edit_messages"], false);
+            assert_eq!(data["can_delete_messages"], false);
+            assert_eq!(data["can_invite_users"], false);
+            assert_eq!(data["can_restrict_members"], false);
+            assert_eq!(data["can_pin_messages"], false);
+            assert_eq!(data["can_promote_members"], false);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+
+        let request = PromoteChatMember::new(1, 2)
+            .can_change_info(true)
+            .can_post_messages(false)
+            .can_edit_messages(true)
+            .can_delete_messages(false)
+            .can_invite_users(true)
+            .can_restrict_members(false)
+            .can_pin_messages(true)
+            .can_promote_members(false)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/promoteChatMember");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["user_id"], 2);
+            assert_eq!(data["can_change_info"], true);
+            assert_eq!(data["can_post_messages"], false);
+            assert_eq!(data["can_edit_messages"], true);
+            assert_eq!(data["can_delete_messages"], false);
+            assert_eq!(data["can_invite_users"], true);
+            assert_eq!(data["can_restrict_members"], false);
+            assert_eq!(data["can_pin_messages"], true);
+            assert_eq!(data["can_promote_members"], false);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}
