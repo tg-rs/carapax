@@ -32,7 +32,11 @@ impl InlineQueryResultCachedMpeg4Gif {
     ///
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * mpeg4_file_id - A valid file identifier for the MP4 file
-    pub fn new<S: Into<String>>(id: S, mpeg4_file_id: S) -> Self {
+    pub fn new<I, F>(id: I, mpeg4_file_id: F) -> Self
+    where
+        I: Into<String>,
+        F: Into<String>,
+    {
         InlineQueryResultCachedMpeg4Gif {
             id: id.into(),
             mpeg4_file_id: mpeg4_file_id.into(),
@@ -69,8 +73,8 @@ impl InlineQueryResultCachedMpeg4Gif {
     }
 
     /// Content of the message to be sent instead of the video animation
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 }

@@ -35,7 +35,12 @@ impl InlineQueryResultVoice {
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * voice_url - A valid URL for the voice recording
     /// * title - Recording title
-    pub fn new<S: Into<String>>(id: S, voice_url: S, title: S) -> Self {
+    pub fn new<I, U, T>(id: I, voice_url: U, title: T) -> Self
+    where
+        I: Into<String>,
+        U: Into<String>,
+        T: Into<String>,
+    {
         InlineQueryResultVoice {
             id: id.into(),
             voice_url: voice_url.into(),
@@ -73,8 +78,8 @@ impl InlineQueryResultVoice {
     }
 
     /// Content of the message to be sent instead of the voice recording
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 }

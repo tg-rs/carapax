@@ -39,3 +39,58 @@ pub struct ChosenInlineResult {
     /// The query that was used to obtain the result
     pub query: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[allow(clippy::float_cmp)]
+    #[test]
+    fn deserialize_inline_query() {
+        let data: InlineQuery = serde_json::from_value(serde_json::json!({
+            "id": "query id",
+            "from": {
+                "id": 1,
+                "first_name": "test",
+                "is_bot": false
+            },
+            "location": {
+                "latitude": 2.1,
+                "longitude": 3.0
+            },
+            "query": "query string",
+            "offset": "query offset",
+        }))
+        .unwrap();
+        assert_eq!(data.id, "query id");
+        assert_eq!(data.from.id, 1);
+        assert_eq!(data.location.unwrap().latitude, 2.1);
+        assert_eq!(data.query, "query string");
+        assert_eq!(data.offset, "query offset");
+    }
+
+    #[allow(clippy::float_cmp)]
+    #[test]
+    fn deserialize_chosen_inline_result() {
+        let data: ChosenInlineResult = serde_json::from_value(serde_json::json!({
+            "result_id": "result id",
+            "from": {
+                "id": 1,
+                "first_name": "test",
+                "is_bot": false
+            },
+            "location": {
+                "latitude": 2.1,
+                "longitude": 3.0
+            },
+            "inline_message_id": "imi",
+            "query": "q",
+        }))
+        .unwrap();
+        assert_eq!(data.result_id, "result id");
+        assert_eq!(data.from.id, 1);
+        assert_eq!(data.location.unwrap().latitude, 2.1);
+        assert_eq!(data.inline_message_id.unwrap(), "imi");
+        assert_eq!(data.query, "q");
+    }
+}

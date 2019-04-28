@@ -47,7 +47,14 @@ impl InlineQueryResultVideo {
     /// * mime_type - Mime type of the content of video url, “text/html” or “video/mp4”
     /// * thumb_url - URL of the thumbnail (jpeg only) for the video
     /// * title - Title for the result
-    pub fn new<S: Into<String>>(id: S, video_url: S, mime_type: S, thumb_url: S, title: S) -> Self {
+    pub fn new<A, B, C, D, E>(id: A, video_url: B, mime_type: C, thumb_url: D, title: E) -> Self
+    where
+        A: Into<String>,
+        B: Into<String>,
+        C: Into<String>,
+        D: Into<String>,
+        E: Into<String>,
+    {
         InlineQueryResultVideo {
             id: id.into(),
             video_url: video_url.into(),
@@ -111,8 +118,8 @@ impl InlineQueryResultVideo {
     ///
     /// This field is required if InlineQueryResultVideo is used
     /// to send an HTML-page as a result (e.g., a YouTube video)
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 }

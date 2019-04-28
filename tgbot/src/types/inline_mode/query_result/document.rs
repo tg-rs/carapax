@@ -44,7 +44,13 @@ impl InlineQueryResultDocument {
     /// * title - Title for the result
     /// * document_url - A valid URL for the file
     /// * mime_type - Mime type of the content of the file, either “application/pdf” or “application/zip”
-    pub fn new<S: Into<String>>(id: S, title: S, document_url: S, mime_type: S) -> Self {
+    pub fn new<I, T, U, M>(id: I, title: T, document_url: U, mime_type: M) -> Self
+    where
+        I: Into<String>,
+        T: Into<String>,
+        U: Into<String>,
+        M: Into<String>,
+    {
         InlineQueryResultDocument {
             id: id.into(),
             title: title.into(),
@@ -86,8 +92,8 @@ impl InlineQueryResultDocument {
     }
 
     /// Content of the message to be sent instead of the file
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 

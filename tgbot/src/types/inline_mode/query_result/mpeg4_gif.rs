@@ -41,7 +41,12 @@ impl InlineQueryResultMpeg4Gif {
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * mpeg4_url - A valid URL for the MP4 file. File size must not exceed 1MB
     /// * thumb_url - URL of the static thumbnail (jpeg or gif) for the result
-    pub fn new<S: Into<String>>(id: S, mpeg4_url: S, thumb_url: S) -> Self {
+    pub fn new<I, U, T>(id: I, mpeg4_url: U, thumb_url: T) -> Self
+    where
+        I: Into<String>,
+        U: Into<String>,
+        T: Into<String>,
+    {
         InlineQueryResultMpeg4Gif {
             id: id.into(),
             mpeg4_url: mpeg4_url.into(),
@@ -100,8 +105,8 @@ impl InlineQueryResultMpeg4Gif {
     }
 
     /// Content of the message to be sent instead of the video animation
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 }

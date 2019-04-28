@@ -37,7 +37,12 @@ impl InlineQueryResultContact {
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * phone_number - Contact's phone number
     /// * first_name - Contact's first name
-    pub fn new<S: Into<String>>(id: S, phone_number: S, first_name: S) -> Self {
+    pub fn new<I, P, N>(id: I, phone_number: P, first_name: N) -> Self
+    where
+        I: Into<String>,
+        P: Into<String>,
+        N: Into<String>,
+    {
         InlineQueryResultContact {
             id: id.into(),
             phone_number: phone_number.into(),
@@ -71,8 +76,8 @@ impl InlineQueryResultContact {
     }
 
     /// Content of the message to be sent instead of the contact
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 

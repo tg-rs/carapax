@@ -37,7 +37,12 @@ impl InlineQueryResultAudio {
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * audio_url - A valid URL for the audio file
     /// * title - Title
-    pub fn new<S: Into<String>>(id: S, audio_url: S, title: S) -> Self {
+    pub fn new<I, U, T>(id: I, audio_url: U, title: T) -> Self
+    where
+        I: Into<String>,
+        U: Into<String>,
+        T: Into<String>,
+    {
         InlineQueryResultAudio {
             id: id.into(),
             audio_url: audio_url.into(),
@@ -82,8 +87,8 @@ impl InlineQueryResultAudio {
     }
 
     /// Content of the message to be sent instead of the audio
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 }

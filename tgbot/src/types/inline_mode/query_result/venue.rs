@@ -43,7 +43,12 @@ impl InlineQueryResultVenue {
     /// * longitude - Longitude of the venue location in degrees
     /// * title - Title of the venue
     /// * address - Address of the venue
-    pub fn new<S: Into<String>>(id: S, latitude: Float, longitude: Float, title: S, address: S) -> Self {
+    pub fn new<I, T, A>(id: I, latitude: Float, longitude: Float, title: T, address: A) -> Self
+    where
+        I: Into<String>,
+        T: Into<String>,
+        A: Into<String>,
+    {
         InlineQueryResultVenue {
             id: id.into(),
             latitude,
@@ -81,8 +86,8 @@ impl InlineQueryResultVenue {
     }
 
     /// Content of the message to be sent instead of the venue
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 

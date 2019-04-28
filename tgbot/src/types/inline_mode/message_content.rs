@@ -171,3 +171,104 @@ impl InputMessageContentVenue {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn serialize_contact() {
+        assert_eq!(
+            serde_json::to_value(InputMessageContent::from(
+                InputMessageContentContact::new("+79001231212", "Vasya")
+                    .last_name("Pupkin")
+                    .vcard("vcard")
+            ))
+            .unwrap(),
+            serde_json::json!({
+                "phone_number": "+79001231212",
+                "first_name": "Vasya",
+                "last_name": "Pupkin",
+                "vcard": "vcard"
+            })
+        );
+
+        assert_eq!(
+            serde_json::to_value(InputMessageContent::from(InputMessageContentContact::new(
+                "+79001231212",
+                "Vasya"
+            )))
+            .unwrap(),
+            serde_json::json!({
+                "phone_number": "+79001231212",
+                "first_name": "Vasya"
+            })
+        );
+    }
+
+    #[allow(clippy::float_cmp)]
+    #[test]
+    fn serialize_location() {
+        let val = serde_json::to_value(InputMessageContent::from(
+            InputMessageContentLocation::new(1.1, 2.1).live_period(100),
+        ))
+        .unwrap();
+        assert_eq!(val.get("latitude").unwrap().as_f64().unwrap().round(), 1.0);
+        assert_eq!(val.get("longitude").unwrap().as_f64().unwrap().round(), 2.0);
+        assert_eq!(val.get("live_period").unwrap().as_i64().unwrap(), 100);
+
+        let val = serde_json::to_value(InputMessageContent::from(InputMessageContentLocation::new(1.1, 2.1))).unwrap();
+        assert_eq!(val.get("latitude").unwrap().as_f64().unwrap().round(), 1.0);
+        assert_eq!(val.get("longitude").unwrap().as_f64().unwrap().round(), 2.0);
+    }
+
+    #[test]
+    fn serialize_text() {
+        assert_eq!(
+            serde_json::to_value(InputMessageContent::from(
+                InputMessageContentText::new("text")
+                    .parse_mode(ParseMode::Html)
+                    .disable_web_page_preview(true)
+            ))
+            .unwrap(),
+            serde_json::json!({
+                "message_text": "text",
+                "parse_mode": "HTML",
+                "disable_web_page_preview": true
+            })
+        );
+
+        assert_eq!(
+            serde_json::to_value(InputMessageContent::from(InputMessageContentText::new("text"))).unwrap(),
+            serde_json::json!({
+                "message_text": "text"
+            })
+        );
+    }
+
+    #[allow(clippy::float_cmp)]
+    #[test]
+    fn serialize_venue() {
+        let val = serde_json::to_value(InputMessageContent::from(
+            InputMessageContentVenue::new(1.1, 2.1, "title", "addr")
+                .foursquare_id("f-id")
+                .foursquare_type("f-type"),
+        ))
+        .unwrap();
+        assert_eq!(val.get("latitude").unwrap().as_f64().unwrap().round(), 1.0);
+        assert_eq!(val.get("longitude").unwrap().as_f64().unwrap().round(), 2.0);
+        assert_eq!(val.get("title").unwrap().as_str().unwrap(), "title");
+        assert_eq!(val.get("address").unwrap().as_str().unwrap(), "addr");
+        assert_eq!(val.get("foursquare_id").unwrap().as_str().unwrap(), "f-id");
+        assert_eq!(val.get("foursquare_type").unwrap().as_str().unwrap(), "f-type");
+
+        let val = serde_json::to_value(InputMessageContent::from(InputMessageContentVenue::new(
+            1.1, 2.1, "title", "addr",
+        )))
+        .unwrap();
+        assert_eq!(val.get("latitude").unwrap().as_f64().unwrap().round(), 1.0);
+        assert_eq!(val.get("longitude").unwrap().as_f64().unwrap().round(), 2.0);
+        assert_eq!(val.get("title").unwrap().as_str().unwrap(), "title");
+        assert_eq!(val.get("address").unwrap().as_str().unwrap(), "addr");
+    }
+}

@@ -39,7 +39,11 @@ impl InlineQueryResultLocation {
     /// * latitude - Location latitude in degrees
     /// * longitude - Location longitude in degrees
     /// * title - Location title
-    pub fn new<S: Into<String>>(id: S, latitude: Float, longitude: Float, title: S) -> Self {
+    pub fn new<I, T>(id: I, latitude: Float, longitude: Float, title: T) -> Self
+    where
+        I: Into<String>,
+        T: Into<String>,
+    {
         InlineQueryResultLocation {
             id: id.into(),
             latitude,
@@ -67,8 +71,8 @@ impl InlineQueryResultLocation {
     }
 
     /// Content of the message to be sent instead of the location
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 

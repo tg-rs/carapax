@@ -12,6 +12,7 @@ use serde::Serialize;
 pub struct InlineQueryResultCachedAudio {
     id: String,
     audio_file_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     caption: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     parse_mode: Option<ParseMode>,
@@ -28,7 +29,11 @@ impl InlineQueryResultCachedAudio {
     ///
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * audio_file_id - A valid file identifier for the audio file
-    pub fn new<S: Into<String>>(id: S, audio_file_id: S) -> Self {
+    pub fn new<I, F>(id: I, audio_file_id: F) -> Self
+    where
+        I: Into<String>,
+        F: Into<String>,
+    {
         InlineQueryResultCachedAudio {
             id: id.into(),
             audio_file_id: audio_file_id.into(),
@@ -58,8 +63,8 @@ impl InlineQueryResultCachedAudio {
     }
 
     /// Content of the message to be sent instead of the audio
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 }

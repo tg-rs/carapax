@@ -31,7 +31,12 @@ impl InlineQueryResultCachedVoice {
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * voice_file_id - A valid file identifier for the voice message
     /// * title - Title for the result
-    pub fn new<S: Into<String>>(id: S, voice_file_id: S, title: S) -> Self {
+    pub fn new<I, F, T>(id: I, voice_file_id: F, title: T) -> Self
+    where
+        I: Into<String>,
+        F: Into<String>,
+        T: Into<String>,
+    {
         InlineQueryResultCachedVoice {
             id: id.into(),
             voice_file_id: voice_file_id.into(),
@@ -62,8 +67,8 @@ impl InlineQueryResultCachedVoice {
     }
 
     /// Content of the message to be sent instead of the voice message
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 }

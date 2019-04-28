@@ -33,7 +33,12 @@ impl InlineQueryResultCachedVideo {
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * video_file_id - A valid file identifier of the video
     /// * title - Title for the result
-    pub fn new<S: Into<String>>(id: S, video_file_id: S, title: S) -> Self {
+    pub fn new<I, F, T>(id: I, video_file_id: F, title: T) -> Self
+    where
+        I: Into<String>,
+        F: Into<String>,
+        T: Into<String>,
+    {
         InlineQueryResultCachedVideo {
             id: id.into(),
             video_file_id: video_file_id.into(),
@@ -71,8 +76,8 @@ impl InlineQueryResultCachedVideo {
     }
 
     /// Content of the message to be sent instead of the video
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 }

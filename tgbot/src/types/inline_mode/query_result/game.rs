@@ -17,7 +17,11 @@ impl InlineQueryResultGame {
     ///
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * game_short_name - Short name of the game
-    pub fn new<S: Into<String>>(id: S, game_short_name: S) -> Self {
+    pub fn new<I, N>(id: I, game_short_name: N) -> Self
+    where
+        I: Into<String>,
+        N: Into<String>,
+    {
         InlineQueryResultGame {
             id: id.into(),
             game_short_name: game_short_name.into(),

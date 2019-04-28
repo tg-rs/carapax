@@ -33,11 +33,16 @@ impl InlineQueryResultArticle {
     /// * id - Unique identifier for this result, 1-64 Bytes
     /// * title - Title of the result
     /// * input_message_content - Content of the message to be sent
-    pub fn new<S: Into<String>>(id: S, title: S, input_message_content: InputMessageContent) -> Self {
+    pub fn new<I, T, C>(id: I, title: T, input_message_content: C) -> Self
+    where
+        I: Into<String>,
+        T: Into<String>,
+        C: Into<InputMessageContent>,
+    {
         InlineQueryResultArticle {
             id: id.into(),
             title: title.into(),
-            input_message_content,
+            input_message_content: input_message_content.into(),
             reply_markup: None,
             url: None,
             hide_url: None,

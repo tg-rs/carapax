@@ -23,7 +23,11 @@ impl InlineQueryResultCachedSticker {
     ///
     /// * id - Unique identifier for this result, 1-64 bytes
     /// * sticker_file_id - A valid file identifier of the sticker
-    pub fn new<S: Into<String>>(id: S, sticker_file_id: S) -> Self {
+    pub fn new<I, F>(id: I, sticker_file_id: F) -> Self
+    where
+        I: Into<String>,
+        F: Into<String>,
+    {
         InlineQueryResultCachedSticker {
             id: id.into(),
             sticker_file_id: sticker_file_id.into(),
@@ -39,8 +43,8 @@ impl InlineQueryResultCachedSticker {
     }
 
     /// Content of the message to be sent instead of the photo
-    pub fn input_message_content(mut self, input_message_content: InputMessageContent) -> Self {
-        self.input_message_content = Some(input_message_content);
+    pub fn input_message_content<C: Into<InputMessageContent>>(mut self, input_message_content: C) -> Self {
+        self.input_message_content = Some(input_message_content.into());
         self
     }
 }
