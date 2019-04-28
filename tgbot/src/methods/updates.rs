@@ -126,8 +126,8 @@ impl SetWebhook {
     }
 
     /// Upload your public key certificate so that the root certificate in use can be checked
-    pub fn certificate(mut self, certificate: String) -> Self {
-        self.certificate = Some(certificate);
+    pub fn certificate<C: Into<String>>(mut self, certificate: C) -> Self {
+        self.certificate = Some(certificate.into());
         self
     }
 
@@ -211,10 +211,10 @@ mod tests {
     use serde_json::Value;
 
     #[test]
-    fn test_serialize_get_updates() {
+    fn get_updates() {
         let req = GetUpdates::default().into_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(req.url, String::from("host/bottoken/getUpdates"));
+        assert_eq!(req.url, "host/bottoken/getUpdates");
         match req.body {
             RequestBody::Json(data) => {
                 assert_eq!(String::from_utf8(data).unwrap(), String::from(r#"{}"#));
@@ -232,6 +232,7 @@ mod tests {
         let req = GetUpdates::default()
             .offset(0)
             .limit(10)
+            .timeout(Duration::from_secs(10))
             .allowed_updates(updates)
             .add_allowed_update(AllowedUpdate::InlineQuery)
             .add_allowed_update(AllowedUpdate::CallbackQuery)
@@ -245,6 +246,7 @@ mod tests {
                 let data: Value = serde_json::from_slice(&data).unwrap();;
                 assert_eq!(data["offset"], 0);
                 assert_eq!(data["limit"], 10);
+                assert_eq!(data["timeout"], 10);
                 let mut updates: Vec<&str> = data["allowed_updates"]
                     .as_array()
                     .unwrap()
@@ -269,26 +271,82 @@ mod tests {
             }
             data => panic!("Unexpected request data: {:?}", data),
         }
+
+        let method = GetUpdates::default().add_allowed_update(AllowedUpdate::Message);
+        assert_eq!(method.allowed_updates.unwrap().len(), 1);
     }
 
     #[test]
-    fn test_serialize_set_webhook() {
+    fn set_webhook() {
         let req = SetWebhook::new("url").into_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(req.url, String::from("host/bottoken/setWebhook"));
+        assert_eq!(req.url, "host/bottoken/setWebhook");
         match req.body {
             RequestBody::Json(data) => {
-                assert_eq!(String::from_utf8(data).unwrap(), String::from(r#"{"url":"url"}"#));
+                assert_eq!(String::from_utf8(data).unwrap(), r#"{"url":"url"}"#);
             }
             data => panic!("Unexpected request data: {:?}", data),
         }
+
+        let mut updates = HashSet::new();
+        updates.insert(AllowedUpdate::Message);
+        updates.insert(AllowedUpdate::Message);
+        updates.insert(AllowedUpdate::EditedMessage);
+        updates.insert(AllowedUpdate::ChannelPost);
+        updates.insert(AllowedUpdate::EditedChannelPost);
+        updates.insert(AllowedUpdate::ChosenInlineResult);
+        let req = SetWebhook::new("url")
+            .certificate("cert")
+            .max_connections(10)
+            .allowed_updates(updates)
+            .add_allowed_update(AllowedUpdate::InlineQuery)
+            .add_allowed_update(AllowedUpdate::CallbackQuery)
+            .add_allowed_update(AllowedUpdate::PreCheckoutQuery)
+            .add_allowed_update(AllowedUpdate::ShippingQuery)
+            .into_request()
+            .unwrap()
+            .build("host", "token");
+        assert_eq!(req.method, RequestMethod::Post);
+        assert_eq!(req.url, "host/bottoken/setWebhook");
+        match req.body {
+            RequestBody::Json(data) => {
+                let data: Value = serde_json::from_slice(&data).unwrap();
+                assert_eq!(data["certificate"], "cert");
+                assert_eq!(data["max_connections"], 10);
+                let mut updates: Vec<&str> = data["allowed_updates"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|x| x.as_str().unwrap())
+                    .collect();
+                updates.sort();
+                assert_eq!(
+                    updates,
+                    vec![
+                        "callback_query",
+                        "channel_post",
+                        "chosen_inline_result",
+                        "edited_channel_post",
+                        "edited_message",
+                        "inline_query",
+                        "message",
+                        "pre_checkout_query",
+                        "shipping_query",
+                    ]
+                );
+            }
+            data => panic!("Unexpected request data: {:?}", data),
+        }
+
+        let method = SetWebhook::new("url").add_allowed_update(AllowedUpdate::Message);
+        assert_eq!(method.allowed_updates.unwrap().len(), 1);
     }
 
     #[test]
-    fn test_serialize_delete_webhook() {
+    fn delete_webhook() {
         let req = DeleteWebhook.into_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Get);
-        assert_eq!(req.url, String::from("host/bottoken/deleteWebhook"));
+        assert_eq!(req.url, "host/bottoken/deleteWebhook");
         match req.body {
             RequestBody::Empty => {}
             data => panic!("Unexpected request data: {:?}", data),
@@ -296,10 +354,10 @@ mod tests {
     }
 
     #[test]
-    fn test_serialize_get_webhook_info() {
+    fn get_webhook_info() {
         let req = GetWebhookInfo.into_request().unwrap().build("host", "token");
         assert_eq!(req.method, RequestMethod::Get);
-        assert_eq!(req.url, String::from("host/bottoken/getWebhookInfo"));
+        assert_eq!(req.url, "host/bottoken/getWebhookInfo");
         match req.body {
             RequestBody::Empty => {}
             data => panic!("Unexpected request data: {:?}", data),
