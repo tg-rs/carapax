@@ -12,3 +12,20 @@ impl Method for GetMe {
         RequestBuilder::empty("getMe")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+
+    #[test]
+    fn get_me() {
+        let request = GetMe.into_request().unwrap().build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Get);
+        assert_eq!(request.url, "base-url/bottoken/getMe");
+        if let RequestBody::Empty = request.body {
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}
