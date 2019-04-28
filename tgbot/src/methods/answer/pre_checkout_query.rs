@@ -52,3 +52,42 @@ impl Method for AnswerPreCheckoutQuery {
         RequestBuilder::json("answerPreCheckoutQuery", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn answer_pre_checkout_query() {
+        let request = AnswerPreCheckoutQuery::ok("query-id")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/answerPreCheckoutQuery");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["pre_checkout_query_id"], "query-id");
+            assert_eq!(data["ok"], true);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+
+        let request = AnswerPreCheckoutQuery::error("query-id", "msg")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/answerPreCheckoutQuery");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["pre_checkout_query_id"], "query-id");
+            assert_eq!(data["ok"], false);
+            assert_eq!(data["error_message"], "msg");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

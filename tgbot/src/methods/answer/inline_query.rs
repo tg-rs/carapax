@@ -102,3 +102,36 @@ impl Method for AnswerInlineQuery {
         RequestBuilder::json("answerInlineQuery", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn answer_inline_query() {
+        let request = AnswerInlineQuery::new("id", vec![])
+            .cache_time(300)
+            .personal(true)
+            .next_offset("offset")
+            .switch_pm_text("text")
+            .switch_pm_parameter("param")
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/answerInlineQuery");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["inline_query_id"], "id");
+            assert_eq!(data["cache_time"], 300);
+            assert_eq!(data["is_personal"], true);
+            assert_eq!(data["next_offset"], "offset");
+            assert_eq!(data["switch_pm_text"], "text");
+            assert_eq!(data["switch_pm_parameter"], "param");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}
