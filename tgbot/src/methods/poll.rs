@@ -113,8 +113,8 @@ impl StopPoll {
     }
 
     /// A JSON-serialized object for a new message inline keyboard
-    pub fn reply_markup(mut self, reply_markup: InlineKeyboardMarkup) -> Self {
-        self.reply_markup = Some(reply_markup);
+    pub fn reply_markup<R: Into<InlineKeyboardMarkup>>(mut self, reply_markup: R) -> Self {
+        self.reply_markup = Some(reply_markup.into());
         self
     }
 }
@@ -124,5 +124,70 @@ impl Method for StopPoll {
 
     fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("stopPoll", &self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::{ForceReply, InlineKeyboardButton},
+    };
+    use serde_json::Value;
+
+    #[test]
+    fn send_poll() {
+        let req = SendPoll::new(1, "Q")
+            .option("O1")
+            .option("O2")
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(ForceReply::new(true))
+            .into_request()
+            .unwrap()
+            .build("host", "token");
+        assert_eq!(req.method, RequestMethod::Post);
+        assert_eq!(req.url, "host/bottoken/sendPoll");
+        match req.body {
+            RequestBody::Json(data) => {
+                let data: Value = serde_json::from_slice(&data).unwrap();
+                assert_eq!(data["chat_id"], 1);
+                assert_eq!(data["question"], "Q");
+                assert_eq!(
+                    data["options"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|x| x.as_str().unwrap())
+                        .collect::<Vec<&str>>(),
+                    vec!["O1", "O2"]
+                );
+                assert_eq!(data["disable_notification"], true);
+                assert_eq!(data["reply_to_message_id"], 1);
+                assert_eq!(data["reply_markup"]["force_reply"], true);
+            }
+            data => panic!("Unexpected request data: {:?}", data),
+        }
+    }
+
+    #[test]
+    fn stop_poll() {
+        let req = StopPoll::new(1, 2)
+            .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
+            .into_request()
+            .unwrap()
+            .build("host", "token");
+        assert_eq!(req.method, RequestMethod::Post);
+        assert_eq!(req.url, "host/bottoken/stopPoll");
+        match req.body {
+            RequestBody::Json(data) => {
+                let data: Value = serde_json::from_slice(&data).unwrap();
+                assert_eq!(data["chat_id"], 1);
+                assert_eq!(data["message_id"], 2);
+                assert_eq!(data["reply_markup"]["inline_keyboard"][0][0]["text"], "text");
+            }
+            data => panic!("Unexpected request data: {:?}", data),
+        }
     }
 }
