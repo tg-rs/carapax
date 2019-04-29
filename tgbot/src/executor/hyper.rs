@@ -111,7 +111,10 @@ pub(crate) fn proxy_executor(dsn: &str) -> Result<Box<Executor>, Error> {
         "http" | "https" => {
             let mut proxy = HttpProxy::new(HttpProxyIntercept::All, dsn.parse()?);
             if let Some(password) = parsed_dsn.password() {
-                proxy.set_authorization(HttpProxyCredentials::basic(parsed_dsn.username(), password)?);
+                proxy.set_authorization(HttpProxyCredentials::basic(
+                    parsed_dsn.username(),
+                    &decode_password(password),
+                )?);
             }
             http_proxy_executor(proxy)
         }
@@ -123,9 +126,71 @@ pub(crate) fn proxy_executor(dsn: &str) -> Result<Box<Executor>, Error> {
             addrs: host,
             auth: parsed_dsn.password().map(|password| SocksAuth {
                 user: parsed_dsn.username().to_string(),
-                pass: percent_decode(password.as_bytes()).decode_utf8_lossy().to_string(),
+                pass: decode_password(password),
             }),
         }),
         _ => unexpected_proxy!(),
+    }
+}
+
+fn decode_password(password: &str) -> String {
+    percent_decode(password.as_bytes()).decode_utf8_lossy().to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default() {
+        assert!(default_executor().is_ok())
+    }
+
+    #[test]
+    fn http_proxy() {
+        assert!(proxy_executor("http://user:pwd@127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("http://user:pwd@127.0.0.1").is_err());
+        assert!(proxy_executor("http://user@127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("http://user@127.0.0.1").is_err());
+        assert!(proxy_executor("http://:pwd@127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("http://:pwd@127.0.0.1").is_err());
+        assert!(proxy_executor("http://127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("http://127.0.0.1").is_err());
+    }
+
+    #[test]
+    fn https_proxy() {
+        assert!(proxy_executor("https://user:pwd@127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("https://user:pwd@127.0.0.1").is_err());
+        assert!(proxy_executor("https://user@127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("https://user@127.0.0.1").is_err());
+        assert!(proxy_executor("https://127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("https://127.0.0.1").is_err());
+    }
+
+    #[test]
+    fn socks4_proxy() {
+        assert!(proxy_executor("socks4://userid@127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("socks4://userid@127.0.0.1").is_err());
+        assert!(proxy_executor("socks4://127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("socks4://127.0.0.1").is_err());
+    }
+
+    #[test]
+    fn socks5_proxy() {
+        assert!(proxy_executor("socks5://user:pA55[w^r|}@127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("socks5://user:pA55[w^r|}@127.0.0.1").is_err());
+        assert!(proxy_executor("socks5://user@127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("socks5://:pA55[w^r|}@127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("socks5://:pA55[w^r|}@127.0.0.1").is_err());
+        assert!(proxy_executor("socks5://user@127.0.0.1").is_err());
+        assert!(proxy_executor("socks5://127.0.0.1:1234").is_ok());
+        assert!(proxy_executor("socks5://127.0.0.1").is_err());
+    }
+
+    #[test]
+    fn proxy_error() {
+        assert!(proxy_executor("").is_err());
+        assert!(proxy_executor("unknown://user:pass@127.0.0.1:1234").is_err());
     }
 }
