@@ -86,7 +86,7 @@ impl AccessRule {
 }
 
 /// Principal helps to decide should rule accept an update or not
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Principal {
     /// Accepts all updates
     All,
@@ -126,10 +126,19 @@ impl Principal {
     pub fn chat<P: Into<PrincipalChat>>(principal: P) -> Self {
         Principal::Chat(principal.into())
     }
+
+    /// Creates a principal for chat user
+    pub fn chat_user<C, U>(chat: C, user: U) -> Self
+    where
+        C: Into<PrincipalChat>,
+        U: Into<PrincipalUser>,
+    {
+        Principal::ChatUser(chat.into(), user.into())
+    }
 }
 
 /// Represents a user
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrincipalUser {
     /// Accepts updates only from a user with specified ID
     Id(Integer),
@@ -172,7 +181,7 @@ impl PrincipalUser {
 }
 
 /// Represents a chat
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrincipalChat {
     /// Accepts updates only from a chat with specified ID
     Id(Integer),
@@ -218,5 +227,304 @@ impl Principal {
             }
             Principal::All => true,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use carapax::core::types::Update;
+
+    #[test]
+    fn access_rule() {
+        let update: Update = serde_json::from_value(serde_json::json!({
+            "update_id": 1,
+            "message": {
+                "message_id": 1,
+                "date": 1,
+                "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                "text": "test"
+            }
+        }))
+        .unwrap();
+
+        let principal_chat = Principal::from(PrincipalChat::from(1));
+        let principal_user = Principal::from(PrincipalUser::from(1));
+
+        let rule = AccessRule::new(principal_user.clone(), true);
+        assert_eq!(rule.principal, principal_user);
+        assert!(rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::new(principal_chat.clone(), false);
+        assert_eq!(rule.principal, principal_chat);
+        assert!(!rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::allow(principal_user.clone());
+        assert_eq!(rule.principal, principal_user);
+        assert!(rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::deny(principal_chat.clone());
+        assert_eq!(rule.principal, principal_chat);
+        assert!(!rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::allow_all();
+        assert_eq!(rule.principal, Principal::All);
+        assert!(rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::deny_all();
+        assert_eq!(rule.principal, Principal::All);
+        assert!(!rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::allow_user(1);
+        assert_eq!(rule.principal, principal_user);
+        assert!(rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::deny_user(1);
+        assert_eq!(rule.principal, principal_user);
+        assert!(!rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::allow_chat(1);
+        assert_eq!(rule.principal, principal_chat);
+        assert!(rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::deny_chat(1);
+        assert_eq!(rule.principal, principal_chat);
+        assert!(!rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::allow_chat_user(1, 1);
+        assert_eq!(
+            rule.principal,
+            Principal::from((PrincipalChat::from(1), PrincipalUser::from(1)))
+        );
+        assert!(rule.is_granted());
+        assert!(rule.accepts(&update));
+
+        let rule = AccessRule::deny_chat_user(1, 1);
+        assert_eq!(
+            rule.principal,
+            Principal::from((PrincipalChat::from(1), PrincipalUser::from(1)))
+        );
+        assert!(!rule.is_granted());
+        assert!(rule.accepts(&update));
+    }
+
+    #[test]
+    fn principal() {
+        assert_eq!(Principal::from(PrincipalUser::from(1)), Principal::user(1));
+        assert_eq!(Principal::from(PrincipalChat::from(1)), Principal::chat(1));
+
+        let principal = Principal::from((PrincipalChat::from(1), PrincipalUser::from(1)));
+        assert_eq!(
+            principal,
+            Principal::chat_user(PrincipalChat::from(1), PrincipalUser::from(1))
+        );
+        assert!(principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+        assert!(!principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 2, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+        assert!(!principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 2, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+    }
+
+    #[test]
+    fn principal_user() {
+        let principal = PrincipalUser::from(1);
+        assert_eq!(principal, PrincipalUser::Id(1));
+        assert!(principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+        assert!(!principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 2, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+
+        assert_eq!(
+            PrincipalUser::from(String::from("test")),
+            PrincipalUser::Username(String::from("test"))
+        );
+
+        let principal = PrincipalUser::from("test");
+        assert_eq!(principal, PrincipalUser::Username(String::from("test")));
+        assert!(principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "test"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+        assert!(!principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+        assert!(!principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+    }
+
+    #[test]
+    fn principal_chat() {
+        let principal = PrincipalChat::from(1);
+        assert_eq!(principal, PrincipalChat::Id(1));
+        assert!(principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+        assert!(!principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 2, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+
+        assert_eq!(
+            PrincipalChat::from(String::from("test")),
+            PrincipalChat::Username(String::from("test"))
+        );
+
+        let principal = PrincipalChat::from("test");
+        assert_eq!(principal, PrincipalChat::Username(String::from("test")));
+        assert!(principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "test"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+        assert!(!principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
+        assert!(!principal.accepts(
+            &serde_json::from_value::<Update>(serde_json::json!({
+                "update_id": 1,
+                "message": {
+                    "message_id": 1,
+                    "date": 1,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                    "chat": {"id": 1, "type": "supergroup", "title": "test"},
+                    "text": "test"
+                }
+            }))
+            .unwrap()
+        ));
     }
 }
