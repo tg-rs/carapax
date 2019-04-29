@@ -169,6 +169,15 @@ impl From<InputFileReader> for InputFile {
     }
 }
 
+impl<R> From<R> for InputFile
+where
+    R: Read + Send + 'static,
+{
+    fn from(reader: R) -> Self {
+        InputFile::reader(InputFileReader::new(reader))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,6 +224,9 @@ mod tests {
 
         let reader = InputFileReader::from(Cursor::new(b"data")).info(("name", mime::TEXT_PLAIN));
         let reader = InputFile::from(reader);
+        assert!(format!("{:?}", reader.kind).starts_with("InputFileKind::Reader("));
+
+        let reader = InputFile::from(Cursor::new(b"data"));
         assert!(format!("{:?}", reader.kind).starts_with("InputFileKind::Reader("));
     }
 

@@ -90,3 +90,31 @@ impl From<Form> for MultipartForm<'static> {
         result
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn form_value() {
+        let val = FormValue::from(1);
+        assert_eq!(val.get_text().unwrap(), "1");
+        assert!(val.get_file().is_none());
+
+        let val = FormValue::from(InputFile::file_id("file-id"));
+        assert!(val.get_text().is_none());
+        assert!(val.get_file().is_some());
+    }
+
+    #[test]
+    fn form() {
+        let mut form = Form::new();
+        form.insert_field("id", 1);
+        form.insert_field("id", InputFile::file_id("file-id"));
+        form.insert_field("id", InputFile::url("url"));
+        form.insert_field("id", InputFile::path("file-path"));
+        form.insert_field("id", InputFile::from(Cursor::new(b"test")));
+        MultipartForm::from(form);
+    }
+}
