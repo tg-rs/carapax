@@ -149,3 +149,33 @@ impl<T> Future for ApiFuture<T> {
         self.inner.poll()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::methods::SendMessage;
+    use futures::future;
+    use tokio::runtime::current_thread::block_on_all;
+
+    #[test]
+    fn api() {
+        let config = Config::new("token")
+            .host("https://example.com")
+            .proxy("socks5://user:password@127.0.0.1:1234");
+        let api = Api::new(config).unwrap();
+        assert_eq!(api.host, "https://example.com");
+        assert_eq!(api.token, "token");
+
+        let config = Config::new("token");
+        let api = Api::new(config).unwrap();
+        assert_eq!(api.host, DEFAULT_HOST);
+        assert_eq!(api.token, "token");
+
+        block_on_all(future::lazy(|| {
+            api.spawn(api.execute(SendMessage::new(1, "text")));
+            api.spawn(api.download_file("path"));
+            Ok::<(), ()>(())
+        }))
+        .unwrap()
+    }
+}
