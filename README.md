@@ -1,6 +1,6 @@
 # TG-RS
 
-[![Travis](https://img.shields.io/travis/tg-rs/tg-rs.svg?style=flat-square)](https://travis-ci.org/tg-rs/tg-rs)
+[![Travis](https://img.shields.io/travis/tg-rs/tg-rs/master.svg?style=flat-square)](https://travis-ci.org/tg-rs/tg-rs)
 [![Codecov](https://img.shields.io/codecov/c/github/tg-rs/tg-rs.svg?style=flat-square)](https://codecov.io/gh/tg-rs/tg-rs)
 
 ## Project layout
