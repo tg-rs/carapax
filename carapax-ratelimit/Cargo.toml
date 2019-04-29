@@ -17,5 +17,7 @@ ratelimit_meter = "4.0"
 [dev-dependencies]
 dotenv = "0.13.0"
 env_logger = "0.6.1"
+futures = "0.1"
 log = "0.4.6"
+serde_json = "1.0"
 tokio = "0.1.17"

@@ -194,3 +194,182 @@ where
         .into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::nonzero;
+    use carapax::{core::types::Update, Context};
+    use futures::Future;
+
+    #[test]
+    fn handler_key_found() {
+        let mut context = Context::default();
+        let update: Update = serde_json::from_value(serde_json::json!({
+            "update_id": 1,
+            "message": {
+                "message_id": 1,
+                "date": 1,
+                "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                "text": "test"
+            }
+        }))
+        .unwrap();
+        let handler = KeyedRateLimitHandler::new(limit_all_users, true, nonzero!(1u32), Duration::from_secs(1000));
+        let mut items = Vec::new();
+        for _ in 0..10 {
+            let result = handler.handle(&mut context, &update).wait().unwrap();
+            items.push(result)
+        }
+        assert!(items.into_iter().any(|x| x == HandlerResult::Stop))
+    }
+
+    #[test]
+    fn handler_key_not_found() {
+        let mut context = Context::default();
+        let update: Update = serde_json::from_value(serde_json::json!({
+            "update_id": 1,
+            "message": {
+                "message_id": 1,
+                "date": 1,
+                "from": {"id": 2, "is_bot": false, "first_name": "test", "username": "username_user"},
+                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                "text": "test"
+            }
+        }))
+        .unwrap();
+        for (on_missing, expected_result) in &[(true, HandlerResult::Continue), (false, HandlerResult::Stop)] {
+            let handler = KeyedRateLimitHandler::new(
+                RateLimitList::default().with_user(1),
+                *on_missing,
+                nonzero!(1u32),
+                Duration::from_secs(1000),
+            );
+            let result = handler.handle(&mut context, &update).wait().unwrap();
+            assert_eq!(result, *expected_result);
+        }
+    }
+
+    #[test]
+    fn limit_users() {
+        let update: Update = serde_json::from_value(serde_json::json!({
+            "update_id": 1,
+            "message": {
+                "message_id": 1,
+                "date": 1,
+                "from": {"id": 2, "is_bot": false, "first_name": "test", "username": "username_user"},
+                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                "text": "test"
+            }
+        }))
+        .unwrap();
+        assert_eq!(
+            limit_all_users(&update).unwrap(),
+            update.get_user().map(|u| u.id).unwrap()
+        );
+    }
+
+    #[test]
+    fn limit_chats() {
+        let update: Update = serde_json::from_value(serde_json::json!({
+            "update_id": 1,
+            "message": {
+                "message_id": 1,
+                "date": 1,
+                "from": {"id": 2, "is_bot": false, "first_name": "test", "username": "username_user"},
+                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                "text": "test"
+            }
+        }))
+        .unwrap();
+        assert_eq!(limit_all_chats(&update).unwrap(), update.get_chat_id().unwrap());
+    }
+
+    #[test]
+    fn rate_limit_list() {
+        let list = RateLimitList::default()
+            .with_users(vec![UserId::from(1), UserId::from("username1")])
+            .with_chats(vec![ChatId::from(1), ChatId::from("username1")])
+            .with_user(2)
+            .with_chat(2)
+            .with_user("username2")
+            .with_chat("username2");
+
+        for (update, key) in vec![
+            // chat id = 1
+            (
+                serde_json::json!({
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 2,
+                        "date": 3,
+                        "from": {"id": 4, "is_bot": false, "first_name": "test", "username": "username"},
+                        "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username"},
+                        "text": "test"
+                    }
+                }),
+                Some(RateLimitListKey::Id(1)),
+            ),
+            // chat username = username1
+            (
+                serde_json::json!({
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 2,
+                        "date": 3,
+                        "from": {"id": 4, "is_bot": false, "first_name": "test", "username": "username"},
+                        "chat": {"id": 5, "type": "supergroup", "title": "test", "username": "username1"},
+                        "text": "test"
+                    }
+                }),
+                Some(RateLimitListKey::Username(String::from("username1"))),
+            ),
+            // user id = 1
+            (
+                serde_json::json!({
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 2,
+                        "date": 3,
+                        "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username"},
+                        "chat": {"id": 5, "type": "supergroup", "title": "test", "username": "username"},
+                        "text": "test"
+                    }
+                }),
+                Some(RateLimitListKey::Id(1)),
+            ),
+            // user username = username1
+            (
+                serde_json::json!({
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 2,
+                        "date": 3,
+                        "from": {"id": 4, "is_bot": false, "first_name": "test", "username": "username1"},
+                        "chat": {"id": 5, "type": "supergroup", "title": "test", "username": "username"},
+                        "text": "test"
+                    }
+                }),
+                Some(RateLimitListKey::Username(String::from("username1"))),
+            ),
+            // key not found
+            (
+                serde_json::json!({
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 2,
+                        "date": 3,
+                        "from": {"id": 4, "is_bot": false, "first_name": "test", "username": "username"},
+                        "chat": {"id": 5, "type": "supergroup", "title": "test", "username": "username"},
+                        "text": "test"
+                    }
+                }),
+                None,
+            ),
+        ] {
+            let update: Update = serde_json::from_value(update).unwrap();
+            assert_eq!(list.get_key(&update), key);
+        }
+    }
+}

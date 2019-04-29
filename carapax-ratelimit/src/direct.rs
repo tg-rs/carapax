@@ -35,3 +35,34 @@ impl UpdateHandler for DirectRateLimitHandler {
         .into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::nonzero;
+    use carapax::{core::types::Update, Context};
+    use futures::Future;
+
+    #[test]
+    fn handler() {
+        let mut context = Context::default();
+        let update: Update = serde_json::from_value(serde_json::json!({
+            "update_id": 1,
+            "message": {
+                "message_id": 1,
+                "date": 1,
+                "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
+                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
+                "text": "test"
+            }
+        }))
+        .unwrap();
+        let handler = DirectRateLimitHandler::new(nonzero!(1u32), Duration::from_secs(1000));
+        let mut items = Vec::new();
+        for _ in 0..10 {
+            let result = handler.handle(&mut context, &update).wait().unwrap();
+            items.push(result)
+        }
+        assert!(items.into_iter().any(|x| x == HandlerResult::Stop))
+    }
+}
