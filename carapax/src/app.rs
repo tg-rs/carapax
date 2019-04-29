@@ -49,3 +49,33 @@ impl App {
         handle_updates(method, Dispatcher::new(api, self.handlers, self.error_strategy))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        context::Context,
+        core::types::Update,
+        handler::{HandlerFuture, HandlerResult},
+    };
+
+    fn update_handler(_context: &mut Context, _update: &Update) -> HandlerFuture {
+        HandlerResult::Continue.into()
+    }
+
+    #[test]
+    fn handlers() {
+        let mut app = App::new();
+        assert_eq!(app.handlers.len(), 0);
+        app = app.add_handler(Handler::update(update_handler));
+        assert_eq!(app.handlers.len(), 1);
+    }
+
+    #[test]
+    fn error_strategy() {
+        let mut app = App::default();
+        assert_eq!(app.error_strategy, ErrorStrategy::Abort);
+        app = app.error_strategy(ErrorStrategy::Ignore);
+        assert_eq!(app.error_strategy, ErrorStrategy::Ignore);
+    }
+}

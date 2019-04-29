@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tgbot::{types::Update, Api, UpdateHandler};
 
 /// Defines how to deal with errors in handlers
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorStrategy {
     /// Ignore any error in a handler or middleware and write it to log
     Ignore,
@@ -139,7 +139,6 @@ impl Future for DispatcherFuture {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::{from_value, json};
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -174,9 +173,14 @@ mod tests {
     #[fail(display = "Test error")]
     struct ErrorMock;
 
-    fn handle_update_ok(context: &mut Context, _update: &Update) -> HandlerFuture {
+    fn handle_update_continue(context: &mut Context, _update: &Update) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
         HandlerResult::Continue.into()
+    }
+
+    fn handle_update_stop(context: &mut Context, _update: &Update) -> HandlerFuture {
+        context.get::<Counter>().inc_calls();
+        HandlerResult::Stop.into()
     }
 
     fn handle_update_err(context: &mut Context, _update: &Update) -> HandlerFuture {
@@ -185,8 +189,8 @@ mod tests {
     }
 
     #[test]
-    fn test_error_strategy() {
-        let update: Update = from_value(json!(
+    fn error_strategy() {
+        let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
                 "message": {
@@ -206,7 +210,7 @@ mod tests {
             vec![
                 Handler::update(setup_context),
                 Handler::update(handle_update_err),
-                Handler::update(handle_update_ok),
+                Handler::update(handle_update_continue),
             ],
             ErrorStrategy::Abort,
         );
@@ -219,11 +223,40 @@ mod tests {
             vec![
                 Handler::update(setup_context),
                 Handler::update(handle_update_err),
-                Handler::update(handle_update_ok),
+                Handler::update(handle_update_continue),
             ],
             ErrorStrategy::Ignore,
         );
         let context = dispatcher.dispatch(update.clone()).wait().unwrap();
         assert_eq!(context.get::<Counter>().get_calls(), 2);
+    }
+
+    #[test]
+    fn handler_stopped() {
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "test"
+                }
+            }
+        ))
+        .unwrap();
+
+        let dispatcher = Dispatcher::new(
+            Api::new("token").unwrap(),
+            vec![
+                Handler::update(setup_context),
+                Handler::update(handle_update_stop),
+                Handler::update(handle_update_continue),
+            ],
+            ErrorStrategy::Abort,
+        );
+        let context = dispatcher.dispatch(update.clone()).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 1);
     }
 }

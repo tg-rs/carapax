@@ -581,7 +581,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_message() {
+    fn dispatch_message() {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
@@ -641,7 +641,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_inline_query() {
+    fn dispatch_inline_query() {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
@@ -668,7 +668,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_chosen_inline_result() {
+    fn dispatch_chosen_inline_result() {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
@@ -694,7 +694,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_callback_query() {
+    fn dispatch_callback_query() {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
@@ -719,7 +719,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_shipping_query() {
+    fn dispatch_shipping_query() {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
@@ -753,7 +753,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_pre_checkout_query() {
+    fn dispatch_pre_checkout_query() {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
@@ -781,7 +781,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_poll() {
+    fn dispatch_poll() {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
@@ -811,7 +811,7 @@ mod tests {
     }
 
     #[test]
-    fn test_commands_handler() {
+    fn commands_handler() {
         let update: Update = from_value(json!(
             {
                 "update_id": 1,
@@ -840,7 +840,7 @@ mod tests {
     }
 
     #[test]
-    fn test_text_handler() {
+    fn text_handler() {
         for (update, handler) in vec![
             (
                 json!({
@@ -866,7 +866,7 @@ mod tests {
                         "text": "test equals"
                     }
                 }),
-                Handler::message(TextHandler::contains("test equals", handle_message)),
+                Handler::message(TextHandler::equals("test equals", handle_message)),
             ),
             (
                 json!({
@@ -907,5 +907,31 @@ mod tests {
             let context = dispatcher.dispatch(update).wait().unwrap();
             assert_eq!(context.get::<Counter>().get_calls(), 1);
         }
+    }
+
+    #[test]
+    fn update_skipped() {
+        let dispatcher = Dispatcher::new(
+            Api::new("token").unwrap(),
+            vec![Handler::update(setup_context), Handler::message(handle_message)],
+            ErrorStrategy::Abort,
+        );
+        let update = from_value(json!(
+            {
+                "update_id": 1,
+                "poll": {
+                    "id": "id",
+                    "question": "test poll",
+                    "options": [
+                        {"text": "opt 1", "voter_count": 1},
+                        {"text": "opt 2", "voter_count": 2}
+                    ],
+                    "is_closed": false
+                }
+            }
+        ))
+        .unwrap();
+        let context = dispatcher.dispatch(update).wait().unwrap();
+        assert_eq!(context.get::<Counter>().get_calls(), 0);
     }
 }
