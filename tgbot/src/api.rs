@@ -170,12 +170,5 @@ mod tests {
         let api = Api::new(config).unwrap();
         assert_eq!(api.host, DEFAULT_HOST);
         assert_eq!(api.token, "token");
-
-        block_on_all(future::lazy(|| {
-            api.spawn(api.execute(SendMessage::new(1, "text")));
-            api.spawn(api.download_file("path"));
-            Ok::<(), ()>(())
-        }))
-        .unwrap()
     }
 }
