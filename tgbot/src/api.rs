@@ -153,9 +153,6 @@ impl<T> Future for ApiFuture<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::methods::SendMessage;
-    use futures::future;
-    use tokio::runtime::current_thread::block_on_all;
 
     #[test]
     fn api() {
