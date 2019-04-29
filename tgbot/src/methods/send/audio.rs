@@ -110,3 +110,50 @@ impl Method for SendAudio {
         RequestBuilder::form("sendAudio", self.form)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::ForceReply,
+    };
+
+    #[test]
+    fn send_audio() {
+        let request = SendAudio::new(1, InputFile::file_id("file-id"))
+            .caption("caption")
+            .parse_mode(ParseMode::Markdown)
+            .duration(100)
+            .performer("performer")
+            .title("title")
+            .thumb(InputFile::file_id("thumb-id"))
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(ForceReply::new(true))
+            .unwrap()
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendAudio");
+        if let RequestBody::Form(form) = request.body {
+            assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
+            assert!(form.fields["audio"].get_file().is_some());
+            assert_eq!(form.fields["caption"].get_text().unwrap(), "caption");
+            assert_eq!(form.fields["parse_mode"].get_text().unwrap(), "Markdown");
+            assert_eq!(form.fields["duration"].get_text().unwrap(), "100");
+            assert_eq!(form.fields["performer"].get_text().unwrap(), "performer");
+            assert_eq!(form.fields["title"].get_text().unwrap(), "title");
+            assert!(form.fields["thumb"].get_file().is_some());
+            assert_eq!(form.fields["disable_notification"].get_text().unwrap(), "true");
+            assert_eq!(form.fields["reply_to_message_id"].get_text().unwrap(), "1");
+            assert_eq!(
+                form.fields["reply_markup"].get_text().unwrap(),
+                r#"{"force_reply":true}"#
+            );
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

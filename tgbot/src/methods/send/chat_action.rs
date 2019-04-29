@@ -45,3 +45,27 @@ impl Method for SendChatAction {
         RequestBuilder::json("sendChatAction", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::request::{RequestBody, RequestMethod};
+    use serde_json::Value;
+
+    #[test]
+    fn send_chat_action() {
+        let request = SendChatAction::new(1, ChatAction::Typing)
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendChatAction");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["action"], "typing");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

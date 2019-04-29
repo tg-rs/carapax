@@ -47,3 +47,46 @@ impl Method for SendMediaGroup {
         RequestBuilder::form("sendMediaGroup", self.form)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::{InputFile, InputFileReader, InputMediaPhoto, InputMediaVideo},
+    };
+    use std::io::Cursor;
+
+    #[test]
+    fn send_media_group() {
+        let request = SendMediaGroup::new(
+            1,
+            MediaGroup::default()
+                .add_item(InputFileReader::from(Cursor::new("test")), InputMediaPhoto::default())
+                .add_item(InputFileReader::from(Cursor::new("test")), InputMediaVideo::default())
+                .add_item_with_thumb(
+                    InputFile::file_id("file-id"),
+                    InputFile::url("thumb-url"),
+                    InputMediaVideo::default(),
+                ),
+        )
+        .unwrap()
+        .disable_notification(true)
+        .reply_to_message_id(1)
+        .into_request()
+        .unwrap()
+        .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendMediaGroup");
+        if let RequestBody::Form(form) = request.body {
+            assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
+            assert!(form.fields.get("media").is_some());
+            assert!(form.fields.get("tgbot_im_file_0").is_some());
+            assert!(form.fields.get("tgbot_im_file_1").is_some());
+            assert_eq!(form.fields["disable_notification"].get_text().unwrap(), "true");
+            assert_eq!(form.fields["reply_to_message_id"].get_text().unwrap(), "1");
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

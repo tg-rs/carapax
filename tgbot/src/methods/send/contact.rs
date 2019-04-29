@@ -85,3 +85,41 @@ impl Method for SendContact {
         RequestBuilder::json("sendContact", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::ForceReply,
+    };
+    use serde_json::Value;
+
+    #[test]
+    fn send_contact() {
+        let request = SendContact::new(1, "phone", "first name")
+            .last_name("last name")
+            .vcard("vcard")
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(ForceReply::new(true))
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendContact");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["phone_number"], "phone");
+            assert_eq!(data["first_name"], "first name");
+            assert_eq!(data["last_name"], "last name");
+            assert_eq!(data["vcard"], "vcard");
+            assert_eq!(data["disable_notification"], true);
+            assert_eq!(data["reply_to_message_id"], 1);
+            assert_eq!(data["reply_markup"]["force_reply"], true);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

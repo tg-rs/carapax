@@ -87,3 +87,44 @@ impl Method for SendVideoNote {
         RequestBuilder::form("sendVideoNote", self.form)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::ForceReply,
+    };
+
+    #[test]
+    fn send_video_note() {
+        let request = SendVideoNote::new(1, InputFile::file_id("file-id"))
+            .duration(50)
+            .length(100)
+            .thumb(InputFile::file_id("thumb-id"))
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(ForceReply::new(true))
+            .unwrap()
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendVideoNote");
+        if let RequestBody::Form(form) = request.body {
+            assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
+            assert!(form.fields["video_note"].get_file().is_some());
+            assert_eq!(form.fields["duration"].get_text().unwrap(), "50");
+            assert_eq!(form.fields["length"].get_text().unwrap(), "100");
+            assert!(form.fields["thumb"].get_file().is_some());
+            assert_eq!(form.fields["disable_notification"].get_text().unwrap(), "true");
+            assert_eq!(form.fields["reply_to_message_id"].get_text().unwrap(), "1");
+            assert_eq!(
+                form.fields["reply_markup"].get_text().unwrap(),
+                r#"{"force_reply":true}"#
+            );
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

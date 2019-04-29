@@ -66,16 +66,24 @@ impl SendInvoice {
     /// * prices - Price breakdown, a list of components
     ///            (e.g. product price, tax, discount, delivery cost, delivery tax, bonus, etc.)
     #[allow(clippy::too_many_arguments)]
-    pub fn new<S: Into<String>>(
+    pub fn new<A, B, C, D, E, F>(
         chat_id: Integer,
-        title: S,
-        description: S,
-        payload: S,
-        provider_token: S,
-        start_parameter: S,
-        currency: S,
+        title: A,
+        description: B,
+        payload: C,
+        provider_token: D,
+        start_parameter: E,
+        currency: F,
         prices: Vec<LabeledPrice>,
-    ) -> Self {
+    ) -> Self
+    where
+        A: Into<String>,
+        B: Into<String>,
+        C: Into<String>,
+        D: Into<String>,
+        E: Into<String>,
+        F: Into<String>,
+    {
         SendInvoice {
             chat_id,
             title: title.into(),
@@ -209,5 +217,77 @@ impl Method for SendInvoice {
 
     fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendInvoice", &self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::InlineKeyboardButton,
+    };
+    use serde_json::Value;
+
+    #[test]
+    fn send_invoice() {
+        let request = SendInvoice::new(1, "title", "description", "payload", "token", "param", "RUB", vec![])
+            .provider_data("data")
+            .photo_url("url")
+            .photo_size(100)
+            .photo_width(200)
+            .photo_height(300)
+            .need_name(true)
+            .need_phone_number(true)
+            .need_email(true)
+            .need_shipping_address(true)
+            .send_phone_number_to_provider(true)
+            .send_email_to_provider(true)
+            .flexible(true)
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendInvoice");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(
+                data,
+                serde_json::json!({
+                    "chat_id": 1,
+                    "title": "title",
+                    "description": "description",
+                    "payload": "payload",
+                    "provider_token": "token",
+                    "start_parameter": "param",
+                    "currency": "RUB",
+                    "prices": [],
+                    "provider_data": "data",
+                    "photo_url": "url",
+                    "photo_size": 100,
+                    "photo_width": 200,
+                    "photo_height": 300,
+                    "need_name": true,
+                    "need_phone_number": true,
+                    "need_email": true,
+                    "need_shipping_address": true,
+                    "send_phone_number_to_provider": true,
+                    "send_email_to_provider": true,
+                    "is_flexible": true,
+                    "disable_notification": true,
+                    "reply_to_message_id": 1,
+                    "reply_markup": {
+                        "inline_keyboard": [[
+                            {"text": "text", "url": "url"}
+                        ]]
+                    }
+                })
+            );
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
     }
 }

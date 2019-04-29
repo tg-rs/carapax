@@ -78,3 +78,40 @@ impl Method for SendLocation {
         RequestBuilder::json("sendLocation", &self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::ForceReply,
+    };
+    use serde_json::Value;
+
+    #[allow(clippy::float_cmp)]
+    #[test]
+    fn send_location() {
+        let request = SendLocation::new(1, 2.0, 3.0)
+            .live_period(100)
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(ForceReply::new(true))
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendLocation");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(data["chat_id"], 1);
+            assert_eq!(data["latitude"], 2.0);
+            assert_eq!(data["longitude"], 3.0);
+            assert_eq!(data["live_period"], 100);
+            assert_eq!(data["disable_notification"], true);
+            assert_eq!(data["reply_to_message_id"], 1);
+            assert_eq!(data["reply_markup"]["force_reply"], true);
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
+    }
+}

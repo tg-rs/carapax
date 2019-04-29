@@ -36,13 +36,12 @@ impl SendVenue {
     /// * longitude - Longitude of the venue
     /// * title - Name of the venue
     /// * address - Address of the venue
-    pub fn new<C: Into<ChatId>, S: Into<String>>(
-        chat_id: C,
-        latitude: Float,
-        longitude: Float,
-        title: S,
-        address: S,
-    ) -> Self {
+    pub fn new<C, T, A>(chat_id: C, latitude: Float, longitude: Float, title: T, address: A) -> Self
+    where
+        C: Into<ChatId>,
+        T: Into<String>,
+        A: Into<String>,
+    {
         SendVenue {
             chat_id: chat_id.into(),
             latitude,
@@ -96,5 +95,50 @@ impl Method for SendVenue {
 
     fn into_request(self) -> Result<RequestBuilder, Error> {
         RequestBuilder::json("sendVenue", &self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        request::{RequestBody, RequestMethod},
+        types::ForceReply,
+    };
+    use serde_json::Value;
+
+    #[test]
+    fn send_venue() {
+        let request = SendVenue::new(1, 2.0, 3.0, "title", "addr")
+            .foursquare_id("f-id")
+            .foursquare_type("f-type")
+            .disable_notification(true)
+            .reply_to_message_id(1)
+            .reply_markup(ForceReply::new(true))
+            .into_request()
+            .unwrap()
+            .build("base-url", "token");
+        assert_eq!(request.method, RequestMethod::Post);
+        assert_eq!(request.url, "base-url/bottoken/sendVenue");
+        if let RequestBody::Json(data) = request.body {
+            let data: Value = serde_json::from_slice(&data).unwrap();
+            assert_eq!(
+                data,
+                serde_json::json!({
+                    "chat_id": 1,
+                    "latitude": 2.0,
+                    "longitude": 3.0,
+                    "title": "title",
+                    "address": "addr",
+                    "foursquare_id": "f-id",
+                    "foursquare_type": "f-type",
+                    "disable_notification": true,
+                    "reply_to_message_id": 1,
+                    "reply_markup": {"force_reply": true}
+                })
+            );
+        } else {
+            panic!("Unexpected request body: {:?}", request.body);
+        }
     }
 }
