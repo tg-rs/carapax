@@ -107,7 +107,7 @@ pub(crate) fn namespace_from_update(update: &Update) -> String {
 }
 
 /// Defines a lifetime for each session
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SessionLifetime {
     /// Session will live forever
     ///
@@ -132,5 +132,153 @@ impl From<Duration> for SessionLifetime {
 impl From<u64> for SessionLifetime {
     fn from(seconds: u64) -> Self {
         SessionLifetime::Duration(Duration::from_secs(seconds))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use futures::future;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    #[derive(Default)]
+    struct Store {
+        data: Mutex<HashMap<String, String>>,
+        expire_calls: Mutex<Vec<(String, usize)>>,
+    }
+
+    impl SessionStore for Store {
+        fn get<O>(&self, key: SessionKey) -> Box<Future<Item = Option<O>, Error = Error> + Send>
+        where
+            O: DeserializeOwned + Send + 'static,
+        {
+            match self.data.lock().unwrap().get(&key.to_string()) {
+                Some(x) => Box::new(future::result(serde_json::from_str(&x).map(Some)).from_err()),
+                None => Box::new(future::ok(None)),
+            }
+        }
+
+        fn set<I>(&self, key: SessionKey, val: &I) -> Box<Future<Item = (), Error = Error> + Send>
+        where
+            I: Serialize,
+        {
+            Box::new(
+                future::result(serde_json::to_string(val).and_then(|val| {
+                    self.data.lock().unwrap().insert(key.to_string(), val);
+                    Ok(())
+                }))
+                .from_err(),
+            )
+        }
+
+        fn expire(&self, key: SessionKey, seconds: usize) -> Box<Future<Item = (), Error = Error> + Send> {
+            self.expire_calls.lock().unwrap().push((key.to_string(), seconds));
+            Box::new(future::ok(()))
+        }
+
+        fn del(&self, key: SessionKey) -> Box<Future<Item = (), Error = Error> + Send> {
+            self.data.lock().unwrap().remove(&key.to_string());
+            Box::new(future::ok(()))
+        }
+    }
+
+    #[test]
+    fn session() {
+        let store = Arc::new(Store::default());
+        let session = Session::new("namespace", store.clone());
+        session.set("key", &1).wait().unwrap();
+        assert_eq!(session.get::<usize>("key").wait().unwrap().unwrap(), 1);
+        session.expire("key", 10).wait().unwrap();
+        assert!(store
+            .expire_calls
+            .lock()
+            .unwrap()
+            .contains(&(String::from("namespace-key"), 10)));
+        session.del("key").wait().unwrap();
+        assert!(session.get::<usize>("key").wait().unwrap().is_none());
+    }
+
+    #[test]
+    fn session_key() {
+        let key = SessionKey::new("namespace", "name");
+        assert_eq!(key.namespace(), "namespace");
+        assert_eq!(key.name(), "name");
+        assert_eq!(key.to_string(), "namespace-name");
+    }
+
+    #[test]
+    fn session_lifetime() {
+        assert_eq!(SessionLifetime::default(), SessionLifetime::Forever);
+        assert_eq!(
+            SessionLifetime::from(Duration::from_secs(1)),
+            SessionLifetime::Duration(Duration::from_secs(1)),
+        );
+        assert_eq!(
+            SessionLifetime::from(1),
+            SessionLifetime::Duration(Duration::from_secs(1)),
+        );
+    }
+
+    #[test]
+    fn get_namespace_from_update() {
+        assert_eq!(
+            namespace_from_update(
+                &serde_json::from_value(serde_json::json!({
+                    "update_id": 1,
+                    "message": {
+                        "message_id": 1,
+                        "date": 0,
+                        "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username1"},
+                        "chat": {"id": 1, "type": "private", "first_name": "test", "username": "username1"},
+                        "text": "test middleware"
+                    }
+                }))
+                .unwrap()
+            ),
+            "1-1"
+        );
+
+        assert_eq!(
+            namespace_from_update(
+                &serde_json::from_value(serde_json::json!({
+                    "update_id": 1,
+                    "inline_query": {
+                        "id": "query id",
+                        "from": {
+                            "id": 1111,
+                            "first_name": "Test Firstname",
+                            "is_bot": false
+                        },
+                        "query": "query text",
+                        "offset": "query offset"
+                    }
+                }))
+                .unwrap()
+            ),
+            "1111-1111"
+        );
+
+        assert_eq!(
+            namespace_from_update(
+                &serde_json::from_value(serde_json::json!({
+                    "update_id": 1,
+                    "channel_post": {
+                        "message_id": 1111,
+                        "date": 0,
+                        "author_signature": "test",
+                        "chat": {
+                            "id": 1,
+                            "type": "channel",
+                            "title": "channeltitle",
+                            "username": "channelusername"
+                        },
+                        "text": "test message from channel"
+                    }
+                }))
+                .unwrap()
+            ),
+            "1-1"
+        );
     }
 }
