@@ -176,12 +176,15 @@ impl RateLimitKey for RateLimitList {
     }
 }
 
-impl<K> UpdateHandler for KeyedRateLimitHandler<K>
+impl<K> Handler for KeyedRateLimitHandler<K>
 where
     K: RateLimitKey,
 {
-    fn handle(&self, _context: &mut Context, update: &Update) -> HandlerFuture {
-        let should_pass = if let Some(key) = self.key.get_key(update) {
+    type Item = Update;
+    type Result = HandlerResult;
+
+    fn handle(&self, _context: &mut Context, update: Self::Item) -> Self::Result {
+        let should_pass = if let Some(key) = self.key.get_key(&update) {
             self.limiter.lock().unwrap().check(key).is_ok()
         } else {
             self.on_missing
@@ -191,7 +194,6 @@ where
         } else {
             HandlerResult::Stop
         }
-        .into()
     }
 }
 
@@ -200,7 +202,6 @@ mod tests {
     use super::*;
     use crate::nonzero;
     use carapax::{core::types::Update, Context};
-    use futures::Future;
 
     #[test]
     fn handler_key_found() {
@@ -219,7 +220,7 @@ mod tests {
         let handler = KeyedRateLimitHandler::new(limit_all_users, true, nonzero!(1u32), Duration::from_secs(1000));
         let mut items = Vec::new();
         for _ in 0..10 {
-            let result = handler.handle(&mut context, &update).wait().unwrap();
+            let result = handler.handle(&mut context, update.clone());
             items.push(result)
         }
         assert!(items.into_iter().any(|x| x == HandlerResult::Stop))
@@ -246,7 +247,7 @@ mod tests {
                 nonzero!(1u32),
                 Duration::from_secs(1000),
             );
-            let result = handler.handle(&mut context, &update).wait().unwrap();
+            let result = handler.handle(&mut context, update.clone());
             assert_eq!(result, *expected_result);
         }
     }

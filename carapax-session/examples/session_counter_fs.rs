@@ -1,7 +1,7 @@
 #[cfg(feature = "fs-store")]
 fn main() {
     use carapax::prelude::*;
-    use carapax_session::{session_handler, spawn_gc, store::fs::FsSessionStore, Session};
+    use carapax_session::{spawn_gc, store::fs::FsSessionStore, Session, SessionHandler};
     use dotenv::dotenv;
     use futures::{future, Future};
     use std::{env, time::Duration};
@@ -65,7 +65,7 @@ fn main() {
         }))
     }
 
-    fn handle_message(context: &mut Context, message: &Message) -> HandlerFuture {
+    fn handle_message(context: &mut Context, message: Message) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
         let session = context.get::<Session<FsSessionStore>>().clone();
         let api = context.get::<Api>().clone();
@@ -92,9 +92,9 @@ fn main() {
 
     let api = Api::new(config).unwrap();
     let commands = CommandsHandler::default()
-        .add_handler("/set", handle_set)
-        .add_handler("/reset", handle_reset)
-        .add_handler("/expire", handle_expire);
+        .add_handler("/set", FnCommandHandler::from(handle_set))
+        .add_handler("/reset", FnCommandHandler::from(handle_reset))
+        .add_handler("/expire", FnCommandHandler::from(handle_expire));
     tokio::run(future::lazy(|| {
         FsSessionStore::open("/tmp/carapax-session")
             .map_err(|e| log::error!("Failed to create session store: {:?}", e))
@@ -102,9 +102,9 @@ fn main() {
                 store = store.with_lifetime(10);
                 spawn_gc(Duration::from_secs(10), store.clone());
                 App::new()
-                    .add_handler(session_handler(store))
-                    .add_handler(Handler::message(commands))
-                    .add_handler(Handler::message(handle_message))
+                    .add_handler(SessionHandler::new(store))
+                    .add_handler(commands)
+                    .add_handler(FnHandler::from(handle_message))
                     .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api)))
             })
     }));

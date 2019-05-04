@@ -5,7 +5,20 @@ use crate::{
 use carapax::prelude::*;
 use std::sync::Arc;
 
-pub(crate) struct SessionHandler<S> {
+/// This handler sets Session to context,
+/// so you can use it in your handlers:
+///
+/// ```
+/// use carapax::prelude::*;
+/// use carapax_session::{store::redis::RedisSessionStore, Session};
+///
+/// fn handler(context: &mut Context, message: &Message) -> HandlerFuture {
+///     let session = context.get::<Session<RedisSessionStore>>();
+///     // do something with session...
+///     HandlerResult::Continue.into()
+/// }
+/// ```
+pub struct SessionHandler<S> {
     store: Arc<S>,
 }
 
@@ -13,19 +26,22 @@ impl<S> SessionHandler<S>
 where
     S: SessionStore,
 {
-    pub(crate) fn new(store: S) -> Self {
+    /// Creates a new session handler
+    pub fn new(store: S) -> Self {
         Self { store: Arc::new(store) }
     }
 }
 
-impl<S> UpdateHandler for SessionHandler<S>
+impl<S> Handler for SessionHandler<S>
 where
     S: SessionStore + Send + Sync + 'static,
 {
-    fn handle(&self, context: &mut Context, update: &Update) -> HandlerFuture {
-        let namespace = namespace_from_update(update);
+    type Item = Update;
+    type Result = ();
+
+    fn handle(&self, context: &mut Context, update: Self::Item) -> Self::Result {
+        let namespace = namespace_from_update(&update);
         context.set(Session::new(namespace, self.store.clone()));
-        HandlerResult::Continue.into()
     }
 }
 
@@ -81,8 +97,7 @@ mod tests {
         ))
         .unwrap();
         let handler = SessionHandler::new(Store);
-        let result = handler.handle(&mut context, &update).wait().unwrap();
-        assert_eq!(result, HandlerResult::Continue);
+        handler.handle(&mut context, update);
         assert!(context.get_opt::<Session<Store>>().is_some());
     }
 }

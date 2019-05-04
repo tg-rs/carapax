@@ -3,125 +3,11 @@ use failure::Error;
 use futures::{future, Future};
 use regex::Regex;
 use shellwords::{split, MismatchedQuotes};
-use std::{collections::HashMap, string::FromUtf16Error};
+use std::{collections::HashMap, marker::PhantomData, ops::Deref, string::FromUtf16Error};
 use tgbot::types::{
     CallbackQuery, ChosenInlineResult, InlineQuery, Message, Poll, PreCheckoutQuery, ShippingQuery, Text, Update,
     UpdateKind,
 };
-
-/// A regular update handler
-pub struct Handler {
-    kind: HandlerKind,
-}
-
-impl Handler {
-    fn new(kind: HandlerKind) -> Self {
-        Self { kind }
-    }
-
-    /// Create message handler
-    pub fn message<H>(handler: H) -> Self
-    where
-        H: MessageHandler + Send + Sync + 'static,
-    {
-        Self::new(HandlerKind::Message(Box::new(handler)))
-    }
-
-    /// Create inline query handler
-    pub fn inline_query<H>(handler: H) -> Self
-    where
-        H: InlineQueryHandler + Send + Sync + 'static,
-    {
-        Self::new(HandlerKind::InlineQuery(Box::new(handler)))
-    }
-
-    /// Create chosen inline result handler
-    pub fn chosen_inline_result<H>(handler: H) -> Self
-    where
-        H: ChosenInlineResultHandler + Send + Sync + 'static,
-    {
-        Self::new(HandlerKind::ChosenInlineResult(Box::new(handler)))
-    }
-
-    /// Create callback query handler
-    pub fn callback_query<H>(handler: H) -> Self
-    where
-        H: CallbackQueryHandler + Send + Sync + 'static,
-    {
-        Self::new(HandlerKind::CallbackQuery(Box::new(handler)))
-    }
-
-    /// Create shipping query handler
-    pub fn shipping_query<H>(handler: H) -> Self
-    where
-        H: ShippingQueryHandler + Send + Sync + 'static,
-    {
-        Self::new(HandlerKind::ShippingQuery(Box::new(handler)))
-    }
-
-    /// Create pre checkout query handler
-    pub fn pre_checkout_query<H>(handler: H) -> Self
-    where
-        H: PreCheckoutQueryHandler + Send + Sync + 'static,
-    {
-        Self::new(HandlerKind::PreCheckoutQuery(Box::new(handler)))
-    }
-
-    /// Create poll handler
-    pub fn poll<H>(handler: H) -> Self
-    where
-        H: PollHandler + Send + Sync + 'static,
-    {
-        Self::new(HandlerKind::Poll(Box::new(handler)))
-    }
-
-    /// Create a regular update handler
-    pub fn update<H>(handler: H) -> Self
-    where
-        H: UpdateHandler + Send + Sync + 'static,
-    {
-        Self::new(HandlerKind::Update(Box::new(handler)))
-    }
-}
-
-enum HandlerKind {
-    Message(Box<MessageHandler + Send + Sync>),
-    InlineQuery(Box<InlineQueryHandler + Send + Sync>),
-    ChosenInlineResult(Box<ChosenInlineResultHandler + Send + Sync>),
-    CallbackQuery(Box<CallbackQueryHandler + Send + Sync>),
-    ShippingQuery(Box<ShippingQueryHandler + Send + Sync>),
-    PreCheckoutQuery(Box<PreCheckoutQueryHandler + Send + Sync>),
-    Update(Box<UpdateHandler + Send + Sync>),
-    Poll(Box<PollHandler + Send + Sync>),
-}
-
-impl Handler {
-    pub(super) fn handle(&self, context: &mut Context, update: &Update) -> HandlerFuture {
-        macro_rules! handle {
-            ($kind:ident($val:ident)) => {
-                if let HandlerKind::$kind(ref handler) = self.kind {
-                    return handler.handle(context, $val);
-                }
-            };
-        }
-
-        handle!(Update(update));
-
-        match update.kind {
-            UpdateKind::Message(ref val)
-            | UpdateKind::EditedMessage(ref val)
-            | UpdateKind::ChannelPost(ref val)
-            | UpdateKind::EditedChannelPost(ref val) => handle!(Message(val)),
-            UpdateKind::InlineQuery(ref val) => handle!(InlineQuery(val)),
-            UpdateKind::ChosenInlineResult(ref val) => handle!(ChosenInlineResult(val)),
-            UpdateKind::CallbackQuery(ref val) => handle!(CallbackQuery(val)),
-            UpdateKind::ShippingQuery(ref val) => handle!(ShippingQuery(val)),
-            UpdateKind::PreCheckoutQuery(ref val) => handle!(PreCheckoutQuery(val)),
-            UpdateKind::Poll(ref val) => handle!(Poll(val)),
-        }
-        HandlerResult::Continue.into()
-    }
-}
 
 /// Result of a handler
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -158,6 +44,12 @@ impl From<HandlerResult> for HandlerFuture {
     }
 }
 
+impl From<()> for HandlerFuture {
+    fn from(_: ()) -> Self {
+        Self::from(HandlerResult::Continue)
+    }
+}
+
 impl<E> From<Result<HandlerResult, E>> for HandlerFuture
 where
     E: Into<Error>,
@@ -176,104 +68,202 @@ impl Future for HandlerFuture {
     }
 }
 
-macro_rules! impl_func {
-    ($handler:ident($arg:ident)) => {
-        impl<F, R> $handler for F
-        where
-            F: Fn(&mut Context, &$arg) -> R,
-            R: Into<HandlerFuture>,
-        {
-            fn handle(&self, context: &mut Context, arg: &$arg) -> HandlerFuture {
-                (self)(context, arg).into()
-            }
+/// A trait to create object from Update
+pub trait FromUpdate: Sized {
+    /// Creates a reference from update
+    fn from_update(update: Update) -> Option<Self>;
+}
+
+impl FromUpdate for Update {
+    fn from_update(update: Update) -> Option<Self> {
+        Some(update)
+    }
+}
+
+impl FromUpdate for Message {
+    fn from_update(update: Update) -> Option<Self> {
+        match update.kind {
+            UpdateKind::Message(msg)
+            | UpdateKind::EditedMessage(msg)
+            | UpdateKind::ChannelPost(msg)
+            | UpdateKind::EditedChannelPost(msg) => Some(msg),
+            _ => None,
         }
-    };
+    }
 }
 
-/// A regular message handler
-pub trait MessageHandler {
-    /// Handles a message
-    fn handle(&self, context: &mut Context, message: &Message) -> HandlerFuture;
+impl FromUpdate for InlineQuery {
+    fn from_update(update: Update) -> Option<Self> {
+        match update.kind {
+            UpdateKind::InlineQuery(query) => Some(query),
+            _ => None,
+        }
+    }
 }
 
-impl_func!(MessageHandler(Message));
-
-/// An inline query handler
-pub trait InlineQueryHandler {
-    /// Handles a query
-    fn handle(&self, context: &mut Context, query: &InlineQuery) -> HandlerFuture;
+impl FromUpdate for ChosenInlineResult {
+    fn from_update(update: Update) -> Option<Self> {
+        match update.kind {
+            UpdateKind::ChosenInlineResult(result) => Some(result),
+            _ => None,
+        }
+    }
 }
 
-impl_func!(InlineQueryHandler(InlineQuery));
-
-/// A chosen inline result handler
-pub trait ChosenInlineResultHandler {
-    /// Handles a result
-    fn handle(&self, context: &mut Context, result: &ChosenInlineResult) -> HandlerFuture;
+impl FromUpdate for CallbackQuery {
+    fn from_update(update: Update) -> Option<Self> {
+        match update.kind {
+            UpdateKind::CallbackQuery(query) => Some(query),
+            _ => None,
+        }
+    }
 }
 
-impl_func!(ChosenInlineResultHandler(ChosenInlineResult));
-
-/// A callback query handler
-pub trait CallbackQueryHandler {
-    /// Handles a query
-    fn handle(&self, context: &mut Context, query: &CallbackQuery) -> HandlerFuture;
+impl FromUpdate for ShippingQuery {
+    fn from_update(update: Update) -> Option<Self> {
+        match update.kind {
+            UpdateKind::ShippingQuery(query) => Some(query),
+            _ => None,
+        }
+    }
 }
 
-impl_func!(CallbackQueryHandler(CallbackQuery));
-
-/// A shipping query handler
-pub trait ShippingQueryHandler {
-    /// Handles a query
-    fn handle(&self, context: &mut Context, query: &ShippingQuery) -> HandlerFuture;
+impl FromUpdate for PreCheckoutQuery {
+    fn from_update(update: Update) -> Option<Self> {
+        match update.kind {
+            UpdateKind::PreCheckoutQuery(query) => Some(query),
+            _ => None,
+        }
+    }
 }
 
-impl_func!(ShippingQueryHandler(ShippingQuery));
-
-/// A pre checkout query handler
-pub trait PreCheckoutQueryHandler {
-    /// Handles a query
-    fn handle(&self, context: &mut Context, query: &PreCheckoutQuery) -> HandlerFuture;
+impl FromUpdate for Poll {
+    fn from_update(update: Update) -> Option<Self> {
+        match update.kind {
+            UpdateKind::Poll(poll) => Some(poll),
+            _ => None,
+        }
+    }
 }
 
-impl_func!(PreCheckoutQueryHandler(PreCheckoutQuery));
+/// A handler
+pub trait Handler {
+    /// A handler item
+    type Item: FromUpdate;
+    /// A handler result
+    type Result: Into<HandlerFuture>;
 
-/// A poll handler
-///
-/// Bots receive only updates about polls, which are sent or stopped by the bot
-pub trait PollHandler {
-    /// Handles a poll
-    fn handle(&self, context: &mut Context, poll: &Poll) -> HandlerFuture;
+    /// Handles an [item] with [context] and returns [result]
+    ///
+    /// [item]: Handler::Item
+    /// [context]: Handler::Context
+    /// [result]: Handler::Result
+    fn handle(&self, context: &mut Context, item: Self::Item) -> Self::Result;
 }
 
-impl_func!(PollHandler(Poll));
+pub(crate) type BoxedHandler = Box<Handler<Item = Update, Result = HandlerFuture> + Send + Sync + 'static>;
 
-/// A regular update handler
-pub trait UpdateHandler {
-    /// Handles an update
-    fn handle(&self, context: &mut Context, update: &Update) -> HandlerFuture;
+pub(crate) struct HandlerWrapper<H> {
+    handler: H,
 }
 
-impl_func!(UpdateHandler(Update));
+impl<H> HandlerWrapper<H> {
+    pub fn boxed(handler: H) -> Box<Self> {
+        Box::new(Self { handler })
+    }
+}
+
+impl<H, I, R> Handler for Box<H>
+where
+    H: Handler<Item = I, Result = R> + Sized,
+    I: FromUpdate,
+    R: Into<HandlerFuture>,
+{
+    type Item = I;
+    type Result = R;
+
+    fn handle(&self, context: &mut Context, item: Self::Item) -> Self::Result {
+        self.deref().handle(context, item)
+    }
+}
+
+impl<H, I, R> Handler for HandlerWrapper<H>
+where
+    H: Handler<Item = I, Result = R>,
+    I: FromUpdate,
+    R: Into<HandlerFuture>,
+{
+    type Item = Update;
+    type Result = HandlerFuture;
+
+    fn handle(&self, context: &mut Context, item: Self::Item) -> Self::Result {
+        match I::from_update(item) {
+            Some(item) => self.handler.handle(context, item).into(),
+            _ => HandlerResult::Continue.into(),
+        }
+    }
+}
+
+/// A wrapper around function
+pub struct FnHandler<F, I, R>
+where
+    F: Fn(&mut Context, I) -> R,
+    I: FromUpdate,
+    R: Into<HandlerFuture>,
+{
+    f: F,
+    _item: PhantomData<I>,
+}
+
+impl<F, I, R> FnHandler<F, I, R>
+where
+    F: Fn(&mut Context, I) -> R,
+    I: FromUpdate,
+    R: Into<HandlerFuture>,
+{
+    #[cfg(test)]
+    pub(crate) fn wrapped(f: F) -> Box<HandlerWrapper<Self>> {
+        HandlerWrapper::boxed(Self::from(f))
+    }
+}
+
+impl<F, I, R> From<F> for FnHandler<F, I, R>
+where
+    F: Fn(&mut Context, I) -> R,
+    I: FromUpdate,
+    R: Into<HandlerFuture>,
+{
+    fn from(f: F) -> Self {
+        Self { f, _item: PhantomData }
+    }
+}
+
+impl<F, I, R> Handler for FnHandler<F, I, R>
+where
+    F: Fn(&mut Context, I) -> R,
+    I: FromUpdate,
+    R: Into<HandlerFuture>,
+{
+    type Item = I;
+    type Result = R;
+
+    fn handle(&self, context: &mut Context, item: Self::Item) -> Self::Result {
+        (self.f)(context, item)
+    }
+}
 
 /// A simple commands handler
 ///
 /// Just takes a first command from a message and ignores others.
 /// Assumes that all text after command is arguments.
 /// Use quotes in order to include spaces in argument: `'hello word'`
+#[derive(Default)]
 pub struct CommandsHandler {
-    handlers: HashMap<String, Box<CommandHandler + Send + Sync>>,
-    not_found_handler: Option<Box<CommandHandler + Send + Sync>>,
+    handlers: HashMap<String, BoxedCommandHandler>,
+    not_found_handler: Option<BoxedCommandHandler>,
 }
 
-impl Default for CommandsHandler {
-    fn default() -> Self {
-        Self {
-            handlers: HashMap::new(),
-            not_found_handler: None,
-        }
-    }
-}
+type BoxedCommandHandler = Box<CommandHandler<Result = HandlerFuture> + Send + Sync>;
 
 impl CommandsHandler {
     /// Add command handler
@@ -282,21 +272,23 @@ impl CommandsHandler {
     ///
     /// - name - Command name (starts with `/`)
     /// - handler - Command handler
-    pub fn add_handler<S, H>(mut self, name: S, handler: H) -> Self
+    pub fn add_handler<S, H, O>(mut self, name: S, handler: H) -> Self
     where
         S: Into<String>,
-        H: CommandHandler + Send + Sync + 'static,
+        H: CommandHandler<Result = O> + Send + Sync + 'static,
+        O: Into<HandlerFuture>,
     {
-        self.handlers.insert(name.into(), Box::new(handler));
+        self.handlers.insert(name.into(), HandlerWrapper::boxed(handler));
         self
     }
 
     /// Add not found command handler
-    pub fn not_found_handler<H>(mut self, handler: H) -> Self
+    pub fn not_found_handler<H, O>(mut self, handler: H) -> Self
     where
-        H: CommandHandler + Send + Sync + 'static,
+        H: CommandHandler<Result = O> + Send + Sync + 'static,
+        O: Into<HandlerFuture>,
     {
-        self.not_found_handler = Some(Box::new(handler));
+        self.not_found_handler = Some(HandlerWrapper::boxed(handler));
         self
     }
 }
@@ -312,10 +304,13 @@ pub enum CommandError {
     MismatchedQuotes,
 }
 
-impl MessageHandler for CommandsHandler {
-    fn handle(&self, context: &mut Context, message: &Message) -> HandlerFuture {
+impl Handler for CommandsHandler {
+    type Item = Message;
+    type Result = HandlerFuture;
+
+    fn handle(&self, context: &mut Context, message: Self::Item) -> Self::Result {
         match (&message.commands, message.get_text()) {
-            (Some(ref commands), Some(ref text)) => {
+            (Some(commands), Some(text)) => {
                 // tgbot guarantees that commands will never be empty, but we must be sure
                 assert!(!commands.is_empty());
                 // just take first command and ignore others
@@ -327,9 +322,9 @@ impl MessageHandler for CommandsHandler {
                 match String::from_utf16(&input) {
                     Ok(input) => match split(&input) {
                         Ok(args) => match self.handlers.get(&command.command) {
-                            Some(handler) => handler.handle(context, message, args),
+                            Some(handler) => handler.handle(context, &message, args),
                             None => match self.not_found_handler {
-                                Some(ref handler) => handler.handle(context, message, args),
+                                Some(ref handler) => handler.handle(context, &message, args),
                                 None => HandlerResult::Continue.into(),
                             },
                         },
@@ -345,17 +340,56 @@ impl MessageHandler for CommandsHandler {
 
 /// Actual command handler
 pub trait CommandHandler {
-    /// Handles a command
-    fn handle(&self, context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture;
+    /// A handler result
+    type Result: Into<HandlerFuture>;
+
+    /// Handles command with [context] and returns [result]
+    ///
+    /// [context]: CommandHandler::Context
+    /// [result]: CommandHandler::Result
+    fn handle(&self, context: &mut Context, message: &Message, args: Vec<String>) -> Self::Result;
 }
 
-impl<F, R> CommandHandler for F
+impl<H, O> CommandHandler for HandlerWrapper<H>
+where
+    H: CommandHandler<Result = O>,
+    O: Into<HandlerFuture>,
+{
+    type Result = HandlerFuture;
+
+    fn handle(&self, context: &mut Context, message: &Message, args: Vec<String>) -> Self::Result {
+        self.handler.handle(context, message, args).into()
+    }
+}
+
+/// A wrapper around function
+pub struct FnCommandHandler<F, R>
 where
     F: Fn(&mut Context, &Message, Vec<String>) -> R,
     R: Into<HandlerFuture>,
 {
-    fn handle(&self, context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture {
-        (self)(context, message, args).into()
+    f: F,
+}
+
+impl<F, R> From<F> for FnCommandHandler<F, R>
+where
+    F: Fn(&mut Context, &Message, Vec<String>) -> R,
+    R: Into<HandlerFuture>,
+{
+    fn from(f: F) -> Self {
+        Self { f }
+    }
+}
+
+impl<F, R> CommandHandler for FnCommandHandler<F, R>
+where
+    F: Fn(&mut Context, &Message, Vec<String>) -> R,
+    R: Into<HandlerFuture>,
+{
+    type Result = R;
+
+    fn handle(&self, context: &mut Context, message: &Message, args: Vec<String>) -> Self::Result {
+        (self.f)(context, message, args)
     }
 }
 
@@ -413,21 +447,14 @@ pub struct TextHandler<R, H> {
     handler: H,
 }
 
-impl<R, H> TextHandler<R, H>
-where
-    R: TextRule,
-    H: MessageHandler,
-{
+impl<R, H> TextHandler<R, H> {
     /// Creates a new handler
     pub fn new(rule: R, handler: H) -> Self {
         Self { rule, handler }
     }
 }
 
-impl<H> TextHandler<TextRuleContains, H>
-where
-    H: MessageHandler,
-{
+impl<H> TextHandler<TextRuleContains, H> {
     /// Create a handler for messages contains given text
     pub fn contains<S>(text: S, handler: H) -> Self
     where
@@ -437,10 +464,7 @@ where
     }
 }
 
-impl<H> TextHandler<TextRuleEquals, H>
-where
-    H: MessageHandler,
-{
+impl<H> TextHandler<TextRuleEquals, H> {
     /// Create a handler for messages equals given text
     pub fn equals<S>(text: S, handler: H) -> Self
     where
@@ -450,10 +474,7 @@ where
     }
 }
 
-impl<H> TextHandler<TextRuleMatches, H>
-where
-    H: MessageHandler,
-{
+impl<H> TextHandler<TextRuleMatches, H> {
     /// Create a handler for messages matches given text
     ///
     /// See [regex](https://docs.rs/regex) crate for more information about patterns
@@ -470,14 +491,18 @@ where
     }
 }
 
-impl<R, H> MessageHandler for TextHandler<R, H>
+impl<TR, H, R> Handler for TextHandler<TR, H>
 where
-    R: TextRule,
-    H: MessageHandler,
+    TR: TextRule,
+    H: Handler<Item = Message, Result = R>,
+    R: Into<HandlerFuture>,
 {
-    fn handle(&self, context: &mut Context, message: &Message) -> HandlerFuture {
+    type Item = Message;
+    type Result = HandlerFuture;
+
+    fn handle(&self, context: &mut Context, message: Self::Item) -> Self::Result {
         if message.get_text().map(|text| self.rule.accepts(text)).unwrap_or(false) {
-            self.handler.handle(context, message)
+            self.handler.handle(context, message).into()
         } else {
             HandlerResult::Continue.into()
         }
@@ -529,55 +554,45 @@ mod tests {
         }
     }
 
-    fn setup_context(context: &mut Context, _update: &Update) -> HandlerFuture {
+    fn setup_context(context: &mut Context, _update: Update) {
         context.set(Args::new());
         context.set(Counter::new());
-        HandlerResult::Continue.into()
     }
 
-    fn command_handler(context: &mut Context, _message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn command_handler(context: &mut Context, _message: &Message, args: Vec<String>) {
         context.get_mut::<Args>().extend(args);
-        HandlerResult::Continue.into()
     }
 
-    fn handle_message(context: &mut Context, _message: &Message) -> HandlerFuture {
-        context.get::<Counter>().inc_calls();
-        HandlerResult::Continue.into()
+    fn handle_message(context: &mut Context, _message: Message) {
+        context.get_mut::<Counter>().inc_calls();
     }
 
-    fn handle_inline_query(context: &mut Context, _query: &InlineQuery) -> HandlerFuture {
-        context.get::<Counter>().inc_calls();
-        HandlerResult::Continue.into()
+    fn handle_inline_query(context: &mut Context, _query: InlineQuery) {
+        context.get_mut::<Counter>().inc_calls();
     }
 
-    fn handle_chose_inline_result(context: &mut Context, _result: &ChosenInlineResult) -> HandlerFuture {
-        context.get::<Counter>().inc_calls();
-        HandlerResult::Continue.into()
+    fn handle_chose_inline_result(context: &mut Context, _result: ChosenInlineResult) {
+        context.get_mut::<Counter>().inc_calls();
     }
 
-    fn handle_callback_query(context: &mut Context, _query: &CallbackQuery) -> HandlerFuture {
-        context.get::<Counter>().inc_calls();
-        HandlerResult::Continue.into()
+    fn handle_callback_query(context: &mut Context, _query: CallbackQuery) {
+        context.get_mut::<Counter>().inc_calls();
     }
 
-    fn handle_shipping_query(context: &mut Context, _query: &ShippingQuery) -> HandlerFuture {
-        context.get::<Counter>().inc_calls();
-        HandlerResult::Continue.into()
+    fn handle_shipping_query(context: &mut Context, _query: ShippingQuery) {
+        context.get_mut::<Counter>().inc_calls();
     }
 
-    fn handle_precheckout_query(context: &mut Context, _query: &PreCheckoutQuery) -> HandlerFuture {
-        context.get::<Counter>().inc_calls();
-        HandlerResult::Continue.into()
+    fn handle_pre_checkout_query(context: &mut Context, _query: PreCheckoutQuery) {
+        context.get_mut::<Counter>().inc_calls();
     }
 
-    fn handle_poll(context: &mut Context, _poll: &Poll) -> HandlerFuture {
-        context.get::<Counter>().inc_calls();
-        HandlerResult::Continue.into()
+    fn handle_poll(context: &mut Context, _poll: Poll) {
+        context.get_mut::<Counter>().inc_calls();
     }
 
-    fn handle_update(context: &mut Context, _update: &Update) -> HandlerFuture {
-        context.get::<Counter>().inc_calls();
-        HandlerResult::Continue.into()
+    fn handle_update(context: &mut Context, _update: Update) {
+        context.get_mut::<Counter>().inc_calls();
     }
 
     #[test]
@@ -585,9 +600,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::message(handle_message),
-                Handler::update(handle_update),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_message),
+                FnHandler::wrapped(handle_update),
             ],
             ErrorStrategy::Abort,
         );
@@ -645,9 +660,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::inline_query(handle_inline_query),
-                Handler::update(handle_update),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_inline_query),
+                FnHandler::wrapped(handle_update),
             ],
             ErrorStrategy::Abort,
         );
@@ -672,9 +687,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::chosen_inline_result(handle_chose_inline_result),
-                Handler::update(handle_update),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_chose_inline_result),
+                FnHandler::wrapped(handle_update),
             ],
             ErrorStrategy::Abort,
         );
@@ -698,9 +713,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::callback_query(handle_callback_query),
-                Handler::update(handle_update),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_callback_query),
+                FnHandler::wrapped(handle_update),
             ],
             ErrorStrategy::Abort,
         );
@@ -723,9 +738,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::shipping_query(handle_shipping_query),
-                Handler::update(handle_update),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_shipping_query),
+                FnHandler::wrapped(handle_update),
             ],
             ErrorStrategy::Abort,
         );
@@ -757,9 +772,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::pre_checkout_query(handle_precheckout_query),
-                Handler::update(handle_update),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_pre_checkout_query),
+                FnHandler::wrapped(handle_update),
             ],
             ErrorStrategy::Abort,
         );
@@ -785,9 +800,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::poll(handle_poll),
-                Handler::update(handle_update),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_poll),
+                FnHandler::wrapped(handle_update),
             ],
             ErrorStrategy::Abort,
         );
@@ -828,10 +843,10 @@ mod tests {
             }
         ))
         .unwrap();
-        let commands = CommandsHandler::default().add_handler("/testcommand", command_handler);
+        let commands = CommandsHandler::default().add_handler("/testcommand", FnCommandHandler::from(command_handler));
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
-            vec![Handler::update(setup_context), Handler::message(commands)],
+            vec![FnHandler::wrapped(setup_context), HandlerWrapper::boxed(commands)],
             ErrorStrategy::Abort,
         );
         let context = dispatcher.dispatch(update.clone()).wait().unwrap();
@@ -841,7 +856,7 @@ mod tests {
 
     #[test]
     fn text_handler() {
-        for (update, handler) in vec![
+        let cases: Vec<(_, BoxedHandler)> = vec![
             (
                 json!({
                     "update_id": 1,
@@ -853,7 +868,7 @@ mod tests {
                         "text": "test substring contains"
                     }
                 }),
-                Handler::message(TextHandler::contains("substring", handle_message)),
+                HandlerWrapper::boxed(TextHandler::contains("substring", FnHandler::from(handle_message))),
             ),
             (
                 json!({
@@ -866,7 +881,7 @@ mod tests {
                         "text": "test equals"
                     }
                 }),
-                Handler::message(TextHandler::equals("test equals", handle_message)),
+                HandlerWrapper::boxed(TextHandler::equals("test equals", FnHandler::from(handle_message))),
             ),
             (
                 json!({
@@ -879,7 +894,7 @@ mod tests {
                         "text": "test matches"
                     }
                 }),
-                Handler::message(TextHandler::matches("matches$", handle_message).unwrap()),
+                HandlerWrapper::boxed(TextHandler::matches("matches$", FnHandler::from(handle_message)).unwrap()),
             ),
             (
                 json!({
@@ -892,16 +907,17 @@ mod tests {
                         "text": "test predicate"
                     }
                 }),
-                Handler::message(TextHandler::new(
+                HandlerWrapper::boxed(TextHandler::new(
                     |text: &Text| text.data.contains("predicate"),
-                    handle_message,
+                    FnHandler::from(handle_message),
                 )),
             ),
-        ] {
+        ];
+        for (update, handler) in cases {
             let update = from_value(update).unwrap();
             let dispatcher = Dispatcher::new(
                 Api::new("token").unwrap(),
-                vec![Handler::update(setup_context), handler],
+                vec![FnHandler::wrapped(setup_context), handler],
                 ErrorStrategy::Abort,
             );
             let context = dispatcher.dispatch(update).wait().unwrap();
@@ -913,7 +929,7 @@ mod tests {
     fn update_skipped() {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
-            vec![Handler::update(setup_context), Handler::message(handle_message)],
+            vec![FnHandler::wrapped(setup_context), FnHandler::wrapped(handle_message)],
             ErrorStrategy::Abort,
         );
         let update = from_value(json!(

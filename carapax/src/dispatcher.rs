@@ -1,6 +1,7 @@
 use crate::{
     context::Context,
-    handler::{Handler, HandlerFuture, HandlerResult},
+    handler::{HandlerFuture, HandlerResult},
+    BoxedHandler,
 };
 use failure::Error;
 use futures::{Async, Future, Poll};
@@ -18,21 +19,21 @@ pub enum ErrorStrategy {
 
 pub(crate) struct Dispatcher {
     api: Api,
-    handlers: Arc<Vec<Handler>>,
+    handlers: Arc<Vec<BoxedHandler>>,
     error_strategy: ErrorStrategy,
 }
 
 struct HandlersQueue {
-    handlers: Arc<Vec<Handler>>,
+    handlers: Arc<Vec<BoxedHandler>>,
     current: usize,
 }
 
 impl HandlersQueue {
-    fn new(handlers: Arc<Vec<Handler>>) -> Self {
+    fn new(handlers: Arc<Vec<BoxedHandler>>) -> Self {
         HandlersQueue { handlers, current: 0 }
     }
 
-    fn next(&mut self) -> Option<&Handler> {
+    fn next(&mut self) -> Option<&BoxedHandler> {
         let handler = self.handlers.get(self.current);
         self.current += 1;
         handler
@@ -40,7 +41,7 @@ impl HandlersQueue {
 }
 
 impl Dispatcher {
-    pub(crate) fn new(api: Api, handlers: Vec<Handler>, error_strategy: ErrorStrategy) -> Self {
+    pub(crate) fn new(api: Api, handlers: Vec<BoxedHandler>, error_strategy: ErrorStrategy) -> Self {
         Self {
             api,
             handlers: Arc::new(handlers),
@@ -77,7 +78,7 @@ pub(crate) struct DispatcherFuture {
 
 impl DispatcherFuture {
     fn new(
-        handlers: Arc<Vec<Handler>>,
+        handlers: Arc<Vec<BoxedHandler>>,
         context: Context,
         error_strategy: ErrorStrategy,
         update: Update,
@@ -102,7 +103,7 @@ impl DispatcherFuture {
     fn switch_to_next_handler(&mut self) {
         let ctx = self.context.as_mut().expect("No context");
         let update = &self.update;
-        self.handler = self.handlers.next().map(|handler| handler.handle(ctx, update));
+        self.handler = self.handlers.next().map(|handler| handler.handle(ctx, update.clone()));
     }
 
     fn stop(&mut self) {
@@ -139,6 +140,7 @@ impl Future for DispatcherFuture {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::FnHandler;
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -164,26 +166,24 @@ mod tests {
         }
     }
 
-    fn setup_context(context: &mut Context, _update: &Update) -> HandlerFuture {
+    fn setup_context(context: &mut Context, _update: Update) {
         context.set(Counter::new());
-        HandlerResult::Continue.into()
     }
 
     #[derive(Debug, Fail)]
     #[fail(display = "Test error")]
     struct ErrorMock;
 
-    fn handle_update_continue(context: &mut Context, _update: &Update) -> HandlerFuture {
+    fn handle_update_continue(context: &mut Context, _update: Update) {
         context.get::<Counter>().inc_calls();
-        HandlerResult::Continue.into()
     }
 
-    fn handle_update_stop(context: &mut Context, _update: &Update) -> HandlerFuture {
+    fn handle_update_stop(context: &mut Context, _update: Update) -> HandlerResult {
         context.get::<Counter>().inc_calls();
-        HandlerResult::Stop.into()
+        HandlerResult::Stop
     }
 
-    fn handle_update_err(context: &mut Context, _update: &Update) -> HandlerFuture {
+    fn handle_update_err(context: &mut Context, _update: Update) -> HandlerFuture {
         context.get::<Counter>().inc_calls();
         Err(ErrorMock).into()
     }
@@ -208,9 +208,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::update(handle_update_err),
-                Handler::update(handle_update_continue),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_update_err),
+                FnHandler::wrapped(handle_update_continue),
             ],
             ErrorStrategy::Abort,
         );
@@ -221,9 +221,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::update(handle_update_err),
-                Handler::update(handle_update_continue),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_update_err),
+                FnHandler::wrapped(handle_update_continue),
             ],
             ErrorStrategy::Ignore,
         );
@@ -250,9 +250,9 @@ mod tests {
         let dispatcher = Dispatcher::new(
             Api::new("token").unwrap(),
             vec![
-                Handler::update(setup_context),
-                Handler::update(handle_update_stop),
-                Handler::update(handle_update_continue),
+                FnHandler::wrapped(setup_context),
+                FnHandler::wrapped(handle_update_stop),
+                FnHandler::wrapped(handle_update_continue),
             ],
             ErrorStrategy::Abort,
         );

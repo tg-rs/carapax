@@ -43,11 +43,11 @@ fn main() {
     let app = App::new();
 
     tokio::run(
-        app.add_handler(Handler::message(
+        app.add_handler(
             CommandsHandler::default()
-                .add_handler("/start", handle_start)
-                .add_handler("/user_id", handle_user_id),
-        ))
+                .add_handler("/start", FnCommandHandler::from(handle_start))
+                .add_handler("/user_id", FnCommandHandler::from(handle_user_id)),
+        )
         .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
     );
 }

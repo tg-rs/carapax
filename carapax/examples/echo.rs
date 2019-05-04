@@ -5,7 +5,7 @@ use futures::Future;
 use log;
 use std::env;
 
-fn handle_message(context: &mut Context, message: &Message) -> HandlerFuture {
+fn handle_message(context: &mut Context, message: Message) -> HandlerFuture {
     log::info!("got a message: {:?}\n", message);
     if let Some(text) = message.get_text() {
         let chat_id = message.get_chat_id();
@@ -16,7 +16,7 @@ fn handle_message(context: &mut Context, message: &Message) -> HandlerFuture {
             Ok(HandlerResult::Continue)
         }));
     }
-    HandlerResult::Continue.into()
+    ().into()
 }
 
 fn main() {
@@ -34,7 +34,7 @@ fn main() {
     let api = Api::new(config).unwrap();
     tokio::run(
         App::new()
-            .add_handler(Handler::message(handle_message))
+            .add_handler(FnHandler::from(handle_message))
             .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
     );
 }
