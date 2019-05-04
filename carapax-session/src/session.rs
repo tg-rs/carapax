@@ -139,8 +139,7 @@ impl From<u64> for SessionLifetime {
 mod tests {
     use super::*;
     use futures::future;
-    use std::collections::HashMap;
-    use std::sync::Mutex;
+    use std::{collections::HashMap, sync::Mutex};
 
     #[derive(Default)]
     struct Store {

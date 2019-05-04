@@ -1,14 +1,14 @@
 #[cfg(feature = "redis-store")]
 fn main() {
     use carapax::prelude::*;
-    use carapax_session::{session_handler, store::redis::RedisSessionStore, Session};
+    use carapax_session::{store::redis::RedisSessionStore, Session, SessionHandler};
     use dotenv::dotenv;
     use futures::{future::lazy, Future};
     use std::env;
 
     const SESSION_NAMESPACE: &str = "carapax-session";
 
-    fn handle_set(context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn handle_set(context: &mut Context, message: Message, args: Vec<String>) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
         let session = context.get::<Session<RedisSessionStore>>().clone();
         let api = context.get::<Api>().clone();
@@ -32,7 +32,7 @@ fn main() {
         }))
     }
 
-    fn handle_expire(context: &mut Context, message: &Message, args: Vec<String>) -> HandlerFuture {
+    fn handle_expire(context: &mut Context, message: Message, args: Vec<String>) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
         let session = context.get::<Session<RedisSessionStore>>().clone();
         let api = context.get::<Api>().clone();
@@ -56,7 +56,7 @@ fn main() {
         }))
     }
 
-    fn handle_reset(context: &mut Context, message: &Message, _args: Vec<String>) -> HandlerFuture {
+    fn handle_reset(context: &mut Context, message: Message, _args: Vec<String>) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
         let session = context.get::<Session<RedisSessionStore>>().clone();
         let api = context.get::<Api>().clone();
@@ -67,7 +67,7 @@ fn main() {
         }))
     }
 
-    fn handle_message(context: &mut Context, message: &Message) -> HandlerFuture {
+    fn handle_message(context: &mut Context, message: Message) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
         let session = context.get::<Session<RedisSessionStore>>().clone();
         let api = context.get::<Api>().clone();
@@ -107,9 +107,9 @@ fn main() {
                 // set session lifetime to 10 seconds
                 store = store.with_lifetime(10);
                 App::new()
-                    .add_handler(session_handler(store))
-                    .add_handler(Handler::message(commands))
-                    .add_handler(Handler::message(handle_message))
+                    .add_handler(SessionHandler::new(store))
+                    .add_handler(commands)
+                    .add_handler(FnHandler::from(handle_message))
                     .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api)))
             })
     }));
