@@ -2,7 +2,7 @@ use crate::policy::AccessPolicy;
 use carapax::prelude::*;
 use futures::Future;
 
-/// Access control middleware
+/// Access control handler
 ///
 /// Helps to deny/allow updates from specific user/chat
 pub struct AccessHandler<P> {
@@ -16,11 +16,14 @@ impl<P> AccessHandler<P> {
     }
 }
 
-impl<P> UpdateHandler for AccessHandler<P>
+impl<P> Handler for AccessHandler<P>
 where
     P: AccessPolicy,
 {
-    fn handle(&self, context: &mut Context, update: &Update) -> HandlerFuture {
+    type Input = Update;
+    type Output = HandlerFuture;
+
+    fn handle(&self, context: &mut Context, update: Self::Input) -> Self::Output {
         HandlerFuture::new(self.policy.is_granted(context, &update).and_then(|result| {
             if result {
                 Ok(HandlerResult::Continue)
@@ -72,12 +75,12 @@ mod tests {
 
         let policy = Policy::new(true);
         let handler = AccessHandler::new(policy);
-        let result = handler.handle(&mut context, &update).wait().unwrap();
+        let result = handler.handle(&mut context, update.clone()).wait().unwrap();
         assert_eq!(result, HandlerResult::Continue);
 
         let policy = Policy::new(false);
         let handler = AccessHandler::new(policy);
-        let result = handler.handle(&mut context, &update).wait().unwrap();
+        let result = handler.handle(&mut context, update).wait().unwrap();
         assert_eq!(result, HandlerResult::Stop);
     }
 }
