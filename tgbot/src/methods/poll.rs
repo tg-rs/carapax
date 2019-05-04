@@ -1,5 +1,8 @@
-use crate::types::{ChatId, InlineKeyboardMarkup, Integer, Message, Poll, ReplyMarkup};
-use crate::{methods::Method, request::RequestBuilder};
+use crate::{
+    methods::Method,
+    request::RequestBuilder,
+    types::{ChatId, InlineKeyboardMarkup, Integer, Message, Poll, ReplyMarkup},
+};
 use failure::Error;
 use serde::Serialize;
 
