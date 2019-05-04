@@ -6,9 +6,8 @@ use dotenv::dotenv;
 use env_logger;
 use std::{env, time::Duration};
 
-fn handle_message(_context: &mut Context, message: &Message) -> HandlerFuture {
+fn handle_message(_context: &mut Context, message: Message) {
     log::info!("Got a new message: {:?}", message);
-    HandlerResult::Continue.into()
 }
 
 fn main() {
@@ -32,14 +31,16 @@ fn main() {
     // Allow update when key is missing
     let on_missing = true;
 
-    let rate_limit_handler = match strategy.as_str() {
+    let mut app = App::new();
+
+    match strategy.as_str() {
         "direct" => {
             // Limit all updates
-            Handler::update(DirectRateLimitHandler::new(capacity, interval))
+            app = app.add_handler(DirectRateLimitHandler::new(capacity, interval))
         }
         "all_users" => {
             // Limit updates per user ID for all users
-            Handler::update(KeyedRateLimitHandler::new(
+            app = app.add_handler(KeyedRateLimitHandler::new(
                 limit_all_chats,
                 on_missing,
                 capacity,
@@ -48,7 +49,7 @@ fn main() {
         }
         "all_chats" => {
             // Limit updates per chat ID for all chats
-            Handler::update(KeyedRateLimitHandler::new(
+            app = app.add_handler(KeyedRateLimitHandler::new(
                 limit_all_users,
                 on_missing,
                 capacity,
@@ -67,7 +68,7 @@ fn main() {
                 Ok(chat_id) => ChatId::Id(chat_id),
                 Err(_) => ChatId::Username(chat_id),
             };
-            Handler::update(KeyedRateLimitHandler::new(
+            app = app.add_handler(KeyedRateLimitHandler::new(
                 RateLimitList::default().with_user(user_id).with_chat(chat_id),
                 on_missing,
                 capacity,
@@ -78,9 +79,7 @@ fn main() {
     };
 
     tokio::run(
-        App::new()
-            .add_handler(rate_limit_handler)
-            .add_handler(Handler::message(handle_message))
+        app.add_handler(FnHandler::from(handle_message))
             .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
     )
 }
