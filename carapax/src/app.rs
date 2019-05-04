@@ -1,13 +1,13 @@
 use crate::{
     dispatcher::{Dispatcher, ErrorStrategy},
-    handler::Handler,
+    handler::{BoxedHandler, FromUpdate, Handler, HandlerFuture, HandlerWrapper},
 };
 use futures::Future;
 use tgbot::{handle_updates, Api, UpdateMethod};
 
 /// A Telegram Bot App
 pub struct App {
-    handlers: Vec<Handler>,
+    handlers: Vec<BoxedHandler>,
     error_strategy: ErrorStrategy,
 }
 
@@ -39,8 +39,13 @@ impl App {
     ///
     /// When a handler fails with error, all next handlers will not run.
     /// Use `App::error_strategy()` to change this behaviour.
-    pub fn add_handler(mut self, handler: Handler) -> Self {
-        self.handlers.push(handler);
+    pub fn add_handler<H, I, R>(mut self, handler: H) -> Self
+    where
+        H: Handler<Input = I, Output = R> + Send + Sync + 'static,
+        I: FromUpdate,
+        R: Into<HandlerFuture>,
+    {
+        self.handlers.push(HandlerWrapper::boxed(handler));
         self
     }
 
@@ -53,21 +58,15 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        context::Context,
-        core::types::Update,
-        handler::{HandlerFuture, HandlerResult},
-    };
+    use crate::{context::Context, core::types::Update, FnHandler};
 
-    fn update_handler(_context: &mut Context, _update: &Update) -> HandlerFuture {
-        HandlerResult::Continue.into()
-    }
+    fn update_handler(_context: &mut Context, _update: Update) {}
 
     #[test]
     fn handlers() {
         let mut app = App::new();
         assert_eq!(app.handlers.len(), 0);
-        app = app.add_handler(Handler::update(update_handler));
+        app = app.add_handler(FnHandler::from(update_handler));
         assert_eq!(app.handlers.len(), 1);
     }
 
