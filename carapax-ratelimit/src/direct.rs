@@ -25,14 +25,16 @@ impl DirectRateLimitHandler {
     }
 }
 
-impl UpdateHandler for DirectRateLimitHandler {
-    fn handle(&self, _context: &mut Context, _update: &Update) -> HandlerFuture {
+impl Handler for DirectRateLimitHandler {
+    type Input = Update;
+    type Output = HandlerResult;
+
+    fn handle(&self, _context: &mut Context, _update: Self::Input) -> Self::Output {
         if self.limiter.lock().unwrap().check().is_ok() {
             HandlerResult::Continue
         } else {
             HandlerResult::Stop
         }
-        .into()
     }
 }
 
@@ -41,7 +43,6 @@ mod tests {
     use super::*;
     use crate::nonzero;
     use carapax::{core::types::Update, Context};
-    use futures::Future;
 
     #[test]
     fn handler() {
@@ -58,11 +59,8 @@ mod tests {
         }))
         .unwrap();
         let handler = DirectRateLimitHandler::new(nonzero!(1u32), Duration::from_secs(1000));
-        let mut items = Vec::new();
-        for _ in 0..10 {
-            let result = handler.handle(&mut context, &update).wait().unwrap();
-            items.push(result)
-        }
-        assert!(items.into_iter().any(|x| x == HandlerResult::Stop))
+        assert!((0..10)
+            .map(|_| handler.handle(&mut context, update.clone()))
+            .any(|x| x == HandlerResult::Stop))
     }
 }

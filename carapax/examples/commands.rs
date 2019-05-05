@@ -5,7 +5,7 @@ use futures::Future;
 use log;
 use std::env;
 
-fn handle_start(context: &mut Context, message: &Message, _: Vec<String>) -> HandlerFuture {
+fn handle_start(context: &mut Context, message: Message, _: Vec<String>) -> HandlerFuture {
     log::info!("handle /start command\n");
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, "Hello!");
@@ -16,7 +16,7 @@ fn handle_start(context: &mut Context, message: &Message, _: Vec<String>) -> Han
     }))
 }
 
-fn handle_user_id(context: &mut Context, message: &Message, _: Vec<String>) -> HandlerFuture {
+fn handle_user_id(context: &mut Context, message: Message, _: Vec<String>) -> HandlerFuture {
     log::info!("handle /user_id command\n");
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, format!("Your ID is: {:?}", message.get_user().map(|u| u.id)));
@@ -43,11 +43,11 @@ fn main() {
     let app = App::new();
 
     tokio::run(
-        app.add_handler(Handler::message(
+        app.add_handler(
             CommandsHandler::default()
                 .add_handler("/start", handle_start)
                 .add_handler("/user_id", handle_user_id),
-        ))
+        )
         .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
     );
 }

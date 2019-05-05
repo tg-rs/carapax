@@ -4,9 +4,8 @@ use dotenv::dotenv;
 use env_logger;
 use std::env;
 
-fn handle_message(_context: &mut Context, message: &Message) -> HandlerFuture {
+fn handle_message(_context: &mut Context, message: Message) {
     log::info!("Got a new message: {:?}", message);
-    HandlerResult::Continue.into()
 }
 
 fn main() {
@@ -30,8 +29,8 @@ fn main() {
 
     tokio::run(
         App::new()
-            .add_handler(Handler::update(AccessHandler::new(policy)))
-            .add_handler(Handler::message(handle_message))
+            .add_handler(AccessHandler::new(policy))
+            .add_handler(FnHandler::from(handle_message))
             .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
     )
 }

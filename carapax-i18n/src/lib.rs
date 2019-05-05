@@ -1,7 +1,7 @@
 //! An i18n handler for carapax
 #![warn(missing_docs)]
 
-use carapax::{core::types::Update, Context, HandlerFuture, HandlerResult, UpdateHandler};
+use carapax::{core::types::Update, Context, Handler};
 use std::{collections::HashMap, sync::Arc};
 
 pub use gettext::Catalog;
@@ -36,18 +36,20 @@ impl<R> I18nHandler<R> {
     }
 }
 
-impl<R> UpdateHandler for I18nHandler<R>
+impl<R> Handler for I18nHandler<R>
 where
     R: LocaleResolver,
 {
-    fn handle(&self, context: &mut Context, update: &Update) -> HandlerFuture {
-        let locale = self.resolver.resolve(update);
+    type Input = Update;
+    type Output = ();
+
+    fn handle(&self, context: &mut Context, update: Self::Input) -> Self::Output {
+        let locale = self.resolver.resolve(&update);
         let translator = locale
             .as_ref()
             .and_then(|locale| self.translators.get(locale).cloned())
             .unwrap_or_else(|| self.default_translator.clone());
         context.set(translator);
-        HandlerResult::Continue.into()
     }
 }
 
@@ -166,7 +168,6 @@ enum TranslationKind {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use futures::future::Future;
 
     const EN: &[u8] = include_bytes!("../data/en.mo");
     const RU: &[u8] = include_bytes!("../data/ru.mo");
@@ -238,8 +239,7 @@ mod tests {
                 ru_update.clone(),
             ),
         ] {
-            let res = handler.handle(&mut context, &update).wait().unwrap();
-            assert_eq!(res, HandlerResult::Continue);
+            handler.handle(&mut context, update.clone());
             let translator = context.get::<Translator>();
             assert_eq!(translator.translate(key), value);
         }
