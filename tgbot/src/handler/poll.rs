@@ -129,7 +129,7 @@ impl UpdatesStream {
         self
     }
 
-    /// Set options
+    /// Set options used in getUpdates method
     pub fn options(mut self, options: UpdatesStreamOptions) -> Self {
         self.options = options;
         self
@@ -142,7 +142,9 @@ impl From<Api> for UpdatesStream {
     }
 }
 
-/// Update stream options
+/// Updates stream options
+///
+/// These options are used in getUpdates method
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct UpdatesStreamOptions {
     offset: Integer,
@@ -156,6 +158,7 @@ impl UpdatesStreamOptions {
     /// Limits the number of updates to be retrieved
     ///
     /// Values between 1—100 are accepted
+    ///
     /// Defaults to 100
     pub fn limit(mut self, limit: Integer) -> Self {
         self.limit = limit;
@@ -165,7 +168,9 @@ impl UpdatesStreamOptions {
     /// Timeout in seconds for long polling
     ///
     /// 0 - usual short polling
+    ///
     /// Defaults to 10
+    ///
     /// Should be positive, short polling should be used for testing purposes only
     pub fn poll_timeout(mut self, poll_timeout: Duration) -> Self {
         self.poll_timeout = poll_timeout;

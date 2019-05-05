@@ -1,7 +1,7 @@
 //! An i18n handler for carapax
 #![warn(missing_docs)]
 
-use carapax::{core::types::Update, Context, Handler};
+use carapax::{context::Context, core::types::Update, Handler};
 use std::{collections::HashMap, sync::Arc};
 
 pub use gettext::Catalog;

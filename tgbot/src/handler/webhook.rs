@@ -11,7 +11,7 @@ use hyper::{
 use lazy_queue::sync::bounded::LazyQueue;
 use tokio_executor::spawn;
 
-/// Creates a webhook service
+#[doc(hidden)]
 pub struct WebhookServiceFactory {
     path: String,
     queue: LazyQueue<Update>,
@@ -19,7 +19,7 @@ pub struct WebhookServiceFactory {
 }
 
 impl WebhookServiceFactory {
-    /// Creates a new factory
+    #[doc(hidden)]
     pub fn new<S, H>(path: S, mut update_handler: H) -> WebhookServiceFactory
     where
         S: Into<String>,
@@ -59,7 +59,7 @@ impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
     }
 }
 
-/// Webhook service
+#[doc(hidden)]
 pub struct WebhookService {
     path: String,
     queue: LazyQueue<Update>,

@@ -46,8 +46,11 @@ impl Future for AccessPolicyFuture {
 ///
 /// Stores all rules in a Vec
 ///
-/// If there are no rules found for update, is_granted() will return false
-/// You can use `Rule::allow(Principal::All)` as last rule in order to change this behaviour
+/// If there are no rules found for update, [is_granted()] will return false
+/// You can use [allow_all()] as a last rule in order to change this behaviour
+///
+/// [is_granted()]: trait.AccessPolicy.html#tymethod.is_granted
+/// [allow_all()]: struct.AccessRule.html#method.allow_all
 #[derive(Default)]
 pub struct InMemoryAccessPolicy {
     rules: Vec<AccessRule>,

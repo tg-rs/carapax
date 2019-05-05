@@ -84,7 +84,7 @@ impl Api {
 
     /// Downloads a file
     ///
-    /// Use getFile method in order get file_path
+    /// Use getFile method in order to get value for file_path argument
     pub fn download_file<P: AsRef<str>>(&self, file_path: P) -> ApiFuture<Vec<u8>> {
         let executor = self.executor.clone();
         ApiFuture {
@@ -135,7 +135,7 @@ impl Api {
     }
 }
 
-/// An API future
+#[doc(hidden)]
 #[must_use = "futures do nothing unless polled"]
 pub struct ApiFuture<T> {
     inner: Box<Future<Item = T, Error = Error> + Send>,

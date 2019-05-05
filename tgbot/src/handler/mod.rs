@@ -9,8 +9,14 @@ mod webhook;
 pub use self::{poll::*, webhook::*};
 
 /// An update handler
+///
+/// When update is received from telegram it will come here
 pub trait UpdateHandler {
     /// Handles an update
+    ///
+    /// # Arguments
+    ///
+    /// * update - A received update
     fn handle(&mut self, update: Update);
 }
 
@@ -31,8 +37,8 @@ impl UpdateMethod {
     ///
     /// # Arguments
     ///
-    /// - addr - Bind address
-    /// - path - URL path for webhook
+    /// * addr - Bind address
+    /// * path - URL path for webhook
     pub fn webhook<A, S>(addr: A, path: S) -> Self
     where
         A: Into<SocketAddr>,
@@ -52,7 +58,12 @@ enum UpdateMethodKind {
     Webhook { addr: SocketAddr, path: String },
 }
 
-/// Start getting updates
+/// Allows to get updates from Telegram
+///
+/// # Arguments
+///
+/// * update_method - How to receive updates: via webhook or long polling
+/// * handler - Updates handler (see [UpdateHandler](trait.UpdateHandler.html) trait)
 pub fn handle_updates<H>(update_method: UpdateMethod, mut handler: H) -> impl Future<Item = (), Error = ()>
 where
     H: UpdateHandler + Send + Sync + 'static,
