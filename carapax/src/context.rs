@@ -3,6 +3,8 @@ use anymap::{
     Map,
 };
 
+pub use anymap::{Entry, OccupiedEntry, VacantEntry};
+
 /// Context for handlers
 #[derive(Debug)]
 pub struct Context {
@@ -48,6 +50,11 @@ impl Context {
     pub fn get_mut_opt<T: IntoBox<Any + Send + Sync>>(&mut self) -> Option<&mut T> {
         self.inner.get_mut()
     }
+
+    /// Gets the entry for the given type in the collection for in-place manipulation
+    pub fn entry<T: IntoBox<Any + Send + Sync>>(&mut self) -> Entry<Any + Send + Sync, T> {
+        self.inner.entry()
+    }
 }
 
 #[cfg(test)]
@@ -79,5 +86,14 @@ mod tests {
     fn context_get_mut_panics() {
         let mut ctx = Context::default();
         ctx.get_mut::<usize>();
+    }
+
+    #[test]
+    fn context_entry() {
+        let mut ctx = Context::default();
+        ctx.set(1usize);
+        assert_eq!(*ctx.entry().or_insert(2usize), 1);
+        let mut ctx = Context::default();
+        assert_eq!(*ctx.entry().or_insert(2usize), 2);
     }
 }
