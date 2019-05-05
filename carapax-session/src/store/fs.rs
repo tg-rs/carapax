@@ -148,10 +148,15 @@ impl SessionStore for FsSessionStore {
     }
 
     fn del(&self, key: SessionKey) -> Box<Future<Item = (), Error = Error> + Send> {
-        Box::new(
-            self.key_to_path(key)
-                .and_then(|file_path| fs::remove_file(file_path).from_err()),
-        )
+        Box::new(self.key_to_path(key).and_then(|file_path| {
+            fs::remove_file(file_path).then(|r| match r {
+                Ok(()) => Ok(()),
+                Err(err) => match err.kind() {
+                    IoErrorKind::NotFound => Ok(()),
+                    _ => Err(err.into()),
+                },
+            })
+        }))
     }
 }
 
