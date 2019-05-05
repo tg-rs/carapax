@@ -2,7 +2,6 @@ use crate::{
     context::Context,
     handler::{Handler, HandlerFuture, HandlerResult, HandlerWrapper},
 };
-use shellwords::{split, MismatchedQuotes};
 use std::{collections::HashMap, string::FromUtf16Error};
 use tgbot::types::Message;
 
@@ -58,6 +57,18 @@ pub enum CommandError {
     MismatchedQuotes,
 }
 
+impl From<FromUtf16Error> for CommandError {
+    fn from(err: FromUtf16Error) -> Self {
+        CommandError::FromUtf16(err)
+    }
+}
+
+impl From<shellwords::MismatchedQuotes> for CommandError {
+    fn from(_: shellwords::MismatchedQuotes) -> Self {
+        CommandError::MismatchedQuotes
+    }
+}
+
 impl Handler for CommandsHandler {
     type Input = Message;
     type Output = HandlerFuture;
@@ -73,18 +84,20 @@ impl Handler for CommandsHandler {
                 let pos = command.data.offset + command.data.length;
                 // pos is UTF-16 offset
                 let input: Vec<u16> = text.data.encode_utf16().skip(pos).collect();
-                match String::from_utf16(&input) {
-                    Ok(input) => match split(&input) {
-                        Ok(args) => match self.handlers.get(&command.command) {
-                            Some(handler) => handler.handle(context, message, args),
-                            None => match self.not_found_handler {
-                                Some(ref handler) => handler.handle(context, message, args),
-                                None => HandlerResult::Continue.into(),
-                            },
-                        },
-                        Err(MismatchedQuotes) => Err(CommandError::MismatchedQuotes).into(),
-                    },
-                    Err(err) => Err(CommandError::FromUtf16(err)).into(),
+                let command = command.command.clone();
+                let res = || -> Result<HandlerFuture, CommandError> {
+                    let input = String::from_utf16(&input)?;
+                    let args = shellwords::split(&input)?;
+                    Ok(self
+                        .handlers
+                        .get(&command)
+                        .or_else(|| self.not_found_handler.as_ref())
+                        .map(|handler| handler.handle(context, message, args))
+                        .unwrap_or_else(|| HandlerResult::Continue.into()))
+                };
+                match res() {
+                    Ok(fut) => fut,
+                    Err(err) => Err(err).into(),
                 }
             }
             _ => HandlerResult::Continue.into(),

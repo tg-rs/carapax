@@ -19,15 +19,17 @@ fn main() {
                 Err(err) => {
                     return HandlerFuture::new(
                         api.execute(SendMessage::new(chat_id, err.to_string()))
-                            .and_then(|_| Ok(HandlerResult::Stop)),
+                            .map(|_| HandlerResult::Stop),
                     );
                 }
             }
         };
-        HandlerFuture::new(session.set("counter", &val).and_then(move |()| {
-            api.execute(SendMessage::new(chat_id, "OK"))
-                .and_then(|_| Ok(HandlerResult::Stop))
-        }))
+        HandlerFuture::new(
+            session
+                .set("counter", &val)
+                .and_then(move |()| api.execute(SendMessage::new(chat_id, "OK")))
+                .map(|_| HandlerResult::Stop),
+        )
     }
 
     fn handle_expire(context: &mut Context, message: Message, args: Vec<String>) -> HandlerFuture {
@@ -43,15 +45,17 @@ fn main() {
                 Err(err) => {
                     return HandlerFuture::new(
                         api.execute(SendMessage::new(chat_id, err.to_string()))
-                            .and_then(|_| Ok(HandlerResult::Stop)),
+                            .map(|_| HandlerResult::Stop),
                     );
                 }
             }
         };
-        HandlerFuture::new(session.expire("counter", seconds).and_then(move |()| {
-            api.execute(SendMessage::new(chat_id, "OK"))
-                .and_then(|_| Ok(HandlerResult::Stop))
-        }))
+        HandlerFuture::new(
+            session
+                .expire("counter", seconds)
+                .and_then(move |()| api.execute(SendMessage::new(chat_id, "OK")))
+                .map(|_| HandlerResult::Stop),
+        )
     }
 
     fn handle_reset(context: &mut Context, message: Message, _args: Vec<String>) -> HandlerFuture {
@@ -59,10 +63,12 @@ fn main() {
         let session = context.get::<Session<FsSessionStore>>().clone();
         let api = context.get::<Api>().clone();
         let chat_id = message.get_chat_id();
-        HandlerFuture::new(session.del("counter").and_then(move |()| {
-            api.execute(SendMessage::new(chat_id, "OK"))
-                .and_then(|_| Ok(HandlerResult::Stop))
-        }))
+        HandlerFuture::new(
+            session
+                .del("counter")
+                .and_then(move |()| api.execute(SendMessage::new(chat_id, "OK")))
+                .map(|_| HandlerResult::Stop),
+        )
     }
 
     fn handle_message(context: &mut Context, message: Message) -> HandlerFuture {
@@ -70,13 +76,16 @@ fn main() {
         let session = context.get::<Session<FsSessionStore>>().clone();
         let api = context.get::<Api>().clone();
         let chat_id = message.get_chat_id();
-        HandlerFuture::new(session.get::<usize>("counter").and_then(move |val| {
-            let val = val.unwrap_or(0) + 1;
-            session.set("counter", &val).and_then(move |()| {
-                api.execute(SendMessage::new(chat_id, format!("Count: {}", val)))
-                    .and_then(|_| Ok(HandlerResult::Continue))
-            })
-        }))
+        HandlerFuture::new(
+            session
+                .get::<usize>("counter")
+                .and_then(move |val| {
+                    let val = val.unwrap_or(0) + 1;
+                    session.set("counter", &val).map(move |()| val)
+                })
+                .and_then(move |val| api.execute(SendMessage::new(chat_id, format!("Count: {}", val))))
+                .map(|_| HandlerResult::Continue),
+        )
     }
 
     dotenv().ok();
