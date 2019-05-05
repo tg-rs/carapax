@@ -11,6 +11,8 @@ use std::sync::Arc;
 /// so you can use it in your handlers:
 ///
 /// ```
+/// # #[cfg(feature = "redis-store")]
+/// # mod check {
 /// use carapax::prelude::*;
 /// use carapax_session::{store::redis::RedisSessionStore, Session};
 ///
@@ -19,6 +21,8 @@ use std::sync::Arc;
 ///     // do something with session...
 ///     HandlerResult::Continue.into()
 /// }
+/// # }
+/// # fn main() {}
 /// ```
 pub struct SessionHandler<S> {
     store: Arc<S>,
