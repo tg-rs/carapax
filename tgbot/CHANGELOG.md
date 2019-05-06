@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.0 (xx.05.2018)
+
+- Added Bot API 4.2 support.
+- Added `prelude` module.
+- Added `ChatMember::is_member()` method.
+- Added `UpdatesStream::should_retry()` method.
+- Added `Api::download_file()` method.
+- Added option to set custom base url for Telegram API (see `Config` struct).
+- Added multipart support (you can upload files using multipart/form-data now).
+- Added `UserId` type.
+- You can (de)serialize callback data using `serde_json` (see `CallbackQuery` and `InlineKeyboardButton` types).
+- `Api::new()` now takes a `Config` object.
+- `Api::execute()` takes a method by value instead of reference.
+- `Method::get_request(&self)` replaced by `Method::into_request(self)`
+- `RequestBuilder` is now private.
+- Removed use of `Mutex` in `WebhookService`.
+- Removed `WebhookServiceFactoryError`.
+- Removed `InlineKeyboardButton::new()` method as the user must use exactly one of the option fields.
+
 ## 0.3.0 (12.03.2019)
 
 - Dispatcher moved to [carapax](https://github.com/tg-rs/carapax).
