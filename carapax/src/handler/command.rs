@@ -7,8 +7,10 @@ use tgbot::types::Message;
 
 /// A simple commands handler
 ///
-/// Just takes a first command from a message and ignores others.
-/// Assumes that all text after command is arguments.
+/// Takes the first command from a message and ignores others.
+///
+/// Assumes that all text after the command is its arguments.
+///
 /// Use quotes in order to include spaces in argument: `'hello word'`
 #[derive(Default)]
 pub struct CommandsHandler {
@@ -19,7 +21,7 @@ pub struct CommandsHandler {
 type BoxedCommandHandler = Box<CommandHandler<Output = HandlerFuture> + Send + Sync>;
 
 impl CommandsHandler {
-    /// Add command handler
+    /// Adds a command handler
     ///
     /// # Arguments
     ///
@@ -35,7 +37,7 @@ impl CommandsHandler {
         self
     }
 
-    /// Add a handler to be executed when command not found
+    /// Adds a handler to be executed when the command is not found
     pub fn not_found_handler<H, O>(mut self, handler: H) -> Self
     where
         H: CommandHandler<Output = O> + Send + Sync + 'static,
@@ -105,14 +107,14 @@ impl Handler for CommandsHandler {
     }
 }
 
-/// Actual command handler
+/// A command handler trait
 pub trait CommandHandler {
-    /// A result or future to return
+    /// A handler's output.
     ///
     /// See [HandlerFuture](struct.HandlerFuture.html) for more information
     type Output: Into<HandlerFuture>;
 
-    /// Handles a command
+    /// Handles the command
     ///
     /// # Arguments
     ///

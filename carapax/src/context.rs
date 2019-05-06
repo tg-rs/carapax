@@ -18,26 +18,26 @@ impl Default for Context {
 }
 
 impl Context {
-    /// Sets a value to context
+    /// Sets a value for a given type `T`
     pub fn set<T: IntoBox<Any + Send + Sync>>(&mut self, value: T) {
         self.inner.insert(value);
     }
 
-    /// Returns a reference to value from context
+    /// Returns a reference to a value of a given type `T`
     ///
     /// # Panics
     ///
-    /// Panics if value not found
+    /// Panics if the type is not found
     pub fn get<T: IntoBox<Any + Send + Sync>>(&self) -> &T {
         self.inner.get().expect("Value not found in context")
     }
 
-    /// Returns a reference to the value stored in context for the type T, if it exists
+    /// Returns a reference to a value of a given type `T` if it exists.
     pub fn get_opt<T: IntoBox<Any + Send + Sync>>(&self) -> Option<&T> {
         self.inner.get()
     }
 
-    /// Returns a mutable reference to value from context
+    /// Returns a mutable reference to a value of a given type `T`
     ///
     /// # Panics
     ///
@@ -46,12 +46,12 @@ impl Context {
         self.inner.get_mut().expect("Value not found in context")
     }
 
-    /// Returns a mutable reference to the value stored in context for the type T, if it exists
+    /// Returns a mutable reference to a value of a given type `T` if it exists
     pub fn get_mut_opt<T: IntoBox<Any + Send + Sync>>(&mut self) -> Option<&mut T> {
         self.inner.get_mut()
     }
 
-    /// Gets the entry for the given type in the collection for in-place manipulation
+    /// Gives the type's corresponding entry in the context's typemap for in-place manipulation
     pub fn entry<T: IntoBox<Any + Send + Sync>>(&mut self) -> Entry<Any + Send + Sync, T> {
         self.inner.entry()
     }

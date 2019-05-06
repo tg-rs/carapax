@@ -8,12 +8,12 @@ mod app;
 mod dispatcher;
 mod handler;
 
-/// A "prelude" for users of the framework
+/// A convenience "prelude" for users of the framework
 pub mod prelude;
 
 pub use self::{app::*, dispatcher::*, handler::*};
 
 pub use tgbot as core;
 
-/// Context for handler
+/// Context for handlers
 pub mod context;

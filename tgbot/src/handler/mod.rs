@@ -9,8 +9,6 @@ mod webhook;
 pub use self::{poll::*, webhook::*};
 
 /// An update handler
-///
-/// When update is received from telegram it will come here
 pub trait UpdateHandler {
     /// Handles an update
     ///
@@ -33,7 +31,7 @@ impl UpdateMethod {
         }
     }
 
-    /// Get updates using webhook
+    /// Get updates using a webhook
     ///
     /// # Arguments
     ///
@@ -58,7 +56,7 @@ enum UpdateMethodKind {
     Webhook { addr: SocketAddr, path: String },
 }
 
-/// Allows to get updates from Telegram
+/// Processes updates from Telegram
 ///
 /// # Arguments
 ///

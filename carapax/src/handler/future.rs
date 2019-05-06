@@ -14,7 +14,7 @@ pub enum HandlerResult {
     Stop,
 }
 
-/// A handler future
+/// A future that drives a handler's execution.
 ///
 /// # Example
 ///

@@ -121,15 +121,15 @@ impl UpdatesStream {
         }
     }
 
-    /// Should retry request when an error has occurred
+    /// Whether or not a request should be retried if it has resolved into an error.
     ///
-    /// Default value is true
+    /// Default value is `true`
     pub fn should_retry(mut self, value: bool) -> Self {
         self.should_retry = value;
         self
     }
 
-    /// Set options used in getUpdates method
+    /// Sets update stream options used in getUpdates method
     pub fn options(mut self, options: UpdatesStreamOptions) -> Self {
         self.options = options;
         self
@@ -165,7 +165,7 @@ impl UpdatesStreamOptions {
         self
     }
 
-    /// Timeout in seconds for long polling
+    /// Timeout for long polling
     ///
     /// 0 - usual short polling
     ///

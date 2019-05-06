@@ -20,7 +20,7 @@ pub struct Config {
 }
 
 impl Config {
-    /// Creates a new config with given token
+    /// Creates a new configuration with a given token
     pub fn new<S: Into<String>>(token: S) -> Self {
         Self {
             token: token.into(),
@@ -68,7 +68,7 @@ pub struct Api {
 }
 
 impl Api {
-    /// Creates a new client
+    /// Creates a API instance with a given configuration.
     pub fn new<C: Into<Config>>(config: C) -> Result<Self, Error> {
         let config = config.into();
         Ok(Api {

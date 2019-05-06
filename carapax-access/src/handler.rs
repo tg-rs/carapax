@@ -10,7 +10,7 @@ pub struct AccessHandler<P> {
 }
 
 impl<P> AccessHandler<P> {
-    /// Creates a new handler with specified policy
+    /// Creates a new handler with a specified policy
     pub fn new(policy: P) -> Self {
         AccessHandler { policy }
     }

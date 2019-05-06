@@ -5,7 +5,7 @@ use crate::{
 use futures::Future;
 use tgbot::{handle_updates, Api, UpdateMethod};
 
-/// A Telegram Bot App
+/// A Telegram Bot application
 pub struct App {
     handlers: Vec<BoxedHandler>,
     error_strategy: ErrorStrategy,
@@ -18,7 +18,7 @@ impl Default for App {
 }
 
 impl App {
-    /// Creates a new app
+    /// Creates a new application
     pub fn new() -> Self {
         App {
             handlers: vec![],
@@ -26,7 +26,7 @@ impl App {
         }
     }
 
-    /// Set handler error strategy
+    /// Sets an handler error strategy
     ///
     /// See [ErrorStrategy](enum.ErrorStrategy.html) for more information.
     /// Default values is `ErrorStrategy::Abort`.
@@ -35,7 +35,7 @@ impl App {
         self
     }
 
-    /// Add a handler
+    /// Adds a handler
     ///
     /// When a handler fails with error, all next handlers will not run.
     /// Use `App::error_strategy()` to change this behaviour.
@@ -49,7 +49,7 @@ impl App {
         self
     }
 
-    /// Returns a future that will run app
+    /// Returns a future that will run the app
     pub fn run(self, api: Api, method: UpdateMethod) -> impl Future<Item = (), Error = ()> {
         handle_updates(method, Dispatcher::new(api, self.handlers, self.error_strategy))
     }
