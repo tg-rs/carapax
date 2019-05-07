@@ -36,7 +36,7 @@ pub trait Handler {
     fn handle(&self, context: &mut Context, input: Self::Input) -> Self::Output;
 }
 
-pub(crate) type BoxedHandler = Box<Handler<Input = Update, Output = HandlerFuture> + Send + Sync + 'static>;
+pub(crate) type BoxedHandler = Box<dyn Handler<Input = Update, Output = HandlerFuture> + Send + Sync + 'static>;
 
 impl<H, I, R> Handler for Box<H>
 where

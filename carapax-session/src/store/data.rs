@@ -39,7 +39,7 @@ impl Data {
 #[derive(Serialize)]
 pub(super) struct DataRef<'a, T>
 where
-    T: Serialize + 'a,
+    T: Serialize,
 {
     expires_at: Option<u64>,
     value: &'a T,

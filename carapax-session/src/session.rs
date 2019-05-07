@@ -30,7 +30,7 @@ where
     /// Get value of key
     ///
     /// If key not exists, None is returned
-    pub fn get<O>(&self, key: &str) -> Box<Future<Item = Option<O>, Error = Error> + Send>
+    pub fn get<O>(&self, key: &str) -> Box<dyn Future<Item = Option<O>, Error = Error> + Send>
     where
         O: DeserializeOwned + Send + 'static,
     {
@@ -38,7 +38,7 @@ where
     }
 
     /// Set key to hold the given value
-    pub fn set<I>(&self, key: &str, val: &I) -> Box<Future<Item = (), Error = Error> + Send>
+    pub fn set<I>(&self, key: &str, val: &I) -> Box<dyn Future<Item = (), Error = Error> + Send>
     where
         I: Serialize,
     {
@@ -48,12 +48,12 @@ where
     /// Set a timeout on key
     ///
     /// After the timeout has expired, the key will automatically be deleted
-    pub fn expire(&self, key: &str, seconds: usize) -> Box<Future<Item = (), Error = Error> + Send> {
+    pub fn expire(&self, key: &str, seconds: usize) -> Box<dyn Future<Item = (), Error = Error> + Send> {
         self.store.expire(self.build_key(key), seconds)
     }
 
     /// Remove the specified key
-    pub fn del(&self, key: &str) -> Box<Future<Item = (), Error = Error> + Send> {
+    pub fn del(&self, key: &str) -> Box<dyn Future<Item = (), Error = Error> + Send> {
         self.store.del(self.build_key(key))
     }
 }
@@ -91,7 +91,7 @@ impl SessionKey {
 }
 
 impl fmt::Display for SessionKey {
-    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, out: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(out, "{}-{}", self.namespace, self.name)
     }
 }
@@ -148,7 +148,7 @@ mod tests {
     }
 
     impl SessionStore for Store {
-        fn get<O>(&self, key: SessionKey) -> Box<Future<Item = Option<O>, Error = Error> + Send>
+        fn get<O>(&self, key: SessionKey) -> Box<dyn Future<Item = Option<O>, Error = Error> + Send>
         where
             O: DeserializeOwned + Send + 'static,
         {
@@ -158,7 +158,7 @@ mod tests {
             }
         }
 
-        fn set<I>(&self, key: SessionKey, val: &I) -> Box<Future<Item = (), Error = Error> + Send>
+        fn set<I>(&self, key: SessionKey, val: &I) -> Box<dyn Future<Item = (), Error = Error> + Send>
         where
             I: Serialize,
         {
@@ -171,12 +171,12 @@ mod tests {
             )
         }
 
-        fn expire(&self, key: SessionKey, seconds: usize) -> Box<Future<Item = (), Error = Error> + Send> {
+        fn expire(&self, key: SessionKey, seconds: usize) -> Box<dyn Future<Item = (), Error = Error> + Send> {
             self.expire_calls.lock().unwrap().push((key.to_string(), seconds));
             Box::new(future::ok(()))
         }
 
-        fn del(&self, key: SessionKey) -> Box<Future<Item = (), Error = Error> + Send> {
+        fn del(&self, key: SessionKey) -> Box<dyn Future<Item = (), Error = Error> + Send> {
             self.data.lock().unwrap().remove(&key.to_string());
             Box::new(future::ok(()))
         }

@@ -32,7 +32,7 @@ impl<C> HyperExecutor<C> {
 }
 
 impl<C: Connect + 'static> Executor for HyperExecutor<C> {
-    fn execute(&self, req: Request) -> Box<Future<Item = Vec<u8>, Error = Error> + Send> {
+    fn execute(&self, req: Request) -> Box<dyn Future<Item = Vec<u8>, Error = Error> + Send> {
         let mut builder = match req.method {
             RequestMethod::Get => HttpRequest::get(req.url),
             RequestMethod::Post => HttpRequest::post(req.url),
@@ -73,19 +73,19 @@ fn https_connector() -> Result<HttpsConnector<HttpConnector>, Error> {
     Ok(HttpsConnector::new(DEFAULT_HTTPS_DNS_WORKER_THREADS)?)
 }
 
-pub(crate) fn default_executor() -> Result<Box<Executor>, Error> {
+pub(crate) fn default_executor() -> Result<Box<dyn Executor>, Error> {
     let connector = https_connector()?;
     let client = Client::builder().build(connector);
     Ok(Box::new(HyperExecutor::new(client)))
 }
 
-fn socks_proxy_executor(proxy: SocksProxy<SocketAddr>) -> Result<Box<Executor>, Error> {
+fn socks_proxy_executor(proxy: SocksProxy<SocketAddr>) -> Result<Box<dyn Executor>, Error> {
     let connector = proxy.with_tls()?;
     let client = Client::builder().build(connector);
     Ok(Box::new(HyperExecutor::new(client)))
 }
 
-fn http_proxy_executor(proxy: HttpProxy) -> Result<Box<Executor>, Error> {
+fn http_proxy_executor(proxy: HttpProxy) -> Result<Box<dyn Executor>, Error> {
     let connector = https_connector()?;
     let proxy_connector = HttpProxyConnector::from_proxy(connector, proxy)?;
     let client = Client::builder().build(proxy_connector);
@@ -96,7 +96,7 @@ fn http_proxy_executor(proxy: HttpProxy) -> Result<Box<Executor>, Error> {
 #[fail(display = "Unexpected proxy: {}", _0)]
 struct UnexpectedProxyError(String);
 
-pub(crate) fn proxy_executor(dsn: &str) -> Result<Box<Executor>, Error> {
+pub(crate) fn proxy_executor(dsn: &str) -> Result<Box<dyn Executor>, Error> {
     macro_rules! unexpected_proxy {
         () => {
             return Err(UnexpectedProxyError(dsn.to_string()).into());

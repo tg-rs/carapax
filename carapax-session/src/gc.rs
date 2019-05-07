@@ -7,7 +7,7 @@ use tokio_timer::Interval;
 /// Adds GC support for a session store
 pub trait GarbageCollector {
     /// Removes old sessions
-    fn collect(&self) -> Box<Future<Item = (), Error = Error> + Send>;
+    fn collect(&self) -> Box<dyn Future<Item = (), Error = Error> + Send>;
 }
 
 /// Spawns a session GC

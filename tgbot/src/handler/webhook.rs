@@ -46,7 +46,7 @@ impl<Ctx> MakeService<Ctx> for WebhookServiceFactory {
     type ResBody = Body;
     type Error = Error;
     type Service = WebhookService;
-    type Future = Box<Future<Item = Self::Service, Error = Self::MakeError> + Send>;
+    type Future = Box<dyn Future<Item = Self::Service, Error = Self::MakeError> + Send>;
     type MakeError = Never;
 
     fn make_service(&mut self, _ctx: Ctx) -> Self::Future {
@@ -95,7 +95,7 @@ impl Service for WebhookService {
     type ReqBody = Body;
     type ResBody = Body;
     type Error = Error;
-    type Future = Box<Future<Item = Response<Body>, Error = Error> + Send>;
+    type Future = Box<dyn Future<Item = Response<Body>, Error = Error> + Send>;
 
     fn call(&mut self, req: Request<Self::ReqBody>) -> Self::Future {
         if let Method::POST = *req.method() {

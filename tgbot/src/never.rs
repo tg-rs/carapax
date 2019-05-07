@@ -5,13 +5,13 @@ use std::{error::Error, fmt};
 pub enum Never {}
 
 impl fmt::Display for Never {
-    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {}
     }
 }
 
 impl fmt::Debug for Never {
-    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {}
     }
 }

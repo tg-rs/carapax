@@ -37,7 +37,7 @@ pub enum HandlerResult {
 /// }
 #[must_use = "futures do nothing unless polled"]
 pub struct HandlerFuture {
-    inner: Box<Future<Item = HandlerResult, Error = Error> + Send>,
+    inner: Box<dyn Future<Item = HandlerResult, Error = Error> + Send>,
 }
 
 impl HandlerFuture {

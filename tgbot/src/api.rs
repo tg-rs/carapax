@@ -62,7 +62,7 @@ where
 /// Telegram Bot API client
 #[derive(Clone)]
 pub struct Api {
-    executor: Arc<Box<Executor>>,
+    executor: Arc<Box<dyn Executor>>,
     host: String,
     token: String,
 }
@@ -138,7 +138,7 @@ impl Api {
 /// An API future
 #[must_use = "futures do nothing unless polled"]
 pub struct ApiFuture<T> {
-    inner: Box<Future<Item = T, Error = Error> + Send>,
+    inner: Box<dyn Future<Item = T, Error = Error> + Send>,
 }
 
 impl<T> Future for ApiFuture<T> {

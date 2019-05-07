@@ -16,7 +16,7 @@ struct Handler {
     api: Api,
 }
 
-fn handle_document(api: &Api, document: Document) -> Box<Future<Item = (), Error = Error> + Send> {
+fn handle_document(api: &Api, document: Document) -> Box<dyn Future<Item = (), Error = Error> + Send> {
     let api = api.clone();
     Box::new(
         api.execute(GetFile::new(document.file_id.as_str()))
