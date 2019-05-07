@@ -24,7 +24,7 @@ tokio-executor = "0.1.7"
 tokio-timer = "0.2.10"
 
 # fs-store
-tokio-fs = {version = "0.1.6", optional = true}
+tokio-fs = { version = "0.1.6", optional = true }
 
 # redis-store
 redis = { version = "0.10.0", optional = true }
