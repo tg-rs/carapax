@@ -14,7 +14,7 @@ pub trait AccessPolicy {
 /// Access policy future
 #[must_use = "futures do nothing unless polled"]
 pub struct AccessPolicyFuture {
-    inner: Box<Future<Item = bool, Error = Error> + Send>,
+    inner: Box<dyn Future<Item = bool, Error = Error> + Send>,
 }
 
 impl AccessPolicyFuture {

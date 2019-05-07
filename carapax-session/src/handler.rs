@@ -59,25 +59,25 @@ mod tests {
     struct Store;
 
     impl SessionStore for Store {
-        fn get<O>(&self, _key: SessionKey) -> Box<Future<Item = Option<O>, Error = Error> + Send>
+        fn get<O>(&self, _key: SessionKey) -> Box<dyn Future<Item = Option<O>, Error = Error> + Send>
         where
             O: DeserializeOwned + Send + 'static,
         {
             unimplemented!()
         }
 
-        fn set<I>(&self, _key: SessionKey, _val: &I) -> Box<Future<Item = (), Error = Error> + Send>
+        fn set<I>(&self, _key: SessionKey, _val: &I) -> Box<dyn Future<Item = (), Error = Error> + Send>
         where
             I: Serialize,
         {
             unimplemented!()
         }
 
-        fn expire(&self, _key: SessionKey, _seconds: usize) -> Box<Future<Item = (), Error = Error> + Send> {
+        fn expire(&self, _key: SessionKey, _seconds: usize) -> Box<dyn Future<Item = (), Error = Error> + Send> {
             unimplemented!()
         }
 
-        fn del(&self, _key: SessionKey) -> Box<Future<Item = (), Error = Error> + Send> {
+        fn del(&self, _key: SessionKey) -> Box<dyn Future<Item = (), Error = Error> + Send> {
             unimplemented!()
         }
     }

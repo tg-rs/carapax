@@ -69,12 +69,12 @@ impl From<(String, Mime)> for InputFileInfo {
 
 /// File reader to upload
 pub struct InputFileReader {
-    pub(crate) reader: Box<Read + Send>,
+    pub(crate) reader: Box<dyn Read + Send>,
     pub(crate) info: Option<InputFileInfo>,
 }
 
 impl fmt::Debug for InputFileReader {
-    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, out: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(out, "InputFileReader(reader: ..., info: {:?})", self.info)
     }
 }
@@ -153,7 +153,7 @@ pub(crate) enum InputFileKind {
 }
 
 impl fmt::Debug for InputFileKind {
-    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, out: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             InputFileKind::Id(ref s) => write!(out, "InputFileKind::Id({:?})", s),
             InputFileKind::Url(ref s) => write!(out, "InputFileKind::Url({:?})", s),

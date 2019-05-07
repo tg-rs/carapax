@@ -16,7 +16,7 @@ pub struct CommandsHandler {
     not_found_handler: Option<BoxedCommandHandler>,
 }
 
-type BoxedCommandHandler = Box<CommandHandler<Output = HandlerFuture> + Send + Sync>;
+type BoxedCommandHandler = Box<dyn CommandHandler<Output = HandlerFuture> + Send + Sync>;
 
 impl CommandsHandler {
     /// Add command handler
