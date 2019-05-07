@@ -68,7 +68,7 @@ impl<R, H> TextHandler<R, H> {
 }
 
 impl<H> TextHandler<TextRuleContains, H> {
-    /// Create a handler for messages contains given text
+    /// Create a handler for messages that contain given text
     pub fn contains<S>(text: S, handler: H) -> Self
     where
         S: Into<String>,
@@ -78,7 +78,7 @@ impl<H> TextHandler<TextRuleContains, H> {
 }
 
 impl<H> TextHandler<TextRuleEquals, H> {
-    /// Create a handler for messages equals given text
+    /// Create a handler for messages that equal to given text
     pub fn equals<S>(text: S, handler: H) -> Self
     where
         S: Into<String>,

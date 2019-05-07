@@ -121,15 +121,15 @@ impl UpdatesStream {
         }
     }
 
-    /// Should retry request when an error has occurred
+    /// Whether or not a request should be retried if it has resolved into an error.
     ///
-    /// Default value is true
+    /// Default value is `true`
     pub fn should_retry(mut self, value: bool) -> Self {
         self.should_retry = value;
         self
     }
 
-    /// Set options
+    /// Sets update stream options used in getUpdates method
     pub fn options(mut self, options: UpdatesStreamOptions) -> Self {
         self.options = options;
         self
@@ -142,7 +142,9 @@ impl From<Api> for UpdatesStream {
     }
 }
 
-/// Update stream options
+/// Updates stream options
+///
+/// These options are used in getUpdates method
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct UpdatesStreamOptions {
     offset: Integer,
@@ -156,16 +158,19 @@ impl UpdatesStreamOptions {
     /// Limits the number of updates to be retrieved
     ///
     /// Values between 1—100 are accepted
+    ///
     /// Defaults to 100
     pub fn limit(mut self, limit: Integer) -> Self {
         self.limit = limit;
         self
     }
 
-    /// Timeout in seconds for long polling
+    /// Timeout for long polling
     ///
     /// 0 - usual short polling
+    ///
     /// Defaults to 10
+    ///
     /// Should be positive, short polling should be used for testing purposes only
     pub fn poll_timeout(mut self, poll_timeout: Duration) -> Self {
         self.poll_timeout = poll_timeout;

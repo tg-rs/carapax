@@ -81,8 +81,7 @@ where
 
 /// A function handler
 ///
-/// Since we can not implement a handler for Fn directly,
-/// we use this struct as a workaround
+/// Since we can not implement `Handler` for Fn directly we use this wrapper as a workaround
 ///
 /// # Example
 ///

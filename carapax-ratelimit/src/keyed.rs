@@ -201,7 +201,6 @@ where
 mod tests {
     use super::*;
     use crate::nonzero;
-    use carapax::{core::types::Update, Context};
 
     #[test]
     fn handler_key_found() {

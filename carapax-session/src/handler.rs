@@ -55,7 +55,6 @@ where
 mod tests {
     use super::*;
     use crate::SessionKey;
-    use carapax::{core::types::Update, Context};
     use failure::Error;
     use futures::Future;
     use serde::{de::DeserializeOwned, Serialize};

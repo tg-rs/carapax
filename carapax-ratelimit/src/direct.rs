@@ -42,7 +42,7 @@ impl Handler for DirectRateLimitHandler {
 mod tests {
     use super::*;
     use crate::nonzero;
-    use carapax::{core::types::Update, Context};
+    use carapax::{context::Context, core::types::Update};
 
     #[test]
     fn handler() {

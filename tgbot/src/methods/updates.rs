@@ -52,7 +52,7 @@ impl GetUpdates {
         self
     }
 
-    /// Timeout in seconds for long polling
+    /// Timeout for long polling
     ///
     /// Defaults to 0, i.e. usual short polling
     /// Should be positive, short polling should be used for testing purposes only

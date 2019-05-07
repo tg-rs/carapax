@@ -10,7 +10,7 @@ pub struct AccessHandler<P> {
 }
 
 impl<P> AccessHandler<P> {
-    /// Creates a middleware with specified policy
+    /// Creates a new handler with a specified policy
     pub fn new(policy: P) -> Self {
         AccessHandler { policy }
     }
@@ -38,7 +38,6 @@ where
 mod tests {
     use super::*;
     use crate::policy::{AccessPolicy, AccessPolicyFuture};
-    use carapax::Context;
 
     struct Policy {
         flag: bool,
