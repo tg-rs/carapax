@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 (xx.05.2018)
+## 0.4.0 (07.05.2018)
 
 - Added Bot API 4.2 support.
 - Added `prelude` module.
@@ -15,6 +15,7 @@
 - `Api::execute()` takes a method by value instead of reference.
 - `Method::get_request(&self)` replaced by `Method::into_request(self)`
 - `RequestBuilder` is now private.
+- `WebhookServiceFactory` is now private.
 - Removed use of `Mutex` in `WebhookService`.
 - Removed `WebhookServiceFactoryError`.
 - Removed `InlineKeyboardButton::new()` method as the user must use exactly one of the option fields.

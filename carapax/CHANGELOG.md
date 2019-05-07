@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (xx.05.2019)
+## 0.2.0 (07.05.2019)
 
 - `App::new()` now takes no arguments.
 - Added `api` argument to `App::run()` method.
