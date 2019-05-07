@@ -135,7 +135,7 @@ impl Api {
     }
 }
 
-#[doc(hidden)]
+/// An API future
 #[must_use = "futures do nothing unless polled"]
 pub struct ApiFuture<T> {
     inner: Box<Future<Item = T, Error = Error> + Send>,
