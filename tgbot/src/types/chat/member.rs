@@ -24,7 +24,7 @@ pub enum ChatMember {
 
 impl ChatMember {
     /// Returns a user object
-    pub fn user(&self) -> &User {
+    pub fn get_user(&self) -> &User {
         use self::ChatMember::*;
         match self {
             Administrator(ref admin) => &admin.user,
@@ -191,7 +191,7 @@ mod tests {
         }))
         .unwrap();
         assert!(admin.is_member());
-        assert_eq!(admin.user().id, 1);
+        assert_eq!(admin.get_user().id, 1);
         if let ChatMember::Administrator(ref mut admin) = admin {
             assert_eq!(admin.user.id, 1);
             assert_eq!(admin.user.is_bot, false);
@@ -225,7 +225,7 @@ mod tests {
         }))
         .unwrap();
         assert!(creator.is_member());
-        assert_eq!(creator.user().id, 1);
+        assert_eq!(creator.get_user().id, 1);
         if let ChatMember::Creator(ref creator) = creator {
             assert_eq!(creator.id, 1);
             assert_eq!(creator.is_bot, false);
@@ -253,7 +253,7 @@ mod tests {
         }))
         .unwrap();
         assert!(!kicked.is_member());
-        assert_eq!(kicked.user().id, 1);
+        assert_eq!(kicked.get_user().id, 1);
         if let ChatMember::Kicked(ref mut kicked) = kicked {
             assert_eq!(kicked.user.id, 1);
             assert_eq!(kicked.user.is_bot, true);
@@ -279,7 +279,7 @@ mod tests {
         }))
         .unwrap();
         assert!(!left.is_member());
-        assert_eq!(left.user().id, 1);
+        assert_eq!(left.get_user().id, 1);
         if let ChatMember::Left(ref left) = left {
             assert_eq!(left.id, 1);
             assert_eq!(left.is_bot, true);
@@ -304,7 +304,7 @@ mod tests {
         }))
         .unwrap();
         assert!(plain.is_member());
-        assert_eq!(plain.user().id, 1);
+        assert_eq!(plain.get_user().id, 1);
         if let ChatMember::Member(ref plain) = plain {
             assert_eq!(plain.id, 1);
             assert_eq!(plain.is_bot, false);
@@ -334,7 +334,7 @@ mod tests {
             "is_member": true
         }))
         .unwrap();
-        assert_eq!(restricted.user().id, 1);
+        assert_eq!(restricted.get_user().id, 1);
         assert!(restricted.is_member());
         if let ChatMember::Restricted(ref restricted) = restricted {
             assert_eq!(restricted.user.id, 1);
