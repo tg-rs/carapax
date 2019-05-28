@@ -32,5 +32,6 @@ lazy-queue = "0.1.1"
 [dev-dependencies]
 dotenv = "0.13.0"
 env_logger = "0.6.0"
-tokio = { version = "0.1.7", default-features = false }
 mockito = "0.17.0"
+tokio = { version = "0.1.7", default-features = false }
+tempfile = "3.0.8"

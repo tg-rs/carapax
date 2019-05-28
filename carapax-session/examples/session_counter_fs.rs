@@ -5,6 +5,7 @@ fn main() {
     use dotenv::dotenv;
     use futures::{future, Future};
     use std::{env, time::Duration};
+    use tempfile::tempdir;
 
     fn handle_set(context: &mut Context, message: Message, args: Vec<String>) -> HandlerFuture {
         log::info!("got a message: {:?}\n", message);
@@ -104,8 +105,10 @@ fn main() {
         .add_handler("/set", handle_set)
         .add_handler("/reset", handle_reset)
         .add_handler("/expire", handle_expire);
-    tokio::run(future::lazy(|| {
-        FsSessionStore::open("/tmp/carapax-session")
+    let tmpdir = tempdir().expect("Failed to create temp directory");
+    log::info!("Session directory: {}", tmpdir.path().display());
+    tokio::run(future::lazy(move || {
+        FsSessionStore::open(tmpdir.path())
             .map_err(|e| log::error!("Failed to create session store: {:?}", e))
             .and_then(|mut store| {
                 store = store.with_lifetime(10);
