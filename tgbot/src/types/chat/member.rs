@@ -66,12 +66,12 @@ impl<'de> Deserialize<'de> for ChatMember {
                 user: raw.user,
                 can_be_edited: required!(can_be_edited),
                 can_change_info: required!(can_change_info),
-                can_post_messages: required!(can_post_messages),
-                can_edit_messages: required!(can_edit_messages),
+                can_post_messages: raw.can_post_messages,
+                can_edit_messages: raw.can_edit_messages,
                 can_delete_messages: required!(can_delete_messages),
                 can_invite_users: required!(can_invite_users),
                 can_restrict_members: required!(can_restrict_members),
-                can_pin_messages: required!(can_pin_messages),
+                can_pin_messages: raw.can_pin_messages,
                 can_promote_members: required!(can_promote_members),
             }),
             RawChatMemberStatus::Creator => ChatMember::Creator(raw.user),
@@ -107,10 +107,10 @@ pub struct ChatMemberAdministrator {
     pub can_change_info: bool,
     /// True, if the administrator can post
     /// in the channel, channels only
-    pub can_post_messages: bool,
+    pub can_post_messages: Option<bool>,
     /// True, if the administrator can edit messages
     /// of other users and can pin messages, channels only
-    pub can_edit_messages: bool,
+    pub can_edit_messages: Option<bool>,
     /// True, if the administrator can delete messages of other users
     pub can_delete_messages: bool,
     /// True, if the administrator can invite new users to the chat
@@ -118,7 +118,7 @@ pub struct ChatMemberAdministrator {
     /// True, if the administrator can restrict, ban or unban chat members
     pub can_restrict_members: bool,
     /// True, if the administrator can pin messages, supergroups only
-    pub can_pin_messages: bool,
+    pub can_pin_messages: Option<bool>,
     /// True, if the administrator can
     /// add new administrators with a subset
     /// of his own privileges or
@@ -201,12 +201,12 @@ mod tests {
             assert_eq!(admin.user.language_code.take().unwrap(), "RU");
             assert_eq!(admin.can_be_edited, true);
             assert_eq!(admin.can_change_info, false);
-            assert_eq!(admin.can_post_messages, true);
-            assert_eq!(admin.can_edit_messages, false);
+            assert_eq!(admin.can_post_messages, Some(true));
+            assert_eq!(admin.can_edit_messages, Some(false));
             assert_eq!(admin.can_delete_messages, true);
             assert_eq!(admin.can_invite_users, false);
             assert_eq!(admin.can_restrict_members, true);
-            assert_eq!(admin.can_pin_messages, false);
+            assert_eq!(admin.can_pin_messages, Some(false));
             assert_eq!(admin.can_promote_members, true);
         } else {
             panic!("Unexpected chat member: {:?}", admin);
