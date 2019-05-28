@@ -19,7 +19,8 @@ impl SendMediaGroup {
     pub fn new<C: Into<ChatId>>(chat_id: C, media: MediaGroup) -> Result<Self, Error> {
         let mut form = Form::new();
         form.insert_field("chat_id", chat_id.into());
-        for (k, v) in media.into_form()? {
+        let media_form = media.into_form()?;
+        for (k, v) in media_form {
             form.insert_field(k, v);
         }
         Ok(SendMediaGroup { form })
