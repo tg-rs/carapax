@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.4.0 (07.05.2018)
+## 0.4.1 (28.05.2019)
+
+- Fixed ChatMemberAdministrator parsing.
+
+## 0.4.0 (07.05.2019)
 
 - Added Bot API 4.2 support.
 - Added `prelude` module.
