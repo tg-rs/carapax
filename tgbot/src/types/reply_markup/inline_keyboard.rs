@@ -1,3 +1,4 @@
+use crate::types::login_url::LoginUrl;
 use failure::Error;
 use serde::Serialize;
 
@@ -44,6 +45,8 @@ pub struct InlineKeyboardButton {
     callback_game: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pay: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    login_url: Option<LoginUrl>,
 }
 
 impl InlineKeyboardButton {
@@ -57,6 +60,7 @@ impl InlineKeyboardButton {
             switch_inline_query_current_chat: None,
             callback_game: None,
             pay: None,
+            login_url: None,
         }
     }
 
@@ -70,6 +74,7 @@ impl InlineKeyboardButton {
             switch_inline_query_current_chat: None,
             callback_game: None,
             pay: None,
+            login_url: None,
         }
     }
 
@@ -85,6 +90,7 @@ impl InlineKeyboardButton {
             switch_inline_query_current_chat: None,
             callback_game: None,
             pay: None,
+            login_url: None,
         })
     }
 
@@ -109,6 +115,7 @@ impl InlineKeyboardButton {
             switch_inline_query_current_chat: None,
             callback_game: None,
             pay: None,
+            login_url: None,
         }
     }
 
@@ -130,6 +137,7 @@ impl InlineKeyboardButton {
             switch_inline_query_current_chat: Some(switch_inline_query_current_chat.into()),
             callback_game: None,
             pay: None,
+            login_url: None,
         }
     }
 
@@ -145,6 +153,7 @@ impl InlineKeyboardButton {
             switch_inline_query_current_chat: None,
             callback_game: Some(String::new()),
             pay: None,
+            login_url: None,
         }
     }
 
@@ -160,6 +169,29 @@ impl InlineKeyboardButton {
             switch_inline_query_current_chat: None,
             callback_game: None,
             pay: Some(true),
+            login_url: None,
+        }
+    }
+
+    /// An HTTP URL used to automatically authorize the user
+    ///
+    /// Can be used as a replacement for the [Telegram Login Widget][1]
+    ///
+    /// [1]: https://core.telegram.org/widgets/login
+    pub fn with_login_url<T, U>(text: T, login_url: U) -> Self
+    where
+        T: Into<String>,
+        U: Into<LoginUrl>,
+    {
+        InlineKeyboardButton {
+            text: text.into(),
+            url: None,
+            callback_data: None,
+            switch_inline_query: None,
+            switch_inline_query_current_chat: None,
+            callback_game: None,
+            pay: None,
+            login_url: Some(login_url.into()),
         }
     }
 }
@@ -188,6 +220,7 @@ mod tests {
             InlineKeyboardButton::with_switch_inline_query_current_chat("siqcc", "siqcc"),
             InlineKeyboardButton::with_callback_game("cg"),
             InlineKeyboardButton::with_pay("pay"),
+            InlineKeyboardButton::with_login_url("login url", "http://example.com"),
         ]]
         .into();
         let data = serde_json::to_value(&markup).unwrap();
@@ -202,7 +235,8 @@ mod tests {
                         {"text":"siq","switch_inline_query":"siq"},
                         {"text":"siqcc","switch_inline_query_current_chat":"siqcc"},
                         {"text":"cg","callback_game":""},
-                        {"text":"pay","pay":true}
+                        {"text":"pay","pay":true},
+                        {"text":"login url","login_url":{"url":"http://example.com"}}
                     ]
                 ]
             })
