@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2 (01.06.2019)
+
+- Added Bot API 4.3 support.
+
 ## 0.4.1 (28.05.2019)
 
 - Fixed ChatMemberAdministrator parsing.
