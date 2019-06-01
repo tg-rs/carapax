@@ -11,6 +11,7 @@ use crate::types::{
     photo_size::PhotoSize,
     poll::Poll,
     primitive::Integer,
+    reply_markup::InlineKeyboardMarkup,
     stickers::Sticker,
     user::User,
     venue::Venue,
@@ -68,6 +69,7 @@ pub(super) struct RawMessage {
     pub successful_payment: Option<SuccessfulPayment>,
     pub connected_website: Option<String>,
     pub passport_data: Option<PassportData>,
+    pub reply_markup: Option<InlineKeyboardMarkup>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

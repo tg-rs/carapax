@@ -1,9 +1,9 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Represents a parameter of the inline keyboard button used to automatically authorize a user
 ///
 /// Serves as a great replacement for the Telegram Login Widget when the user is coming from Telegram
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LoginUrl {
     url: String,
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -1,4 +1,6 @@
-use crate::types::{chat::Chat, message::raw::RawMessage, primitive::Integer, user::User};
+use crate::types::{
+    chat::Chat, message::raw::RawMessage, primitive::Integer, reply_markup::InlineKeyboardMarkup, user::User,
+};
 use serde::{de::Error, Deserialize, Deserializer};
 
 mod data;
@@ -33,6 +35,8 @@ pub struct Message {
     pub data: MessageData,
     /// Contains command data
     pub commands: Option<Vec<BotCommand>>,
+    /// Inline keyboard attached to the message
+    pub reply_markup: Option<InlineKeyboardMarkup>,
 }
 
 impl Message {
@@ -203,6 +207,7 @@ impl Message {
                     media_group_id: raw.media_group_id,
                     data: $data,
                     commands: $commands,
+                    reply_markup: raw.reply_markup,
                 });
             };
         };

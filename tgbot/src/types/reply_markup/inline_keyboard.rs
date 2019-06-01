@@ -1,9 +1,9 @@
 use crate::types::login_url::LoginUrl;
 use failure::Error;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Inline keyboard that appears right next to the message it belongs to
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct InlineKeyboardMarkup {
     inline_keyboard: Vec<Vec<InlineKeyboardButton>>,
 }
@@ -30,7 +30,7 @@ impl From<Vec<Vec<InlineKeyboardButton>>> for InlineKeyboardMarkup {
 /// Button of an inline keyboard
 ///
 /// You must use exactly one of the optional fields
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InlineKeyboardButton {
     text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
