@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.3 (07.07.2019)
+
+- Ignore invalid updates in webhook handler.
+
 ## 0.4.2 (01.06.2019)
 
 - Added Bot API 4.3 support.
