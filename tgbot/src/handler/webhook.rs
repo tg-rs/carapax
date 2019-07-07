@@ -84,10 +84,14 @@ fn put_on_a_queue(
                     Ok(Response::new(Body::empty()))
                 }
             })),
-            Err(err) => Either::B(ok(Response::builder()
-                .status(StatusCode::BAD_REQUEST)
-                .body(Body::from(err.to_string()))
-                .expect("Can't construct a BAD_REQUEST response"))),
+            Err(err) => {
+                log::error!(
+                    "Failed to parse update \"{}\": {:?}",
+                    err,
+                    String::from_utf8_lossy(&body)
+                );
+                Either::B(ok(Response::new(Body::empty())))
+            }
         })
 }
 
