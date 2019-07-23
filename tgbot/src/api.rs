@@ -4,7 +4,7 @@ use crate::{
     request::RequestBuilder,
     types::Response,
 };
-use failure::Error;
+use failure::{format_err, Error};
 use futures::{future, Future, Poll};
 use serde::de::DeserializeOwned;
 use std::{fmt::Debug, sync::Arc};
@@ -112,7 +112,15 @@ impl Api {
                         .map(|builder| builder.build(&self.host, &self.token)),
                 )
                 .and_then(move |req| executor.execute(req))
-                .and_then(|data| serde_json::from_slice::<Response<M::Response>>(&data).map_err(Error::from))
+                .and_then(|data| {
+                    serde_json::from_slice::<Response<M::Response>>(&data).map_err(|e| {
+                        format_err!(
+                            "Can not parse response: {} (data={})",
+                            e,
+                            String::from_utf8_lossy(&data)
+                        )
+                    })
+                })
                 .and_then(|rep| match rep {
                     Response::Success(obj) => Ok(obj),
                     Response::Error(err) => Err(err.into()),

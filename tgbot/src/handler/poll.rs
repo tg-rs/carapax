@@ -46,7 +46,7 @@ fn make_request(api: &Api, options: &UpdatesStreamOptions) -> ApiFuture<Vec<Upda
 impl State {
     fn switch_to_idle(&mut self, err: Error) {
         error!(
-            "An error has occurred while getting updates: {:?}\n{:?}",
+            "An error has occurred while getting updates: {}\n{:?}",
             err,
             err.backtrace()
         );
