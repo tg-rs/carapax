@@ -6,11 +6,13 @@ use crate::types::{
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 
 mod member;
+mod permissions;
 mod photo;
 mod raw;
 
 pub use self::{
     member::{ChatMember, ChatMemberAdministrator, ChatMemberKicked, ChatMemberRestricted},
+    permissions::ChatPermissions,
     photo::ChatPhoto,
 };
 
@@ -58,6 +60,7 @@ impl<'de> Deserialize<'de> for Chat {
                 photo: raw_chat.photo,
                 pinned_message: raw_chat.pinned_message,
                 invite_link: raw_chat.invite_link,
+                permissions: raw_chat.permissions,
             }),
             RawChatKind::Private => Chat::Private(PrivateChat {
                 id: raw_chat.id,
@@ -76,6 +79,7 @@ impl<'de> Deserialize<'de> for Chat {
                 invite_link: raw_chat.invite_link,
                 sticker_set_name: raw_chat.sticker_set_name,
                 can_set_sticker_set: raw_chat.can_set_sticker_set,
+                permissions: raw_chat.permissions,
             }),
         })
     }
@@ -91,15 +95,19 @@ pub struct ChannelChat {
     /// Username of a channel
     pub username: Option<String>,
     /// Chat photo
+    ///
     /// Returned only in getChat
     pub photo: Option<ChatPhoto>,
     /// Description of a channel
-    /// Returned only in getChat.
+    ///
+    /// Returned only in getChat
     pub description: Option<String>,
     /// Invite link
+    ///
     /// Returned only in getChat
     pub invite_link: Option<String>,
     /// Pinned message
+    ///
     /// Returned only in getChat
     pub pinned_message: Option<Box<Message>>,
 }
@@ -112,16 +120,25 @@ pub struct GroupChat {
     /// Title
     pub title: String,
     /// True if a group has ‘All Members Are Admins’ enabled
+    ///
+    /// The field is still returned in the object for backward compatibility,
+    /// but new bots should use the permissions field instead
     pub all_members_are_administrators: bool,
     /// Chat photo
+    ///
     /// Returned only in getChat
     pub photo: Option<ChatPhoto>,
     /// Invite link
+    ///
     /// Returned only in getChat
     pub invite_link: Option<String>,
     /// Pinned message
     /// Returned only in getChat
     pub pinned_message: Option<Box<Message>>,
+    /// Default chat member permissions, for groups and supergroups
+    ///
+    /// Returned only in getChat
+    pub permissions: Option<ChatPermissions>,
 }
 
 /// Private chat
@@ -136,6 +153,7 @@ pub struct PrivateChat {
     /// Username of a chat
     pub username: Option<String>,
     /// Chat photo
+    ///
     /// Returned only in getChat
     pub photo: Option<ChatPhoto>,
 }
@@ -150,23 +168,33 @@ pub struct SupergroupChat {
     /// Username of a supergroup
     pub username: Option<String>,
     /// Photo of a supergroup
+    ///
     /// Returned only in getChat
     pub photo: Option<ChatPhoto>,
     /// Description of a supergroup
+    ///
     /// Returned only in getChat
     pub description: Option<String>,
     /// Invite link
+    ///
     /// Returned only in getChat
     pub invite_link: Option<String>,
     /// Pinned message
+    ///
     /// Returned only in getChat
     pub pinned_message: Option<Box<Message>>,
     /// For supergroups, name of group sticker set
+    ///
     /// Returned only in getChat
     pub sticker_set_name: Option<String>,
     /// True, if the bot can change the group sticker set
+    ///
     /// Returned only in getChat
     pub can_set_sticker_set: Option<bool>,
+    /// Default chat member permissions, for groups and supergroups
+    ///
+    /// Returned only in getChat
+    pub permissions: Option<ChatPermissions>,
 }
 
 /// Chat ID or username
@@ -341,7 +369,8 @@ mod tests {
                     "first_name": "user"
                 },
                 "text": "test"
-            }
+            },
+            "permissions": {"can_send_messages": true}
         }))
         .unwrap();
         if let Chat::Group(chat) = chat {
@@ -352,6 +381,8 @@ mod tests {
             assert_eq!(photo.small_file_id, "smallfileid");
             assert_eq!(photo.big_file_id, "bigfileid");
             assert_eq!(chat.invite_link.unwrap(), "groupinvitelink");
+            let permissions = chat.permissions.unwrap();
+            assert!(permissions.can_send_messages.unwrap());
             assert!(chat.pinned_message.is_some());
         } else {
             panic!("Unexpected chat: {:?}", chat);
@@ -371,6 +402,7 @@ mod tests {
             assert!(chat.photo.is_none());
             assert!(chat.invite_link.is_none());
             assert!(chat.pinned_message.is_none());
+            assert!(chat.permissions.is_none());
         } else {
             panic!("Unexpected chat: {:?}", chat);
         }
@@ -434,6 +466,9 @@ mod tests {
             "invite_link": "supergroupinvitelink",
             "sticker_set_name": "supergroupstickersetname",
             "can_set_sticker_set": true,
+            "permissions": {
+                "can_send_messages": true
+            },
             "pinned_message": {
                 "message_id": 1,
                 "date": 0,
@@ -464,6 +499,8 @@ mod tests {
             assert_eq!(chat.sticker_set_name.unwrap(), "supergroupstickersetname");
             assert!(chat.can_set_sticker_set.unwrap());
             assert!(chat.pinned_message.is_some());
+            let permissions = chat.permissions.unwrap();
+            assert!(permissions.can_send_messages.unwrap());
         } else {
             panic!("Unexpected chat: {:?}", chat)
         }
@@ -485,6 +522,7 @@ mod tests {
             assert!(chat.sticker_set_name.is_none());
             assert!(chat.can_set_sticker_set.is_none());
             assert!(chat.pinned_message.is_none());
+            assert!(chat.permissions.is_none());
         } else {
             panic!("Unexpected chat: {:?}", chat)
         }

@@ -1,7 +1,7 @@
 use crate::{
     methods::Method,
     request::RequestBuilder,
-    types::{ChatId, Integer},
+    types::{ChatId, ChatPermissions, Integer},
 };
 use failure::Error;
 use serde::Serialize;
@@ -16,16 +16,9 @@ use serde::Serialize;
 pub struct RestrictChatMember {
     chat_id: ChatId,
     user_id: Integer,
+    permissions: ChatPermissions,
     #[serde(skip_serializing_if = "Option::is_none")]
     until_date: Option<Integer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    can_send_messages: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    can_send_media_messages: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    can_send_other_messages: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    can_add_web_page_previews: Option<bool>,
 }
 
 impl RestrictChatMember {
@@ -39,29 +32,26 @@ impl RestrictChatMember {
         RestrictChatMember {
             chat_id: chat_id.into(),
             user_id,
+            permissions: ChatPermissions::default(),
             until_date: None,
-            can_send_messages: None,
-            can_send_media_messages: None,
-            can_send_other_messages: None,
-            can_add_web_page_previews: None,
         }
+    }
+
+    /// Replace current permissions with the new one
+    pub fn with_permissions(mut self, permissions: ChatPermissions) -> Self {
+        self.permissions = permissions;
+        self
     }
 
     /// Restrict everything
     pub fn restrict_all(mut self) -> Self {
-        self.can_send_messages = Some(false);
-        self.can_send_media_messages = Some(false);
-        self.can_send_other_messages = Some(false);
-        self.can_add_web_page_previews = Some(false);
+        self.permissions = ChatPermissions::restricted();
         self
     }
 
     /// Allow everything
     pub fn allow_all(mut self) -> Self {
-        self.can_send_messages = Some(true);
-        self.can_send_media_messages = Some(true);
-        self.can_send_other_messages = Some(true);
-        self.can_add_web_page_previews = Some(true);
+        self.permissions = ChatPermissions::allowed();
         self
     }
 
@@ -75,29 +65,37 @@ impl RestrictChatMember {
     }
 
     /// Pass True, if the user can send text messages, contacts, locations and venues
+    ///
+    /// Deprecated, to be removed in tgbot 0.5.0. Use with_permissions() instead.
     pub fn can_send_messages(mut self, can_send_messages: bool) -> Self {
-        self.can_send_messages = Some(can_send_messages);
+        self.permissions = self.permissions.with_send_messages(can_send_messages);
         self
     }
 
     /// Pass True, if the user can send audios, documents, photos,
     /// videos, video notes and voice notes, implies can_send_messages
+    ///
+    /// Deprecated, to be removed in tgbot 0.5.0. Use with_permissions() instead.
     pub fn can_send_media_messages(mut self, can_send_media_messages: bool) -> Self {
-        self.can_send_media_messages = Some(can_send_media_messages);
+        self.permissions = self.permissions.with_send_media_messages(can_send_media_messages);
         self
     }
 
     /// Pass True, if the user can send animations, games, stickers and
     /// use inline bots, implies can_send_media_messages
+    ///
+    /// Deprecated, to be removed in tgbot 0.5.0. Use with_permissions() instead.
     pub fn can_send_other_messages(mut self, can_send_other_messages: bool) -> Self {
-        self.can_send_other_messages = Some(can_send_other_messages);
+        self.permissions = self.permissions.with_send_other_messages(can_send_other_messages);
         self
     }
 
     /// Pass True, if the user may add web page previews to their messages,
     /// implies can_send_media_messages
+    ///
+    /// Deprecated, to be removed in tgbot 0.5.0. Use with_permissions() instead.
     pub fn can_add_web_page_previews(mut self, can_add_web_page_previews: bool) -> Self {
-        self.can_add_web_page_previews = Some(can_add_web_page_previews);
+        self.permissions = self.permissions.with_add_web_page_previews(can_add_web_page_previews);
         self
     }
 }
@@ -131,10 +129,19 @@ mod tests {
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["user_id"], 2);
             assert_eq!(data["until_date"], 100);
-            assert_eq!(data["can_send_messages"], false);
-            assert_eq!(data["can_send_media_messages"], false);
-            assert_eq!(data["can_send_other_messages"], false);
-            assert_eq!(data["can_add_web_page_previews"], false);
+            assert_eq!(
+                data["permissions"],
+                serde_json::json!({
+                    "can_send_messages": false,
+                    "can_send_media_messages": false,
+                    "can_send_polls": false,
+                    "can_send_other_messages": false,
+                    "can_add_web_page_previews": false,
+                    "can_change_info": false,
+                    "can_invite_users": false,
+                    "can_pin_messages": false,
+                })
+            );
         } else {
             panic!("Unexpected request body: {:?}", request.body);
         }
@@ -155,10 +162,19 @@ mod tests {
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["user_id"], 2);
             assert_eq!(data["until_date"], 100);
-            assert_eq!(data["can_send_messages"], true);
-            assert_eq!(data["can_send_media_messages"], true);
-            assert_eq!(data["can_send_other_messages"], true);
-            assert_eq!(data["can_add_web_page_previews"], true);
+            assert_eq!(
+                data["permissions"],
+                serde_json::json!({
+                    "can_send_messages": true,
+                    "can_send_media_messages": true,
+                    "can_send_polls": true,
+                    "can_send_other_messages": true,
+                    "can_add_web_page_previews": true,
+                    "can_change_info": true,
+                    "can_invite_users": true,
+                    "can_pin_messages": true,
+                })
+            );
         } else {
             panic!("Unexpected request body: {:?}", request.body);
         }
@@ -182,10 +198,15 @@ mod tests {
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["user_id"], 2);
             assert_eq!(data["until_date"], 100);
-            assert_eq!(data["can_send_messages"], true);
-            assert_eq!(data["can_send_media_messages"], false);
-            assert_eq!(data["can_send_other_messages"], true);
-            assert_eq!(data["can_add_web_page_previews"], false);
+            assert_eq!(
+                data["permissions"],
+                serde_json::json!({
+                    "can_send_messages": true,
+                    "can_send_media_messages": false,
+                    "can_send_other_messages": true,
+                    "can_add_web_page_previews": false
+                })
+            );
         } else {
             panic!("Unexpected request body: {:?}", request.body);
         }

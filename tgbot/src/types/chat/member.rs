@@ -84,7 +84,11 @@ impl<'de> Deserialize<'de> for ChatMember {
             RawChatMemberStatus::Restricted => ChatMember::Restricted(ChatMemberRestricted {
                 user: raw.user,
                 until_date: required!(until_date),
+                can_change_info: required!(can_change_info),
+                can_invite_users: required!(can_invite_users),
+                can_pin_messages: raw.can_pin_messages,
                 can_send_messages: required!(can_send_messages),
+                can_send_polls: required!(can_send_polls),
                 can_send_media_messages: required!(can_send_media_messages),
                 can_send_other_messages: required!(can_send_other_messages),
                 can_add_web_page_previews: required!(can_add_web_page_previews),
@@ -117,7 +121,7 @@ pub struct ChatMemberAdministrator {
     pub can_invite_users: bool,
     /// True, if the administrator can restrict, ban or unban chat members
     pub can_restrict_members: bool,
-    /// True, if the administrator can pin messages, supergroups only
+    /// True, if the administrator can pin messages, groups and supergroups only
     pub can_pin_messages: Option<bool>,
     /// True, if the administrator can
     /// add new administrators with a subset
@@ -144,9 +148,18 @@ pub struct ChatMemberRestricted {
     pub user: User,
     /// Date when restrictions will be lifted for this user, unix time
     pub until_date: Integer,
+    /// True, if the user allowed to change
+    /// the chat title, photo and other settings
+    pub can_change_info: bool,
+    /// True, if the user allowed to invite new users to the chat
+    pub can_invite_users: bool,
+    /// True, if the user allowed to pin messages, groups and supergroups only
+    pub can_pin_messages: Option<bool>,
     /// True, if the user can send
     /// text messages, contacts, locations and venues
     pub can_send_messages: bool,
+    /// True, if the user is allowed to send polls
+    pub can_send_polls: bool,
     /// True, if the user can send
     /// audios, documents, photos, videos,
     /// video notes and voice notes, implies can_send_messages
@@ -327,6 +340,10 @@ mod tests {
                 "first_name": "firstname"
             },
             "until_date": 0,
+            "can_change_info": true,
+            "can_invite_users": false,
+            "can_send_polls": true,
+            "can_pin_messages": false,
             "can_send_messages": true,
             "can_send_media_messages": false,
             "can_send_other_messages": true,
@@ -344,6 +361,10 @@ mod tests {
             assert!(restricted.user.username.is_none());
             assert!(restricted.user.language_code.is_none());
             assert_eq!(restricted.until_date, 0);
+            assert!(restricted.can_change_info);
+            assert!(!restricted.can_invite_users);
+            assert!(restricted.can_send_polls);
+            assert!(!restricted.can_pin_messages.unwrap());
             assert!(restricted.can_send_messages);
             assert!(!restricted.can_send_media_messages);
             assert!(restricted.can_send_other_messages);

@@ -1,4 +1,9 @@
-use crate::types::{chat::photo::ChatPhoto, message::Message, primitive::Integer, user::User};
+use crate::types::{
+    chat::{permissions::ChatPermissions, photo::ChatPhoto},
+    message::Message,
+    primitive::Integer,
+    user::User,
+};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -17,6 +22,7 @@ pub struct RawChat {
     pub pinned_message: Option<Box<Message>>,
     pub sticker_set_name: Option<String>,
     pub can_set_sticker_set: Option<bool>,
+    pub permissions: Option<ChatPermissions>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -39,6 +45,7 @@ pub struct RawChatMember {
     pub can_be_edited: Option<bool>,
     pub can_change_info: Option<bool>,
     pub can_post_messages: Option<bool>,
+    pub can_send_polls: Option<bool>,
     pub can_edit_messages: Option<bool>,
     pub can_delete_messages: Option<bool>,
     pub can_invite_users: Option<bool>,
