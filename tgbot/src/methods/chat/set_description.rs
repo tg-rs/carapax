@@ -2,7 +2,7 @@ use crate::{methods::Method, request::RequestBuilder, types::ChatId};
 use failure::Error;
 use serde::Serialize;
 
-/// Change the description of a supergroup or a channel
+/// Change the description of a group, a supergroup or a channel
 ///
 /// The bot must be an administrator in the chat for this to work
 /// and must have the appropriate admin rights

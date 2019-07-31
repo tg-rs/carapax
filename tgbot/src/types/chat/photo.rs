@@ -4,10 +4,14 @@ use serde::Deserialize;
 #[derive(Clone, Debug, Deserialize)]
 pub struct ChatPhoto {
     /// Unique file identifier of small (160x160) chat photo
+    ///
     /// This file_id can be used only for photo download
+    /// and only for as long as the photo is not changed
     pub small_file_id: String,
     /// Unique file identifier of big (640x640) chat photo
+    ///
     /// This file_id can be used only for photo download
+    /// and only for as long as the photo is not changed
     pub big_file_id: String,
 }
 
