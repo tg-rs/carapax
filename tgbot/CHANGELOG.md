@@ -4,6 +4,12 @@
 
 - Added Bot API 4.4 support.
 - Added information about response data to poll request error.
+- RestrictChatMember methods:
+  can_send_messages,
+  can_send_media_messages,
+  can_send_other_messages,
+  can_add_web_page_previews are now deprecated and will be removed in 0.5.0.
+  Use with_permissions method instead.
 
 ## 0.4.3 (07.07.2019)
 
