@@ -609,7 +609,8 @@ mod tests {
             "sticker": {
                 "file_id": "sticker-id",
                 "width": 512,
-                "height": 512
+                "height": 512,
+                "is_animated": true
             }
         }))
         .unwrap();

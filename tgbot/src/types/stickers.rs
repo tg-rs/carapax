@@ -64,6 +64,8 @@ pub struct Sticker {
     pub mask_position: Option<MaskPosition>,
     /// File size
     pub file_size: Option<Integer>,
+    /// True, if the sticker is animated
+    pub is_animated: bool,
 }
 
 /// Sticker set
@@ -77,6 +79,8 @@ pub struct StickerSet {
     pub contains_masks: bool,
     /// List of all set stickers
     pub stickers: Vec<Sticker>,
+    /// True, if the sticker set contains animated stickers
+    pub is_animated: bool,
 }
 
 #[cfg(test)]
@@ -104,13 +108,15 @@ mod tests {
                 "y_shift": 2.0,
                 "scale": 3.0,
             },
-            "file_size": 1234
+            "file_size": 1234,
+            "is_animated": false
         }))
         .unwrap();
 
         assert_eq!(data.file_id, "test file id");
         assert_eq!(data.width, 512);
         assert_eq!(data.height, 512);
+        assert!(!data.is_animated);
 
         let thumb = data.thumb.unwrap();
         assert_eq!(thumb.file_id, "AdddddUuUUUUccccUUmm_PPP");
@@ -135,13 +141,15 @@ mod tests {
         let data: Sticker = serde_json::from_value(serde_json::json!({
             "file_id": "test file id",
             "width": 512,
-            "height": 512
+            "height": 512,
+            "is_animated": true
         }))
         .unwrap();
 
         assert_eq!(data.file_id, "test file id");
         assert_eq!(data.width, 512);
         assert_eq!(data.height, 512);
+        assert!(data.is_animated);
         assert!(data.thumb.is_none());
         assert!(data.emoji.is_none());
         assert!(data.set_name.is_none());
@@ -182,11 +190,13 @@ mod tests {
             "name": "test",
             "title": "test",
             "contains_masks": false,
-            "stickers": []
+            "stickers": [],
+            "is_animated": false
         }))
         .unwrap();
         assert_eq!(data.name, "test");
         assert_eq!(data.title, "test");
+        assert!(!data.is_animated);
         assert!(!data.contains_masks);
         assert!(data.stickers.is_empty());
     }
