@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.4 (31.07.2019)
+
+- Added Bot API 4.4 support.
+- Added information about response data to poll request error.
+
 ## 0.4.3 (07.07.2019)
 
 - Ignore invalid updates in webhook handler.
