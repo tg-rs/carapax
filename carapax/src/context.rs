@@ -52,7 +52,7 @@ impl Context {
     }
 
     /// Gives the type's corresponding entry in the context's typemap for in-place manipulation
-    pub fn entry<T: IntoBox<dyn Any + Send + Sync>>(&mut self) -> Entry<Any + Send + Sync, T> {
+    pub fn entry<T: IntoBox<dyn Any + Send + Sync>>(&mut self) -> Entry<dyn Any + Send + Sync, T> {
         self.inner.entry()
     }
 }
