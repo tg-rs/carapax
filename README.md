@@ -96,6 +96,11 @@ TGRS_RATE_LIMIT_USER_ID=userid
 # Used in ratelimit example
 TGRS_RATE_LIMIT_CHAT_ID=chatid
 
+# Chat ID for notifications
+# Specify an integer chat id or chat username string (without @)
+#
+# Used in notify example
+TGRS_NOTIFICATION_CHAT_ID
 ```
 
 ## Code of Conduct
