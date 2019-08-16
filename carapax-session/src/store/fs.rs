@@ -38,7 +38,7 @@ impl FsSessionStore {
     /// # Arguments
     ///
     /// - root - A directory to store session data
-    pub fn open<P>(root: P) -> Box<Future<Item = Self, Error = Error> + Send>
+    pub fn open<P>(root: P) -> Box<dyn Future<Item = Self, Error = Error> + Send>
     where
         P: Into<PathBuf>,
     {
@@ -63,7 +63,7 @@ impl FsSessionStore {
         self
     }
 
-    fn key_to_path(&self, key: SessionKey) -> Box<Future<Item = PathBuf, Error = Error> + Send> {
+    fn key_to_path(&self, key: SessionKey) -> Box<dyn Future<Item = PathBuf, Error = Error> + Send> {
         let key_root = self.root.clone().join(key.namespace());
         let file_path = key_root.join(key.name()).with_extension("json");
         let key_root_clone = key_root.clone();
@@ -101,7 +101,7 @@ impl FsSessionStore {
 }
 
 impl SessionStore for FsSessionStore {
-    fn get<O>(&self, key: SessionKey) -> Box<Future<Item = Option<O>, Error = Error> + Send>
+    fn get<O>(&self, key: SessionKey) -> Box<dyn Future<Item = Option<O>, Error = Error> + Send>
     where
         O: DeserializeOwned + Send + 'static,
     {
@@ -123,7 +123,7 @@ impl SessionStore for FsSessionStore {
         }))
     }
 
-    fn set<I>(&self, key: SessionKey, val: &I) -> Box<Future<Item = (), Error = Error> + Send>
+    fn set<I>(&self, key: SessionKey, val: &I) -> Box<dyn Future<Item = (), Error = Error> + Send>
     where
         I: Serialize,
     {
@@ -136,7 +136,7 @@ impl SessionStore for FsSessionStore {
         }
     }
 
-    fn expire(&self, key: SessionKey, seconds: usize) -> Box<Future<Item = (), Error = Error> + Send> {
+    fn expire(&self, key: SessionKey, seconds: usize) -> Box<dyn Future<Item = (), Error = Error> + Send> {
         Box::new(self.key_to_path(key).and_then(move |file_path| {
             fs::read(file_path.clone())
                 .from_err()
@@ -147,7 +147,7 @@ impl SessionStore for FsSessionStore {
         }))
     }
 
-    fn del(&self, key: SessionKey) -> Box<Future<Item = (), Error = Error> + Send> {
+    fn del(&self, key: SessionKey) -> Box<dyn Future<Item = (), Error = Error> + Send> {
         Box::new(self.key_to_path(key).and_then(|file_path| {
             fs::remove_file(file_path).then(|r| match r {
                 Ok(()) => Ok(()),
@@ -161,7 +161,7 @@ impl SessionStore for FsSessionStore {
 }
 
 impl GarbageCollector for FsSessionStore {
-    fn collect(&self) -> Box<Future<Item = (), Error = Error> + Send> {
+    fn collect(&self) -> Box<dyn Future<Item = (), Error = Error> + Send> {
         let lifetime = match self.session_lifetime {
             SessionLifetime::Forever => return Box::new(future::ok(())),
             SessionLifetime::Duration(duration) => duration.as_secs(),

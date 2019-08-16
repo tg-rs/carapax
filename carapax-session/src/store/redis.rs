@@ -64,7 +64,7 @@ impl RedisSessionStore {
         format!("{}-{}", self.namespace, key.namespace())
     }
 
-    fn query<V>(&self, cmd: Cmd) -> Box<Future<Item = V, Error = Error> + Send>
+    fn query<V>(&self, cmd: Cmd) -> Box<dyn Future<Item = V, Error = Error> + Send>
     where
         V: FromRedisValue + Send + 'static,
     {
@@ -73,7 +73,7 @@ impl RedisSessionStore {
 }
 
 impl SessionStore for RedisSessionStore {
-    fn get<O>(&self, key: SessionKey) -> Box<Future<Item = Option<O>, Error = Error> + Send>
+    fn get<O>(&self, key: SessionKey) -> Box<dyn Future<Item = Option<O>, Error = Error> + Send>
     where
         O: DeserializeOwned + Send + 'static,
     {
@@ -95,7 +95,7 @@ impl SessionStore for RedisSessionStore {
         }))
     }
 
-    fn set<I>(&self, key: SessionKey, val: &I) -> Box<Future<Item = (), Error = Error> + Send>
+    fn set<I>(&self, key: SessionKey, val: &I) -> Box<dyn Future<Item = (), Error = Error> + Send>
     where
         I: Serialize,
     {
@@ -141,7 +141,7 @@ impl SessionStore for RedisSessionStore {
         }
     }
 
-    fn expire(&self, key: SessionKey, seconds: usize) -> Box<Future<Item = (), Error = Error> + Send> {
+    fn expire(&self, key: SessionKey, seconds: usize) -> Box<dyn Future<Item = (), Error = Error> + Send> {
         let mut hget_cmd = redis::cmd("HGET");
         let namespace = self.format_namespace(&key);
         hget_cmd.arg(namespace.clone());
@@ -169,7 +169,7 @@ impl SessionStore for RedisSessionStore {
         ))
     }
 
-    fn del(&self, key: SessionKey) -> Box<Future<Item = (), Error = Error> + Send> {
+    fn del(&self, key: SessionKey) -> Box<dyn Future<Item = (), Error = Error> + Send> {
         let mut cmd = redis::cmd("HDEL");
         cmd.arg(self.format_namespace(&key));
         cmd.arg(key.name());

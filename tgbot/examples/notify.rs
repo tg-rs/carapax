@@ -13,6 +13,7 @@ use tgbot::{
     Api, Config,
 };
 
+#[allow(clippy::large_enum_variant)]
 enum Notification {
     Hello,
     #[allow(dead_code)]
