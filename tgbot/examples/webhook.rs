@@ -1,21 +1,23 @@
+use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use log;
-use tgbot::{handle_updates, types::Update, UpdateHandler, UpdateMethod};
+use failure::Error;
+use log::info;
+use tgbot::{types::Update, webhook, UpdateHandler};
 
 struct Handler;
 
+#[async_trait]
 impl UpdateHandler for Handler {
-    fn handle(&mut self, update: Update) {
-        log::info!("got an update: {:?}\n", update);
+    async fn handle(&mut self, update: Update) -> Result<(), Error> {
+        info!("got an update: {:?}\n", update);
+        Ok(())
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     dotenv().ok();
     env_logger::init();
-    tokio::run(handle_updates(
-        UpdateMethod::webhook(([127, 0, 0, 1], 8080), "/"),
-        Handler,
-    ));
+    webhook::run_server(([127, 0, 0, 1], 8080), "/", Handler).await
 }

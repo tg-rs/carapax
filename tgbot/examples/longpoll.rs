@@ -1,36 +1,38 @@
+use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use futures::Future;
+use failure::Error;
 use log;
 use std::env;
 use tgbot::{
-    handle_updates,
+    longpoll::LongPoll,
     methods::SendMessage,
     types::{Update, UpdateKind},
-    Api, Config, UpdateHandler, UpdateMethod,
+    Api, Config, UpdateHandler,
 };
 
 struct Handler {
     api: Api,
 }
 
+#[async_trait]
 impl UpdateHandler for Handler {
-    fn handle(&mut self, update: Update) {
+    async fn handle(&mut self, update: Update) -> Result<(), Error> {
         log::info!("got an update: {:?}\n", update);
         if let UpdateKind::Message(message) = update.kind {
             if let Some(text) = message.get_text() {
+                let api = self.api.clone();
                 let chat_id = message.get_chat_id();
                 let method = SendMessage::new(chat_id, text.data.clone());
-                self.api.spawn(self.api.execute(method).then(|x| {
-                    log::info!("sendMessage result: {:?}\n", x);
-                    Ok::<(), ()>(())
-                }));
+                api.execute(method).await?;
             }
         }
+        Ok(())
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     dotenv().ok();
     env_logger::init();
 
@@ -38,8 +40,9 @@ fn main() {
     let proxy = env::var("TGRS_PROXY").ok();
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy)?;
     }
-    let api = Api::new(config).expect("Failed to create API");
-    tokio::run(handle_updates(UpdateMethod::poll(api.clone()), Handler { api }));
+    let api = Api::new(config)?;
+    LongPoll::new(api.clone(), Handler { api }).run().await;
+    Ok(())
 }
