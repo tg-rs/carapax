@@ -1,13 +1,15 @@
 use crate::{
-    executor::{default_executor, proxy_executor, Executor},
     methods::Method,
-    request::RequestBuilder,
+    request::{RequestBody, RequestBuilder, RequestMethod},
     types::Response,
 };
+use bytes::Bytes;
 use failure::{format_err, Error};
-use futures::{future, Future, Poll};
+use log::{debug, log_enabled, Level};
+use reqwest::{Client, ClientBuilder, Proxy};
 use serde::de::DeserializeOwned;
 use std::{fmt::Debug, sync::Arc};
+use url::Url;
 
 const DEFAULT_HOST: &str = "https://api.telegram.org";
 
@@ -16,7 +18,7 @@ const DEFAULT_HOST: &str = "https://api.telegram.org";
 pub struct Config {
     host: Option<String>,
     token: String,
-    proxy: Option<String>,
+    proxy: Option<Proxy>,
 }
 
 impl Config {
@@ -42,11 +44,23 @@ impl Config {
     /// Proxy format:
     /// * http://\[user:password\]@host:port
     /// * https://\[user:password\]@host:port
-    /// * socks4://userid@host:port
     /// * socks5://\[user:password\]@host:port
-    pub fn proxy<S: Into<String>>(mut self, proxy: S) -> Self {
-        self.proxy = Some(proxy.into());
-        self
+    pub fn proxy<U: AsRef<str>>(mut self, url: U) -> Result<Self, Error> {
+        let raw_url = url.as_ref();
+        let url = Url::parse(raw_url)?;
+        if url.has_authority() {
+            let mut base_url = url.clone();
+            base_url
+                .set_username("")
+                .map_err(|()| format_err!("Failed to remove username"))?;
+            base_url
+                .set_password(None)
+                .map_err(|()| format_err!("Failed to remove password"))?;
+            self.proxy = Some(Proxy::all(base_url.as_str())?.basic_auth(url.username(), url.password().unwrap_or("")));
+        } else {
+            self.proxy = Some(Proxy::all(raw_url)?);
+        }
+        Ok(self)
     }
 }
 
@@ -62,7 +76,7 @@ where
 /// Telegram Bot API client
 #[derive(Clone)]
 pub struct Api {
-    executor: Arc<Box<dyn Executor>>,
+    client: Arc<Client>,
     host: String,
     token: String,
 }
@@ -71,12 +85,17 @@ impl Api {
     /// Creates a API instance with a given configuration.
     pub fn new<C: Into<Config>>(config: C) -> Result<Self, Error> {
         let config = config.into();
+
+        let mut builder = ClientBuilder::new();
+        builder = if let Some(proxy) = config.proxy {
+            builder.proxy(proxy)
+        } else {
+            builder.no_proxy()
+        };
+        let client = builder.build()?;
+
         Ok(Api {
-            executor: Arc::new(if let Some(ref proxy) = config.proxy {
-                proxy_executor(proxy)?
-            } else {
-                default_executor()?
-            }),
+            client: Arc::new(client),
             host: config.host.unwrap_or_else(|| String::from(DEFAULT_HOST)),
             token: config.token,
         })
@@ -85,76 +104,58 @@ impl Api {
     /// Downloads a file
     ///
     /// Use getFile method in order to get value for file_path argument
-    pub fn download_file<P: AsRef<str>>(&self, file_path: P) -> ApiFuture<Vec<u8>> {
-        let executor = self.executor.clone();
-        ApiFuture {
-            inner: Box::new(
-                future::result(
-                    RequestBuilder::empty(file_path.as_ref())
-                        .map(|builder| builder.build(&format!("{}/file", &self.host), &self.token)),
-                )
-                .and_then(move |req| executor.execute(req)),
-            ),
+    pub async fn download_file<P: AsRef<str>>(&self, file_path: P) -> Result<Bytes, Error> {
+        let req = RequestBuilder::empty(file_path.as_ref())?.build(&format!("{}/file", &self.host), &self.token);
+        debug!("Downloading file from {}", req.url);
+        let rep = self.client.get(&req.url).send().await?;
+        if !rep.status().is_success() {
+            Err(format_err!("Failed to donwload file: {}", rep.text().await?))
+        } else {
+            Ok(rep.bytes().await?)
         }
     }
 
     /// Executes a method
-    pub fn execute<M: Method>(&self, method: M) -> ApiFuture<M::Response>
+    pub async fn execute<M: Method>(&self, method: M) -> Result<M::Response, Error>
     where
         M::Response: DeserializeOwned + Send + 'static,
     {
-        let executor = self.executor.clone();
-        ApiFuture {
-            inner: Box::new(
-                future::result(
-                    method
-                        .into_request()
-                        .map(|builder| builder.build(&self.host, &self.token)),
-                )
-                .and_then(move |req| executor.execute(req))
-                .and_then(|data| {
-                    serde_json::from_slice::<Response<M::Response>>(&data).map_err(|e| {
-                        format_err!(
-                            "Can not parse response: {} (data={})",
-                            e,
-                            String::from_utf8_lossy(&data)
-                        )
-                    })
-                })
-                .and_then(|rep| match rep {
-                    Response::Success(obj) => Ok(obj),
-                    Response::Error(err) => Err(err.into()),
-                }),
-            ),
-        }
-    }
+        let req = method.into_request()?.build(&self.host, &self.token);
 
-    /// Spawns a future on the default executor.
-    pub fn spawn<F, T, E: Debug>(&self, f: F)
-    where
-        F: Future<Item = T, Error = E> + 'static + Send,
-    {
-        tokio_executor::spawn(f.then(|r| {
-            if let Err(e) = r {
-                log::error!("An error has occurred: {:?}", e)
+        let http_req = match req.method {
+            RequestMethod::Get => {
+                debug!("Execute GET {}", req.url);
+                self.client.get(&req.url)
             }
-            Ok(())
-        }));
-    }
-}
-
-/// An API future
-#[must_use = "futures do nothing unless polled"]
-pub struct ApiFuture<T> {
-    inner: Box<dyn Future<Item = T, Error = Error> + Send>,
-}
-
-impl<T> Future for ApiFuture<T> {
-    type Item = T;
-    type Error = Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        self.inner.poll()
+            RequestMethod::Post => {
+                debug!("Execute POST: {}", req.url);
+                self.client.post(&req.url)
+            }
+        };
+        let rep = match req.body {
+            RequestBody::Form(form) => {
+                let form = form.into_multipart().await?;
+                debug!("Sending multipart body: {:?}", form);
+                http_req.multipart(form)
+            }
+            RequestBody::Json(data) => {
+                if log_enabled!(Level::Debug) {
+                    debug!("Sending JSON body: {:?}", String::from_utf8(data.clone()));
+                }
+                http_req.header("Content-Type", "application/json").body(data)
+            }
+            RequestBody::Empty => {
+                debug!("Sending empty body");
+                http_req
+            }
+        }
+        .send()
+        .await?;
+        let data = rep.json::<Response<M::Response>>().await?;
+        match data {
+            Response::Success(obj) => Ok(obj),
+            Response::Error(err) => Err(err.into()),
+        }
     }
 }
 
@@ -166,7 +167,8 @@ mod tests {
     fn api() {
         let config = Config::new("token")
             .host("https://example.com")
-            .proxy("socks5://user:password@127.0.0.1:1234");
+            .proxy("socks5://user:password@127.0.0.1:1234")
+            .unwrap();
         let api = Api::new(config).unwrap();
         assert_eq!(api.host, "https://example.com");
         assert_eq!(api.token, "token");
