@@ -130,14 +130,14 @@ mod tests {
         assert!(val.get_file().is_some());
     }
 
-    // #[test]
-    // fn form() {
-    //     let mut form = Form::new();
-    //     form.insert_field("id", 1);
-    //     form.insert_field("id", InputFile::file_id("file-id"));
-    //     form.insert_field("id", InputFile::url("url"));
-    //     form.insert_field("id", InputFile::path("file-path"));
-    //     form.insert_field("id", InputFile::from(Cursor::new(b"test")));
-    //     MultipartForm::from(form);
-    // }
+    #[tokio::test]
+    async fn form() {
+        let mut form = Form::new();
+        form.insert_field("id", 1);
+        form.insert_field("id", InputFile::file_id("file-id"));
+        form.insert_field("id", InputFile::url("url"));
+        form.insert_field("id", InputFile::path("file-path"));
+        form.insert_field("id", InputFile::from(Cursor::new(b"test")));
+        form.into_multipart().await.unwrap();
+    }
 }
