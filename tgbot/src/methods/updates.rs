@@ -243,7 +243,7 @@ mod tests {
             .build("host", "token");
         match req.body {
             RequestBody::Json(data) => {
-                let data: Value = serde_json::from_slice(&data).unwrap();;
+                let data: Value = serde_json::from_slice(&data).unwrap();
                 assert_eq!(data["offset"], 0);
                 assert_eq!(data["limit"], 10);
                 assert_eq!(data["timeout"], 10);
