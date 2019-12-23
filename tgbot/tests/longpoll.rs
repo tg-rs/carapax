@@ -1,17 +1,34 @@
+use async_trait::async_trait;
 use dotenv::dotenv;
-use futures::Stream;
+use failure::Error;
 use mockito::{mock, server_url, Matcher};
 use serde_json::json;
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use tgbot::prelude::*;
-use tokio::runtime::current_thread::block_on_all;
+use tokio::{spawn, sync::Mutex, time::delay_for};
 
-#[test]
-fn poll() {
+struct Handler {
+    updates: Arc<Mutex<Vec<Update>>>,
+}
+
+#[async_trait]
+impl UpdateHandler for Handler {
+    async fn handle(&mut self, update: Update) -> Result<(), Error> {
+        let mut updates = self.updates.lock().await;
+        updates.push(update);
+        Ok(())
+    }
+}
+
+#[tokio::test]
+async fn longpoll() {
     dotenv().ok();
     env_logger::init();
     let _m = mock("POST", "/bottoken/getUpdates")
-        .match_body(Matcher::Json(json!({
-            "offset": 1,
+        .match_body(Matcher::PartialJson(json!({
             "limit": 100,
             "timeout": 10,
             "allowed_updates": []
@@ -42,9 +59,23 @@ fn poll() {
         )
         .create();
     let api = Api::new(Config::new("token").host(server_url())).unwrap();
-    let f = UpdatesStream::from(api).should_retry(false).take(1).collect();
-    let updates = block_on_all(f).unwrap();
-    assert_eq!(updates.len(), 1);
-    let update = &updates[0];
-    assert_eq!(update.id, 1);
+    let updates = Arc::new(Mutex::new(Vec::new()));
+    let handler = Handler {
+        updates: updates.clone(),
+    };
+    let poll = LongPoll::new(api, handler);
+    let handle = poll.get_handle();
+    let wait_updates = updates.clone();
+    spawn(async move {
+        let now = Instant::now();
+        while wait_updates.lock().await.is_empty() {
+            if now.elapsed().as_secs() >= 2 {
+                break;
+            }
+            delay_for(Duration::from_millis(100)).await;
+        }
+        handle.shutdown().await
+    });
+    poll.run().await;
+    assert!(!updates.lock().await.is_empty())
 }

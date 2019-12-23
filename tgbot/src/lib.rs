@@ -1,4 +1,5 @@
 //! A Telegram Bot API client library
+#![recursion_limit = "256"]
 #![warn(missing_docs)]
 
 mod api;

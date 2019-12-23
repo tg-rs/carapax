@@ -9,7 +9,10 @@ use failure::Error;
 use futures_util::{pin_mut, stream::StreamExt};
 use log::error;
 use std::{cmp::max, collections::HashSet, time::Duration};
-use tokio::time::delay_for;
+use tokio::{
+    sync::mpsc::{channel, Receiver, Sender},
+    time::delay_for,
+};
 
 const DEFAULT_LIMIT: Integer = 100;
 const DEFAULT_POLL_TIMEOUT: Duration = Duration::from_secs(10);
@@ -20,6 +23,8 @@ pub struct LongPoll<H> {
     api: Api,
     handler: Box<H>,
     options: LongPollOptions,
+    sender: Sender<()>,
+    receiver: Receiver<()>,
 }
 
 impl<H> LongPoll<H> {
@@ -30,10 +35,13 @@ impl<H> LongPoll<H> {
     /// * api - Telegram Bot API Client
     /// * handler - Updates Handler
     pub fn new(api: Api, handler: H) -> Self {
+        let (sender, receiver) = channel(1);
         Self {
             api,
             handler: Box::new(handler),
             options: LongPollOptions::default(),
+            sender,
+            receiver,
         }
     }
 
@@ -48,6 +56,13 @@ impl<H> LongPoll<H>
 where
     H: UpdateHandler,
 {
+    /// Returns a long poll handle
+    pub fn get_handle(&self) -> LongPollHandle {
+        LongPollHandle {
+            sender: self.sender.clone(),
+        }
+    }
+
     /// Start polling loop
     pub async fn run(mut self) {
         let LongPollOptions {
@@ -58,8 +73,13 @@ where
             allowed_updates,
         } = self.options;
         let api = self.api.clone();
+        let mut receiver = self.receiver;
         let s = stream! {
             loop {
+                if receiver.try_recv().is_ok() {
+                    receiver.close();
+                    break;
+                }
                 let method = GetUpdates::default()
                     .offset(offset + 1)
                     .limit(limit)
@@ -86,6 +106,18 @@ where
                 error!("Failed to handle update: {}\n{:?}", err, err.backtrace());
             }
         }
+    }
+}
+
+/// Long poll handle
+pub struct LongPollHandle {
+    sender: Sender<()>,
+}
+
+impl LongPollHandle {
+    /// Stop polling loop
+    pub async fn shutdown(mut self) {
+        let _ = self.sender.send(()).await;
     }
 }
 
