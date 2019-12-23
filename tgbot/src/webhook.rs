@@ -14,13 +14,15 @@ use std::{
 };
 use tokio::sync::Mutex;
 
-struct WebhookServiceFactory<H> {
+#[doc(hidden)]
+pub struct WebhookServiceFactory<H> {
     path: String,
     handler: Arc<Mutex<H>>,
 }
 
 impl<H> WebhookServiceFactory<H> {
-    fn new<P>(path: P, update_handler: H) -> Self
+    #[doc(hidden)]
+    pub fn new<P>(path: P, update_handler: H) -> Self
     where
         P: Into<String>,
     {
@@ -49,7 +51,8 @@ impl<H, T> Service<T> for WebhookServiceFactory<H> {
     }
 }
 
-struct WebhookService<H> {
+#[doc(hidden)]
+pub struct WebhookService<H> {
     path: String,
     handler: Arc<Mutex<H>>,
 }
