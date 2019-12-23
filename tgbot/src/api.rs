@@ -16,7 +16,7 @@ const DEFAULT_HOST: &str = "https://api.telegram.org";
 /// An API config
 #[derive(Debug, Clone)]
 pub struct Config {
-    host: Option<String>,
+    host: String,
     token: String,
     proxy: Option<Proxy>,
 }
@@ -26,7 +26,7 @@ impl Config {
     pub fn new<S: Into<String>>(token: S) -> Self {
         Self {
             token: token.into(),
-            host: None,
+            host: String::from(DEFAULT_HOST),
             proxy: None,
         }
     }
@@ -35,7 +35,7 @@ impl Config {
     ///
     /// https://api.telegram.org is used by default
     pub fn host<S: Into<String>>(mut self, host: S) -> Self {
-        self.host = Some(host.into());
+        self.host = host.into();
         self
     }
 
@@ -96,7 +96,7 @@ impl Api {
 
         Ok(Api {
             client: Arc::new(client),
-            host: config.host.unwrap_or_else(|| String::from(DEFAULT_HOST)),
+            host: config.host,
             token: config.token,
         })
     }
@@ -109,7 +109,7 @@ impl Api {
         debug!("Downloading file from {}", req.url);
         let rep = self.client.get(&req.url).send().await?;
         if !rep.status().is_success() {
-            Err(format_err!("Failed to donwload file: {}", rep.text().await?))
+            Err(format_err!("Failed to download file: {}", rep.text().await?))
         } else {
             Ok(rep.bytes().await?)
         }
@@ -164,10 +164,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn config() {
+        // TODO: test socks when reqwest feature will be available
+        let config = Config::new("token");
+        // .proxy("socks5://user:password@127.0.0.1:1234")
+        // .unwrap();
+        assert_eq!(config.token, "token");
+        assert_eq!(config.host, DEFAULT_HOST);
+        // assert!(config.proxy.is_some());
+
+        let config = Config::new("token")
+            .host("https://example.com")
+            .proxy("http://127.0.0.1:1234")
+            .unwrap();
+        assert_eq!(config.token, "token");
+        assert_eq!(config.host, "https://example.com");
+        assert!(config.proxy.is_some());
+
+        let config = Config::new("token").proxy("https://127.0.0.1:1234").unwrap();
+        assert_eq!(config.token, "token");
+        assert_eq!(config.host, DEFAULT_HOST);
+        assert!(config.proxy.is_some());
+
+        let config = Config::new("token");
+        assert_eq!(config.token, "token");
+        assert_eq!(config.host, DEFAULT_HOST);
+        assert!(config.proxy.is_none());
+    }
+
+    #[test]
     fn api() {
         let config = Config::new("token")
             .host("https://example.com")
-            .proxy("socks5://user:password@127.0.0.1:1234")
+            .proxy("http://user:password@127.0.0.1:1234")
             .unwrap();
         let api = Api::new(config).unwrap();
         assert_eq!(api.host, "https://example.com");
