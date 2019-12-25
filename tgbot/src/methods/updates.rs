@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{AllowedUpdate, Integer, Update, WebhookInfo},
 };
-use failure::Error;
 use serde::Serialize;
 use std::{collections::HashSet, time::Duration};
 
@@ -25,8 +24,8 @@ pub struct GetUpdates {
 impl Method for GetUpdates {
     type Response = Vec<Update>;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("getUpdates", &self)
+    fn into_request(self) -> Request {
+        Request::json("getUpdates", self)
     }
 }
 
@@ -173,8 +172,8 @@ impl SetWebhook {
 impl Method for SetWebhook {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("setWebhook", &self)
+    fn into_request(self) -> Request {
+        Request::json("setWebhook", self)
     }
 }
 
@@ -187,8 +186,8 @@ pub struct DeleteWebhook;
 impl Method for DeleteWebhook {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::empty("deleteWebhook")
+    fn into_request(self) -> Request {
+        Request::empty("deleteWebhook")
     }
 }
 
@@ -199,8 +198,8 @@ pub struct GetWebhookInfo;
 impl Method for GetWebhookInfo {
     type Response = WebhookInfo;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::empty("getWebhookInfo")
+    fn into_request(self) -> Request {
+        Request::empty("getWebhookInfo")
     }
 }
 
@@ -212,12 +211,12 @@ mod tests {
 
     #[test]
     fn get_updates() {
-        let req = GetUpdates::default().into_request().unwrap().build("host", "token");
-        assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(req.url, "host/bottoken/getUpdates");
-        match req.body {
+        let request = GetUpdates::default().into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/getUpdates");
+        match request.into_body() {
             RequestBody::Json(data) => {
-                assert_eq!(String::from_utf8(data).unwrap(), String::from(r#"{}"#));
+                assert_eq!(data.unwrap(), "{}");
             }
             data => panic!("Unexpected request data: {:?}", data),
         }
@@ -229,7 +228,7 @@ mod tests {
         updates.insert(AllowedUpdate::ChannelPost);
         updates.insert(AllowedUpdate::EditedChannelPost);
         updates.insert(AllowedUpdate::ChosenInlineResult);
-        let req = GetUpdates::default()
+        let request = GetUpdates::default()
             .offset(0)
             .limit(10)
             .timeout(Duration::from_secs(10))
@@ -238,12 +237,10 @@ mod tests {
             .add_allowed_update(AllowedUpdate::CallbackQuery)
             .add_allowed_update(AllowedUpdate::PreCheckoutQuery)
             .add_allowed_update(AllowedUpdate::ShippingQuery)
-            .into_request()
-            .unwrap()
-            .build("host", "token");
-        match req.body {
+            .into_request();
+        match request.into_body() {
             RequestBody::Json(data) => {
-                let data: Value = serde_json::from_slice(&data).unwrap();
+                let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
                 assert_eq!(data["offset"], 0);
                 assert_eq!(data["limit"], 10);
                 assert_eq!(data["timeout"], 10);
@@ -278,12 +275,12 @@ mod tests {
 
     #[test]
     fn set_webhook() {
-        let req = SetWebhook::new("url").into_request().unwrap().build("host", "token");
-        assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(req.url, "host/bottoken/setWebhook");
-        match req.body {
+        let request = SetWebhook::new("url").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/setWebhook");
+        match request.into_body() {
             RequestBody::Json(data) => {
-                assert_eq!(String::from_utf8(data).unwrap(), r#"{"url":"url"}"#);
+                assert_eq!(data.unwrap(), r#"{"url":"url"}"#);
             }
             data => panic!("Unexpected request data: {:?}", data),
         }
@@ -295,7 +292,7 @@ mod tests {
         updates.insert(AllowedUpdate::ChannelPost);
         updates.insert(AllowedUpdate::EditedChannelPost);
         updates.insert(AllowedUpdate::ChosenInlineResult);
-        let req = SetWebhook::new("url")
+        let request = SetWebhook::new("url")
             .certificate("cert")
             .max_connections(10)
             .allowed_updates(updates)
@@ -303,14 +300,12 @@ mod tests {
             .add_allowed_update(AllowedUpdate::CallbackQuery)
             .add_allowed_update(AllowedUpdate::PreCheckoutQuery)
             .add_allowed_update(AllowedUpdate::ShippingQuery)
-            .into_request()
-            .unwrap()
-            .build("host", "token");
-        assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(req.url, "host/bottoken/setWebhook");
-        match req.body {
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/setWebhook");
+        match request.into_body() {
             RequestBody::Json(data) => {
-                let data: Value = serde_json::from_slice(&data).unwrap();
+                let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
                 assert_eq!(data["certificate"], "cert");
                 assert_eq!(data["max_connections"], 10);
                 let mut updates: Vec<&str> = data["allowed_updates"]
@@ -344,10 +339,13 @@ mod tests {
 
     #[test]
     fn delete_webhook() {
-        let req = DeleteWebhook.into_request().unwrap().build("host", "token");
-        assert_eq!(req.method, RequestMethod::Get);
-        assert_eq!(req.url, "host/bottoken/deleteWebhook");
-        match req.body {
+        let request = DeleteWebhook.into_request();
+        assert_eq!(request.get_method(), RequestMethod::Get);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/deleteWebhook"
+        );
+        match request.into_body() {
             RequestBody::Empty => {}
             data => panic!("Unexpected request data: {:?}", data),
         }
@@ -355,10 +353,13 @@ mod tests {
 
     #[test]
     fn get_webhook_info() {
-        let req = GetWebhookInfo.into_request().unwrap().build("host", "token");
-        assert_eq!(req.method, RequestMethod::Get);
-        assert_eq!(req.url, "host/bottoken/getWebhookInfo");
-        match req.body {
+        let request = GetWebhookInfo.into_request();
+        assert_eq!(request.get_method(), RequestMethod::Get);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/getWebhookInfo"
+        );
+        match request.into_body() {
             RequestBody::Empty => {}
             data => panic!("Unexpected request data: {:?}", data),
         }

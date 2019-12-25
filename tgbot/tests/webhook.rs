@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use bytes::Buf;
 use dotenv::dotenv;
 use env_logger;
-use failure::Error;
 use hyper::{body, header::HeaderValue, Body, Client, Method, Request, Server, StatusCode};
 use std::sync::Arc;
 use tgbot::prelude::*;
@@ -14,7 +13,9 @@ struct Handler {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    async fn handle(&mut self, update: Update) -> Result<(), Error> {
+    type Error = ();
+
+    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         let mut updates = self.updates.lock().await;
         updates.push(update);
         Ok(())

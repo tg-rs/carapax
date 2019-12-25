@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{InlineQueryResult, Integer},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Use this method to send answers to an inline query
@@ -98,8 +97,8 @@ impl AnswerInlineQuery {
 impl Method for AnswerInlineQuery {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("answerInlineQuery", &self)
+    fn into_request(self) -> Request {
+        Request::json("answerInlineQuery", self)
     }
 }
 
@@ -117,13 +116,14 @@ mod tests {
             .next_offset("offset")
             .switch_pm_text("text")
             .switch_pm_parameter("param")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/answerInlineQuery");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/answerInlineQuery"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["inline_query_id"], "id");
             assert_eq!(data["cache_time"], 300);
             assert_eq!(data["is_personal"], true);
@@ -131,7 +131,7 @@ mod tests {
             assert_eq!(data["switch_pm_text"], "text");
             assert_eq!(data["switch_pm_parameter"], "param");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

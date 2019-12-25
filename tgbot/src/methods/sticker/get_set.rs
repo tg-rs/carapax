@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder, types::StickerSet};
-use failure::Error;
+use crate::{methods::Method, request::Request, types::StickerSet};
 use serde::Serialize;
 
 /// Get a sticker set
@@ -22,8 +21,8 @@ impl GetStickerSet {
 impl Method for GetStickerSet {
     type Response = StickerSet;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("getStickerSet", &self)
+    fn into_request(self) -> Request {
+        Request::json("getStickerSet", self)
     }
 }
 
@@ -35,17 +34,17 @@ mod tests {
 
     #[test]
     fn get_sticker_set() {
-        let request = GetStickerSet::new("name")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/getStickerSet");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = GetStickerSet::new("name").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/getStickerSet"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["name"], "name");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

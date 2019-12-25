@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder, types::User};
-use failure::Error;
+use crate::{methods::Method, request::Request, types::User};
 
 /// Returns basic information about the bot in form of a User object
 #[derive(Clone, Copy, Debug)]
@@ -8,8 +7,8 @@ pub struct GetMe;
 impl Method for GetMe {
     type Response = User;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::empty("getMe")
+    fn into_request(self) -> Request {
+        Request::empty("getMe")
     }
 }
 
@@ -20,12 +19,12 @@ mod tests {
 
     #[test]
     fn get_me() {
-        let request = GetMe.into_request().unwrap().build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Get);
-        assert_eq!(request.url, "base-url/bottoken/getMe");
-        if let RequestBody::Empty = request.body {
+        let request = GetMe.into_request();
+        assert_eq!(request.get_method(), RequestMethod::Get);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/getMe");
+        if let RequestBody::Empty = request.into_body() {
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

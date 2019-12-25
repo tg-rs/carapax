@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use failure::Error;
 use log;
 use std::{env, path::Path};
 use tempfile::{tempdir, TempDir};
@@ -18,28 +17,29 @@ struct Handler {
     tmpdir: TempDir,
 }
 
-async fn handle_document(api: &Api, tmpdir: &Path, document: Document) -> Result<(), Error> {
+async fn handle_document(api: &Api, tmpdir: &Path, document: Document) {
     let api = api.clone();
     let path = tmpdir.join(document.file_name.clone().unwrap_or_else(|| String::from("unknown")));
-    let file = api.execute(GetFile::new(document.file_id.as_str())).await?;
+    let file = api.execute(GetFile::new(document.file_id.as_str())).await.unwrap();
     let file_path = file.file_path.unwrap();
-    let data = api.download_file(file_path).await?;
+    let data = api.download_file(file_path).await.unwrap();
     println!("Name: {:?}", document.file_name);
     println!("Mime-Type: {:?}", document.mime_type);
     println!("Document size: {:?}", document.file_size);
     println!("Downloaded size: {:?}", data.len());
-    let mut file = File::create(path).await?;
-    file.write_all(&data).await?;
-    Ok(())
+    let mut file = File::create(path).await.unwrap();
+    file.write_all(&data).await.unwrap();
 }
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    async fn handle(&mut self, update: Update) -> Result<(), Error> {
+    type Error = ();
+
+    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         log::info!("got an update: {:?}\n", update);
         if let UpdateKind::Message(message) = update.kind {
             if let MessageData::Document { data, .. } = message.data {
-                handle_document(&self.api, self.tmpdir.path(), data).await?;
+                handle_document(&self.api, self.tmpdir.path(), data).await;
             }
         }
         Ok(())
@@ -47,7 +47,7 @@ impl UpdateHandler for Handler {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -55,11 +55,10 @@ async fn main() -> Result<(), Error> {
     let proxy = env::var("TGRS_PROXY").ok();
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy)?;
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
-    let api = Api::new(config)?;
-    let tmpdir = tempdir()?;
+    let api = Api::new(config).expect("Failed to create API");
+    let tmpdir = tempdir().expect("Failed to create temporary directory");
     log::info!("Temp dir: {}", tmpdir.path().display());
     LongPoll::new(api.clone(), Handler { api, tmpdir }).run().await;
-    Ok(())
 }

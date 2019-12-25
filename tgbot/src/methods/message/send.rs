@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, Integer, Message, ParseMode, ReplyMarkup},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Send text messages
@@ -78,8 +77,8 @@ impl SendMessage {
 impl Method for SendMessage {
     type Response = Message;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("sendMessage", &self)
+    fn into_request(self) -> Request {
+        Request::json("sendMessage", self)
     }
 }
 #[cfg(test)]
@@ -99,13 +98,11 @@ mod tests {
             .disable_notification(true)
             .reply_to_message_id(1)
             .reply_markup(ForceReply::new(true))
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/sendMessage");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/sendMessage");
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["text"], "text");
             assert_eq!(data["parse_mode"], "Markdown");
@@ -114,7 +111,7 @@ mod tests {
             assert_eq!(data["reply_to_message_id"], 1);
             assert_eq!(data["reply_markup"]["force_reply"], true);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

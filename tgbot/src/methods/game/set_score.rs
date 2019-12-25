@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{EditMessageResult, Integer},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Set the score of the specified user in a game
@@ -85,8 +84,8 @@ impl SetGameScore {
 impl Method for SetGameScore {
     type Response = EditMessageResult;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("setGameScore", &self)
+    fn into_request(self) -> Request {
+        Request::json("setGameScore", self)
     }
 }
 
@@ -101,13 +100,11 @@ mod tests {
         let request = SetGameScore::new(1, 2, 3, 100)
             .force(true)
             .disable_edit_message(true)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/setGameScore");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/setGameScore");
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["message_id"], 2);
             assert_eq!(data["user_id"], 3);
@@ -115,26 +112,24 @@ mod tests {
             assert_eq!(data["force"], true);
             assert_eq!(data["disable_edit_message"], true);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
 
         let request = SetGameScore::with_inline_message_id("msg-id", 3, 100)
             .force(true)
             .disable_edit_message(true)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/setGameScore");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/setGameScore");
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["inline_message_id"], "msg-id");
             assert_eq!(data["user_id"], 3);
             assert_eq!(data["score"], 100);
             assert_eq!(data["force"], true);
             assert_eq!(data["disable_edit_message"], true);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, Integer, Message},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Forward message of any kind
@@ -45,8 +44,8 @@ impl ForwardMessage {
 impl Method for ForwardMessage {
     type Response = Message;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("forwardMessage", &self)
+    fn into_request(self) -> Request {
+        Request::json("forwardMessage", self)
     }
 }
 
@@ -58,21 +57,20 @@ mod tests {
 
     #[test]
     fn forward_message() {
-        let request = ForwardMessage::new(1, 2, 3)
-            .disable_notification(true)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/forwardMessage");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = ForwardMessage::new(1, 2, 3).disable_notification(true).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/forwardMessage"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["from_chat_id"], 2);
             assert_eq!(data["message_id"], 3);
             assert_eq!(data["disable_notification"], true);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

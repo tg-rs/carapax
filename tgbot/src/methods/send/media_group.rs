@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::{Form, RequestBuilder},
-    types::{ChatId, Integer, MediaGroup, Message},
+    request::{Form, Request},
+    types::{ChatId, Integer, MediaGroup, MediaGroupError, Message},
 };
-use failure::Error;
 
 /// Send a group of photos or videos as an album
 #[derive(Debug)]
@@ -16,7 +15,7 @@ impl SendMediaGroup {
     ///
     /// * chat_id - Unique identifier for the target chat
     /// * media - Photos and videos to be sent, must include 2–10 items
-    pub fn new<C: Into<ChatId>>(chat_id: C, media: MediaGroup) -> Result<Self, Error> {
+    pub fn new<C: Into<ChatId>>(chat_id: C, media: MediaGroup) -> Result<Self, MediaGroupError> {
         let mut form = Form::new();
         form.insert_field("chat_id", chat_id.into());
         let media_form = media.into_form()?;
@@ -44,8 +43,8 @@ impl SendMediaGroup {
 impl Method for SendMediaGroup {
     type Response = Vec<Message>;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::form("sendMediaGroup", self.form)
+    fn into_request(self) -> Request {
+        Request::form("sendMediaGroup", self.form)
     }
 }
 
@@ -74,12 +73,13 @@ mod tests {
         .unwrap()
         .disable_notification(true)
         .reply_to_message_id(1)
-        .into_request()
-        .unwrap()
-        .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/sendMediaGroup");
-        if let RequestBody::Form(form) = request.body {
+        .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/sendMediaGroup"
+        );
+        if let RequestBody::Form(form) = request.into_body() {
             assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
             assert!(form.fields.get("media").is_some());
             assert!(form.fields.get("tgbot_im_file_0").is_some());
@@ -87,7 +87,7 @@ mod tests {
             assert_eq!(form.fields["disable_notification"].get_text().unwrap(), "true");
             assert_eq!(form.fields["reply_to_message_id"].get_text().unwrap(), "1");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

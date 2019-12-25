@@ -2,9 +2,9 @@ use crate::{
     request::FormValue,
     types::{InputFile, InputFileKind, InputMediaPhoto, InputMediaVideo},
 };
-use failure::{Error, Fail};
 use serde::Serialize;
-use std::collections::HashMap;
+use serde_json::Error as JsonError;
+use std::{collections::HashMap, error::Error as StdError, fmt};
 
 const MIN_GROUP_ATTACHMENTS: usize = 2;
 const MAX_GROUP_ATTACHMENTS: usize = 10;
@@ -53,16 +53,21 @@ impl MediaGroup {
         }
     }
 
-    pub(crate) fn into_form(self) -> Result<HashMap<String, FormValue>, Error> {
+    pub(crate) fn into_form(self) -> Result<HashMap<String, FormValue>, MediaGroupError> {
         let total_files = self.items.len();
         if total_files < MIN_GROUP_ATTACHMENTS {
-            return Err(MediaGroupError::NotEnoughAttachments(MIN_GROUP_ATTACHMENTS).into());
+            return Err(MediaGroupError::NotEnoughAttachments(MIN_GROUP_ATTACHMENTS));
         }
         if total_files > MAX_GROUP_ATTACHMENTS {
-            return Err(MediaGroupError::TooManyAttachments(MAX_GROUP_ATTACHMENTS).into());
+            return Err(MediaGroupError::TooManyAttachments(MAX_GROUP_ATTACHMENTS));
         }
         let mut fields: HashMap<String, FormValue> = self.files.into_iter().map(|(k, v)| (k, v.into())).collect();
-        fields.insert(String::from("media"), serde_json::to_string(&self.items)?.into());
+        fields.insert(
+            String::from("media"),
+            serde_json::to_string(&self.items)
+                .map_err(MediaGroupError::Serialize)?
+                .into(),
+        );
         Ok(fields)
     }
 }
@@ -114,14 +119,37 @@ impl From<(String, String, InputMediaVideo)> for MediaGroupItem {
 }
 
 /// A media group error
-#[derive(Debug, Fail)]
+#[derive(Debug)]
 pub enum MediaGroupError {
     /// Media group contains not enough files
-    #[fail(display = "Media group must contain at least {} attachments", _0)]
     NotEnoughAttachments(usize),
     /// Media group contains too many files
-    #[fail(display = "Media group must contain no more than {} attachments", _0)]
     TooManyAttachments(usize),
+    /// Can not serialize items
+    Serialize(JsonError),
+}
+
+impl StdError for MediaGroupError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            MediaGroupError::Serialize(err) => Some(err),
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for MediaGroupError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MediaGroupError::NotEnoughAttachments(number) => {
+                write!(out, "media group must contain at least {} attachments", number)
+            }
+            MediaGroupError::TooManyAttachments(number) => {
+                write!(out, "media group must contain no more than {} attachments", number)
+            }
+            MediaGroupError::Serialize(err) => write!(out, "can not serialize media group items: {}", err),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -147,14 +175,14 @@ mod tests {
         assert!(group.get("tgbot_im_file_1").is_some());
 
         let err = MediaGroup::default().into_form().unwrap_err();
-        assert_eq!(err.to_string(), "Media group must contain at least 2 attachments");
+        assert_eq!(err.to_string(), "media group must contain at least 2 attachments");
 
         let mut group = MediaGroup::default();
         for _ in 0..11 {
             group = group.add_item(InputFile::file_id("file-id"), InputMediaPhoto::default());
         }
         let err = group.into_form().unwrap_err();
-        assert_eq!(err.to_string(), "Media group must contain no more than 10 attachments");
+        assert_eq!(err.to_string(), "media group must contain no more than 10 attachments");
     }
 
     #[test]

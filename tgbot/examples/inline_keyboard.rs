@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use failure::Error;
 use log;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -27,7 +26,7 @@ impl CallbackData {
     }
 }
 
-async fn handle_update(api: &Api, update: Update) -> Result<Option<Message>, Error> {
+async fn handle_update(api: &Api, update: Update) -> Option<Message> {
     match update.kind {
         UpdateKind::Message(message) => {
             let chat_id = message.get_chat_id();
@@ -39,7 +38,7 @@ async fn handle_update(api: &Api, update: Update) -> Result<Option<Message>, Err
                         // You also can use with_callback_data in order to pass a plain string
                         InlineKeyboardButton::with_callback_data_struct("button", &callback_data).unwrap(),
                     ]]);
-                    return Ok(Some(api.execute(method).await?));
+                    return Some(api.execute(method).await.unwrap());
                 }
             }
         }
@@ -49,25 +48,27 @@ async fn handle_update(api: &Api, update: Update) -> Result<Option<Message>, Err
                 // or query.data if you have passed a plain string
                 let data = query.parse_data::<CallbackData>().unwrap().unwrap();
                 let method = SendMessage::new(chat_id, data.value);
-                return Ok(Some(api.execute(method).await?));
+                return Some(api.execute(method).await.unwrap());
             }
         }
         _ => {}
     }
-    Ok(None)
+    None
 }
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    async fn handle(&mut self, update: Update) -> Result<(), Error> {
+    type Error = ();
+
+    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         log::info!("Got an update: {:?}", update);
-        handle_update(&self.api, update).await?;
+        handle_update(&self.api, update).await.unwrap();
         Ok(())
     }
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -75,9 +76,8 @@ async fn main() -> Result<(), Error> {
     let proxy = env::var("TGRS_PROXY").ok();
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy)?;
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
-    let api = Api::new(config)?;
+    let api = Api::new(config).expect("Failed to create API");
     LongPoll::new(api.clone(), Handler { api }).run().await;
-    Ok(())
 }

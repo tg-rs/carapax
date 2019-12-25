@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{InlineKeyboardMarkup, Integer, Message},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Use this method to send a game
@@ -60,8 +59,8 @@ impl SendGame {
 impl Method for SendGame {
     type Response = Message;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("sendGame", &self)
+    fn into_request(self) -> Request {
+        Request::json("sendGame", self)
     }
 }
 
@@ -80,20 +79,18 @@ mod tests {
             .disable_notification(true)
             .reply_to_message_id(1)
             .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/sendGame");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/sendGame");
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["game_short_name"], "name");
             assert_eq!(data["disable_notification"], true);
             assert_eq!(data["reply_to_message_id"], 1);
             assert_eq!(data["reply_markup"]["inline_keyboard"][0][0]["text"], "text");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

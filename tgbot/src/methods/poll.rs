@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, InlineKeyboardMarkup, Integer, Message, Poll, ReplyMarkup},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Use this method to send a native poll
@@ -81,8 +80,8 @@ impl SendPoll {
 impl Method for SendPoll {
     type Response = Message;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("sendPoll", &self)
+    fn into_request(self) -> Request {
+        Request::json("sendPoll", self)
     }
 }
 
@@ -125,8 +124,8 @@ impl StopPoll {
 impl Method for StopPoll {
     type Response = Poll;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("stopPoll", &self)
+    fn into_request(self) -> Request {
+        Request::json("stopPoll", self)
     }
 }
 
@@ -141,20 +140,18 @@ mod tests {
 
     #[test]
     fn send_poll() {
-        let req = SendPoll::new(1, "Q")
+        let request = SendPoll::new(1, "Q")
             .option("O1")
             .option("O2")
             .disable_notification(true)
             .reply_to_message_id(1)
             .reply_markup(ForceReply::new(true))
-            .into_request()
-            .unwrap()
-            .build("host", "token");
-        assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(req.url, "host/bottoken/sendPoll");
-        match req.body {
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/sendPoll");
+        match request.into_body() {
             RequestBody::Json(data) => {
-                let data: Value = serde_json::from_slice(&data).unwrap();
+                let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
                 assert_eq!(data["chat_id"], 1);
                 assert_eq!(data["question"], "Q");
                 assert_eq!(
@@ -176,16 +173,14 @@ mod tests {
 
     #[test]
     fn stop_poll() {
-        let req = StopPoll::new(1, 2)
+        let request = StopPoll::new(1, 2)
             .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
-            .into_request()
-            .unwrap()
-            .build("host", "token");
-        assert_eq!(req.method, RequestMethod::Post);
-        assert_eq!(req.url, "host/bottoken/stopPoll");
-        match req.body {
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/stopPoll");
+        match request.into_body() {
             RequestBody::Json(data) => {
-                let data: Value = serde_json::from_slice(&data).unwrap();
+                let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
                 assert_eq!(data["chat_id"], 1);
                 assert_eq!(data["message_id"], 2);
                 assert_eq!(data["reply_markup"]["inline_keyboard"][0][0]["text"], "text");

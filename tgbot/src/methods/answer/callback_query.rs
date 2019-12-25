@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder, types::Integer};
-use failure::Error;
+use crate::{methods::Method, request::Request, types::Integer};
 use serde::Serialize;
 
 /// Send answer to callback query sent from inline keyboard
@@ -78,8 +77,8 @@ impl AnswerCallbackQuery {
 impl Method for AnswerCallbackQuery {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("answerCallbackQuery", &self)
+    fn into_request(self) -> Request {
+        Request::json("answerCallbackQuery", self)
     }
 }
 
@@ -96,20 +95,21 @@ mod tests {
             .show_alert(true)
             .url("url")
             .cache_time(10)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/answerCallbackQuery");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/answerCallbackQuery"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["callback_query_id"], "q-id");
             assert_eq!(data["text"], "text");
             assert_eq!(data["show_alert"], true);
             assert_eq!(data["url"], "url");
             assert_eq!(data["cache_time"], 10);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

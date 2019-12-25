@@ -1,11 +1,10 @@
 use crate::{
-    api::Api,
+    api::{Api, ExecuteError},
     handler::UpdateHandler,
     methods::GetUpdates,
-    types::{AllowedUpdate, Integer, ResponseError},
+    types::{AllowedUpdate, Integer, ResponseError, ResponseParameters},
 };
 use async_stream::stream;
-use failure::Error;
 use futures_util::{pin_mut, stream::StreamExt};
 use log::error;
 use std::{cmp::max, collections::HashSet, time::Duration};
@@ -88,7 +87,7 @@ where
                 let updates = match api.execute(method).await {
                     Ok(updates) => updates,
                     Err(err) => {
-                        error!("An error has occurred while getting updates: {}\n{:?}", err, err.backtrace());
+                        error!("An error has occurred while getting updates: {}", err);
                         let timeout = get_error_timeout(err, error_timeout);
                         delay_for(error_timeout).await;
                         continue
@@ -103,7 +102,7 @@ where
         pin_mut!(s);
         while let Some(update) = s.next().await {
             if let Err(err) = self.handler.handle(update).await {
-                error!("Failed to handle update: {}\n{:?}", err, err.backtrace());
+                error!("Failed to handle update: {:?}", err);
             }
         }
     }
@@ -121,14 +120,19 @@ impl LongPollHandle {
     }
 }
 
-fn get_error_timeout(err: Error, default_timeout: Duration) -> Duration {
-    err.downcast::<ResponseError>()
-        .ok()
-        .and_then(|err| {
-            err.parameters
-                .and_then(|parameters| parameters.retry_after.map(|count| Duration::from_secs(count as u64)))
-        })
-        .unwrap_or(default_timeout)
+fn get_error_timeout(err: ExecuteError, default_timeout: Duration) -> Duration {
+    if let ExecuteError::Response(ResponseError {
+        parameters: Some(ResponseParameters {
+            retry_after: Some(retry_after),
+            ..
+        }),
+        ..
+    }) = err
+    {
+        Duration::from_secs(retry_after as u64)
+    } else {
+        default_timeout
+    }
 }
 
 /// Options for long polling

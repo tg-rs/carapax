@@ -3,9 +3,11 @@ use crate::types::{
     primitive::{Float, Integer},
 };
 use serde::{Deserialize, Serialize};
+use serde_json::Error as JsonError;
+use std::{error::Error as StdError, fmt};
 
 /// The part of the face relative to which the mask should be placed
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub enum MaskPositionPoint {
     /// “forehead”
     #[serde(rename = "forehead")]
@@ -22,7 +24,7 @@ pub enum MaskPositionPoint {
 }
 
 /// Position on faces where a mask should be placed by default
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct MaskPosition {
     /// The part of the face relative
     /// to which the mask should be placed
@@ -43,6 +45,35 @@ pub struct MaskPosition {
     /// Mask scaling coefficient.
     /// For example, 2.0 means double size
     pub scale: Float,
+}
+
+impl MaskPosition {
+    pub(crate) fn serialize(&self) -> Result<String, MaskPositionError> {
+        serde_json::to_string(self).map_err(MaskPositionError::Serialize)
+    }
+}
+
+/// An error occurred with mask position
+#[derive(Debug)]
+pub enum MaskPositionError {
+    /// Failed to serialize mask position
+    Serialize(JsonError),
+}
+
+impl StdError for MaskPositionError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            MaskPositionError::Serialize(err) => Some(err),
+        }
+    }
+}
+
+impl fmt::Display for MaskPositionError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MaskPositionError::Serialize(err) => write!(out, "can not serialize mask position: {}", err),
+        }
+    }
 }
 
 /// Sticker

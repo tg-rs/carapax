@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder, types::ChatId};
-use failure::Error;
+use crate::{methods::Method, request::Request, types::ChatId};
 use serde::Serialize;
 
 /// Change the title of a chat
@@ -34,8 +33,8 @@ impl SetChatTitle {
 impl Method for SetChatTitle {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("setChatTitle", &self)
+    fn into_request(self) -> Request {
+        Request::json("setChatTitle", self)
     }
 }
 
@@ -47,18 +46,15 @@ mod tests {
 
     #[test]
     fn set_chat_title() {
-        let request = SetChatTitle::new(1, "title")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/setChatTitle");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = SetChatTitle::new(1, "title").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/setChatTitle");
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["title"], "title");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

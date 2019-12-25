@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use failure::Error;
 use log;
 use std::{env, io::Cursor};
 use tgbot::{
@@ -25,7 +24,9 @@ struct Handler {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    async fn handle(&mut self, update: Update) -> Result<(), Error> {
+    type Error = ();
+
+    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         log::info!("got an update: {:?}\n", update);
         if let UpdateKind::Message(message) = update.kind {
             let chat_id = message.get_chat_id();
@@ -37,10 +38,12 @@ impl UpdateHandler for Handler {
                             InputFileReader::new(Cursor::new(b"Hello World!")).info(("hello.txt", mime::TEXT_PLAIN)),
                             InputFile::path(self.document_thumb_path.clone()),
                             InputMediaAnimation::default().caption("test"),
-                        )?;
+                        )
+                        .unwrap();
                         self.api
                             .execute(EditMessageMedia::new(chat_id, reply_to.id, input_media))
-                            .await?;
+                            .await
+                            .unwrap();
                     }
                     // Change document to animation
                     MessageData::Document { .. } => {
@@ -51,25 +54,31 @@ impl UpdateHandler for Handler {
                                 InputMedia::new(
                                     InputFile::url(self.gif_url.clone()),
                                     InputMediaAnimation::default().caption("test"),
-                                )?,
+                                )
+                                .unwrap(),
                             ))
-                            .await?;
+                            .await
+                            .unwrap();
                     }
                     // Change photo to video
                     MessageData::Photo { .. } => {
                         let input_media =
-                            InputMedia::new(InputFile::path(self.video_path.clone()), InputMediaVideo::default())?;
+                            InputMedia::new(InputFile::path(self.video_path.clone()), InputMediaVideo::default())
+                                .unwrap();
                         self.api
                             .execute(EditMessageMedia::new(chat_id, reply_to.id, input_media))
-                            .await?;
+                            .await
+                            .unwrap();
                     }
                     // Change video to photo
                     MessageData::Video { .. } => {
                         let input_media =
-                            InputMedia::new(InputFile::path(self.photo_path.clone()), InputMediaPhoto::default())?;
+                            InputMedia::new(InputFile::path(self.photo_path.clone()), InputMediaPhoto::default())
+                                .unwrap();
                         self.api
                             .execute(EditMessageMedia::new(chat_id, reply_to.id, input_media))
-                            .await?;
+                            .await
+                            .unwrap();
                     }
                     _ => {}
                 }
@@ -77,30 +86,32 @@ impl UpdateHandler for Handler {
                 // Resend document by file id (you also can send a document using URL)
                 self.api
                     .execute(SendDocument::new(chat_id, InputFile::file_id(data.file_id)))
-                    .await?;
+                    .await
+                    .unwrap();
             } else if let Some(text) = message.get_text() {
                 match text.data.as_str() {
                     // Send animation by URL (you also can send animation using a file_id)
                     "/gif" => {
                         let method = SendAnimation::new(chat_id, InputFile::url(self.gif_url.clone()));
-                        self.api.execute(method).await?;
+                        self.api.execute(method).await.unwrap();
                     }
                     "/photo" => {
                         let markup = vec![vec![InlineKeyboardButton::with_callback_data("test", "cb-data")]];
-                        let method =
-                            SendPhoto::new(chat_id, InputFile::path(self.photo_path.clone())).reply_markup(markup)?;
-                        self.api.execute(method).await?;
+                        let method = SendPhoto::new(chat_id, InputFile::path(self.photo_path.clone()))
+                            .reply_markup(markup)
+                            .unwrap();
+                        self.api.execute(method).await.unwrap();
                     }
                     "/text" => {
                         let document = Cursor::new(b"Hello World!");
                         let reader = InputFileReader::new(document).info(("hello.txt", mime::TEXT_PLAIN));
                         let method =
                             SendDocument::new(chat_id, reader).thumb(InputFile::path(self.document_thumb_path.clone()));
-                        self.api.execute(method).await?;
+                        self.api.execute(method).await.unwrap();
                     }
                     "/video" => {
                         let method = SendVideo::new(chat_id, InputFile::path(self.video_path.clone()));
-                        self.api.execute(method).await?;
+                        self.api.execute(method).await.unwrap();
                     }
                     // The same way for other file types...
                     _ => {}
@@ -112,7 +123,7 @@ impl UpdateHandler for Handler {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -124,9 +135,9 @@ async fn main() -> Result<(), Error> {
     let document_thumb_path = env::var("TGRS_DOCUMENT_THUMB_PATH").expect("TGRS_DOCUMENT_THUMB_PATH is not set");
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy)?;
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
-    let api = Api::new(config)?;
+    let api = Api::new(config).expect("Failed to create API");
     LongPoll::new(
         api.clone(),
         Handler {
@@ -139,5 +150,4 @@ async fn main() -> Result<(), Error> {
     )
     .run()
     .await;
-    Ok(())
 }

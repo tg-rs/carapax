@@ -1,6 +1,5 @@
 use dotenv::dotenv;
 use env_logger;
-use failure::Error;
 use std::{env, time::Duration};
 use tgbot::{
     methods::SendMessage,
@@ -17,7 +16,7 @@ enum Notification {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -30,9 +29,9 @@ async fn main() -> Result<(), Error> {
     };
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy)?;
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
-    let api = Api::new(config)?;
+    let api = Api::new(config).expect("Failed to create API");
 
     let (mut tx, mut rx) = mpsc::channel(100);
 
@@ -54,10 +53,8 @@ async fn main() -> Result<(), Error> {
                 unimplemented!()
             }
             Notification::Hello => {
-                api.execute(SendMessage::new(chat_id.clone(), "Hello!")).await?;
+                api.execute(SendMessage::new(chat_id.clone(), "Hello!")).await.unwrap();
             }
         }
     }
-
-    Ok(())
 }

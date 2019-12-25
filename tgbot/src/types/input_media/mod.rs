@@ -2,9 +2,9 @@ use crate::{
     request::FormValue,
     types::{InputFile, InputFileKind},
 };
-use failure::Error;
 use serde::Serialize;
-use std::collections::HashMap;
+use serde_json::Error as JsonError;
+use std::{collections::HashMap, error::Error as StdError, fmt};
 
 mod animation;
 mod audio;
@@ -22,7 +22,7 @@ pub struct InputMedia {
 
 impl InputMedia {
     /// Creates a new input media
-    pub fn new<F, K>(file: F, info: K) -> Result<InputMedia, Error>
+    pub fn new<F, K>(file: F, info: K) -> Result<InputMedia, InputMediaError>
     where
         F: Into<InputFile>,
         InputMediaKind: From<(String, K)>,
@@ -34,7 +34,7 @@ impl InputMedia {
     }
 
     /// Creates a new input media with thumbnail
-    pub fn with_thumb<F, T, K>(file: F, thumb: T, info: K) -> Result<InputMedia, Error>
+    pub fn with_thumb<F, T, K>(file: F, thumb: T, info: K) -> Result<InputMedia, InputMediaError>
     where
         F: Into<InputFile>,
         T: Into<InputFile>,
@@ -58,8 +58,8 @@ impl InputMedia {
         }
     }
 
-    fn add_info(&mut self, info: InputMediaKind) -> Result<(), Error> {
-        let info = serde_json::to_string(&info)?;
+    fn add_info(&mut self, info: InputMediaKind) -> Result<(), InputMediaError> {
+        let info = serde_json::to_string(&info).map_err(InputMediaError::SerializeInfo)?;
         self.fields.insert(String::from("media"), info.into());
         Ok(())
     }
@@ -163,6 +163,29 @@ convert_media_kind!(
 );
 
 convert_media_kind!(Photo(InputMediaPhoto));
+
+/// An error occurred with InputMedia
+#[derive(Debug)]
+pub enum InputMediaError {
+    /// Can not serialize media info
+    SerializeInfo(JsonError),
+}
+
+impl StdError for InputMediaError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            InputMediaError::SerializeInfo(err) => Some(err),
+        }
+    }
+}
+
+impl fmt::Display for InputMediaError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            InputMediaError::SerializeInfo(err) => write!(out, "failed to serialize input media info: {}", err),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

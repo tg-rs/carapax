@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, EditMessageResult, Float, InlineKeyboardMarkup, Integer},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Edit live location messages sent by the bot or via the bot (for inline bots)
@@ -72,8 +71,8 @@ impl EditMessageLiveLocation {
 impl Method for EditMessageLiveLocation {
     type Response = EditMessageResult;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("editMessageLiveLocation", &self)
+    fn into_request(self) -> Request {
+        Request::json("editMessageLiveLocation", self)
     }
 }
 
@@ -128,8 +127,8 @@ impl StopMessageLiveLocation {
 impl Method for StopMessageLiveLocation {
     type Response = EditMessageResult;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("stopMessageLiveLocation", &self)
+    fn into_request(self) -> Request {
+        Request::json("stopMessageLiveLocation", self)
     }
 }
 
@@ -147,35 +146,36 @@ mod tests {
     fn edit_message_live_location() {
         let request = EditMessageLiveLocation::new(1, 2, 3.0, 4.0)
             .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/editMessageLiveLocation");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/editMessageLiveLocation"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["message_id"], 2);
             assert_eq!(data["latitude"], 3.0);
             assert_eq!(data["longitude"], 4.0);
             assert_eq!(data["reply_markup"]["inline_keyboard"][0][0]["text"], "text");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
 
-        let request = EditMessageLiveLocation::with_inline_message_id("msg-id", 3.0, 4.0)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/editMessageLiveLocation");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = EditMessageLiveLocation::with_inline_message_id("msg-id", 3.0, 4.0).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/editMessageLiveLocation"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["inline_message_id"], "msg-id");
             assert_eq!(data["latitude"], 3.0);
             assert_eq!(data["longitude"], 4.0);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 
@@ -183,31 +183,32 @@ mod tests {
     fn stop_message_live_location() {
         let request = StopMessageLiveLocation::new(1, 2)
             .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/stopMessageLiveLocation");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/stopMessageLiveLocation"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["message_id"], 2);
             assert_eq!(data["reply_markup"]["inline_keyboard"][0][0]["text"], "text");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
 
-        let request = StopMessageLiveLocation::with_inline_message_id("msg-id")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/stopMessageLiveLocation");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = StopMessageLiveLocation::with_inline_message_id("msg-id").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/stopMessageLiveLocation"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["inline_message_id"], "msg-id");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

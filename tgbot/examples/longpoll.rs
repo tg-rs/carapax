@@ -1,14 +1,13 @@
 use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use failure::Error;
 use log;
 use std::env;
 use tgbot::{
     longpoll::LongPoll,
     methods::SendMessage,
     types::{Update, UpdateKind},
-    Api, Config, UpdateHandler,
+    Api, Config, ExecuteError, UpdateHandler,
 };
 
 struct Handler {
@@ -17,7 +16,9 @@ struct Handler {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    async fn handle(&mut self, update: Update) -> Result<(), Error> {
+    type Error = ExecuteError;
+
+    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         log::info!("got an update: {:?}\n", update);
         if let UpdateKind::Message(message) = update.kind {
             if let Some(text) = message.get_text() {
@@ -32,7 +33,7 @@ impl UpdateHandler for Handler {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -40,9 +41,8 @@ async fn main() -> Result<(), Error> {
     let proxy = env::var("TGRS_PROXY").ok();
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy)?;
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
-    let api = Api::new(config)?;
+    let api = Api::new(config).expect("Failed to create API");
     LongPoll::new(api.clone(), Handler { api }).run().await;
-    Ok(())
 }

@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatAction, ChatId},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Tell the user that something is happening on the bot's side
@@ -41,8 +40,8 @@ impl SendChatAction {
 impl Method for SendChatAction {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("sendChatAction", &self)
+    fn into_request(self) -> Request {
+        Request::json("sendChatAction", self)
     }
 }
 
@@ -54,18 +53,18 @@ mod tests {
 
     #[test]
     fn send_chat_action() {
-        let request = SendChatAction::new(1, ChatAction::Typing)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/sendChatAction");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = SendChatAction::new(1, ChatAction::Typing).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/sendChatAction"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["action"], "typing");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

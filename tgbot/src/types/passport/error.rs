@@ -1,5 +1,6 @@
 use crate::types::passport::element::EncryptedPassportElementKind;
 use serde::Serialize;
+use std::{error::Error as StdError, fmt};
 
 /// Error in the Telegram Passport element which was submitted that should be resolved by the user
 #[derive(Clone, Debug, Serialize)]
@@ -351,9 +352,16 @@ enum PassportElementErrorKind {
 }
 
 /// Unexpected encrypted passport element kind
-#[derive(Clone, Debug, failure::Fail)]
-#[fail(display = "Unexpected element kind: {:?}", _0)]
+#[derive(Clone, Debug)]
 pub struct UnexpectedEncryptedPassportElementKind(EncryptedPassportElementKind);
+
+impl StdError for UnexpectedEncryptedPassportElementKind {}
+
+impl fmt::Display for UnexpectedEncryptedPassportElementKind {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        write!(out, "unexpected element kind: {:?}", self.0)
+    }
+}
 
 #[cfg(test)]
 mod tests {

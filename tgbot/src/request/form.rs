@@ -1,9 +1,16 @@
 use crate::types::{InputFile, InputFileInfo, InputFileKind, InputFileReader};
-use failure::Error;
 use mime::APPLICATION_OCTET_STREAM;
 use mime_guess;
-use reqwest::multipart::{Form as MultipartForm, Part};
-use std::{collections::HashMap, io::Read};
+use reqwest::{
+    multipart::{Form as MultipartForm, Part},
+    Error as ReqwestError,
+};
+use std::{
+    collections::HashMap,
+    error::Error as StdError,
+    fmt,
+    io::{Error as IoError, Read},
+};
 use tokio::fs;
 
 #[derive(Debug)]
@@ -29,7 +36,7 @@ impl FormValue {
         }
     }
 
-    async fn into_part(self) -> Result<Part, Error> {
+    async fn into_part(self) -> Result<Part, FormError> {
         Ok(match self {
             FormValue::Text(text) => Part::text(text),
             FormValue::File(file) => match file.kind {
@@ -40,7 +47,9 @@ impl FormValue {
                         .and_then(|x| mime_guess::from_ext(&x.to_string_lossy()).first())
                         .unwrap_or(APPLICATION_OCTET_STREAM);
                     let buf = fs::read(path).await?;
-                    let part = Part::stream(buf).mime_str(mime_type.as_ref())?;
+                    let part = Part::stream(buf)
+                        .mime_str(mime_type.as_ref())
+                        .map_err(FormError::Mime)?;
                     match file_name {
                         Some(file_name) => part.file_name(file_name),
                         None => part,
@@ -56,7 +65,10 @@ impl FormValue {
                         Some(InputFileInfo {
                             name: file_name,
                             mime_type: Some(mime_type),
-                        }) => Part::stream(buf).file_name(file_name).mime_str(mime_type.as_ref())?,
+                        }) => Part::stream(buf)
+                            .file_name(file_name)
+                            .mime_str(mime_type.as_ref())
+                            .map_err(FormError::Mime)?,
                         Some(InputFileInfo {
                             name: file_name,
                             mime_type: None,
@@ -104,13 +116,46 @@ impl Form {
         self.fields.insert(name.into(), value.into());
     }
 
-    pub(crate) async fn into_multipart(self) -> Result<MultipartForm, Error> {
+    pub(crate) async fn into_multipart(self) -> Result<MultipartForm, FormError> {
         let mut result = MultipartForm::new();
         for (field_name, field_value) in self.fields {
             let field_value = field_value.into_part().await?;
             result = result.part(field_name, field_value);
         }
         Ok(result)
+    }
+}
+
+/// An error occurred when building multipart form
+#[derive(Debug)]
+pub enum FormError {
+    /// Failed to read file
+    Io(IoError),
+    /// Failed to set MIME type
+    Mime(ReqwestError),
+}
+
+impl From<IoError> for FormError {
+    fn from(err: IoError) -> Self {
+        FormError::Io(err)
+    }
+}
+
+impl StdError for FormError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(match self {
+            FormError::Io(err) => err,
+            FormError::Mime(err) => err,
+        })
+    }
+}
+
+impl fmt::Display for FormError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            FormError::Io(err) => write!(out, "can not read file: {}", err),
+            FormError::Mime(err) => write!(out, "can not set MIME type: {}", err),
+        }
     }
 }
 

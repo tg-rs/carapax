@@ -1,11 +1,12 @@
 use crate::handler::UpdateHandler;
 use bytes::buf::BufExt;
-use failure::Error;
 use futures_util::future::{ok, ready, FutureExt, Ready};
-use hyper::{body, service::Service, Body, Method, Request, Response, Server, StatusCode};
+use http::Error as HttpError;
+use hyper::{body, service::Service, Body, Error as HyperError, Method, Request, Response, Server, StatusCode};
 use log::error;
 use std::{
     convert::Infallible,
+    error::Error as StdError,
     future::Future,
     net::SocketAddr,
     pin::Pin,
@@ -61,7 +62,7 @@ async fn handle_request<H>(
     handler: Arc<Mutex<H>>,
     path: String,
     request: Request<Body>,
-) -> Result<Response<Body>, Error>
+) -> Result<Response<Body>, WebhookError>
 where
     H: UpdateHandler,
 {
@@ -71,7 +72,10 @@ where
             match serde_json::from_reader(data.reader()) {
                 Ok(update) => {
                     let mut handler = handler.lock().await;
-                    handler.handle(update).await?;
+                    handler
+                        .handle(update)
+                        .await
+                        .map_err(|err| WebhookError::Handler(format!("{:?}", err)))?;
                     Response::new(Body::empty())
                 }
                 Err(err) => Response::builder()
@@ -90,13 +94,15 @@ where
     })
 }
 
+type ServiceFuture = Pin<Box<dyn Future<Output = Result<Response<Body>, WebhookError>> + Send>>;
+
 impl<H> Service<Request<Body>> for WebhookService<H>
 where
     H: UpdateHandler + Send + 'static,
 {
     type Response = Response<Body>;
-    type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<Response<Body>, Error>> + Send>>;
+    type Error = WebhookError;
+    type Future = ServiceFuture;
 
     fn poll_ready(&mut self, _: &mut Context) -> Poll<Result<(), Self::Error>> {
         Ok(()).into()
@@ -107,16 +113,35 @@ where
             handle_request(self.handler.clone(), self.path.clone(), request).then(|result| match result {
                 Ok(rep) => ok(rep),
                 Err(err) => {
-                    error!("Failed to handle request: {}\n{:?}", err, err.backtrace());
+                    error!("Webhook error: {}", err);
                     ready(
                         Response::builder()
                             .status(StatusCode::INTERNAL_SERVER_ERROR)
                             .body(Body::empty())
-                            .map_err(Error::from),
+                            .map_err(WebhookError::from),
                     )
                 }
             }),
         )
+    }
+}
+
+#[doc(hidden)]
+#[derive(Debug, derive_more::Display, derive_more::From)]
+pub enum WebhookError {
+    Hyper(HyperError),
+    Http(HttpError),
+    Handler(String),
+}
+
+impl StdError for WebhookError {
+    fn cause(&self) -> Option<&dyn StdError> {
+        use self::WebhookError::*;
+        Some(match self {
+            Hyper(err) => err,
+            Http(err) => err,
+            _ => return None,
+        })
     }
 }
 
@@ -127,7 +152,7 @@ where
 /// * address - Bind address
 /// * path - URL path for webhook
 /// * handler - Updates handler
-pub async fn run_server<A, P, H>(address: A, path: P, handler: H) -> Result<(), Error>
+pub async fn run_server<A, P, H>(address: A, path: P, handler: H) -> Result<(), HyperError>
 where
     A: Into<SocketAddr>,
     P: Into<String>,
@@ -136,6 +161,5 @@ where
     let address = address.into();
     let path = path.into();
     let server = Server::bind(&address).serve(WebhookServiceFactory::new(path, handler));
-    server.await?;
-    Ok(())
+    server.await
 }

@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, EditMessageResult, InlineKeyboardMarkup, Integer, ParseMode},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Edit caption of message sent by the bot or via the bot (for inline bots)
@@ -79,8 +78,8 @@ impl EditMessageCaption {
 impl Method for EditMessageCaption {
     type Response = EditMessageResult;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("editMessageCaption", &self)
+    fn into_request(self) -> Request {
+        Request::json("editMessageCaption", self)
     }
 }
 
@@ -99,32 +98,33 @@ mod tests {
             .caption("caption")
             .parse_mode(ParseMode::Markdown)
             .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/editMessageCaption");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/editMessageCaption"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["message_id"], 2);
             assert_eq!(data["caption"], "caption");
             assert_eq!(data["reply_markup"]["inline_keyboard"][0][0]["text"], "text");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
 
-        let request = EditMessageCaption::with_inline_message_id("msg-id")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/editMessageCaption");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = EditMessageCaption::with_inline_message_id("msg-id").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/editMessageCaption"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["inline_message_id"], "msg-id");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, ChatPermissions},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Set default chat permissions for all members
@@ -36,8 +35,8 @@ impl SetChatPermissions {
 impl Method for SetChatPermissions {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("setChatPermissions", &self)
+    fn into_request(self) -> Request {
+        Request::json("setChatPermissions", self)
     }
 }
 
@@ -49,18 +48,18 @@ mod tests {
 
     #[test]
     fn set_chat_permissions() {
-        let request = SetChatPermissions::new(1, ChatPermissions::default().with_send_messages(true))
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/setChatPermissions");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = SetChatPermissions::new(1, ChatPermissions::default().with_send_messages(true)).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/setChatPermissions"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["permissions"], serde_json::json!({"can_send_messages": true}));
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

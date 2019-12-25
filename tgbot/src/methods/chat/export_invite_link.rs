@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder, types::ChatId};
-use failure::Error;
+use crate::{methods::Method, request::Request, types::ChatId};
 use serde::Serialize;
 
 /// Generate a new invite link for a chat
@@ -28,8 +27,8 @@ impl ExportChatInviteLink {
 impl Method for ExportChatInviteLink {
     type Response = String;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("exportChatInviteLink", &self)
+    fn into_request(self) -> Request {
+        Request::json("exportChatInviteLink", self)
     }
 }
 
@@ -41,17 +40,17 @@ mod tests {
 
     #[test]
     fn export_chat_invite_link() {
-        let request = ExportChatInviteLink::new(1)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/exportChatInviteLink");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = ExportChatInviteLink::new(1).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/exportChatInviteLink"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

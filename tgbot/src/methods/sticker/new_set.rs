@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::{Form, RequestBuilder},
-    types::{InputFile, Integer, MaskPosition},
+    request::{Form, Request},
+    types::{InputFile, Integer, MaskPosition, MaskPositionError},
 };
-use failure::Error;
 
 /// Create new sticker set owned by a user
 ///
@@ -53,9 +52,8 @@ impl CreateNewStickerSet {
     }
 
     /// Position where the mask should be placed on faces
-    pub fn mask_position(mut self, value: MaskPosition) -> Result<Self, Error> {
-        let value = serde_json::to_string(&value)?;
-        self.form.insert_field("mask_position", value);
+    pub fn mask_position(mut self, value: MaskPosition) -> Result<Self, MaskPositionError> {
+        self.form.insert_field("mask_position", value.serialize()?);
         Ok(self)
     }
 }
@@ -63,8 +61,8 @@ impl CreateNewStickerSet {
 impl Method for CreateNewStickerSet {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::form("createNewStickerSet", self.form)
+    fn into_request(self) -> Request {
+        Request::form("createNewStickerSet", self.form)
     }
 }
 
@@ -87,12 +85,13 @@ mod tests {
                 scale: 3.0,
             })
             .unwrap()
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/createNewStickerSet");
-        if let RequestBody::Form(form) = request.body {
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/createNewStickerSet"
+        );
+        if let RequestBody::Form(form) = request.into_body() {
             assert_eq!(form.fields["user_id"].get_text().unwrap(), "1");
             assert_eq!(form.fields["name"].get_text().unwrap(), "name");
             assert_eq!(form.fields["title"].get_text().unwrap(), "title");
@@ -101,7 +100,7 @@ mod tests {
             assert!(form.fields["mask_position"].get_text().is_some());
             assert_eq!(form.fields["contains_masks"].get_text().unwrap(), "true");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

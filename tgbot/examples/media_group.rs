@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use failure::Error;
 use log;
 use std::env;
 use tgbot::{
@@ -20,7 +19,9 @@ struct Handler {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    async fn handle(&mut self, update: Update) -> Result<(), Error> {
+    type Error = ();
+
+    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         log::info!("got an update: {:?}\n", update);
         if let Some(chat_id) = update.get_chat_id() {
             let media = MediaGroup::default()
@@ -37,14 +38,14 @@ impl UpdateHandler for Handler {
                     InputMediaVideo::default().caption("Video 01"),
                 );
             let method = SendMediaGroup::new(chat_id, media).unwrap();
-            self.api.execute(method).await?;
+            self.api.execute(method).await.unwrap();
         }
         Ok(())
     }
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -55,9 +56,9 @@ async fn main() -> Result<(), Error> {
     let video_path = env::var("TGRS_VIDEO_PATH").expect("TGRS_VIDEO_PATH is not set");
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy)?;
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
-    let api = Api::new(config)?;
+    let api = Api::new(config).expect("Failed to create API");
     LongPoll::new(
         api.clone(),
         Handler {
@@ -69,5 +70,4 @@ async fn main() -> Result<(), Error> {
     )
     .run()
     .await;
-    Ok(())
 }

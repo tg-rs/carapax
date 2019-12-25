@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, Integer},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Pin a message in a group, supergroup or a channel
@@ -46,8 +45,8 @@ impl PinChatMessage {
 impl Method for PinChatMessage {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("pinChatMessage", &self)
+    fn into_request(self) -> Request {
+        Request::json("pinChatMessage", self)
     }
 }
 
@@ -59,20 +58,19 @@ mod tests {
 
     #[test]
     fn pin_chat_message() {
-        let request = PinChatMessage::new(1, 2)
-            .disable_notification(true)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/pinChatMessage");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = PinChatMessage::new(1, 2).disable_notification(true).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/pinChatMessage"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["message_id"], 2);
             assert_eq!(data["disable_notification"], true);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

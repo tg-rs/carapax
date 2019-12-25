@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder};
-use failure::Error;
+use crate::{methods::Method, request::Request};
 use serde::Serialize;
 
 /// Delete a sticker from a set created by the bot
@@ -24,8 +23,8 @@ impl DeleteStickerFromSet {
 impl Method for DeleteStickerFromSet {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("deleteStickerFromSet", &self)
+    fn into_request(self) -> Request {
+        Request::json("deleteStickerFromSet", self)
     }
 }
 
@@ -37,17 +36,17 @@ mod tests {
 
     #[test]
     fn delete_sticker_from_set() {
-        let request = DeleteStickerFromSet::new("sticker")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/deleteStickerFromSet");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = DeleteStickerFromSet::new("sticker").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/deleteStickerFromSet"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["sticker"], "sticker");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }
