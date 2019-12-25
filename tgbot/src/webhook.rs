@@ -75,7 +75,7 @@ where
                     handler
                         .handle(update)
                         .await
-                        .map_err(|err| WebhookError::Handler(format!("{:?}", err)))?;
+                        .map_err(|err| WebhookError::Handler(err.to_string()))?;
                     Response::new(Body::empty())
                 }
                 Err(err) => Response::builder()

@@ -3,7 +3,7 @@ use dotenv::dotenv;
 use env_logger;
 use log;
 use serde::{Deserialize, Serialize};
-use std::env;
+use std::{convert::Infallible, env};
 use tgbot::{
     longpoll::LongPoll,
     methods::SendMessage,
@@ -58,7 +58,7 @@ async fn handle_update(api: &Api, update: Update) -> Option<Message> {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    type Error = ();
+    type Error = Infallible;
 
     async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         log::info!("Got an update: {:?}", update);

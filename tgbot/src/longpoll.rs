@@ -102,7 +102,7 @@ where
         pin_mut!(s);
         while let Some(update) = s.next().await {
             if let Err(err) = self.handler.handle(update).await {
-                error!("Failed to handle update: {:?}", err);
+                error!("Failed to handle update: {}", err);
             }
         }
     }

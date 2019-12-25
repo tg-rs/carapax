@@ -2,13 +2,14 @@ use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
 use log::info;
+use std::convert::Infallible;
 use tgbot::{types::Update, webhook, UpdateHandler};
 
 struct Handler;
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    type Error = ();
+    type Error = Infallible;
 
     async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         info!("got an update: {:?}\n", update);

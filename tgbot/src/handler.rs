@@ -1,12 +1,12 @@
 use crate::types::Update;
 use async_trait::async_trait;
-use std::fmt::Debug;
+use std::error::Error;
 
 /// An update handler
 #[async_trait]
 pub trait UpdateHandler {
     /// Error produced by handler
-    type Error: Debug + Send + Sync;
+    type Error: Error + Send + Sync;
 
     /// Handles an update
     ///

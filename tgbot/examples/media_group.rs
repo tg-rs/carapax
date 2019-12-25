@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
 use log;
-use std::env;
+use std::{convert::Infallible, env};
 use tgbot::{
     longpoll::LongPoll,
     methods::SendMediaGroup,
@@ -19,7 +19,7 @@ struct Handler {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    type Error = ();
+    type Error = Infallible;
 
     async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         log::info!("got an update: {:?}\n", update);

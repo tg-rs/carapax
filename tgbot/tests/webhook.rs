@@ -3,7 +3,7 @@ use bytes::Buf;
 use dotenv::dotenv;
 use env_logger;
 use hyper::{body, header::HeaderValue, Body, Client, Method, Request, Server, StatusCode};
-use std::sync::Arc;
+use std::{convert::Infallible, sync::Arc};
 use tgbot::prelude::*;
 use tokio::sync::{oneshot::channel, Mutex};
 
@@ -13,7 +13,7 @@ struct Handler {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    type Error = ();
+    type Error = Infallible;
 
     async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
         let mut updates = self.updates.lock().await;
