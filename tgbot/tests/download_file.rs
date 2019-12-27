@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use mockito::{mock, server_url};
-use tgbot::prelude::*;
+use tgbot::{Api, Config};
 
 #[tokio::test]
 async fn download_file() {

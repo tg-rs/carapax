@@ -7,7 +7,7 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
-use tgbot::prelude::*;
+use tgbot::{longpoll::LongPoll, types::Update, Api, Config, UpdateHandler};
 use tokio::{spawn, sync::Mutex, time::delay_for};
 
 struct Handler {

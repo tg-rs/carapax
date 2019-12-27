@@ -4,7 +4,7 @@ use dotenv::dotenv;
 use env_logger;
 use hyper::{body, header::HeaderValue, Body, Client, Method, Request, Server, StatusCode};
 use std::{convert::Infallible, sync::Arc};
-use tgbot::prelude::*;
+use tgbot::{types::Update, webhook::WebhookServiceFactory, UpdateHandler};
 use tokio::sync::{oneshot::channel, Mutex};
 
 struct Handler {

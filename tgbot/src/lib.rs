@@ -12,15 +12,16 @@ pub mod longpoll;
 /// Methods available in the Bot API
 pub mod methods;
 
-/// A "prelude" for users of the library
-pub mod prelude;
-
 /// Types available in the Bot API
 pub mod types;
 
 /// Services to receive updates via webhook
 pub mod webhook;
 
-pub use self::{api::*, handler::*};
+pub use self::{
+    api::{Api, ApiError, Config, DownloadFileError, ExecuteError, ParseProxyError},
+    handler::UpdateHandler,
+};
 
+pub use async_trait::async_trait;
 pub use mime;
