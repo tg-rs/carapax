@@ -1,82 +1,104 @@
+use std::{convert::Infallible, error::Error};
 use tgbot::types::{
     CallbackQuery, ChosenInlineResult, InlineQuery, Message, Poll, PreCheckoutQuery, ShippingQuery, Update, UpdateKind,
 };
 
 /// Allows to create an input for a handler from given update
-pub trait FromUpdate: Sized {
+pub trait TryFromUpdate: Sized {
+    /// An error when converting update
+    type Error: Error + Send + Sync;
+
     /// Returns a handler input
-    fn from_update(update: Update) -> Option<Self>;
+    ///
+    /// Handler will not run if None returned
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error>;
 }
 
-impl FromUpdate for Update {
-    fn from_update(update: Update) -> Option<Self> {
-        Some(update)
+impl TryFromUpdate for Update {
+    type Error = Infallible;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        Ok(Some(update))
     }
 }
 
-impl FromUpdate for Message {
-    fn from_update(update: Update) -> Option<Self> {
-        match update.kind {
+impl TryFromUpdate for Message {
+    type Error = Infallible;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        Ok(match update.kind {
             UpdateKind::Message(msg)
             | UpdateKind::EditedMessage(msg)
             | UpdateKind::ChannelPost(msg)
             | UpdateKind::EditedChannelPost(msg) => Some(msg),
             _ => None,
-        }
+        })
     }
 }
 
-impl FromUpdate for InlineQuery {
-    fn from_update(update: Update) -> Option<Self> {
-        match update.kind {
+impl TryFromUpdate for InlineQuery {
+    type Error = Infallible;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        Ok(match update.kind {
             UpdateKind::InlineQuery(query) => Some(query),
             _ => None,
-        }
+        })
     }
 }
 
-impl FromUpdate for ChosenInlineResult {
-    fn from_update(update: Update) -> Option<Self> {
-        match update.kind {
+impl TryFromUpdate for ChosenInlineResult {
+    type Error = Infallible;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        Ok(match update.kind {
             UpdateKind::ChosenInlineResult(result) => Some(result),
             _ => None,
-        }
+        })
     }
 }
 
-impl FromUpdate for CallbackQuery {
-    fn from_update(update: Update) -> Option<Self> {
-        match update.kind {
+impl TryFromUpdate for CallbackQuery {
+    type Error = Infallible;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        Ok(match update.kind {
             UpdateKind::CallbackQuery(query) => Some(query),
             _ => None,
-        }
+        })
     }
 }
 
-impl FromUpdate for ShippingQuery {
-    fn from_update(update: Update) -> Option<Self> {
-        match update.kind {
+impl TryFromUpdate for ShippingQuery {
+    type Error = Infallible;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        Ok(match update.kind {
             UpdateKind::ShippingQuery(query) => Some(query),
             _ => None,
-        }
+        })
     }
 }
 
-impl FromUpdate for PreCheckoutQuery {
-    fn from_update(update: Update) -> Option<Self> {
-        match update.kind {
+impl TryFromUpdate for PreCheckoutQuery {
+    type Error = Infallible;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        Ok(match update.kind {
             UpdateKind::PreCheckoutQuery(query) => Some(query),
             _ => None,
-        }
+        })
     }
 }
 
-impl FromUpdate for Poll {
-    fn from_update(update: Update) -> Option<Self> {
-        match update.kind {
+impl TryFromUpdate for Poll {
+    type Error = Infallible;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        Ok(match update.kind {
             UpdateKind::Poll(poll) => Some(poll),
             _ => None,
-        }
+        })
     }
 }
 
@@ -130,8 +152,8 @@ mod tests {
             }),
         ] {
             let update: Update = serde_json::from_value(data).unwrap();
-            assert!(Update::from_update(update.clone()).is_some());
-            assert!(Message::from_update(update).is_some());
+            assert!(Update::try_from_update(update.clone()).unwrap().is_some());
+            assert!(Message::try_from_update(update).unwrap().is_some());
         }
     }
 
@@ -149,8 +171,8 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::from_update(update.clone()).is_some());
-        assert!(InlineQuery::from_update(update).is_some());
+        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
+        assert!(InlineQuery::try_from_update(update).unwrap().is_some());
     }
 
     #[test]
@@ -166,8 +188,8 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::from_update(update.clone()).is_some());
-        assert!(ChosenInlineResult::from_update(update).is_some());
+        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
+        assert!(ChosenInlineResult::try_from_update(update).unwrap().is_some());
     }
 
     #[test]
@@ -182,8 +204,8 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::from_update(update.clone()).is_some());
-        assert!(CallbackQuery::from_update(update).is_some());
+        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
+        assert!(CallbackQuery::try_from_update(update).unwrap().is_some());
     }
 
     #[test]
@@ -207,8 +229,8 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::from_update(update.clone()).is_some());
-        assert!(ShippingQuery::from_update(update).is_some());
+        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
+        assert!(ShippingQuery::try_from_update(update).unwrap().is_some());
     }
 
     #[test]
@@ -226,8 +248,8 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::from_update(update.clone()).is_some());
-        assert!(PreCheckoutQuery::from_update(update).is_some());
+        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
+        assert!(PreCheckoutQuery::try_from_update(update).unwrap().is_some());
     }
 
     #[test]
@@ -247,7 +269,7 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::from_update(update.clone()).is_some());
-        assert!(Poll::from_update(update).is_some());
+        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
+        assert!(Poll::try_from_update(update).unwrap().is_some());
     }
 }
