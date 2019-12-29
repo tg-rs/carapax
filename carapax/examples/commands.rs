@@ -1,17 +1,19 @@
-use carapax::{handler, longpoll::LongPoll, methods::SendMessage, Api, Command, Config, Dispatcher, ExecuteError};
+use carapax::{
+    handler, longpoll::LongPoll, methods::SendMessage, Api, Command, Config, Dispatcher, ExecuteError, HandlerResult,
+};
 use dotenv::dotenv;
 use env_logger;
 use log;
 use std::env;
 
 #[handler(command = "/start")]
-async fn handle_start(context: &mut Api, command: Command) -> Result<(), ExecuteError> {
+async fn handle_start(context: &mut Api, command: Command) -> Result<HandlerResult, ExecuteError> {
     log::info!("handle /start command\n");
     let chat_id = command.get_message().get_chat_id();
     let method = SendMessage::new(chat_id, "Hello!");
     let result = context.execute(method).await;
     log::info!("sendMessage result: {:?}\n", result);
-    Ok(())
+    Ok(HandlerResult::Stop)
 }
 
 #[handler(command = "/user_id")]

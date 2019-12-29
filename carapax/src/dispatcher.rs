@@ -8,6 +8,7 @@ use tokio::sync::Mutex;
 pub struct Dispatcher<C> {
     handlers: Vec<Box<dyn Handler<C, Input = Update, Output = HandlerResult> + Send>>,
     context: Arc<Mutex<C>>,
+    error_handler: Option<Box<dyn ErrorHandler + Send>>,
 }
 
 impl<C> Dispatcher<C>
@@ -23,6 +24,7 @@ where
         Self {
             context: Arc::new(Mutex::new(context)),
             handlers: Vec::new(),
+            error_handler: None,
         }
     }
 
@@ -36,7 +38,7 @@ where
         self.handlers.push(ConvertHandler::boxed(handler))
     }
 
-    pub(crate) async fn dispatch(&mut self, update: Update) -> Result<(), HandlerError> {
+    pub(crate) async fn dispatch(&mut self, update: Update) {
         let context = self.context.clone();
         let mut context = context.lock().await;
         for handler in &mut self.handlers {
@@ -46,10 +48,19 @@ where
                 HandlerResult::Stop => {
                     break;
                 }
-                HandlerResult::Error(err) => return Err(err),
+                HandlerResult::Error(err) => match &mut self.error_handler {
+                    Some(handler) => {
+                        if handler.handle(err).await {
+                            break;
+                        }
+                    }
+                    None => {
+                        log::error!("An error has occurred: {}", err);
+                        break;
+                    }
+                },
             }
         }
-        Ok(())
     }
 }
 
@@ -58,11 +69,19 @@ impl<C> UpdateHandler for Dispatcher<C>
 where
     C: Send + 'static,
 {
-    type Error = HandlerError;
-
-    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
+    async fn handle(&mut self, update: Update) {
         self.dispatch(update).await
     }
+}
+
+/// A handler for errors occurred when dispatching update
+#[async_trait]
+pub trait ErrorHandler {
+    /// Handles a error
+    ///
+    /// Return `true` if you need to stop update propagation.
+    /// Otherwise update will be passed to a next handler.
+    async fn handle(&mut self, err: HandlerError) -> bool;
 }
 
 #[cfg(test)]
@@ -90,7 +109,7 @@ mod tests {
         }
 
         fn with_error() -> Self {
-            Self::new(HandlerResult::from(Err(ErrorMock)))
+            Self::new(HandlerResult::from(Err::<(), ErrorMock>(ErrorMock)))
         }
     }
 
@@ -145,28 +164,25 @@ mod tests {
             }};
         }
 
-        let result = assert_dispatch!(
+        assert_dispatch!(
             2,
             HandlerMock::with_continue(),
             HandlerMock::with_stop(),
             HandlerMock::with_error()
         );
-        assert!(result.is_ok());
 
-        let result = assert_dispatch!(
+        assert_dispatch!(
             1,
             HandlerMock::with_stop(),
             HandlerMock::with_continue(),
             HandlerMock::with_error()
         );
-        assert!(result.is_ok());
 
-        let result = assert_dispatch!(
+        assert_dispatch!(
             1,
             HandlerMock::with_error(),
             HandlerMock::with_stop(),
             HandlerMock::with_continue()
         );
-        assert!(result.is_err());
     }
 }

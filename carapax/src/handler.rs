@@ -74,13 +74,14 @@ impl From<()> for HandlerResult {
     }
 }
 
-impl<E> From<Result<(), E>> for HandlerResult
+impl<T, E> From<Result<T, E>> for HandlerResult
 where
+    T: Into<HandlerResult>,
     E: Error + Send + Sync + 'static,
 {
-    fn from(result: Result<(), E>) -> Self {
+    fn from(result: Result<T, E>) -> Self {
         match result {
-            Ok(()) => HandlerResult::Continue,
+            Ok(res) => res.into(),
             Err(err) => HandlerResult::Error(HandlerError::new(err)),
         }
     }
