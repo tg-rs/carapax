@@ -53,7 +53,7 @@ impl<H> LongPoll<H> {
 
 impl<H> LongPoll<H>
 where
-    H: UpdateHandler,
+    H: UpdateHandler + Send,
 {
     /// Returns a long poll handle
     pub fn get_handle(&self) -> LongPollHandle {
@@ -101,9 +101,7 @@ where
         };
         pin_mut!(s);
         while let Some(update) = s.next().await {
-            if let Err(err) = self.handler.handle(update).await {
-                error!("Failed to handle update: {}", err);
-            }
+            self.handler.handle(update).await;
         }
     }
 }

@@ -7,7 +7,7 @@ use tgbot::{
     longpoll::LongPoll,
     methods::SendMessage,
     types::{Update, UpdateKind},
-    Api, Config, ExecuteError, UpdateHandler,
+    Api, Config, UpdateHandler,
 };
 
 struct Handler {
@@ -16,19 +16,16 @@ struct Handler {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    type Error = ExecuteError;
-
-    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
+    async fn handle(&mut self, update: Update) {
         log::info!("got an update: {:?}\n", update);
         if let UpdateKind::Message(message) = update.kind {
             if let Some(text) = message.get_text() {
                 let api = self.api.clone();
                 let chat_id = message.get_chat_id();
                 let method = SendMessage::new(chat_id, text.data.clone());
-                api.execute(method).await?;
+                api.execute(method).await.unwrap();
             }
         }
-        Ok(())
     }
 }
 

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
 use log;
-use std::{convert::Infallible, env, path::Path};
+use std::{env, path::Path};
 use tempfile::{tempdir, TempDir};
 use tgbot::{
     longpoll::LongPoll,
@@ -33,16 +33,13 @@ async fn handle_document(api: &Api, tmpdir: &Path, document: Document) {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    type Error = Infallible;
-
-    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
+    async fn handle(&mut self, update: Update) {
         log::info!("got an update: {:?}\n", update);
         if let UpdateKind::Message(message) = update.kind {
             if let MessageData::Document { data, .. } = message.data {
                 handle_document(&self.api, self.tmpdir.path(), data).await;
             }
         }
-        Ok(())
     }
 }
 

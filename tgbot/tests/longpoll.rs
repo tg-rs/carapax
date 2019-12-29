@@ -3,7 +3,6 @@ use dotenv::dotenv;
 use mockito::{mock, server_url, Matcher};
 use serde_json::json;
 use std::{
-    convert::Infallible,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -16,12 +15,9 @@ struct Handler {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    type Error = Infallible;
-
-    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
+    async fn handle(&mut self, update: Update) {
         let mut updates = self.updates.lock().await;
         updates.push(update);
-        Ok(())
     }
 }
 

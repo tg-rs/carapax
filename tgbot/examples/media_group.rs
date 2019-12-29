@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
 use log;
-use std::{convert::Infallible, env};
+use std::env;
 use tgbot::{
     longpoll::LongPoll,
     methods::SendMediaGroup,
@@ -19,9 +19,7 @@ struct Handler {
 
 #[async_trait]
 impl UpdateHandler for Handler {
-    type Error = Infallible;
-
-    async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
+    async fn handle(&mut self, update: Update) {
         log::info!("got an update: {:?}\n", update);
         if let Some(chat_id) = update.get_chat_id() {
             let media = MediaGroup::default()
@@ -40,7 +38,6 @@ impl UpdateHandler for Handler {
             let method = SendMediaGroup::new(chat_id, media).unwrap();
             self.api.execute(method).await.unwrap();
         }
-        Ok(())
     }
 }
 

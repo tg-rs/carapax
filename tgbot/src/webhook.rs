@@ -64,7 +64,7 @@ async fn handle_request<H>(
     request: Request<Body>,
 ) -> Result<Response<Body>, WebhookError>
 where
-    H: UpdateHandler,
+    H: UpdateHandler + Send,
 {
     Ok(if let Method::POST = *request.method() {
         if request.uri().path() == path {
@@ -72,10 +72,7 @@ where
             match serde_json::from_reader(data.reader()) {
                 Ok(update) => {
                     let mut handler = handler.lock().await;
-                    handler
-                        .handle(update)
-                        .await
-                        .map_err(|err| WebhookError::Handler(err.to_string()))?;
+                    handler.handle(update).await;
                     Response::new(Body::empty())
                 }
                 Err(err) => Response::builder()
@@ -131,16 +128,14 @@ where
 pub enum WebhookError {
     Hyper(HyperError),
     Http(HttpError),
-    Handler(String),
 }
 
 impl StdError for WebhookError {
-    fn cause(&self) -> Option<&dyn StdError> {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
         use self::WebhookError::*;
         Some(match self {
             Hyper(err) => err,
             Http(err) => err,
-            _ => return None,
         })
     }
 }
