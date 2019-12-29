@@ -10,7 +10,6 @@ documentation = "https://docs.rs/carapax"
 repository = "https://github.com/tg-rs/tg-rs"
 
 [dependencies]
-anymap = "0.12.0"
 async-trait = "0.1.21"
 carapax-codegen = { path = "../carapax-codegen" }
 shellwords = "1.0.0"
