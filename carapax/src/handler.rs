@@ -92,16 +92,16 @@ impl From<HandlerError> for HandlerResult {
     }
 }
 
-pub(crate) struct BoxedHandler<H>(H);
+pub(crate) struct ConvertHandler<H>(H);
 
-impl<H> BoxedHandler<H> {
-    pub(crate) fn new(handler: H) -> Box<Self> {
+impl<H> ConvertHandler<H> {
+    pub(crate) fn boxed(handler: H) -> Box<Self> {
         Box::new(Self(handler))
     }
 }
 
 #[async_trait]
-impl<C, H, I> Handler<C> for BoxedHandler<H>
+impl<C, H, I> Handler<C> for ConvertHandler<H>
 where
     C: Send,
     H: Handler<C, Input = I> + Send,

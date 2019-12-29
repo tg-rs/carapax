@@ -1,4 +1,4 @@
-use crate::handler::{BoxedHandler, Handler, HandlerError, HandlerResult};
+use crate::handler::{ConvertHandler, Handler, HandlerError, HandlerResult};
 use async_trait::async_trait;
 use std::sync::Arc;
 use tgbot::{types::Update, UpdateHandler};
@@ -33,7 +33,7 @@ where
     where
         H: Handler<C> + Send + 'static,
     {
-        self.handlers.push(BoxedHandler::new(handler))
+        self.handlers.push(ConvertHandler::boxed(handler))
     }
 
     pub(crate) async fn dispatch(&mut self, update: Update) -> Result<(), HandlerError> {
