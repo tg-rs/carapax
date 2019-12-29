@@ -7,7 +7,7 @@ mod dispatcher;
 mod handler;
 
 pub use self::{
-    command::{Command, CommandError},
+    command::{Command, CommandDispatcher, CommandError},
     convert::TryFromUpdate,
     dispatcher::Dispatcher,
     handler::{Handler, HandlerError, HandlerResult},
