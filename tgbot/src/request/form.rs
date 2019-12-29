@@ -44,7 +44,8 @@ impl FormValue {
                     let file_name = path.file_name().map(|x| x.to_string_lossy().into_owned());
                     let mime_type = path
                         .extension()
-                        .and_then(|x| mime_guess::from_ext(&x.to_string_lossy()).first())
+                        .and_then(|x| x.to_str())
+                        .and_then(|x| mime_guess::from_ext(x).first())
                         .unwrap_or(APPLICATION_OCTET_STREAM);
                     let buf = fs::read(path).await?;
                     let part = Part::stream(buf)
