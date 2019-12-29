@@ -1,21 +1,19 @@
 use carapax::{
-    context::Context, handler, longpoll::LongPoll, methods::SendMessage, types::Message, Api, Config, Dispatcher,
-    ExecuteError,
+    handler, longpoll::LongPoll, methods::SendMessage, types::Message, Api, Config, Dispatcher, ExecuteError,
 };
 use dotenv::dotenv;
 use std::{convert::Infallible, env};
 
-async fn is_ping(_context: &mut Context, message: &Message) -> Result<bool, Infallible> {
+async fn is_ping(_context: &mut Api, message: &Message) -> Result<bool, Infallible> {
     Ok(message.get_text().map(|text| text.data == "ping").unwrap_or(false))
 }
 
 // Handler will not run if message text not equals "ping"
 #[handler(predicate=is_ping)]
-async fn pingpong_handler(context: &mut Context, message: Message) -> Result<(), ExecuteError> {
+async fn pingpong_handler(context: &mut Api, message: Message) -> Result<(), ExecuteError> {
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, "pong");
-    let api = context.get::<Api>();
-    api.execute(method).await?;
+    context.execute(method).await?;
     Ok(())
 }
 
@@ -31,9 +29,7 @@ async fn main() {
         config = config.proxy(proxy).expect("Failed to set proxy");
     }
     let api = Api::new(config).expect("Failed to create API");
-    let mut context = Context::default();
-    context.set(api.clone());
-    let mut dispatcher = Dispatcher::new(context);
+    let mut dispatcher = Dispatcher::new(api.clone());
     dispatcher.add_handler(pingpong_handler);
     LongPoll::new(api, dispatcher).run().await
 }

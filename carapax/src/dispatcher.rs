@@ -1,25 +1,25 @@
-use crate::{
-    context::Context,
-    handler::{BoxedHandler, Handler, HandlerError, HandlerResult},
-};
+use crate::handler::{BoxedHandler, Handler, HandlerError, HandlerResult};
 use async_trait::async_trait;
 use std::sync::Arc;
 use tgbot::{types::Update, UpdateHandler};
 use tokio::sync::Mutex;
 
 /// A Telegram Update dispatcher
-pub struct Dispatcher {
-    handlers: Vec<Box<dyn Handler<Input = Update, Output = HandlerResult> + Send>>,
-    context: Arc<Mutex<Context>>,
+pub struct Dispatcher<C> {
+    handlers: Vec<Box<dyn Handler<C, Input = Update, Output = HandlerResult> + Send>>,
+    context: Arc<Mutex<C>>,
 }
 
-impl Dispatcher {
+impl<C> Dispatcher<C>
+where
+    C: Send + 'static,
+{
     /// Creates a new Dispatcher
     ///
     /// # Arguments
     ///
     /// * context - Context passed to each handler
-    pub fn new(context: Context) -> Self {
+    pub fn new(context: C) -> Self {
         Self {
             context: Arc::new(Mutex::new(context)),
             handlers: Vec::new(),
@@ -31,7 +31,7 @@ impl Dispatcher {
     /// Handlers will be dispatched in the same order as they are added
     pub fn add_handler<H>(&mut self, handler: H)
     where
-        H: Handler + Send + 'static,
+        H: Handler<C> + Send + 'static,
     {
         self.handlers.push(BoxedHandler::new(handler))
     }
@@ -54,7 +54,10 @@ impl Dispatcher {
 }
 
 #[async_trait]
-impl UpdateHandler for Dispatcher {
+impl<C> UpdateHandler for Dispatcher<C>
+where
+    C: Send + 'static,
+{
     type Error = HandlerError;
 
     async fn handle(&mut self, update: Update) -> Result<(), Self::Error> {
@@ -92,13 +95,12 @@ mod tests {
     }
 
     #[async_trait]
-    impl Handler for HandlerMock {
+    impl Handler<Updates> for HandlerMock {
         type Input = Update;
         type Output = HandlerResult;
 
-        async fn handle(&mut self, context: &mut Context, input: Self::Input) -> Self::Output {
-            let updates = context.get_mut::<Updates>();
-            updates.push(input);
+        async fn handle(&mut self, context: &mut Updates, input: Self::Input) -> Self::Output {
+            context.push(input);
             self.result.take().unwrap()
         }
     }
@@ -133,15 +135,12 @@ mod tests {
         macro_rules! assert_dispatch {
             ($count:expr, $($handler:expr),*) => {{
                 let updates = Updates::new();
-                let mut context = Context::default();
-                context.set(updates);
-                let mut dispatcher = Dispatcher::new(context);
+                let mut dispatcher = Dispatcher::new(updates);
                 $(dispatcher.add_handler($handler);)*
                 let update = create_update();
                 let result = dispatcher.dispatch(update).await;
                 let context = dispatcher.context.lock().await;
-                let updates = context.get::<Updates>();
-                assert_eq!(updates.len(), $count);
+                assert_eq!(context.len(), $count);
                 result
             }};
         }

@@ -6,9 +6,6 @@ mod convert;
 mod dispatcher;
 mod handler;
 
-/// Context for handlers
-pub mod context;
-
 pub use self::{
     command::{Command, CommandError},
     convert::TryFromUpdate,
@@ -26,10 +23,10 @@ pub use tgbot::{
 /// If called without arguments it simply will implement [Handler](trait.Handler.html) for given function.
 /// Example:
 /// ```
-/// use carapax::{context::Context, types::Update, handler};
+/// use carapax::{types::Update, handler};
 ///
 /// #[handler]
-/// async fn handle_update(context: &mut Context, update: Update) {
+/// async fn handle_update(context: &mut (), update: Update) {
 ///     println!("Got update: {:?}", update);
 /// }
 /// ```
@@ -38,10 +35,10 @@ pub use tgbot::{
 ///
 /// Example:
 /// ```
-/// use carapax::{context::Context, Command, handler};
+/// use carapax::{Command, handler};
 ///
 /// #[handler(command = "/start")]
-/// async fn handle_start(context: &mut Context, command: Command) {
+/// async fn handle_start(context: &mut (), command: Command) {
 ///     println!("Got command: {:?}", command);
 /// }
 /// ```
@@ -51,20 +48,19 @@ pub use tgbot::{
 ///
 /// Example:
 /// ```
-/// use carapax::{context::Context, methods::SendMessage, types::Message, handler, Api, ExecuteError};
+/// use carapax::{methods::SendMessage, types::Message, handler, Api, ExecuteError};
 /// use std::convert::Infallible;
 ///
-/// async fn is_ping(_context: &mut Context, message: &Message) -> Result<bool, Infallible> {
+/// async fn is_ping(_context: &mut Api, message: &Message) -> Result<bool, Infallible> {
 ///     Ok(message.get_text().map(|text| text.data == "ping").unwrap_or(false))
 /// }
 ///
 /// // Handler will not run if message text not equals "ping"
 /// #[handler(predicate=is_ping)]
-/// async fn pingpong_handler(context: &mut Context, message: Message) -> Result<(), ExecuteError> {
+/// async fn pingpong_handler(context: &mut Api, message: Message) -> Result<(), ExecuteError> {
 ///     let chat_id = message.get_chat_id();
 ///     let method = SendMessage::new(chat_id, "pong");
-///     let api = context.get::<Api>();
-///     api.execute(method).await?;
+///     context.execute(method).await?;
 ///     Ok(())
 /// }
 /// ```

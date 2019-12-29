@@ -9,6 +9,7 @@ pub(super) struct HandlerMeta {
     ident: Ident,
     ident_inner: Ident,
     handler: ItemFn,
+    context: Box<Type>,
     input: Box<Type>,
     output: Option<Box<Type>>,
 }
@@ -16,6 +17,13 @@ pub(super) struct HandlerMeta {
 impl Parse for HandlerMeta {
     fn parse(input: ParseStream) -> SynResult<Self> {
         let mut handler = input.parse::<ItemFn>()?;
+        let context = match handler.sig.inputs.first() {
+            Some(FnArg::Typed(typed)) => match &*typed.ty {
+                Type::Reference(reference) => reference.elem.clone(),
+                _ => return Err(input.error("context must be a reference")),
+            },
+            _ => return Err(input.error("first argument must be context type")),
+        };
         let input = match handler.sig.inputs.last() {
             Some(FnArg::Typed(arg)) => arg.ty.clone(),
             _ => return Err(input.error("unable to detect handler input")),
@@ -31,6 +39,7 @@ impl Parse for HandlerMeta {
             handler,
             ident,
             ident_inner,
+            context,
             input,
             output,
         })
@@ -93,6 +102,7 @@ pub(super) fn build(meta: HandlerMeta, args: Option<HandlerArgs>) -> TokenStream
         ident,
         ident_inner,
         handler,
+        context,
         input,
         output,
     } = meta;
@@ -133,12 +143,12 @@ pub(super) fn build(meta: HandlerMeta, args: Option<HandlerArgs>) -> TokenStream
         #[allow(non_camel_case_types)]
         struct #ident;
         #[::carapax::async_trait]
-        impl ::carapax::Handler for #ident {
+        impl ::carapax::Handler<#context> for #ident {
             type Input = #input;
             type Output = #output;
             async fn handle(
                 &mut self,
-                context: &mut ::carapax::context::Context,
+                context: &mut #context,
                 input: Self::Input
             ) -> Self::Output {
                 #inner_call
