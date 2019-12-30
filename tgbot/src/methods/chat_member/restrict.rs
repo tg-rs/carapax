@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, ChatPermissions, Integer},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Restrict a user in a supergroup
@@ -103,8 +102,8 @@ impl RestrictChatMember {
 impl Method for RestrictChatMember {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("restrictChatMember", &self)
+    fn into_request(self) -> Request {
+        Request::json("restrictChatMember", self)
     }
 }
 
@@ -119,13 +118,14 @@ mod tests {
         let request = RestrictChatMember::new(1, 2)
             .restrict_all()
             .until_date(100)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/restrictChatMember");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/restrictChatMember"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["user_id"], 2);
             assert_eq!(data["until_date"], 100);
@@ -143,22 +143,20 @@ mod tests {
                 })
             );
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 
     #[test]
     fn restrict_chat_member_allow_all() {
-        let request = RestrictChatMember::new(1, 2)
-            .allow_all()
-            .until_date(100)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/restrictChatMember");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = RestrictChatMember::new(1, 2).allow_all().until_date(100).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/restrictChatMember"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["user_id"], 2);
             assert_eq!(data["until_date"], 100);
@@ -176,7 +174,7 @@ mod tests {
                 })
             );
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 
@@ -188,13 +186,14 @@ mod tests {
             .can_send_other_messages(true)
             .can_add_web_page_previews(false)
             .until_date(100)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/restrictChatMember");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/restrictChatMember"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["user_id"], 2);
             assert_eq!(data["until_date"], 100);
@@ -208,7 +207,7 @@ mod tests {
                 })
             );
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

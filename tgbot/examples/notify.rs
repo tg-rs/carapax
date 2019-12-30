@@ -1,27 +1,22 @@
 use dotenv::dotenv;
 use env_logger;
-use futures::future;
-use std::{
-    env,
-    sync::{mpsc::channel, Arc, Mutex},
-    thread,
-    time::Duration,
-};
+use std::{env, time::Duration};
 use tgbot::{
     methods::SendMessage,
     types::{ChatId, Integer, Update},
     Api, Config,
 };
+use tokio::{spawn, sync::mpsc, time::delay_for};
 
 #[allow(clippy::large_enum_variant)]
 enum Notification {
     Hello,
     #[allow(dead_code)]
     Update(Update),
-    Stop,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -34,36 +29,32 @@ fn main() {
     };
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
     let api = Api::new(config).expect("Failed to create API");
 
-    let (tx, rx) = channel();
-    let rx = Arc::new(Mutex::new(rx));
-    thread::spawn(move || {
-        let rx = rx.clone();
-        tokio::run(future::lazy(move || {
-            let rx = rx.lock().unwrap();
-            loop {
-                let notification = rx.recv().unwrap();
-                match notification {
-                    Notification::Update(_update) => {
-                        // you can handle update from telegram here
-                        unimplemented!()
-                    }
-                    Notification::Hello => api.spawn(api.execute(SendMessage::new(chat_id.clone(), "Hello!"))),
-                    Notification::Stop => break,
-                }
+    let (mut tx, mut rx) = mpsc::channel(100);
+
+    spawn(async move {
+        let timeout = Duration::from_secs(1);
+        for _ in 0..10usize {
+            if tx.send(Notification::Hello).await.is_err() {
+                println!("Receiver dropped");
+                return;
             }
-            Ok(())
-        }))
+            delay_for(timeout).await;
+        }
     });
 
-    let timeout = Duration::from_secs(1);
-    for _ in 0..10 {
-        tx.send(Notification::Hello).unwrap();
-        thread::sleep(timeout);
+    while let Some(notification) = rx.recv().await {
+        match notification {
+            Notification::Update(_update) => {
+                // you can handle update from telegram here
+                unimplemented!()
+            }
+            Notification::Hello => {
+                api.execute(SendMessage::new(chat_id.clone(), "Hello!")).await.unwrap();
+            }
+        }
     }
-    // You also can send update got from telegram: tx.send(Notification::Update(update))
-    tx.send(Notification::Stop).unwrap();
 }

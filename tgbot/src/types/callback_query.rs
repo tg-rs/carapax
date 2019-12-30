@@ -1,6 +1,7 @@
 use crate::types::{message::Message, user::User};
-use failure::Error;
 use serde::{de::DeserializeOwned, Deserialize};
+use serde_json::Error as JsonError;
+use std::{error::Error as StdError, fmt};
 
 /// Incoming callback query from a callback button in an inline keyboard
 ///
@@ -37,11 +38,37 @@ pub struct CallbackQuery {
 
 impl CallbackQuery {
     /// Parses callback data using serde_json
-    pub fn parse_data<T: DeserializeOwned>(&self) -> Result<Option<T>, Error> {
-        Ok(match self.data {
-            Some(ref data) => Some(serde_json::from_str(data)?),
-            None => None,
-        })
+    pub fn parse_data<T: DeserializeOwned>(&self) -> Result<Option<T>, CallbackQueryError> {
+        if let Some(ref data) = self.data {
+            serde_json::from_str(data)
+                .map(Some)
+                .map_err(CallbackQueryError::ParseJsonData)
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+/// An error occurred in callback query
+#[derive(Debug)]
+pub enum CallbackQueryError {
+    /// Failed to parse JSON data
+    ParseJsonData(JsonError),
+}
+
+impl StdError for CallbackQueryError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            CallbackQueryError::ParseJsonData(err) => Some(err),
+        }
+    }
+}
+
+impl fmt::Display for CallbackQueryError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CallbackQueryError::ParseJsonData(err) => write!(out, "failed to parse callback query data: {}", err),
+        }
     }
 }
 

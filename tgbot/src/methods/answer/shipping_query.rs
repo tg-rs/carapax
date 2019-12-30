@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder, types::ShippingOption};
-use failure::Error;
+use crate::{methods::Method, request::Request, types::ShippingOption};
 use serde::Serialize;
 
 /// Reply to shipping query
@@ -51,8 +50,8 @@ impl AnswerShippingQuery {
 impl Method for AnswerShippingQuery {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("answerShippingQuery", &self)
+    fn into_request(self) -> Request {
+        Request::json("answerShippingQuery", self)
     }
 }
 
@@ -64,34 +63,34 @@ mod tests {
 
     #[test]
     fn answer_shipping_query() {
-        let request = AnswerShippingQuery::ok("id", vec![])
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/answerShippingQuery");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = AnswerShippingQuery::ok("id", vec![]).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/answerShippingQuery"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["shipping_query_id"], "id");
             assert_eq!(data["ok"], true);
             assert!(data["shipping_options"].as_array().unwrap().is_empty());
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
 
-        let request = AnswerShippingQuery::error("id", "msg")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/answerShippingQuery");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = AnswerShippingQuery::error("id", "msg").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/answerShippingQuery"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["shipping_query_id"], "id");
             assert_eq!(data["ok"], false);
             assert_eq!(data["error_message"], "msg");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

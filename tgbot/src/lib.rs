@@ -1,12 +1,13 @@
 //! A Telegram Bot API client library
+#![recursion_limit = "256"]
 #![warn(missing_docs)]
-#![recursion_limit = "128"]
 
 mod api;
-mod executor;
 mod handler;
-mod never;
 mod request;
+
+/// Utilities to receive updates using long poll
+pub mod longpoll;
 
 /// Methods available in the Bot API
 pub mod methods;
@@ -14,10 +15,13 @@ pub mod methods;
 /// Types available in the Bot API
 pub mod types;
 
-/// A "prelude" for users of the library
-pub mod prelude;
+/// Services to receive updates via webhook
+pub mod webhook;
 
-pub use self::{api::*, handler::*};
-use never::Never;
+pub use self::{
+    api::{Api, ApiError, Config, DownloadFileError, ExecuteError, ParseProxyError},
+    handler::UpdateHandler,
+};
 
+pub use async_trait::async_trait;
 pub use mime;

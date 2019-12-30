@@ -2,6 +2,7 @@
 members = [
     "carapax",
     "carapax-access",
+    "carapax-codegen",
     "carapax-i18n",
     "carapax-ratelimit",
     "carapax-session",

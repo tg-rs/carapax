@@ -1,57 +1,50 @@
+use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use failure::Error;
-use futures::Future;
 use log;
 use std::{env, path::Path};
 use tempfile::{tempdir, TempDir};
 use tgbot::{
-    handle_updates,
+    longpoll::LongPoll,
     methods::GetFile,
     types::{Document, MessageData, Update, UpdateKind},
-    Api, Config, UpdateHandler, UpdateMethod,
+    Api, Config, UpdateHandler,
 };
-use tokio::{fs::File, io::AsyncWrite};
+use tokio::{fs::File, io::AsyncWriteExt};
 
 struct Handler {
     api: Api,
     tmpdir: TempDir,
 }
 
-fn handle_document(api: &Api, tmpdir: &Path, document: Document) -> Box<dyn Future<Item = (), Error = Error> + Send> {
+async fn handle_document(api: &Api, tmpdir: &Path, document: Document) {
     let api = api.clone();
     let path = tmpdir.join(document.file_name.clone().unwrap_or_else(|| String::from("unknown")));
-    Box::new(
-        api.execute(GetFile::new(document.file_id.as_str()))
-            .and_then(move |file| {
-                let file_path = file.file_path.unwrap();
-                api.download_file(file_path)
-            })
-            .and_then(move |data| {
-                println!("Name: {:?}", document.file_name);
-                println!("Mime-Type: {:?}", document.mime_type);
-                println!("Document size: {:?}", document.file_size);
-                println!("Downloaded size: {:?}", data.len());
-                File::create(path)
-                    .and_then(move |mut file| file.poll_write(&data))
-                    .map(|_| ())
-                    .from_err()
-            }),
-    )
+    let file = api.execute(GetFile::new(document.file_id.as_str())).await.unwrap();
+    let file_path = file.file_path.unwrap();
+    let data = api.download_file(file_path).await.unwrap();
+    println!("Name: {:?}", document.file_name);
+    println!("Mime-Type: {:?}", document.mime_type);
+    println!("Document size: {:?}", document.file_size);
+    println!("Downloaded size: {:?}", data.len());
+    let mut file = File::create(path).await.unwrap();
+    file.write_all(&data).await.unwrap();
 }
 
+#[async_trait]
 impl UpdateHandler for Handler {
-    fn handle(&mut self, update: Update) {
+    async fn handle(&mut self, update: Update) {
         log::info!("got an update: {:?}\n", update);
         if let UpdateKind::Message(message) = update.kind {
             if let MessageData::Document { data, .. } = message.data {
-                self.api.spawn(handle_document(&self.api, self.tmpdir.path(), data));
+                handle_document(&self.api, self.tmpdir.path(), data).await;
             }
         }
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -59,10 +52,10 @@ fn main() {
     let proxy = env::var("TGRS_PROXY").ok();
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
     let api = Api::new(config).expect("Failed to create API");
-    let tmpdir = tempdir().expect("Failed to create temp dir");
+    let tmpdir = tempdir().expect("Failed to create temporary directory");
     log::info!("Temp dir: {}", tmpdir.path().display());
-    tokio::run(handle_updates(UpdateMethod::poll(api.clone()), Handler { api, tmpdir }));
+    LongPoll::new(api.clone(), Handler { api, tmpdir }).run().await;
 }

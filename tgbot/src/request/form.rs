@@ -1,6 +1,17 @@
 use crate::types::{InputFile, InputFileInfo, InputFileKind, InputFileReader};
-use hyper_multipart_rfc7578::client::multipart::Form as MultipartForm;
-use std::collections::HashMap;
+use mime::APPLICATION_OCTET_STREAM;
+use mime_guess;
+use reqwest::{
+    multipart::{Form as MultipartForm, Part},
+    Error as ReqwestError,
+};
+use std::{
+    collections::HashMap,
+    error::Error as StdError,
+    fmt,
+    io::{Error as IoError, Read},
+};
+use tokio::fs;
 
 #[derive(Debug)]
 pub(crate) enum FormValue {
@@ -23,6 +34,53 @@ impl FormValue {
             FormValue::Text(_) => None,
             FormValue::File(ref file) => Some(file),
         }
+    }
+
+    async fn into_part(self) -> Result<Part, FormError> {
+        Ok(match self {
+            FormValue::Text(text) => Part::text(text),
+            FormValue::File(file) => match file.kind {
+                InputFileKind::Path(path) => {
+                    let file_name = path.file_name().and_then(|x| x.to_str()).map(String::from);
+                    let mime_type = path
+                        .extension()
+                        .and_then(|x| x.to_str())
+                        .and_then(|x| mime_guess::from_ext(x).first())
+                        .unwrap_or(APPLICATION_OCTET_STREAM);
+                    let buf = fs::read(path).await?;
+                    let part = Part::stream(buf)
+                        .mime_str(mime_type.as_ref())
+                        .map_err(FormError::Mime)?;
+                    match file_name {
+                        Some(file_name) => part.file_name(file_name),
+                        None => part,
+                    }
+                }
+                InputFileKind::Reader(InputFileReader {
+                    mut reader,
+                    info: file_info,
+                }) => {
+                    let mut buf = Vec::new();
+                    reader.read_to_end(&mut buf)?;
+                    match file_info {
+                        Some(InputFileInfo {
+                            name: file_name,
+                            mime_type: Some(mime_type),
+                        }) => Part::stream(buf)
+                            .file_name(file_name)
+                            .mime_str(mime_type.as_ref())
+                            .map_err(FormError::Mime)?,
+                        Some(InputFileInfo {
+                            name: file_name,
+                            mime_type: None,
+                        }) => Part::stream(buf).file_name(file_name),
+                        None => Part::stream(buf),
+                    }
+                }
+                InputFileKind::Id(file_id) => Part::text(file_id),
+                InputFileKind::Url(url) => Part::text(url),
+            },
+        })
     }
 }
 
@@ -58,36 +116,47 @@ impl Form {
     {
         self.fields.insert(name.into(), value.into());
     }
+
+    pub(crate) async fn into_multipart(self) -> Result<MultipartForm, FormError> {
+        let mut result = MultipartForm::new();
+        for (field_name, field_value) in self.fields {
+            let field_value = field_value.into_part().await?;
+            result = result.part(field_name, field_value);
+        }
+        Ok(result)
+    }
 }
 
-impl From<Form> for MultipartForm<'static> {
-    fn from(form: Form) -> Self {
-        let mut result = MultipartForm::default();
-        for (field_name, field_value) in form.fields {
-            match field_value {
-                FormValue::Text(text) => result.add_text(field_name, text),
-                FormValue::File(file) => match file.kind {
-                    InputFileKind::Path(path) => result.add_file(field_name, path).unwrap(),
-                    InputFileKind::Reader(InputFileReader {
-                        reader,
-                        info: file_info,
-                    }) => match file_info {
-                        Some(InputFileInfo {
-                            name: file_name,
-                            mime_type: Some(mime_type),
-                        }) => result.add_reader_file_with_mime(field_name, reader, file_name, mime_type),
-                        Some(InputFileInfo {
-                            name: file_name,
-                            mime_type: None,
-                        }) => result.add_reader_file(field_name, reader, file_name),
-                        None => result.add_reader(field_name, reader),
-                    },
-                    InputFileKind::Id(file_id) => result.add_text(field_name, file_id),
-                    InputFileKind::Url(url) => result.add_text(field_name, url),
-                },
-            }
+/// An error occurred when building multipart form
+#[derive(Debug)]
+pub enum FormError {
+    /// Failed to read file
+    Io(IoError),
+    /// Failed to set MIME type
+    Mime(ReqwestError),
+}
+
+impl From<IoError> for FormError {
+    fn from(err: IoError) -> Self {
+        FormError::Io(err)
+    }
+}
+
+impl StdError for FormError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(match self {
+            FormError::Io(err) => err,
+            FormError::Mime(err) => err,
+        })
+    }
+}
+
+impl fmt::Display for FormError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            FormError::Io(err) => write!(out, "can not read file: {}", err),
+            FormError::Mime(err) => write!(out, "can not set MIME type: {}", err),
         }
-        result
     }
 }
 
@@ -107,14 +176,14 @@ mod tests {
         assert!(val.get_file().is_some());
     }
 
-    #[test]
-    fn form() {
+    #[tokio::test]
+    async fn form() {
         let mut form = Form::new();
         form.insert_field("id", 1);
         form.insert_field("id", InputFile::file_id("file-id"));
         form.insert_field("id", InputFile::url("url"));
         form.insert_field("id", InputFile::path("file-path"));
         form.insert_field("id", InputFile::from(Cursor::new(b"test")));
-        MultipartForm::from(form);
+        form.into_multipart().await.unwrap();
     }
 }

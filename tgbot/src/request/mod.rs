@@ -1,57 +1,54 @@
-use failure::Error;
 use serde::ser::Serialize;
+use serde_json::Error as JsonError;
 
 mod form;
 
 pub(crate) use self::form::*;
 
-/// A request builder
+#[doc(hidden)]
 #[derive(Debug)]
-pub struct RequestBuilder {
-    method: RequestMethod,
+pub struct Request {
     path: String,
+    method: RequestMethod,
     body: RequestBody,
 }
 
-impl RequestBuilder {
-    pub(crate) fn form<S: Into<String>>(path: S, form: Form) -> Result<RequestBuilder, Error> {
-        Ok(RequestBuilder {
+impl Request {
+    pub(crate) fn form<P: Into<String>>(path: P, form: Form) -> Self {
+        Self {
+            path: path.into(),
             method: RequestMethod::Post,
             body: RequestBody::Form(form),
-            path: path.into(),
-        })
-    }
-
-    pub(crate) fn json<S: Into<String>>(path: S, s: &impl Serialize) -> Result<RequestBuilder, Error> {
-        Ok(RequestBuilder {
-            method: RequestMethod::Post,
-            body: RequestBody::Json(serde_json::to_vec(s)?),
-            path: path.into(),
-        })
-    }
-
-    pub(crate) fn empty<S: Into<String>>(path: S) -> Result<RequestBuilder, Error> {
-        Ok(RequestBuilder {
-            method: RequestMethod::Get,
-            body: RequestBody::Empty,
-            path: path.into(),
-        })
-    }
-
-    pub(crate) fn build(self, base_url: &str, token: &str) -> Request {
-        Request {
-            method: self.method,
-            url: format!("{}/bot{}/{}", base_url, token, self.path),
-            body: self.body,
         }
     }
-}
 
-#[derive(Debug)]
-pub(crate) struct Request {
-    pub(crate) method: RequestMethod,
-    pub(crate) url: String,
-    pub(crate) body: RequestBody,
+    pub(crate) fn json<P: Into<String>>(path: P, data: impl Serialize) -> Self {
+        Self {
+            path: path.into(),
+            method: RequestMethod::Post,
+            body: RequestBody::Json(serde_json::to_string(&data)),
+        }
+    }
+
+    pub(crate) fn empty<P: Into<String>>(path: P) -> Self {
+        Self {
+            path: path.into(),
+            method: RequestMethod::Get,
+            body: RequestBody::Empty,
+        }
+    }
+
+    pub(crate) fn build_url(&self, base_url: &str, token: &str) -> String {
+        format!("{}/bot{}/{}", base_url, token, self.path)
+    }
+
+    pub(crate) fn get_method(&self) -> RequestMethod {
+        self.method
+    }
+
+    pub(crate) fn into_body(self) -> RequestBody {
+        self.body
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
@@ -63,6 +60,6 @@ pub(crate) enum RequestMethod {
 #[derive(Debug)]
 pub(crate) enum RequestBody {
     Form(Form),
-    Json(Vec<u8>),
+    Json(Result<String, JsonError>),
     Empty,
 }

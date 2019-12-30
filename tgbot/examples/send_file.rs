@@ -1,17 +1,17 @@
+use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use futures::Future;
 use log;
 use std::{env, io::Cursor};
 use tgbot::{
-    handle_updates,
+    longpoll::LongPoll,
     methods::{EditMessageMedia, SendAnimation, SendDocument, SendPhoto, SendVideo},
     mime,
     types::{
         InlineKeyboardButton, InputFile, InputFileReader, InputMedia, InputMediaAnimation, InputMediaPhoto,
         InputMediaVideo, MessageData, Update, UpdateKind,
     },
-    Api, Config, UpdateHandler, UpdateMethod,
+    Api, Config, UpdateHandler,
 };
 
 struct Handler {
@@ -22,90 +22,95 @@ struct Handler {
     document_thumb_path: String,
 }
 
+#[async_trait]
 impl UpdateHandler for Handler {
-    fn handle(&mut self, update: Update) {
+    async fn handle(&mut self, update: Update) {
         log::info!("got an update: {:?}\n", update);
-
-        macro_rules! execute {
-            ($method:expr) => {
-                self.api.spawn(self.api.execute($method).then(|x| {
-                    log::info!("method result: {:?}\n", x);
-                    Ok::<(), ()>(())
-                }));
-            };
-        }
-
         if let UpdateKind::Message(message) = update.kind {
             let chat_id = message.get_chat_id();
             if let Some(reply_to) = message.reply_to {
                 match reply_to.data {
                     // Change animation to document
                     MessageData::Animation(_) => {
-                        execute!(EditMessageMedia::new(
-                            chat_id,
-                            reply_to.id,
-                            InputMedia::with_thumb(
-                                InputFileReader::new(Cursor::new(b"Hello World!"))
-                                    .info(("hello.txt", mime::TEXT_PLAIN)),
-                                InputFile::path(self.document_thumb_path.clone()),
-                                InputMediaAnimation::default().caption("test")
-                            )
-                            .unwrap()
-                        ));
+                        let input_media = InputMedia::with_thumb(
+                            InputFileReader::new(Cursor::new(b"Hello World!")).info(("hello.txt", mime::TEXT_PLAIN)),
+                            InputFile::path(self.document_thumb_path.clone()),
+                            InputMediaAnimation::default().caption("test"),
+                        )
+                        .unwrap();
+                        self.api
+                            .execute(EditMessageMedia::new(chat_id, reply_to.id, input_media))
+                            .await
+                            .unwrap();
                     }
                     // Change document to animation
                     MessageData::Document { .. } => {
-                        execute!(EditMessageMedia::new(
-                            chat_id,
-                            reply_to.id,
-                            InputMedia::new(
-                                InputFile::url(self.gif_url.clone()),
-                                InputMediaAnimation::default().caption("test")
-                            )
-                            .unwrap()
-                        ));
+                        self.api
+                            .execute(EditMessageMedia::new(
+                                chat_id,
+                                reply_to.id,
+                                InputMedia::new(
+                                    InputFile::url(self.gif_url.clone()),
+                                    InputMediaAnimation::default().caption("test"),
+                                )
+                                .unwrap(),
+                            ))
+                            .await
+                            .unwrap();
                     }
                     // Change photo to video
                     MessageData::Photo { .. } => {
-                        execute!(EditMessageMedia::new(
-                            chat_id,
-                            reply_to.id,
+                        let input_media =
                             InputMedia::new(InputFile::path(self.video_path.clone()), InputMediaVideo::default())
-                                .unwrap()
-                        ));
+                                .unwrap();
+                        self.api
+                            .execute(EditMessageMedia::new(chat_id, reply_to.id, input_media))
+                            .await
+                            .unwrap();
                     }
                     // Change video to photo
                     MessageData::Video { .. } => {
-                        execute!(EditMessageMedia::new(
-                            chat_id,
-                            reply_to.id,
+                        let input_media =
                             InputMedia::new(InputFile::path(self.photo_path.clone()), InputMediaPhoto::default())
-                                .unwrap()
-                        ));
+                                .unwrap();
+                        self.api
+                            .execute(EditMessageMedia::new(chat_id, reply_to.id, input_media))
+                            .await
+                            .unwrap();
                     }
                     _ => {}
                 }
             } else if let MessageData::Document { data, .. } = message.data {
                 // Resend document by file id (you also can send a document using URL)
-                execute!(SendDocument::new(chat_id, InputFile::file_id(data.file_id)));
+                self.api
+                    .execute(SendDocument::new(chat_id, InputFile::file_id(data.file_id)))
+                    .await
+                    .unwrap();
             } else if let Some(text) = message.get_text() {
                 match text.data.as_str() {
                     // Send animation by URL (you also can send animation using a file_id)
-                    "/gif" => execute!(SendAnimation::new(chat_id, InputFile::url(self.gif_url.clone()))),
+                    "/gif" => {
+                        let method = SendAnimation::new(chat_id, InputFile::url(self.gif_url.clone()));
+                        self.api.execute(method).await.unwrap();
+                    }
                     "/photo" => {
                         let markup = vec![vec![InlineKeyboardButton::with_callback_data("test", "cb-data")]];
-                        execute!(SendPhoto::new(chat_id, InputFile::path(self.photo_path.clone()))
+                        let method = SendPhoto::new(chat_id, InputFile::path(self.photo_path.clone()))
                             .reply_markup(markup)
-                            .unwrap())
+                            .unwrap();
+                        self.api.execute(method).await.unwrap();
                     }
                     "/text" => {
                         let document = Cursor::new(b"Hello World!");
                         let reader = InputFileReader::new(document).info(("hello.txt", mime::TEXT_PLAIN));
-                        execute!(
-                            SendDocument::new(chat_id, reader).thumb(InputFile::path(self.document_thumb_path.clone()))
-                        )
+                        let method =
+                            SendDocument::new(chat_id, reader).thumb(InputFile::path(self.document_thumb_path.clone()));
+                        self.api.execute(method).await.unwrap();
                     }
-                    "/video" => execute!(SendVideo::new(chat_id, InputFile::path(self.video_path.clone()))),
+                    "/video" => {
+                        let method = SendVideo::new(chat_id, InputFile::path(self.video_path.clone()));
+                        self.api.execute(method).await.unwrap();
+                    }
                     // The same way for other file types...
                     _ => {}
                 };
@@ -114,7 +119,8 @@ impl UpdateHandler for Handler {
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -126,11 +132,11 @@ fn main() {
     let document_thumb_path = env::var("TGRS_DOCUMENT_THUMB_PATH").expect("TGRS_DOCUMENT_THUMB_PATH is not set");
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
     let api = Api::new(config).expect("Failed to create API");
-    tokio::run(handle_updates(
-        UpdateMethod::poll(api.clone()),
+    LongPoll::new(
+        api.clone(),
         Handler {
             api,
             gif_url,
@@ -138,5 +144,7 @@ fn main() {
             video_path,
             document_thumb_path,
         },
-    ));
+    )
+    .run()
+    .await;
 }

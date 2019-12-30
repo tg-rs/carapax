@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::{Form, RequestBuilder},
+    request::{Form, Request},
     types::{ChatId, InputFile},
 };
-use failure::Error;
 
 /// Set a new profile photo for the chat
 ///
@@ -40,8 +39,8 @@ impl SetChatPhoto {
 impl Method for SetChatPhoto {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::form("setChatPhoto", self.form)
+    fn into_request(self) -> Request {
+        Request::form("setChatPhoto", self.form)
     }
 }
 
@@ -52,17 +51,14 @@ mod tests {
 
     #[test]
     fn set_chat_photo() {
-        let request = SetChatPhoto::new(1, InputFile::file_id("sticker-id"))
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/setChatPhoto");
-        if let RequestBody::Form(form) = request.body {
+        let request = SetChatPhoto::new(1, InputFile::file_id("sticker-id")).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/setChatPhoto");
+        if let RequestBody::Form(form) = request.into_body() {
             assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
             assert!(form.fields["photo"].get_file().is_some());
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

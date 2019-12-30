@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, EditMessageResult, InlineKeyboardMarkup, Integer, ParseMode},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Edit text and game messages sent by the bot or via the bot (for inline bots)
@@ -84,8 +83,8 @@ impl EditMessageText {
 impl Method for EditMessageText {
     type Response = EditMessageResult;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("editMessageText", &self)
+    fn into_request(self) -> Request {
+        Request::json("editMessageText", self)
     }
 }
 
@@ -104,13 +103,14 @@ mod tests {
             .parse_mode(ParseMode::Markdown)
             .disable_web_page_preview(true)
             .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/editMessageText");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/editMessageText"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["message_id"], 2);
             assert_eq!(data["text"], "text");
@@ -118,21 +118,21 @@ mod tests {
             assert_eq!(data["disable_web_page_preview"], true);
             assert_eq!(data["reply_markup"]["inline_keyboard"][0][0]["text"], "text");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
 
-        let request = EditMessageText::with_inline_message_id("msg-id", "text")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/editMessageText");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = EditMessageText::with_inline_message_id("msg-id", "text").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/editMessageText"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["inline_message_id"], "msg-id");
             assert_eq!(data["text"], "text");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

@@ -128,6 +128,6 @@ mod tests {
             "forward_date": 0
         });
         let err = serde_json::from_value::<Message>(input).unwrap_err();
-        assert_eq!(err.to_string(), String::from("Unexpected forward_* fields combination"));
+        assert_eq!(err.to_string(), String::from("unexpected forward_* fields combination"));
     }
 }

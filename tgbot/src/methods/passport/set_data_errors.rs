@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{Integer, PassportElementError},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Informs a user that some of the Telegram Passport elements they provided contains errors
@@ -39,8 +38,8 @@ impl SetPassportDataErrors {
 impl Method for SetPassportDataErrors {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("setPassportDataErrors", &self)
+    fn into_request(self) -> Request {
+        Request::json("setPassportDataErrors", self)
     }
 }
 
@@ -52,18 +51,18 @@ mod tests {
 
     #[test]
     fn set_passport_data_errors() {
-        let request = SetPassportDataErrors::new(1, vec![])
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/setPassportDataErrors");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = SetPassportDataErrors::new(1, vec![]).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/setPassportDataErrors"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["user_id"], 1);
             assert!(data["errors"].as_array().unwrap().is_empty());
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

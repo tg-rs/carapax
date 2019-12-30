@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, Integer},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Unban a previously kicked user in a supergroup or channel
@@ -36,8 +35,8 @@ impl UnbanChatMember {
 impl Method for UnbanChatMember {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("unbanChatMember", &self)
+    fn into_request(self) -> Request {
+        Request::json("unbanChatMember", self)
     }
 }
 
@@ -49,18 +48,18 @@ mod tests {
 
     #[test]
     fn unban_chat_member() {
-        let request = UnbanChatMember::new(1, 2)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/unbanChatMember");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = UnbanChatMember::new(1, 2).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/unbanChatMember"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["user_id"], 2);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

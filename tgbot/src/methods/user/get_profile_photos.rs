@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{Integer, UserProfilePhotos},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Get a list of profile pictures for a user
@@ -51,8 +50,8 @@ impl GetUserProfilePhotos {
 impl Method for GetUserProfilePhotos {
     type Response = UserProfilePhotos;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("getUserProfilePhotos", &self)
+    fn into_request(self) -> Request {
+        Request::json("getUserProfilePhotos", self)
     }
 }
 
@@ -64,21 +63,19 @@ mod tests {
 
     #[test]
     fn get_user_profile_photos() {
-        let request = GetUserProfilePhotos::new(1)
-            .offset(5)
-            .limit(10)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/getUserProfilePhotos");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = GetUserProfilePhotos::new(1).offset(5).limit(10).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/getUserProfilePhotos"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["user_id"], 1);
             assert_eq!(data["offset"], 5);
             assert_eq!(data["limit"], 10);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

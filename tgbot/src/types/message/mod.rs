@@ -2,6 +2,7 @@ use crate::types::{
     chat::Chat, message::raw::RawMessage, primitive::Integer, reply_markup::InlineKeyboardMarkup, user::User,
 };
 use serde::{de::Error, Deserialize, Deserializer};
+use std::{error::Error as StdError, fmt};
 
 mod data;
 mod forward;
@@ -276,16 +277,32 @@ pub enum EditMessageResult {
     Bool(bool),
 }
 
-#[derive(Debug, failure::Fail, derive_more::From)]
+#[derive(Debug, derive_more::From)]
 enum ParseError {
-    #[fail(display = "Unexpected forward_* fields combination")]
     BadForward,
-    #[fail(display = "Failed to parse text: {}", _0)]
-    BadText(#[cause] ParseTextError),
-    #[fail(display = "\"{}\" field is missing", _0)]
+    BadText(ParseTextError),
     MissingField(&'static str),
-    #[fail(display = "Can not get message data")]
     NoData,
+}
+
+impl StdError for ParseError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            ParseError::BadText(err) => Some(err),
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ParseError::BadForward => write!(out, "unexpected forward_* fields combination"),
+            ParseError::BadText(err) => write!(out, "failed to parse text: {}", err),
+            ParseError::MissingField(field) => write!(out, "\"{}\" field is missing", field),
+            ParseError::NoData => write!(out, "can not get message data"),
+        }
+    }
 }
 
 fn get_commands(text: &Text) -> Option<Vec<BotCommand>> {

@@ -27,24 +27,12 @@ pub struct Update {
 impl Update {
     /// Returns a chat ID from update
     pub fn get_chat_id(&self) -> Option<Integer> {
-        match self.kind {
-            UpdateKind::Message(ref msg)
-            | UpdateKind::EditedMessage(ref msg)
-            | UpdateKind::ChannelPost(ref msg)
-            | UpdateKind::EditedChannelPost(ref msg) => Some(msg.get_chat_id()),
-            _ => None,
-        }
+        self.get_message().map(|msg| msg.get_chat_id())
     }
 
     /// Returns a chat username from update
     pub fn get_chat_username(&self) -> Option<&str> {
-        match self.kind {
-            UpdateKind::Message(ref msg)
-            | UpdateKind::EditedMessage(ref msg)
-            | UpdateKind::ChannelPost(ref msg)
-            | UpdateKind::EditedChannelPost(ref msg) => msg.get_chat_username(),
-            _ => None,
-        }
+        self.get_message().and_then(|msg| msg.get_chat_username())
     }
 
     /// Returns a user ID from update
@@ -61,6 +49,17 @@ impl Update {
             UpdateKind::PreCheckoutQuery(ref query) => &query.from,
             UpdateKind::Poll(_) => return None,
         })
+    }
+
+    /// Returns a message from update
+    pub fn get_message(&self) -> Option<&Message> {
+        match self.kind {
+            UpdateKind::Message(ref msg)
+            | UpdateKind::EditedMessage(ref msg)
+            | UpdateKind::ChannelPost(ref msg)
+            | UpdateKind::EditedChannelPost(ref msg) => Some(msg),
+            _ => None,
+        }
     }
 }
 

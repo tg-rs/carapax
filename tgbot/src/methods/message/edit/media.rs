@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::{Form, RequestBuilder},
-    types::{ChatId, EditMessageResult, InlineKeyboardMarkup, InputMedia, Integer},
+    request::{Form, Request},
+    types::{ChatId, EditMessageResult, InlineKeyboardError, InlineKeyboardMarkup, InputMedia, Integer},
 };
-use failure::Error;
 
 /// Edit audio, document, photo, or video messages
 ///
@@ -50,8 +49,8 @@ impl EditMessageMedia {
     }
 
     /// New inline keyboard
-    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Result<Self, Error> {
-        let reply_markup = serde_json::to_string(&reply_markup.into())?;
+    pub fn reply_markup<I: Into<InlineKeyboardMarkup>>(mut self, reply_markup: I) -> Result<Self, InlineKeyboardError> {
+        let reply_markup = reply_markup.into().serialize()?;
         self.form.insert_field("reply_markup", reply_markup);
         Ok(self)
     }
@@ -60,8 +59,8 @@ impl EditMessageMedia {
 impl Method for EditMessageMedia {
     type Response = EditMessageResult;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::form("editMessageMedia", self.form)
+    fn into_request(self) -> Request {
+        Request::form("editMessageMedia", self.form)
     }
 }
 
@@ -82,34 +81,36 @@ mod tests {
         )
         .reply_markup(vec![vec![InlineKeyboardButton::with_url("text", "url")]])
         .unwrap()
-        .into_request()
-        .unwrap()
-        .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/editMessageMedia");
-        if let RequestBody::Form(form) = request.body {
+        .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/editMessageMedia"
+        );
+        if let RequestBody::Form(form) = request.into_body() {
             assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
             assert_eq!(form.fields["message_id"].get_text().unwrap(), "2");
             assert!(form.fields.get("media").is_some());
             assert!(form.fields.get("reply_markup").is_some());
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
 
         let request = EditMessageMedia::with_inline_message_id(
             "msg-id",
             InputMedia::new(InputFile::file_id("file-id"), InputMediaPhoto::default()).unwrap(),
         )
-        .into_request()
-        .unwrap()
-        .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/editMessageMedia");
-        if let RequestBody::Form(form) = request.body {
+        .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/editMessageMedia"
+        );
+        if let RequestBody::Form(form) = request.into_body() {
             assert_eq!(form.fields["inline_message_id"].get_text().unwrap(), "msg-id");
             assert!(form.fields.get("media").is_some());
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

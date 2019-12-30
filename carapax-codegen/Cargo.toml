@@ -1,0 +1,13 @@
+[package]
+name = "carapax-codegen"
+version = "0.1.0"
+authors = ["Ross Nomann <rossnomann@protonmail.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0"

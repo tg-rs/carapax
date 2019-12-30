@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{Chat, ChatId},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Get up to date information about the chat
@@ -28,8 +27,8 @@ impl GetChat {
 impl Method for GetChat {
     type Response = Chat;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("getChat", &self)
+    fn into_request(self) -> Request {
+        Request::json("getChat", self)
     }
 }
 
@@ -41,14 +40,14 @@ mod tests {
 
     #[test]
     fn get_chat() {
-        let request = GetChat::new(1).into_request().unwrap().build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/getChat");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = GetChat::new(1).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/getChat");
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

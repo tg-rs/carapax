@@ -1,14 +1,14 @@
+use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use futures::Future;
 use log;
 use serde::{Deserialize, Serialize};
 use std::env;
 use tgbot::{
-    handle_updates,
+    longpoll::LongPoll,
     methods::SendMessage,
     types::{InlineKeyboardButton, Message, Update, UpdateKind},
-    Api, ApiFuture, Config, UpdateHandler, UpdateMethod,
+    Api, Config, UpdateHandler,
 };
 
 struct Handler {
@@ -26,7 +26,7 @@ impl CallbackData {
     }
 }
 
-fn handle_update(api: &Api, update: Update) -> Option<ApiFuture<Message>> {
+async fn handle_update(api: &Api, update: Update) -> Option<Message> {
     match update.kind {
         UpdateKind::Message(message) => {
             let chat_id = message.get_chat_id();
@@ -38,7 +38,7 @@ fn handle_update(api: &Api, update: Update) -> Option<ApiFuture<Message>> {
                         // You also can use with_callback_data in order to pass a plain string
                         InlineKeyboardButton::with_callback_data_struct("button", &callback_data).unwrap(),
                     ]]);
-                    return Some(api.execute(method));
+                    return Some(api.execute(method).await.unwrap());
                 }
             }
         }
@@ -48,7 +48,7 @@ fn handle_update(api: &Api, update: Update) -> Option<ApiFuture<Message>> {
                 // or query.data if you have passed a plain string
                 let data = query.parse_data::<CallbackData>().unwrap().unwrap();
                 let method = SendMessage::new(chat_id, data.value);
-                return Some(api.execute(method));
+                return Some(api.execute(method).await.unwrap());
             }
         }
         _ => {}
@@ -56,21 +56,16 @@ fn handle_update(api: &Api, update: Update) -> Option<ApiFuture<Message>> {
     None
 }
 
+#[async_trait]
 impl UpdateHandler for Handler {
-    fn handle(&mut self, update: Update) {
+    async fn handle(&mut self, update: Update) {
         log::info!("Got an update: {:?}", update);
-        if let Some(f) = handle_update(&self.api, update) {
-            self.api.spawn(f.then(|r| {
-                if let Err(e) = r {
-                    log::error!("An error has occurred: {:?}", e);
-                }
-                Ok::<(), ()>(())
-            }))
-        }
+        handle_update(&self.api, update).await.unwrap();
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -78,8 +73,8 @@ fn main() {
     let proxy = env::var("TGRS_PROXY").ok();
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
     let api = Api::new(config).expect("Failed to create API");
-    tokio::run(handle_updates(UpdateMethod::poll(api.clone()), Handler { api }));
+    LongPoll::new(api.clone(), Handler { api }).run().await;
 }

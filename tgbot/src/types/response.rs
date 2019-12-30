@@ -1,5 +1,6 @@
 use crate::types::primitive::Integer;
 use serde::{de::Error, Deserialize, Deserializer};
+use std::{error::Error as StdError, fmt};
 
 /// API Response
 #[derive(Clone, Debug)]
@@ -40,11 +41,7 @@ where
 }
 
 /// Response error
-#[derive(Clone, Debug, failure::Fail)]
-#[fail(
-    display = "A telegram error has occurred: code={:?} message={}",
-    error_code, description
-)]
+#[derive(Clone, Debug)]
 pub struct ResponseError {
     /// Human-readable description
     pub description: String,
@@ -52,6 +49,26 @@ pub struct ResponseError {
     pub error_code: Option<Integer>,
     /// Parameters
     pub parameters: Option<ResponseParameters>,
+}
+
+impl StdError for ResponseError {}
+
+impl fmt::Display for ResponseError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        write!(out, "a telegram error has occurred: description={}", self.description)?;
+        if let Some(code) = self.error_code {
+            write!(out, "; error_code={}", code)?;
+        }
+        if let Some(parameters) = self.parameters {
+            if let Some(chat_id) = parameters.migrate_to_chat_id {
+                write!(out, "; migrate_to_chat_id={}", chat_id)?;
+            }
+            if let Some(retry_after) = parameters.retry_after {
+                write!(out, "; retry_after={}", retry_after)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// Contains information about why a request was unsuccessful

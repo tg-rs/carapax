@@ -1,5 +1,4 @@
-use crate::request::RequestBuilder;
-use failure::Error;
+use crate::request::Request;
 
 /// Represents an API method
 pub trait Method {
@@ -7,5 +6,5 @@ pub trait Method {
     type Response;
 
     /// Returns information about HTTP request
-    fn into_request(self) -> Result<RequestBuilder, Error>;
+    fn into_request(self) -> Request;
 }

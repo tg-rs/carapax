@@ -1,6 +1,7 @@
 use crate::types::login_url::LoginUrl;
-use failure::Error;
 use serde::{Deserialize, Serialize};
+use serde_json::Error as JsonError;
+use std::{error::Error as StdError, fmt};
 
 /// Inline keyboard that appears right next to the message it belongs to
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -18,6 +19,10 @@ impl InlineKeyboardMarkup {
     pub fn row(mut self, row: Vec<InlineKeyboardButton>) -> Self {
         self.inline_keyboard.push(row);
         self
+    }
+
+    pub(crate) fn serialize(&self) -> Result<String, InlineKeyboardError> {
+        serde_json::to_string(self).map_err(InlineKeyboardError::SerializeMarkup)
     }
 }
 
@@ -81,11 +86,16 @@ impl InlineKeyboardButton {
     /// Same as with_callback_data, but takes a serializable type
     ///
     /// Data will be serialized using serde_json
-    pub fn with_callback_data_struct<S: Into<String>, D: Serialize>(text: S, callback_data: &D) -> Result<Self, Error> {
+    pub fn with_callback_data_struct<S: Into<String>, D: Serialize>(
+        text: S,
+        callback_data: &D,
+    ) -> Result<Self, InlineKeyboardError> {
         Ok(InlineKeyboardButton {
             text: text.into(),
             url: None,
-            callback_data: Some(serde_json::to_string(callback_data)?),
+            callback_data: Some(
+                serde_json::to_string(callback_data).map_err(InlineKeyboardError::SerializeCallbackData)?,
+            ),
             switch_inline_query: None,
             switch_inline_query_current_chat: None,
             callback_game: None,
@@ -192,6 +202,35 @@ impl InlineKeyboardButton {
             callback_game: None,
             pay: None,
             login_url: Some(login_url.into()),
+        }
+    }
+}
+
+/// An error occurred with inline keyboard
+#[derive(Debug)]
+pub enum InlineKeyboardError {
+    /// Can not serialize callback data
+    SerializeCallbackData(JsonError),
+    /// Can not serialize markup
+    SerializeMarkup(JsonError),
+}
+
+impl StdError for InlineKeyboardError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        use self::InlineKeyboardError::*;
+        Some(match self {
+            SerializeCallbackData(err) => err,
+            SerializeMarkup(err) => err,
+        })
+    }
+}
+
+impl fmt::Display for InlineKeyboardError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        use self::InlineKeyboardError::*;
+        match self {
+            SerializeCallbackData(err) => write!(out, "failed to serialize callback data: {}", err),
+            SerializeMarkup(err) => write!(out, "failed to serialize markup: {}", err),
         }
     }
 }

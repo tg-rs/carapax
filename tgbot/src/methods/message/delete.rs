@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::RequestBuilder,
+    request::Request,
     types::{ChatId, Integer},
 };
-use failure::Error;
 use serde::Serialize;
 
 /// Delete a message, including service messages
@@ -40,8 +39,8 @@ impl DeleteMessage {
 impl Method for DeleteMessage {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("deleteMessage", &self)
+    fn into_request(self) -> Request {
+        Request::json("deleteMessage", self)
     }
 }
 
@@ -53,18 +52,18 @@ mod tests {
 
     #[test]
     fn delete_message() {
-        let request = DeleteMessage::new(1, 2)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/deleteMessage");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = DeleteMessage::new(1, 2).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/deleteMessage"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["message_id"], 2);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

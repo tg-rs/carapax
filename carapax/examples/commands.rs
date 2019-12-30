@@ -1,53 +1,46 @@
-use carapax::prelude::*;
+use carapax::{
+    handler, longpoll::LongPoll, methods::SendMessage, Api, Command, Config, Dispatcher, ExecuteError, HandlerResult,
+};
 use dotenv::dotenv;
 use env_logger;
-use futures::Future;
 use log;
 use std::env;
 
-fn handle_start(context: &mut Context, message: Message, _: Vec<String>) -> HandlerFuture {
+#[handler(command = "/start")]
+async fn handle_start(api: &mut Api, command: Command) -> Result<HandlerResult, ExecuteError> {
     log::info!("handle /start command\n");
-    let chat_id = message.get_chat_id();
+    let chat_id = command.get_message().get_chat_id();
     let method = SendMessage::new(chat_id, "Hello!");
-    let api = context.get::<Api>();
-    HandlerFuture::new(api.execute(method).then(|x| {
-        log::info!("sendMessage result: {:?}\n", x);
-        Ok(HandlerResult::Continue)
-    }))
+    let result = api.execute(method).await;
+    log::info!("sendMessage result: {:?}\n", result);
+    Ok(HandlerResult::Stop)
 }
 
-fn handle_user_id(context: &mut Context, message: Message, _: Vec<String>) -> HandlerFuture {
+#[handler(command = "/user_id")]
+async fn handle_user_id(api: &mut Api, command: Command) -> Result<(), ExecuteError> {
     log::info!("handle /user_id command\n");
+    let message = command.get_message();
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, format!("Your ID is: {:?}", message.get_user().map(|u| u.id)));
-    let api = context.get::<Api>();
-    HandlerFuture::new(api.execute(method).then(|x| {
-        log::info!("sendMessage result: {:?}\n", x);
-        Ok(HandlerResult::Continue)
-    }))
+    let result = api.execute(method).await?;
+    log::info!("sendMessage result: {:?}\n", result);
+    Ok(())
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
     let token = env::var("TGRS_TOKEN").expect("TGRS_TOKEN is not set");
     let proxy = env::var("TGRS_PROXY").ok();
-
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
-
-    let api = Api::new(config).unwrap();
-    let app = App::new();
-
-    tokio::run(
-        app.add_handler(
-            CommandsHandler::default()
-                .add_handler("/start", handle_start)
-                .add_handler("/user_id", handle_user_id),
-        )
-        .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
-    );
+    let api = Api::new(config).expect("Failed to create API");
+    let mut dispatcher = Dispatcher::new(api.clone());
+    dispatcher.add_handler(handle_start);
+    dispatcher.add_handler(handle_user_id);
+    LongPoll::new(api, dispatcher).run().await;
 }

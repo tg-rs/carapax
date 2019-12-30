@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder, types::ChatId};
-use failure::Error;
+use crate::{methods::Method, request::Request, types::ChatId};
 use serde::Serialize;
 
 /// Change the description of a group, a supergroup or a channel
@@ -36,8 +35,8 @@ impl SetChatDescription {
 impl Method for SetChatDescription {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("setChatDescription", &self)
+    fn into_request(self) -> Request {
+        Request::json("setChatDescription", self)
     }
 }
 
@@ -49,19 +48,18 @@ mod tests {
 
     #[test]
     fn set_chat_description() {
-        let request = SetChatDescription::new(1)
-            .description("desc")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/setChatDescription");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = SetChatDescription::new(1).description("desc").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/setChatDescription"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
             assert_eq!(data["description"], "desc");
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

@@ -3,7 +3,7 @@ use crate::types::{
     primitive::Integer,
     user::User,
 };
-use std::string::FromUtf16Error;
+use std::{error::Error as StdError, fmt, string::FromUtf16Error};
 
 /// Text with entities
 #[derive(Clone, Debug)]
@@ -159,23 +159,40 @@ pub struct TextEntityData {
 }
 
 /// An error when parsing entities
-#[derive(Debug, failure::Fail)]
+#[derive(Debug)]
 pub(crate) enum ParseTextError {
     /// Offset is out of text bounds
-    #[fail(display = "Offset \"{}\" is out of text bounds", _0)]
     BadOffset(Integer),
     /// Length is out of text bounds
-    #[fail(display = "Length \"{}\" is out of text bounds", _0)]
     BadLength(Integer),
     /// URL is required for text_link entity
-    #[fail(display = "URL is required for text_link entity")]
     NoUrl,
     /// User is required for text_mention entity
-    #[fail(display = "User is required for text_mention entity")]
     NoUser,
     /// Can not get UTF-16 text data
-    #[fail(display = "Can not get UTF-16 text data: {}", _0)]
-    FromUtf16(#[cause] FromUtf16Error),
+    FromUtf16(FromUtf16Error),
+}
+
+impl StdError for ParseTextError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            ParseTextError::FromUtf16(err) => Some(err),
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for ParseTextError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        use self::ParseTextError::*;
+        match self {
+            BadOffset(offset) => write!(out, "offset \"{}\" is out of text bounds", offset),
+            BadLength(length) => write!(out, "length \"{}\" is out of text bounds", length),
+            NoUrl => write!(out, "URL is required for text_link entity"),
+            NoUser => write!(out, "user is required for text_mention entity"),
+            FromUtf16(err) => write!(out, "can not get UTF-16 text data: {}", err),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -329,7 +346,7 @@ mod tests {
                         }
                     ]
                 }),
-                "Failed to parse text: Offset \"-1\" is out of text bounds",
+                "failed to parse text: offset \"-1\" is out of text bounds",
             ),
             (
                 json!({
@@ -345,7 +362,7 @@ mod tests {
                         }
                     ]
                 }),
-                "Failed to parse text: Offset \"11\" is out of text bounds",
+                "failed to parse text: offset \"11\" is out of text bounds",
             ),
             (
                 json!({
@@ -361,7 +378,7 @@ mod tests {
                         }
                     ]
                 }),
-                "Failed to parse text: Length \"-1\" is out of text bounds",
+                "failed to parse text: length \"-1\" is out of text bounds",
             ),
             (
                 json!({
@@ -377,7 +394,7 @@ mod tests {
                         }
                     ]
                 }),
-                "Failed to parse text: Length \"11\" is out of text bounds",
+                "failed to parse text: length \"11\" is out of text bounds",
             ),
             (
                 json!({
@@ -393,7 +410,7 @@ mod tests {
                         }
                     ]
                 }),
-                "Failed to parse text: URL is required for text_link entity",
+                "failed to parse text: URL is required for text_link entity",
             ),
             (
                 json!({
@@ -409,7 +426,7 @@ mod tests {
                         }
                     ]
                 }),
-                "Failed to parse text: User is required for text_mention entity",
+                "failed to parse text: user is required for text_mention entity",
             ),
         ] {
             let err = serde_json::from_value::<Message>(input).unwrap_err();

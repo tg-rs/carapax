@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder, types::ChatId};
-use failure::Error;
+use crate::{methods::Method, request::Request, types::ChatId};
 use serde::Serialize;
 
 /// Delete a chat photo
@@ -31,8 +30,8 @@ impl DeleteChatPhoto {
 impl Method for DeleteChatPhoto {
     type Response = bool;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("deleteChatPhoto", &self)
+    fn into_request(self) -> Request {
+        Request::json("deleteChatPhoto", self)
     }
 }
 
@@ -44,17 +43,17 @@ mod tests {
 
     #[test]
     fn delete_chat_photo() {
-        let request = DeleteChatPhoto::new(1)
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/deleteChatPhoto");
-        if let RequestBody::Json(data) = request.body {
-            let data: Value = serde_json::from_slice(&data).unwrap();
+        let request = DeleteChatPhoto::new(1).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/deleteChatPhoto"
+        );
+        if let RequestBody::Json(data) = request.into_body() {
+            let data: Value = serde_json::from_str(&data.unwrap()).unwrap();
             assert_eq!(data["chat_id"], 1);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

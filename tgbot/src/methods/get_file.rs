@@ -1,5 +1,4 @@
-use crate::{methods::Method, request::RequestBuilder, types::File};
-use failure::Error;
+use crate::{methods::Method, request::Request, types::File};
 use serde::Serialize;
 
 /// Get basic info about a file and prepare it for downloading
@@ -36,8 +35,8 @@ impl GetFile {
 impl Method for GetFile {
     type Response = File;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::json("getFile", &self)
+    fn into_request(self) -> Request {
+        Request::json("getFile", self)
     }
 }
 
@@ -48,17 +47,13 @@ mod tests {
 
     #[test]
     fn get_file() {
-        let request = GetFile::new("file-id")
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/getFile");
-        if let RequestBody::Json(data) = request.body {
-            let data = String::from_utf8(data).unwrap();
-            assert_eq!(data, r#"{"file_id":"file-id"}"#);
+        let request = GetFile::new("file-id").into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(request.build_url("base-url", "token"), "base-url/bottoken/getFile");
+        if let RequestBody::Json(data) = request.into_body() {
+            assert_eq!(data.unwrap(), r#"{"file_id":"file-id"}"#);
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

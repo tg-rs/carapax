@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::{Form, RequestBuilder},
+    request::{Form, Request},
     types::{File, InputFile, Integer},
 };
-use failure::Error;
 
 /// Upload a .png file with a sticker for later use in createNewStickerSet and addStickerToSet methods
 #[derive(Debug)]
@@ -33,8 +32,8 @@ impl UploadStickerFile {
 impl Method for UploadStickerFile {
     type Response = File;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::form("uploadStickerFile", self.form)
+    fn into_request(self) -> Request {
+        Request::form("uploadStickerFile", self.form)
     }
 }
 
@@ -45,17 +44,17 @@ mod tests {
 
     #[test]
     fn add_sticker_to_set() {
-        let request = UploadStickerFile::new(1, InputFile::file_id("sticker-id"))
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/uploadStickerFile");
-        if let RequestBody::Form(form) = request.body {
+        let request = UploadStickerFile::new(1, InputFile::file_id("sticker-id")).into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/uploadStickerFile"
+        );
+        if let RequestBody::Form(form) = request.into_body() {
             assert_eq!(form.fields["user_id"].get_text().unwrap(), "1");
             assert!(form.fields["png_sticker"].get_file().is_some());
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }

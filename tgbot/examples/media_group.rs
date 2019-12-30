@@ -1,13 +1,13 @@
+use async_trait::async_trait;
 use dotenv::dotenv;
 use env_logger;
-use futures::Future;
 use log;
 use std::env;
 use tgbot::{
-    handle_updates,
+    longpoll::LongPoll,
     methods::SendMediaGroup,
     types::{InputFile, InputMediaPhoto, InputMediaVideo, MediaGroup, Update},
-    Api, Config, UpdateHandler, UpdateMethod,
+    Api, Config, UpdateHandler,
 };
 
 struct Handler {
@@ -17,8 +17,9 @@ struct Handler {
     video_path: String,
 }
 
+#[async_trait]
 impl UpdateHandler for Handler {
-    fn handle(&mut self, update: Update) {
+    async fn handle(&mut self, update: Update) {
         log::info!("got an update: {:?}\n", update);
         if let Some(chat_id) = update.get_chat_id() {
             let media = MediaGroup::default()
@@ -35,15 +36,13 @@ impl UpdateHandler for Handler {
                     InputMediaVideo::default().caption("Video 01"),
                 );
             let method = SendMediaGroup::new(chat_id, media).unwrap();
-            self.api.spawn(self.api.execute(method).then(|x| {
-                log::info!("sendMessage result: {:?}\n", x);
-                Ok::<(), ()>(())
-            }));
+            self.api.execute(method).await.unwrap();
         }
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -54,16 +53,18 @@ fn main() {
     let video_path = env::var("TGRS_VIDEO_PATH").expect("TGRS_VIDEO_PATH is not set");
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
     let api = Api::new(config).expect("Failed to create API");
-    tokio::run(handle_updates(
-        UpdateMethod::poll(api.clone()),
+    LongPoll::new(
+        api.clone(),
         Handler {
             api,
             photo_path,
             photo_url,
             video_path,
         },
-    ));
+    )
+    .run()
+    .await;
 }

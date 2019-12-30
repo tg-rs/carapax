@@ -1,9 +1,8 @@
 use crate::{
     methods::Method,
-    request::{Form, RequestBuilder},
-    types::{ChatId, InputFile, Integer, Message, ReplyMarkup},
+    request::{Form, Request},
+    types::{ChatId, InputFile, Integer, Message, ReplyMarkup, ReplyMarkupError},
 };
-use failure::Error;
 
 /// Send video message
 ///
@@ -73,9 +72,9 @@ impl SendVideoNote {
     }
 
     /// Additional interface options
-    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, value: R) -> Result<Self, Error> {
-        let value = serde_json::to_string(&value.into())?;
-        self.form.insert_field("reply_markup", value);
+    pub fn reply_markup<R: Into<ReplyMarkup>>(mut self, value: R) -> Result<Self, ReplyMarkupError> {
+        let value = value.into();
+        self.form.insert_field("reply_markup", value.serialize()?);
         Ok(self)
     }
 }
@@ -83,8 +82,8 @@ impl SendVideoNote {
 impl Method for SendVideoNote {
     type Response = Message;
 
-    fn into_request(self) -> Result<RequestBuilder, Error> {
-        RequestBuilder::form("sendVideoNote", self.form)
+    fn into_request(self) -> Request {
+        Request::form("sendVideoNote", self.form)
     }
 }
 
@@ -106,12 +105,13 @@ mod tests {
             .reply_to_message_id(1)
             .reply_markup(ForceReply::new(true))
             .unwrap()
-            .into_request()
-            .unwrap()
-            .build("base-url", "token");
-        assert_eq!(request.method, RequestMethod::Post);
-        assert_eq!(request.url, "base-url/bottoken/sendVideoNote");
-        if let RequestBody::Form(form) = request.body {
+            .into_request();
+        assert_eq!(request.get_method(), RequestMethod::Post);
+        assert_eq!(
+            request.build_url("base-url", "token"),
+            "base-url/bottoken/sendVideoNote"
+        );
+        if let RequestBody::Form(form) = request.into_body() {
             assert_eq!(form.fields["chat_id"].get_text().unwrap(), "1");
             assert!(form.fields["video_note"].get_file().is_some());
             assert_eq!(form.fields["duration"].get_text().unwrap(), "50");
@@ -124,7 +124,7 @@ mod tests {
                 r#"{"force_reply":true}"#
             );
         } else {
-            panic!("Unexpected request body: {:?}", request.body);
+            panic!("Unexpected request body");
         }
     }
 }
