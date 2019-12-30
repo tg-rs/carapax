@@ -53,8 +53,11 @@ where
                 }
                 HandlerResult::Error(err) => match &mut self.error_handler {
                     Some(handler) => {
-                        if handler.handle(err).await {
-                            break;
+                        match handler.handle(err).await {
+                            ErrorPolicy::Continue => { /*noop*/ }
+                            ErrorPolicy::Stop => {
+                                break;
+                            }
                         }
                     }
                     None => {
@@ -82,9 +85,23 @@ where
 pub trait ErrorHandler {
     /// Handles a error
     ///
-    /// Return `true` if you need to stop update propagation.
-    /// Otherwise update will be passed to a next handler.
-    async fn handle(&mut self, err: HandlerError) -> bool;
+    /// This method is called on each error returned by a handler
+    /// [ErrorPolicy](enum.ErrorPolicy.html) defines
+    /// whether next handler should process current update or not.
+    async fn handle(&mut self, err: HandlerError) -> ErrorPolicy;
+}
+
+/// A policy for error handler
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+pub enum ErrorPolicy {
+    /// Continue propagation
+    ///
+    /// Next handler will run
+    Continue,
+    /// Stop propagation
+    ///
+    /// Next handler will not run
+    Stop,
 }
 
 #[cfg(test)]
