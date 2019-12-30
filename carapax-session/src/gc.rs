@@ -1,32 +1,34 @@
-use failure::Error;
-use futures::{Future, Stream};
-use std::time::Duration;
-use tokio_executor::spawn;
-use tokio_timer::Interval;
+use carapax::async_trait;
+use std::{error::Error, time::Duration};
+use tokio::time::interval;
 
 /// Adds GC support for a session store
+#[async_trait]
 pub trait GarbageCollector {
+    /// An error occurred when collecting garbage
+    type Error: Error + Send + Sync;
+
     /// Removes old sessions
-    fn collect(&self) -> Box<dyn Future<Item = (), Error = Error> + Send>;
+    async fn collect(&mut self) -> Result<(), Self::Error>;
 }
 
-/// Spawns a session GC
+/// Runs a session GC
 ///
 /// Allows to remove old sessions in a store at given interval
-pub fn spawn_gc<C>(duration: Duration, collector: C)
+///
+/// # Arguments
+///
+/// * duration - A time interval between collect calls
+/// * collector - Garbage collector
+pub async fn run_gc<C>(duration: Duration, mut collector: C)
 where
     C: GarbageCollector + Send + 'static,
 {
-    spawn(
-        Interval::new_interval(duration)
-            .for_each(move |_| {
-                collector.collect().then(|r| {
-                    if let Err(e) = r {
-                        log::error!("Failed to clear old sessions: {:?}", e);
-                    }
-                    Ok(())
-                })
-            })
-            .map_err(|e| log::error!("Failed to spawn session GC: {:?}", e)),
-    );
+    let mut interval = interval(duration);
+    loop {
+        interval.tick().await;
+        if let Err(err) = collector.collect().await {
+            log::error!("An error has occurred in session GC: {}", err)
+        }
+    }
 }
