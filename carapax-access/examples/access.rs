@@ -1,14 +1,16 @@
-use carapax::prelude::*;
+use carapax::{handler, longpoll::LongPoll, types::Message, Api, Config, Dispatcher};
 use carapax_access::{AccessHandler, AccessRule, InMemoryAccessPolicy};
 use dotenv::dotenv;
 use env_logger;
 use std::env;
 
-fn handle_message(_context: &mut Context, message: Message) {
+#[handler]
+async fn handle_message(_context: &mut (), message: Message) {
     log::info!("Got a new message: {:?}", message);
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -18,19 +20,17 @@ fn main() {
 
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
 
-    let api = Api::new(config).unwrap();
+    let api = Api::new(config).expect("Failed to create API");
 
     // Deny from all except for @username (specify without @)
     let rule = AccessRule::allow_user(username);
     let policy = InMemoryAccessPolicy::default().push_rule(rule);
 
-    tokio::run(
-        App::new()
-            .add_handler(AccessHandler::new(policy))
-            .add_handler(FnHandler::from(handle_message))
-            .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
-    )
+    let mut dispatcher = Dispatcher::new(());
+    dispatcher.add_handler(AccessHandler::new(policy));
+    dispatcher.add_handler(handle_message);
+    LongPoll::new(api, dispatcher).run().await
 }
