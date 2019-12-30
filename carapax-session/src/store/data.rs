@@ -1,7 +1,6 @@
-use failure::Error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_json::Value as JsonValue;
-use std::time::SystemTime;
+use serde_json::{Error as JsonError, Value as JsonValue};
+use std::time::{SystemTime, SystemTimeError};
 
 #[derive(Serialize, Deserialize)]
 pub(super) struct Data {
@@ -10,7 +9,7 @@ pub(super) struct Data {
 }
 
 impl Data {
-    pub(super) fn set_lifetime(&mut self, lifetime: u64) -> Result<(), Error> {
+    pub(super) fn set_lifetime(&mut self, lifetime: u64) -> Result<(), SystemTimeError> {
         self.expires_at = Some(
             SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
@@ -19,7 +18,11 @@ impl Data {
         Ok(())
     }
 
-    pub(super) fn is_expired(&self) -> Result<bool, Error> {
+    pub(super) fn get_expires_at(&self) -> Option<u64> {
+        self.expires_at
+    }
+
+    pub(super) fn is_expired(&self) -> Result<bool, SystemTimeError> {
         Ok(match self.expires_at {
             Some(expires_at) => {
                 let now = SystemTime::now()
@@ -31,7 +34,7 @@ impl Data {
         })
     }
 
-    pub(super) fn parse_value<T: DeserializeOwned>(mut self) -> Result<T, Error> {
+    pub(super) fn parse_value<T: DeserializeOwned>(mut self) -> Result<T, JsonError> {
         Ok(serde_json::from_value(self.value.take())?)
     }
 }
@@ -54,5 +57,10 @@ where
             value,
             expires_at: None,
         }
+    }
+
+    pub(super) fn expires_at(mut self, expires_at: u64) -> Self {
+        self.expires_at = Some(expires_at);
+        self
     }
 }
