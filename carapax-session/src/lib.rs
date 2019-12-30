@@ -1,13 +1,13 @@
 #![warn(missing_docs)]
-//! A session handler for carapax
+//! A session utilities for carapax
 
+mod factory;
 mod gc;
-mod handler;
 mod session;
 
 pub use self::{
-    gc::{spawn_gc, GarbageCollector},
-    handler::SessionHandler,
+    factory::SessionFactory,
+    gc::{run_gc, GarbageCollector},
     session::{Session, SessionKey, SessionLifetime},
 };
 
