@@ -1,22 +1,20 @@
 use crate::store::SessionStore;
-use carapax::core::types::Update;
-use failure::Error;
-use futures::Future;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{fmt, sync::Arc, time::Duration};
+use tokio::sync::Mutex;
 
 /// Actual session available in context
 #[derive(Clone)]
 pub struct Session<S> {
     namespace: String,
-    store: Arc<S>,
+    store: Arc<Mutex<S>>,
 }
 
 impl<S> Session<S>
 where
     S: SessionStore,
 {
-    pub(crate) fn new<N: Into<String>>(namespace: N, store: Arc<S>) -> Self {
+    pub(crate) fn new<N: Into<String>>(namespace: N, store: Arc<Mutex<S>>) -> Self {
         Self {
             namespace: namespace.into(),
             store,
@@ -30,31 +28,31 @@ where
     /// Get value of key
     ///
     /// If key not exists, None is returned
-    pub fn get<O>(&self, key: &str) -> Box<dyn Future<Item = Option<O>, Error = Error> + Send>
+    pub async fn get<O>(&mut self, key: &str) -> Result<Option<O>, S::Error>
     where
-        O: DeserializeOwned + Send + 'static,
+        O: DeserializeOwned + Send + Sync,
     {
-        self.store.get(self.build_key(key))
+        self.store.lock().await.get(self.build_key(key)).await
     }
 
     /// Set key to hold the given value
-    pub fn set<I>(&self, key: &str, val: &I) -> Box<dyn Future<Item = (), Error = Error> + Send>
+    pub async fn set<I>(&mut self, key: &str, val: &I) -> Result<(), S::Error>
     where
-        I: Serialize,
+        I: Serialize + Send + Sync,
     {
-        self.store.set(self.build_key(key), val)
+        self.store.lock().await.set(self.build_key(key), val).await
     }
 
     /// Set a timeout on key
     ///
     /// After the timeout has expired, the key will automatically be deleted
-    pub fn expire(&self, key: &str, seconds: usize) -> Box<dyn Future<Item = (), Error = Error> + Send> {
-        self.store.expire(self.build_key(key), seconds)
+    pub async fn expire(&mut self, key: &str, seconds: usize) -> Result<(), S::Error> {
+        self.store.lock().await.expire(self.build_key(key), seconds).await
     }
 
     /// Remove the specified key
-    pub fn del(&self, key: &str) -> Box<dyn Future<Item = (), Error = Error> + Send> {
-        self.store.del(self.build_key(key))
+    pub async fn del(&mut self, key: &str) -> Result<(), S::Error> {
+        self.store.lock().await.del(self.build_key(key)).await
     }
 }
 
@@ -94,16 +92,6 @@ impl fmt::Display for SessionKey {
     fn fmt(&self, out: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(out, "{}-{}", self.namespace, self.name)
     }
-}
-
-pub(crate) fn namespace_from_update(update: &Update) -> String {
-    let (chat_id, user_id) = match (update.get_chat_id(), update.get_user().map(|x| x.id)) {
-        (Some(chat_id), Some(user_id)) => (chat_id, user_id),
-        (Some(chat_id), None) => (chat_id, chat_id),
-        (None, Some(user_id)) => (user_id, user_id),
-        (None, None) => unreachable!(), // There is always chat_id or user_id
-    };
-    format!("{}-{}", chat_id, user_id)
 }
 
 /// Defines a lifetime for each session
