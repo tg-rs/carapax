@@ -41,7 +41,7 @@ impl FormValue {
             FormValue::Text(text) => Part::text(text),
             FormValue::File(file) => match file.kind {
                 InputFileKind::Path(path) => {
-                    let file_name = path.file_name().map(|x| x.to_string_lossy().into_owned());
+                    let file_name = path.file_name().and_then(|x| x.to_str()).map(String::from);
                     let mime_type = path
                         .extension()
                         .and_then(|x| x.to_str())
