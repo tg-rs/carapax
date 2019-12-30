@@ -59,8 +59,8 @@ where
 mod tests {
     use super::*;
 
-    #[test]
-    fn in_memory_policy() {
+    #[tokio::test]
+    async fn in_memory_policy() {
         let mut policy = InMemoryAccessPolicy::default();
         assert!(policy.rules.is_empty());
         policy = policy.push_rule(AccessRule::allow_user(1));
@@ -69,11 +69,10 @@ mod tests {
         macro_rules! check_access {
             ($rules:expr, $updates:expr) => {{
                 for rules in $rules {
-                    let policy = InMemoryAccessPolicy::new(rules);
+                    let mut policy = InMemoryAccessPolicy::new(rules);
                     for (flag, update) in $updates {
                         let update: Update = serde_json::from_value(update).unwrap();
-                        let mut context = Context::default();
-                        let is_granted = policy.is_granted(&mut context, &update).wait().unwrap();
+                        let is_granted = policy.is_granted(&mut (), &update).await;
                         assert_eq!(is_granted, flag);
                     }
                 }

@@ -36,7 +36,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::policy::{AccessPolicy, AccessPolicyFuture};
+    use crate::policy::AccessPolicy;
 
     struct Policy {
         flag: bool,
@@ -48,15 +48,15 @@ mod tests {
         }
     }
 
-    impl AccessPolicy for Policy {
-        fn is_granted(&self, _context: &mut Context, _update: &Update) -> AccessPolicyFuture {
-            self.flag.into()
+    #[async_trait]
+    impl AccessPolicy<()> for Policy {
+        async fn is_granted(&mut self, _context: &mut (), _update: &Update) -> bool {
+            self.flag
         }
     }
 
-    #[test]
-    fn handler() {
-        let mut context = Context::default();
+    #[tokio::test]
+    async fn handler() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -72,13 +72,17 @@ mod tests {
         .unwrap();
 
         let policy = Policy::new(true);
-        let handler = AccessHandler::new(policy);
-        let result = handler.handle(&mut context, update.clone()).wait().unwrap();
-        assert_eq!(result, HandlerResult::Continue);
+        let mut handler = AccessHandler::new(policy);
+        match handler.handle(&mut (), update.clone()).await {
+            HandlerResult::Continue => { /*ok*/ }
+            result => panic!("Unexpected handler result: {:?}", result),
+        }
 
         let policy = Policy::new(false);
-        let handler = AccessHandler::new(policy);
-        let result = handler.handle(&mut context, update).wait().unwrap();
-        assert_eq!(result, HandlerResult::Stop);
+        let mut handler = AccessHandler::new(policy);
+        match handler.handle(&mut (), update).await {
+            HandlerResult::Stop => { /*ok*/ }
+            result => panic!("Unexpected handler result: {:?}", result),
+        }
     }
 }
