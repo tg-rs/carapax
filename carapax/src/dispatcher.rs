@@ -4,11 +4,14 @@ use std::sync::Arc;
 use tgbot::{types::Update, UpdateHandler};
 use tokio::sync::Mutex;
 
+type BoxedHandler<C> = Box<dyn Handler<C, Input = Update, Output = HandlerResult> + Send>;
+type BoxedErrorHandler = Box<dyn ErrorHandler + Send>;
+
 /// A Telegram Update dispatcher
 pub struct Dispatcher<C> {
-    handlers: Vec<Box<dyn Handler<C, Input = Update, Output = HandlerResult> + Send>>,
+    handlers: Vec<BoxedHandler<C>>,
     context: Arc<Mutex<C>>,
-    error_handler: Option<Box<dyn ErrorHandler + Send>>,
+    error_handler: Option<BoxedErrorHandler>,
 }
 
 impl<C> Dispatcher<C>

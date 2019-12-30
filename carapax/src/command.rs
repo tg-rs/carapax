@@ -7,11 +7,13 @@ use shellwords::MismatchedQuotes;
 use std::{collections::HashMap, error::Error, fmt, string::FromUtf16Error};
 use tgbot::types::{Message, Update};
 
+type BoxedHandler<C> = Box<dyn Handler<C, Input = Command, Output = HandlerResult> + Send>;
+
 /// A simple commands handler
 #[derive(Default)]
 pub struct CommandDispatcher<C> {
-    handlers: HashMap<String, Box<dyn Handler<C, Input = Command, Output = HandlerResult> + Send>>,
-    not_found_handler: Option<Box<dyn Handler<C, Input = Command, Output = HandlerResult> + Send>>,
+    handlers: HashMap<String, BoxedHandler<C>>,
+    not_found_handler: Option<BoxedHandler<C>>,
 }
 
 impl<C> CommandDispatcher<C>
