@@ -1,8 +1,8 @@
 [package]
 name = "carapax-i18n"
-description = "An i18n handler for carapax"
+description = "An i18n utilities for carapax"
 version = "0.1.0"
-authors = ["Arsenii Lyashenko <arsenylyashenko.3@gmail.com>"]
+authors = ["Arsenii Lyashenko <arsenylyashenko.3@gmail.com>", "Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2018"
 readme = "README.md"
 license = "MIT"
@@ -12,11 +12,10 @@ exclude = ["data/**"]
 
 [dependencies]
 carapax = { path = "../carapax" }
-gettext = "0.3.0"
+gettext = "0.4.0"
 
 [dev-dependencies]
-serde_json = "1.0.39"
-futures = "0.1.25"
-tokio = "0.1.7"
-dotenv = "0.13.0"
-env_logger = "0.6.0"
+dotenv = "0.15.0"
+env_logger = "0.7.1"
+serde_json = "1.0"
+tokio = { version = "0.2.6", features = ["macros"]}

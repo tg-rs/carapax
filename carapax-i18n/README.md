@@ -1,6 +1,6 @@
 # carapax-i18n
 
-i18n handler for [carapax](https://github.com/tg-rs/tg-rs/tree/master/carapax)
+An i18n utilities for [carapax](https://github.com/tg-rs/tg-rs/tree/master/carapax)
 
 [![Version](https://img.shields.io/crates/v/carapax-i18n.svg?style=flat-square)](https://crates.io/crates/carapax-i18n)
 [![Downloads](https://img.shields.io/crates/d/carapax-i18n.svg?style=flat-square)](https://crates.io/crates/carapax-i18n)

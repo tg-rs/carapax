@@ -1,26 +1,33 @@
-use carapax::prelude::*;
-use carapax_i18n::{Catalog, I18nHandler, Translator, UserLocaleResolver};
+use carapax::{handler, longpoll::LongPoll, methods::SendMessage, types::Update, Api, Config, Dispatcher};
+use carapax_i18n::{Catalog, Translator, TranslatorStore, UserLocaleResolver};
 use dotenv::dotenv;
 use env_logger;
-use futures::future::Future;
 use std::env;
 
 const RU: &[u8] = include_bytes!("../data/ru.mo");
+const EN: &[u8] = include_bytes!("../data/en.mo");
 
-fn handle_message(context: &mut Context, message: Message) -> HandlerFuture {
-    let api: &Api = context.get();
-    let translator: &Translator = context.get();
-
-    HandlerFuture::new(
-        api.execute(SendMessage::new(
-            message.get_chat_id(),
-            translator.translate("Hello, stranger!"),
-        ))
-        .map(|_| HandlerResult::Continue),
-    )
+struct Context {
+    api: Api,
+    translators: TranslatorStore<UserLocaleResolver>,
 }
 
-fn main() {
+#[handler]
+async fn update_handler(context: &mut Context, update: Update) {
+    let translator = context.translators.get_translator(&update);
+    println!("GOT UPDATE: {:?}; LOCALE: {:?}", update, translator.get_locale());
+    context
+        .api
+        .execute(SendMessage::new(
+            update.get_chat_id().unwrap(),
+            translator.translate("Hello, stranger!"),
+        ))
+        .await
+        .unwrap();
+}
+
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -29,17 +36,18 @@ fn main() {
 
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
 
-    let api = Api::new(config).unwrap();
-
+    let api = Api::new(config).expect("Failed to create API");
+    let en = Translator::new("en", Catalog::parse(EN).unwrap());
     let ru = Translator::new("ru", Catalog::parse(RU).unwrap());
+    let translators = TranslatorStore::new(UserLocaleResolver, en).add_translator(ru);
+    let mut dispatcher = Dispatcher::new(Context {
+        api: api.clone(),
+        translators,
+    });
+    dispatcher.add_handler(update_handler);
 
-    tokio::run(
-        App::new()
-            .add_handler(I18nHandler::new(UserLocaleResolver, ru))
-            .add_handler(FnHandler::from(handle_message))
-            .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
-    )
+    LongPoll::new(api, dispatcher).run().await
 }

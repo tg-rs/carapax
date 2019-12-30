@@ -1,21 +1,24 @@
-//! An i18n handler for carapax
+//! An i18n utilities for carapax
 #![warn(missing_docs)]
 
-use carapax::{context::Context, core::types::Update, Handler};
+use carapax::types::Update;
 use std::{collections::HashMap, sync::Arc};
 
 pub use gettext::Catalog;
 
-/// An i18n handler for carapax
+/// A store for translators
 #[derive(Debug, Clone)]
-pub struct I18nHandler<R> {
+pub struct TranslatorStore<R> {
     resolver: R,
     default_translator: Translator,
     translators: HashMap<String, Translator>,
 }
 
-impl<R> I18nHandler<R> {
-    /// Creates a new I18nHandler
+impl<R> TranslatorStore<R>
+where
+    R: LocaleResolver,
+{
+    /// Creates a new store
     ///
     /// # Arguments
     ///
@@ -34,22 +37,18 @@ impl<R> I18nHandler<R> {
         self.translators.insert(translator.locale.clone(), translator);
         self
     }
-}
 
-impl<R> Handler for I18nHandler<R>
-where
-    R: LocaleResolver,
-{
-    type Input = Update;
-    type Output = ();
-
-    fn handle(&self, context: &mut Context, update: Self::Input) -> Self::Output {
+    /// Returns a translator for given update
+    ///
+    /// If locale could not be resolved
+    /// or translator not found for locale,
+    /// default translator will be returned.
+    pub fn get_translator(&self, update: &Update) -> Translator {
         let locale = self.resolver.resolve(&update);
-        let translator = locale
+        locale
             .as_ref()
             .and_then(|locale| self.translators.get(locale).cloned())
-            .unwrap_or_else(|| self.default_translator.clone());
-        context.set(translator);
+            .unwrap_or_else(|| self.default_translator.clone())
     }
 }
 
@@ -88,7 +87,7 @@ impl Translator {
     }
 
     /// Returns a locale
-    pub fn locale(&self) -> &str {
+    pub fn get_locale(&self) -> &str {
         &self.locale
     }
 }
@@ -173,15 +172,14 @@ mod tests {
     const RU: &[u8] = include_bytes!("../data/ru.mo");
 
     #[test]
-    fn test_handler() {
+    fn store() {
         let en = Catalog::parse(EN).unwrap();
         let en = Translator::new("en", en);
 
         let ru = Catalog::parse(RU).unwrap();
         let ru = Translator::new("ru", ru);
 
-        let handler = I18nHandler::new(UserLocaleResolver, en).add_translator(ru);
-        let mut context = Context::default();
+        let store = TranslatorStore::new(UserLocaleResolver, en).add_translator(ru);
 
         let en_update: serde_json::Value = serde_json::json!({
             "update_id": 1,
@@ -239,8 +237,7 @@ mod tests {
                 ru_update.clone(),
             ),
         ] {
-            handler.handle(&mut context, update.clone());
-            let translator = context.get::<Translator>();
+            let translator = store.get_translator(&update);
             assert_eq!(translator.translate(key), value);
         }
     }
