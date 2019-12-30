@@ -7,22 +7,22 @@ use log;
 use std::env;
 
 #[handler(command = "/start")]
-async fn handle_start(context: &mut Api, command: Command) -> Result<HandlerResult, ExecuteError> {
+async fn handle_start(api: &mut Api, command: Command) -> Result<HandlerResult, ExecuteError> {
     log::info!("handle /start command\n");
     let chat_id = command.get_message().get_chat_id();
     let method = SendMessage::new(chat_id, "Hello!");
-    let result = context.execute(method).await;
+    let result = api.execute(method).await;
     log::info!("sendMessage result: {:?}\n", result);
     Ok(HandlerResult::Stop)
 }
 
 #[handler(command = "/user_id")]
-async fn handle_user_id(context: &mut Api, command: Command) -> Result<(), ExecuteError> {
+async fn handle_user_id(api: &mut Api, command: Command) -> Result<(), ExecuteError> {
     log::info!("handle /user_id command\n");
     let message = command.get_message();
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, format!("Your ID is: {:?}", message.get_user().map(|u| u.id)));
-    let result = context.execute(method).await?;
+    let result = api.execute(method).await?;
     log::info!("sendMessage result: {:?}\n", result);
     Ok(())
 }
