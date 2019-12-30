@@ -1,10 +1,7 @@
-use carapax::prelude::*;
+use carapax::{async_trait, types::Update, Handler, HandlerResult};
 use ratelimit_meter::{DirectRateLimiter, GCRA};
-use std::{
-    num::NonZeroU32,
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{num::NonZeroU32, sync::Arc, time::Duration};
+use tokio::sync::Mutex;
 
 /// Limits all updates
 pub struct DirectRateLimitHandler {
@@ -25,12 +22,16 @@ impl DirectRateLimitHandler {
     }
 }
 
-impl Handler for DirectRateLimitHandler {
+#[async_trait]
+impl<C> Handler<C> for DirectRateLimitHandler
+where
+    C: Send,
+{
     type Input = Update;
     type Output = HandlerResult;
 
-    fn handle(&self, _context: &mut Context, _update: Self::Input) -> Self::Output {
-        if self.limiter.lock().unwrap().check().is_ok() {
+    async fn handle(&mut self, _context: &mut C, _update: Self::Input) -> Self::Output {
+        if self.limiter.lock().await.check().is_ok() {
             HandlerResult::Continue
         } else {
             HandlerResult::Stop
@@ -42,11 +43,10 @@ impl Handler for DirectRateLimitHandler {
 mod tests {
     use super::*;
     use crate::nonzero;
-    use carapax::{context::Context, core::types::Update};
+    use carapax::types::Update;
 
-    #[test]
-    fn handler() {
-        let mut context = Context::default();
+    #[tokio::test]
+    async fn handler() {
         let update: Update = serde_json::from_value(serde_json::json!({
             "update_id": 1,
             "message": {
@@ -58,9 +58,14 @@ mod tests {
             }
         }))
         .unwrap();
-        let handler = DirectRateLimitHandler::new(nonzero!(1u32), Duration::from_secs(1000));
-        assert!((0..10)
-            .map(|_| handler.handle(&mut context, update.clone()))
-            .any(|x| x == HandlerResult::Stop))
+        let mut handler = DirectRateLimitHandler::new(nonzero!(1u32), Duration::from_secs(1000));
+        let mut results = Vec::new();
+        for _ in 0..10 {
+            results.push(handler.handle(&mut (), update.clone()).await)
+        }
+        assert!(results.into_iter().any(|x| match x {
+            HandlerResult::Stop => true,
+            _ => false,
+        }));
     }
 }

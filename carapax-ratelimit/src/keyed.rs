@@ -1,11 +1,11 @@
-use carapax::prelude::*;
-use ratelimit_meter::{KeyedRateLimiter, GCRA};
-use std::{
-    hash::Hash,
-    num::NonZeroU32,
-    sync::{Arc, Mutex},
-    time::Duration,
+use carapax::{
+    async_trait,
+    types::{ChatId, Integer, Update, UserId},
+    Handler, HandlerResult,
 };
+use ratelimit_meter::{KeyedRateLimiter, GCRA};
+use std::{hash::Hash, num::NonZeroU32, sync::Arc, time::Duration};
+use tokio::sync::Mutex;
 
 /// Limits updates accroding to given rules
 pub struct KeyedRateLimitHandler<K: RateLimitKey> {
@@ -38,7 +38,7 @@ where
 /// A key to filter updates
 pub trait RateLimitKey {
     /// Type of the key
-    type Key: Clone + Eq + Hash;
+    type Key: Clone + Eq + Hash + Send;
 
     /// Returns a key from given update
     ///
@@ -49,7 +49,7 @@ pub trait RateLimitKey {
 impl<F, K> RateLimitKey for F
 where
     F: Fn(&Update) -> Option<K>,
-    K: Clone + Eq + Hash,
+    K: Clone + Eq + Hash + Send,
 {
     type Key = K;
 
@@ -176,16 +176,19 @@ impl RateLimitKey for RateLimitList {
     }
 }
 
-impl<K> Handler for KeyedRateLimitHandler<K>
+#[async_trait]
+impl<C, K> Handler<C> for KeyedRateLimitHandler<K>
 where
-    K: RateLimitKey,
+    C: Send,
+    K: RateLimitKey + Send + Sync,
 {
     type Input = Update;
     type Output = HandlerResult;
 
-    fn handle(&self, _context: &mut Context, update: Self::Input) -> Self::Output {
+    async fn handle(&mut self, _context: &mut C, update: Self::Input) -> Self::Output {
         let should_pass = if let Some(key) = self.key.get_key(&update) {
-            self.limiter.lock().unwrap().check(key).is_ok()
+            let mut limiter = self.limiter.lock().await;
+            limiter.check(key).is_ok()
         } else {
             self.on_missing
         };
@@ -202,9 +205,8 @@ mod tests {
     use super::*;
     use crate::nonzero;
 
-    #[test]
-    fn handler_key_found() {
-        let mut context = Context::default();
+    #[tokio::test]
+    async fn handler_key_found() {
         let update: Update = serde_json::from_value(serde_json::json!({
             "update_id": 1,
             "message": {
@@ -216,15 +218,19 @@ mod tests {
             }
         }))
         .unwrap();
-        let handler = KeyedRateLimitHandler::new(limit_all_users, true, nonzero!(1u32), Duration::from_secs(1000));
-        assert!((0..10)
-            .map(|_| handler.handle(&mut context, update.clone()))
-            .any(|x| x == HandlerResult::Stop))
+        let mut results = Vec::new();
+        let mut handler = KeyedRateLimitHandler::new(limit_all_users, true, nonzero!(1u32), Duration::from_secs(1000));
+        for _ in 0..10 {
+            results.push(handler.handle(&mut (), update.clone()).await);
+        }
+        assert!(results.into_iter().any(|x| match x {
+            HandlerResult::Stop => true,
+            _ => false,
+        }))
     }
 
-    #[test]
-    fn handler_key_not_found() {
-        let mut context = Context::default();
+    #[tokio::test]
+    async fn handler_key_not_found() {
         let update: Update = serde_json::from_value(serde_json::json!({
             "update_id": 1,
             "message": {
@@ -236,15 +242,19 @@ mod tests {
             }
         }))
         .unwrap();
-        for (on_missing, expected_result) in &[(true, HandlerResult::Continue), (false, HandlerResult::Stop)] {
-            let handler = KeyedRateLimitHandler::new(
+        for on_missing in &[true, false] {
+            let mut handler = KeyedRateLimitHandler::new(
                 RateLimitList::default().with_user(1),
                 *on_missing,
                 nonzero!(1u32),
                 Duration::from_secs(1000),
             );
-            let result = handler.handle(&mut context, update.clone());
-            assert_eq!(result, *expected_result);
+            let result = handler.handle(&mut (), update.clone()).await;
+            match result {
+                HandlerResult::Continue => assert_eq!(*on_missing, true),
+                HandlerResult::Stop => assert_eq!(*on_missing, false),
+                result => panic!("unexpected result: {:?}", result),
+            };
         }
     }
 

@@ -1,4 +1,9 @@
-use carapax::prelude::*;
+use carapax::{
+    handler,
+    longpoll::LongPoll,
+    types::{ChatId, Integer, Message, UserId},
+    Api, Config, Dispatcher,
+};
 use carapax_ratelimit::{
     limit_all_chats, limit_all_users, nonzero, DirectRateLimitHandler, KeyedRateLimitHandler, RateLimitList,
 };
@@ -6,11 +11,13 @@ use dotenv::dotenv;
 use env_logger;
 use std::{env, time::Duration};
 
-fn handle_message(_context: &mut Context, message: Message) {
+#[handler]
+async fn handle_message(_context: &mut (), message: Message) {
     log::info!("Got a new message: {:?}", message);
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     env_logger::init();
 
@@ -20,7 +27,7 @@ fn main() {
 
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
-        config = config.proxy(proxy);
+        config = config.proxy(proxy).expect("Failed to set proxy");
     }
 
     let api = Api::new(config).unwrap();
@@ -31,16 +38,16 @@ fn main() {
     // Allow update when key is missing
     let on_missing = true;
 
-    let mut app = App::new();
+    let mut dispatcher = Dispatcher::new(());
 
     match strategy.as_str() {
         "direct" => {
             // Limit all updates
-            app = app.add_handler(DirectRateLimitHandler::new(capacity, interval))
+            dispatcher.add_handler(DirectRateLimitHandler::new(capacity, interval))
         }
         "all_users" => {
             // Limit updates per user ID for all users
-            app = app.add_handler(KeyedRateLimitHandler::new(
+            dispatcher.add_handler(KeyedRateLimitHandler::new(
                 limit_all_chats,
                 on_missing,
                 capacity,
@@ -49,7 +56,7 @@ fn main() {
         }
         "all_chats" => {
             // Limit updates per chat ID for all chats
-            app = app.add_handler(KeyedRateLimitHandler::new(
+            dispatcher.add_handler(KeyedRateLimitHandler::new(
                 limit_all_users,
                 on_missing,
                 capacity,
@@ -68,7 +75,7 @@ fn main() {
                 Ok(chat_id) => ChatId::Id(chat_id),
                 Err(_) => ChatId::Username(chat_id),
             };
-            app = app.add_handler(KeyedRateLimitHandler::new(
+            dispatcher.add_handler(KeyedRateLimitHandler::new(
                 RateLimitList::default().with_user(user_id).with_chat(chat_id),
                 on_missing,
                 capacity,
@@ -78,8 +85,7 @@ fn main() {
         _ => panic!("Unknown rate limit strategy: {:?}", strategy),
     };
 
-    tokio::run(
-        app.add_handler(FnHandler::from(handle_message))
-            .run(api.clone(), UpdateMethod::poll(UpdatesStream::new(api))),
-    )
+    dispatcher.add_handler(handle_message);
+
+    LongPoll::new(api, dispatcher).run().await
 }
