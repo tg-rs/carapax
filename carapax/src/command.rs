@@ -192,7 +192,7 @@ mod tests {
     use super::*;
 
     fn create_command(command: &str) -> Command {
-        let len = command.split(" ").next().unwrap().len();
+        let len = command.split_whitespace().next().unwrap().len();
         Command::try_from_update(
             serde_json::from_value(serde_json::json!(
                 {
