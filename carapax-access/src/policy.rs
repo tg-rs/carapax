@@ -1,45 +1,13 @@
 use crate::rules::AccessRule;
-use carapax::prelude::*;
-use failure::Error;
-use futures::{future, Future, Poll};
+use carapax::{async_trait, types::Update};
 
 /// An access policy
 ///
 /// Decides whether update is allowed or not
-pub trait AccessPolicy {
+#[async_trait]
+pub trait AccessPolicy<C> {
     /// Return true if update is allowed and false otherwise
-    fn is_granted(&self, context: &mut Context, update: &Update) -> AccessPolicyFuture;
-}
-
-/// Access policy future
-#[must_use = "futures do nothing unless polled"]
-pub struct AccessPolicyFuture {
-    inner: Box<dyn Future<Item = bool, Error = Error> + Send>,
-}
-
-impl AccessPolicyFuture {
-    /// Creates a future
-    pub fn new<F>(f: F) -> Self
-    where
-        F: Future<Item = bool, Error = Error> + Send + 'static,
-    {
-        AccessPolicyFuture { inner: Box::new(f) }
-    }
-}
-
-impl From<bool> for AccessPolicyFuture {
-    fn from(flag: bool) -> AccessPolicyFuture {
-        AccessPolicyFuture::new(future::ok(flag))
-    }
-}
-
-impl Future for AccessPolicyFuture {
-    type Item = bool;
-    type Error = Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        self.inner.poll()
-    }
+    async fn is_granted(&mut self, context: &mut C, update: &Update) -> bool;
 }
 
 /// In-memory access policy
@@ -69,8 +37,12 @@ impl InMemoryAccessPolicy {
     }
 }
 
-impl AccessPolicy for InMemoryAccessPolicy {
-    fn is_granted(&self, _context: &mut Context, update: &Update) -> AccessPolicyFuture {
+#[async_trait]
+impl<C> AccessPolicy<C> for InMemoryAccessPolicy
+where
+    C: Send,
+{
+    async fn is_granted(&mut self, _context: &mut C, update: &Update) -> bool {
         let mut result = false;
         for rule in &self.rules {
             if rule.accepts(&update) {
@@ -79,7 +51,7 @@ impl AccessPolicy for InMemoryAccessPolicy {
                 break;
             }
         }
-        result.into()
+        result
     }
 }
 

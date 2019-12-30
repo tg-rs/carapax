@@ -1,4 +1,4 @@
-use carapax::prelude::*;
+use carapax::types::{Integer, Update};
 
 /// An access rule - contains information about principal and grant
 #[derive(Debug)]
@@ -233,7 +233,7 @@ impl Principal {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use carapax::core::types::Update;
+    use carapax::types::Update;
 
     #[test]
     fn access_rule_new() {

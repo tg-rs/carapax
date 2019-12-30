@@ -1,6 +1,5 @@
 use crate::policy::AccessPolicy;
-use carapax::prelude::*;
-use futures::Future;
+use carapax::{async_trait, types::Update, Handler, HandlerResult};
 
 /// Access control handler
 ///
@@ -16,21 +15,21 @@ impl<P> AccessHandler<P> {
     }
 }
 
-impl<P> Handler for AccessHandler<P>
+#[async_trait]
+impl<C, P> Handler<C> for AccessHandler<P>
 where
-    P: AccessPolicy,
+    C: Send,
+    P: AccessPolicy<C> + Send + Sync,
 {
     type Input = Update;
-    type Output = HandlerFuture;
+    type Output = HandlerResult;
 
-    fn handle(&self, context: &mut Context, update: Self::Input) -> Self::Output {
-        HandlerFuture::new(self.policy.is_granted(context, &update).and_then(|result| {
-            if result {
-                Ok(HandlerResult::Continue)
-            } else {
-                Ok(HandlerResult::Stop)
-            }
-        }))
+    async fn handle(&mut self, context: &mut C, update: Self::Input) -> Self::Output {
+        if self.policy.is_granted(context, &update).await {
+            HandlerResult::Continue
+        } else {
+            HandlerResult::Stop
+        }
     }
 }
 
