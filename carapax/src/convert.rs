@@ -10,7 +10,7 @@ pub trait TryFromUpdate: Sized {
 
     /// Returns a handler input
     ///
-    /// Handler will not run if None returned
+    /// Handler will not run if None or Error returned
     fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error>;
 }
 
