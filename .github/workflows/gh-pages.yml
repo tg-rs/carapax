@@ -18,6 +18,6 @@ jobs:
                   emptyCommits: false
                   keepFiles: true
               env:
-                  PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }
+                  PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
                   PUBLISH_BRANCH: gh-pages
                   PUBLISH_DIR: ./target/doc
