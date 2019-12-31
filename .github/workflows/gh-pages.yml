@@ -16,7 +16,7 @@ jobs:
             - uses: peaceiris/actions-gh-pages@v2
               with:
                   emptyCommits: false
-                  keepFiles: true
+                  forceOrphan: true
               env:
                   PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
                   PUBLISH_BRANCH: gh-pages
