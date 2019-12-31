@@ -1,0 +1,92 @@
+name: CI
+on:
+    push:
+        branches:
+            - '!gh-pages'
+    pull_request:
+        branches:
+            - '!gh-pages'
+
+jobs:
+    rustfmt:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+            - name: Install toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: nightly
+                  override: true
+                  components: rustfmt
+            - name: cargo fmt
+              uses: actions-rs/cargo@v1
+              with:
+                  command: fmt
+                  args: --all -- --check
+    clippy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+            - run: rustup component add clippy
+            - uses: actions-rs/clippy-check@v1
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  args: --all-targets --all-features -- -D warnings
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+            - name: Cache cargo registry
+              uses: actions/cache@v1
+              with:
+                  path: ~/.cargo/registry
+                  key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-registry-
+            - name: Cache cargo index
+              uses: actions/cache@v1
+              with:
+                  path: ~/.cargo/git
+                  key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-index-
+            - name: Cache cargo build
+              uses: actions/cache@v1
+              with:
+                  path: target
+                  key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-build-target-
+            - uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
+                  override: true
+            - uses: actions-rs/cargo@v1
+              with:
+                  command: test
+                  args: --all-targets --all-features
+    coverage:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+            - uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: nightly
+                  override: true
+            - uses: actions-rs/cargo@v1
+              with:
+                  command: test
+                  args: --all-targets --all-features --no-fail-fast
+                  env:
+                      CARGO_INCREMENTAL: '0'
+                      RUSTFLAGS: >-
+                          -Zprofile
+                          -Ccodegen-units=1
+                          -Cinline-threshold=0
+                          -Clink-dead-code
+                          -Coverflow-checks=off
+                          -Zno-landing-pads
+            - uses: actions-rs/grcov@v0.1
