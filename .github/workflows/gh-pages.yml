@@ -1,0 +1,23 @@
+name: GitHub Pages
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    docs:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+            - uses: actions-rs/cargo@v1
+              with:
+                  command: doc
+                  args: --all --all-features
+            - uses: peaceiris/actions-gh-pages@v2
+              with:
+                  emptyCommits: false
+                  keepFiles: true
+              env:
+                  PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }
+                  PUBLISH_BRANCH: gh-pages
+                  PUBLISH_DIR: ./target/doc
