@@ -44,11 +44,6 @@ TGRS_TOKEN=YOUR-BOT-TOKEN-HERE
 # Used in access example
 TGRS_ACCESS_USERNAME=username
 
-# A redis URL for session store
-#
-# Used in session_counter_redis example
-TGRS_REDIS_URL=redis://127.0.0.1/0
-
 # An URL to a random gif
 #
 # Used in send_file example

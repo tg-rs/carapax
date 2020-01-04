@@ -229,12 +229,12 @@ mod tests {
             (
                 TranslationKey::singular("This is context").context("context"),
                 "This is context",
-                en_update.clone(),
+                en_update,
             ),
             (
                 TranslationKey::singular("This is context").context("context"),
                 "Это контекст",
-                ru_update.clone(),
+                ru_update,
             ),
         ] {
             let translator = store.get_translator(&update);
