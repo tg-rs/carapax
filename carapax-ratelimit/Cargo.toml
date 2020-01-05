@@ -11,13 +11,13 @@ repository = "https://github.com/tg-rs/tg-rs"
 
 [dependencies]
 carapax = { path = "../carapax" }
-nonzero_ext = { version = "0.1", default-features = false }
-ratelimit_meter = "5.0"
+nonzero_ext = { version = "0.2.0", default-features = false }
+ratelimit_meter = "5.0.0"
 tokio = { version = "0.2.6", default-features = false, features = ["sync"]}
 
 [dev-dependencies]
 dotenv = "0.15.0"
 env_logger = "0.7.1"
-log = "0.4.6"
-serde_json = "1.0"
+log = "0.4.8"
+serde_json = "1.0.44"
 tokio = { version = "0.2.6", default-features = false, features = ["sync", "macros"]}

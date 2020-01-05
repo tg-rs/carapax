@@ -11,7 +11,7 @@ repository = "https://github.com/tg-rs/tg-rs"
 
 [dependencies]
 async-stream = "0.2.0"
-async-trait = "0.1.21"
+async-trait = "0.1.22"
 bytes = "0.5.3"
 derive_more = "0.99.2"
 futures-util = "0.3.1"
