@@ -75,10 +75,14 @@ pub enum TextEntity {
     PhoneNumber(TextEntityData),
     /// Monowidth block
     Pre(TextEntityData),
+    /// Strikethrough text
+    Strikethrough(TextEntityData),
     /// Clickable text URLs
     TextLink(TextLink),
     /// Mention user without username
     TextMention(TextMention),
+    /// Underlined text
+    Underline(TextEntityData),
     /// URL
     Url(TextEntityData),
 }
@@ -105,6 +109,7 @@ impl TextEntity {
             RawMessageEntityKind::Mention => TextEntity::Mention(data),
             RawMessageEntityKind::PhoneNumber => TextEntity::PhoneNumber(data),
             RawMessageEntityKind::Pre => TextEntity::Pre(data),
+            RawMessageEntityKind::Strikethrough => TextEntity::Strikethrough(data),
             RawMessageEntityKind::TextLink => match entity.url {
                 Some(url) => TextEntity::TextLink(TextLink { data, url }),
                 None => return Err(ParseTextError::NoUrl),
@@ -113,6 +118,7 @@ impl TextEntity {
                 Some(user) => TextEntity::TextMention(TextMention { data, user }),
                 None => return Err(ParseTextError::NoUser),
             },
+            RawMessageEntityKind::Underline => TextEntity::Underline(data),
             RawMessageEntityKind::Url => TextEntity::Url(data),
         })
     }
@@ -207,7 +213,7 @@ mod tests {
             "message_id": 1, "date": 0,
             "from": {"id": 1, "first_name": "firstname", "is_bot": false},
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
-            "text": "bold /botcommand $cashtag code u@h.z #hashtag italic @mention phone pre textlink textmention url",
+            "text": "bold /botcommand $cashtag code u@h.z #hashtag italic @mention phone pre textlink textmention url underline strikethrough",
             "entities": [
                 {"type": "bold", "offset": 0, "length": 4},
                 {"type": "bot_command", "offset": 5, "length": 11},
@@ -230,7 +236,9 @@ mod tests {
                         "is_bot": false
                     }
                 },
-                {"type": "url", "offset": 93, "length": 3}
+                {"type": "url", "offset": 93, "length": 3},
+                {"type": "underline", "offset": 97, "length": 9},
+                {"type": "strikethrough", "offset": 107, "length": 13}
             ]
         });
         let msg: Message = serde_json::from_value(input).unwrap();
@@ -320,6 +328,16 @@ mod tests {
                         data: String::from("url"),
                         offset: 93,
                         length: 3
+                    }),
+                    TextEntity::Underline(TextEntityData {
+                        data: String::from("underline"),
+                        offset: 97,
+                        length: 9
+                    }),
+                    TextEntity::Strikethrough(TextEntityData {
+                        data: String::from("strikethrough"),
+                        offset: 107,
+                        length: 13
                     })
                 ],
                 entities

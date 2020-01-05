@@ -104,10 +104,14 @@ pub(crate) enum RawMessageEntityKind {
     PhoneNumber,
     #[serde(rename = "pre")]
     Pre,
+    #[serde(rename = "strikethrough")]
+    Strikethrough,
     #[serde(rename = "text_link")]
     TextLink,
     #[serde(rename = "text_mention")]
     TextMention,
+    #[serde(rename = "underline")]
+    Underline,
     #[serde(rename = "url")]
     Url,
 }
