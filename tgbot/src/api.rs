@@ -88,7 +88,7 @@ impl Api {
         } else {
             builder.no_proxy()
         };
-        let client = builder.build().map_err(ApiError::BuildClient)?;
+        let client = builder.use_rustls_tls().build().map_err(ApiError::BuildClient)?;
 
         Ok(Api {
             client: Arc::new(client),
