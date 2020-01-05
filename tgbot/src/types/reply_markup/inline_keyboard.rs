@@ -1,6 +1,6 @@
 use crate::types::login_url::LoginUrl;
 use serde::{Deserialize, Serialize};
-use serde_json::Error as JsonError;
+use serde_json::{Error as JsonError, Value as JsonValue};
 use std::{error::Error as StdError, fmt};
 
 /// Inline keyboard that appears right next to the message it belongs to
@@ -47,7 +47,7 @@ pub struct InlineKeyboardButton {
     #[serde(skip_serializing_if = "Option::is_none")]
     switch_inline_query_current_chat: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    callback_game: Option<String>,
+    callback_game: Option<JsonValue>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pay: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -161,7 +161,7 @@ impl InlineKeyboardButton {
             callback_data: None,
             switch_inline_query: None,
             switch_inline_query_current_chat: None,
-            callback_game: Some(String::new()),
+            callback_game: Some(serde_json::json!({})),
             pay: None,
             login_url: None,
         }
@@ -273,12 +273,38 @@ mod tests {
                         {"text":"cd","callback_data":"{\"value\":\"cdstruct\"}"},
                         {"text":"siq","switch_inline_query":"siq"},
                         {"text":"siqcc","switch_inline_query_current_chat":"siqcc"},
-                        {"text":"cg","callback_game":""},
+                        {"text":"cg","callback_game":{}},
                         {"text":"pay","pay":true},
                         {"text":"login url","login_url":{"url":"http://example.com"}}
                     ]
                 ]
             })
         );
+    }
+
+    #[test]
+    fn deserialize() {
+        let buttons: Vec<InlineKeyboardButton> = serde_json::from_value(serde_json::json!(
+            [
+                {"text":"url","url":"tg://user?id=1"},
+                {"text":"cd","callback_data":"cd"},
+                {"text":"cd","callback_data":"{\"value\":\"cdstruct\"}"},
+                {"text":"siq","switch_inline_query":"siq"},
+                {"text":"siqcc","switch_inline_query_current_chat":"siqcc"},
+                {"text":"cg","callback_game":{}},
+                {"text":"pay","pay":true},
+                {"text":"login url","login_url":{"url":"http://example.com"}}
+            ]
+        ))
+        .unwrap();
+        assert_eq!(buttons.len(), 8);
+        assert_eq!(buttons[0].text, "url");
+        assert_eq!(buttons[1].text, "cd");
+        assert_eq!(buttons[2].text, "cd");
+        assert_eq!(buttons[3].text, "siq");
+        assert_eq!(buttons[4].text, "siqcc");
+        assert_eq!(buttons[5].text, "cg");
+        assert_eq!(buttons[6].text, "pay");
+        assert_eq!(buttons[7].text, "login url");
     }
 }

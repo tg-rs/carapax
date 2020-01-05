@@ -50,6 +50,8 @@ pub enum MessageData {
         /// Document data
         data: Document,
     },
+    /// Message has no data
+    Empty,
     /// Message is a game, information about the game
     Game(Game),
     /// Service message: the group has been created

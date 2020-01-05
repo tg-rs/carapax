@@ -252,7 +252,7 @@ impl Message {
             message!(MessageData::Text(text), commands);
         }
 
-        Err(ParseError::NoData)
+        message!(MessageData::Empty, None)
     }
 }
 
@@ -282,7 +282,6 @@ enum ParseError {
     BadForward,
     BadText(ParseTextError),
     MissingField(&'static str),
-    NoData,
 }
 
 impl StdError for ParseError {
@@ -300,7 +299,6 @@ impl fmt::Display for ParseError {
             ParseError::BadForward => write!(out, "unexpected forward_* fields combination"),
             ParseError::BadText(err) => write!(out, "failed to parse text: {}", err),
             ParseError::MissingField(field) => write!(out, "\"{}\" field is missing", field),
-            ParseError::NoData => write!(out, "can not get message data"),
         }
     }
 }
@@ -354,6 +352,23 @@ mod tests {
         } else {
             panic!("Unexpected reply_to data: {:?}", msg.reply_to);
         }
+    }
+
+    #[test]
+    fn reply_to_with_empty_data() {
+        let data: Message = serde_json::from_value(serde_json::json!({
+            "message_id": 2, "date": 1,
+            "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+            "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+            "text": "test",
+            "reply_to_message": {
+                "message_id": 1, "date": 0,
+                "from": {"id": 1, "first_name": "firstname", "is_bot": false},
+                "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
+            }
+        }))
+        .unwrap();
+        assert!(data.reply_to.is_some());
     }
 
     #[test]
