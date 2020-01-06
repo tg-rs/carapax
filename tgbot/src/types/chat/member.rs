@@ -11,7 +11,7 @@ pub enum ChatMember {
     /// Chat admin
     Administrator(ChatMemberAdministrator),
     /// Chat creator
-    Creator(User),
+    Creator(ChatMemberCreator),
     /// Kicked user
     Kicked(ChatMemberKicked),
     /// Left user
@@ -28,7 +28,7 @@ impl ChatMember {
         use self::ChatMember::*;
         match self {
             Administrator(ref admin) => &admin.user,
-            Creator(ref user) => user,
+            Creator(ref creator) => &creator.user,
             Kicked(ref kicked) => &kicked.user,
             Left(ref user) => user,
             Member(ref user) => user,
@@ -66,6 +66,7 @@ impl<'de> Deserialize<'de> for ChatMember {
                 user: raw.user,
                 can_be_edited: required!(can_be_edited),
                 can_change_info: required!(can_change_info),
+                custom_title: raw.custom_title,
                 can_post_messages: raw.can_post_messages,
                 can_edit_messages: raw.can_edit_messages,
                 can_delete_messages: required!(can_delete_messages),
@@ -74,7 +75,10 @@ impl<'de> Deserialize<'de> for ChatMember {
                 can_pin_messages: raw.can_pin_messages,
                 can_promote_members: required!(can_promote_members),
             }),
-            RawChatMemberStatus::Creator => ChatMember::Creator(raw.user),
+            RawChatMemberStatus::Creator => ChatMember::Creator(ChatMemberCreator {
+                user: raw.user,
+                custom_title: raw.custom_title,
+            }),
             RawChatMemberStatus::Kicked => ChatMember::Kicked(ChatMemberKicked {
                 user: raw.user,
                 until_date: required!(until_date),
@@ -98,6 +102,14 @@ impl<'de> Deserialize<'de> for ChatMember {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct ChatMemberCreator {
+    /// Information about the user
+    pub user: User,
+    /// Custom title for this user
+    pub custom_title: Option<String>,
+}
+
 /// Chat admin
 #[derive(Clone, Debug)]
 pub struct ChatMemberAdministrator {
@@ -109,6 +121,8 @@ pub struct ChatMemberAdministrator {
     /// True, if the administrator can change
     /// the chat title, photo and other settings
     pub can_change_info: bool,
+    /// Custom title for this user
+    pub custom_title: Option<String>,
     /// True, if the administrator can post
     /// in the channel, channels only
     pub can_post_messages: Option<bool>,
@@ -192,6 +206,7 @@ mod tests {
                 "username": "username",
                 "language_code": "RU"
             },
+            "custom_title": "god",
             "can_be_edited": true,
             "can_change_info": false,
             "can_post_messages": true,
@@ -212,6 +227,7 @@ mod tests {
             assert_eq!(admin.user.last_name.take().unwrap(), "lastname");
             assert_eq!(admin.user.username.take().unwrap(), "username");
             assert_eq!(admin.user.language_code.take().unwrap(), "RU");
+            assert_eq!(admin.custom_title.take().unwrap(), "god");
             assert_eq!(admin.can_be_edited, true);
             assert_eq!(admin.can_change_info, false);
             assert_eq!(admin.can_post_messages, Some(true));
@@ -228,8 +244,9 @@ mod tests {
 
     #[test]
     fn deserialize_chat_member_creator() {
-        let creator: ChatMember = serde_json::from_value(serde_json::json!({
+        let mut creator: ChatMember = serde_json::from_value(serde_json::json!({
             "status": "creator",
+            "custom_title": "creator",
             "user": {
                 "id": 1,
                 "is_bot": false,
@@ -239,13 +256,14 @@ mod tests {
         .unwrap();
         assert!(creator.is_member());
         assert_eq!(creator.get_user().id, 1);
-        if let ChatMember::Creator(ref creator) = creator {
-            assert_eq!(creator.id, 1);
-            assert_eq!(creator.is_bot, false);
-            assert_eq!(creator.first_name, String::from("firstname"));
-            assert_eq!(creator.last_name, None);
-            assert_eq!(creator.username, None);
-            assert_eq!(creator.language_code, None);
+        if let ChatMember::Creator(ref mut creator) = creator {
+            assert_eq!(creator.user.id, 1);
+            assert_eq!(creator.user.is_bot, false);
+            assert_eq!(creator.user.first_name, String::from("firstname"));
+            assert_eq!(creator.user.last_name, None);
+            assert_eq!(creator.user.username, None);
+            assert_eq!(creator.user.language_code, None);
+            assert_eq!(creator.custom_title.take().unwrap(), "creator");
         } else {
             panic!("Unexpected chat member: {:?}", creator);
         }
