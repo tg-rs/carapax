@@ -484,6 +484,7 @@ mod tests {
             "caption": "test audio caption",
             "audio": {
                 "file_id": "AwADBAADbXXXXXXXXXXXGBdhD2l6_XX",
+                "file_unique_id": "unique-id",
                 "duration": 243
             }
         }))
@@ -496,7 +497,8 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "caption": "test document caption",
             "document": {
-                "file_id": "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA"
+                "file_id": "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA",
+                "file_unique_id": "unique-id",
             }
         }))
         .unwrap();
@@ -509,6 +511,7 @@ mod tests {
             "caption": "test photo caption",
             "photo": [{
                 "file_id": "photo-id",
+                "file_unique_id": "unique-id",
                 "width": 200,
                 "height": 200
             }]
@@ -532,6 +535,7 @@ mod tests {
             "caption": "test video caption",
             "video": {
                 "file_id": "video-id",
+                "file_unique_id": "unique-id",
                 "width": 1,
                 "height": 2,
                 "duration": 3
@@ -547,6 +551,7 @@ mod tests {
             "caption": "test voice caption",
             "voice": {
                 "file_id": "voice-id",
+                "file_unique_id": "unique-id",
                 "duration": 123
             }
         }))

@@ -4,8 +4,13 @@ use serde::Deserialize;
 /// Video file
 #[derive(Clone, Debug, Deserialize)]
 pub struct Video {
-    /// Unique identifier for this file
+    /// Identifier for this file, which can be used to download or reuse the file
     pub file_id: String,
+    /// Unique identifier for this file
+    ///
+    /// It is supposed to be the same over time and for different bots.
+    /// Can't be used to download or reuse the file.
+    pub file_unique_id: String,
     /// Video width as defined by sender
     pub width: Integer,
     /// Video height as defined by sender
@@ -28,11 +33,13 @@ mod tests {
     fn deserialize_full() {
         let data: Video = serde_json::from_value(serde_json::json!({
             "file_id": "test video file id",
+            "file_unique_id": "unique-id",
             "width": 1,
             "height": 2,
             "duration": 3,
             "thumb": {
                 "file_id": "AdddddUuUUUUccccUUmm_PPP",
+                "file_unique_id": "unique-thumb-id",
                 "width": 24,
                 "height": 24,
                 "file_size": 12324
@@ -43,12 +50,14 @@ mod tests {
         .unwrap();
 
         assert_eq!(data.file_id, "test video file id");
+        assert_eq!(data.file_unique_id, "unique-id");
         assert_eq!(data.width, 1);
         assert_eq!(data.height, 2);
         assert_eq!(data.duration, 3);
 
         let thumb = data.thumb.unwrap();
         assert_eq!(thumb.file_id, "AdddddUuUUUUccccUUmm_PPP");
+        assert_eq!(thumb.file_unique_id, "unique-thumb-id");
         assert_eq!(thumb.width, 24);
         assert_eq!(thumb.height, 24);
         assert_eq!(thumb.file_size.unwrap(), 12324);
@@ -61,6 +70,7 @@ mod tests {
     fn deserialize_partial() {
         let data: Video = serde_json::from_value(serde_json::json!({
             "file_id": "test video file id",
+            "file_unique_id": "unique-id",
             "width": 1,
             "height": 2,
             "duration": 3
@@ -68,6 +78,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(data.file_id, "test video file id");
+        assert_eq!(data.file_unique_id, "unique-id");
         assert_eq!(data.width, 1);
         assert_eq!(data.height, 2);
         assert_eq!(data.duration, 3);

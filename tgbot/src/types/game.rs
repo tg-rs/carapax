@@ -81,6 +81,7 @@ mod tests {
             "photo": [
                 {
                     "file_id": "photo file id",
+                    "file_unique_id": "photo unique file id",
                     "width": 200,
                     "height": 200
                 }
@@ -88,6 +89,7 @@ mod tests {
             "text": "text",
             "animation": {
                 "file_id": "animation file id",
+                "file_unique_id": "animation unique file id",
                 "width": 200,
                 "height": 200,
                 "duration": 24
@@ -98,8 +100,11 @@ mod tests {
         assert_eq!(game.description, "description");
         assert_eq!(game.photo.len(), 1);
         assert_eq!(game.photo[0].file_id, "photo file id");
+        assert_eq!(game.photo[0].file_unique_id, "photo unique file id");
         assert_eq!(game.text.unwrap().data, "text");
-        assert_eq!(game.animation.unwrap().file_id, "animation file id");
+        let animation = game.animation.unwrap();
+        assert_eq!(animation.file_id, "animation file id");
+        assert_eq!(animation.file_unique_id, "animation unique file id");
     }
 
     #[test]

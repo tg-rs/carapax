@@ -11,6 +11,7 @@ pub struct Forward {
 
 /// Sender of the original message
 #[derive(Clone, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum ForwardFrom {
     /// Information about user
     User(User),

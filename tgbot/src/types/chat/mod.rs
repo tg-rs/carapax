@@ -293,7 +293,9 @@ mod tests {
             "username": "channelusername",
             "photo": {
                 "small_file_id": "smallfileid",
-                "big_file_id": "bigfileid"
+                "small_file_unique_id": "smallfileuniqueid",
+                "big_file_id": "bigfileid",
+                "big_file_unique_id": "bigfileuniqueid",
             },
             "description": "channeldescription",
             "invite_link": "channelinvitelink",
@@ -315,7 +317,9 @@ mod tests {
             assert_eq!(chat.username.unwrap(), "channelusername");
             let photo = chat.photo.unwrap();
             assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.small_file_unique_id, "smallfileuniqueid");
             assert_eq!(photo.big_file_id, "bigfileid");
+            assert_eq!(photo.big_file_unique_id, "bigfileuniqueid");
             assert_eq!(chat.description.unwrap(), "channeldescription");
             assert_eq!(chat.invite_link.unwrap(), "channelinvitelink");
             assert!(chat.pinned_message.is_some());
@@ -351,7 +355,9 @@ mod tests {
             "all_members_are_administrators": true,
             "photo": {
                 "small_file_id": "smallfileid",
-                "big_file_id": "bigfileid"
+                "small_file_unique_id": "smallfileuniqueid",
+                "big_file_id": "bigfileid",
+                "big_file_unique_id": "bigfileuniqueid",
             },
             "invite_link": "groupinvitelink",
             "pinned_message": {
@@ -379,7 +385,9 @@ mod tests {
             assert!(chat.all_members_are_administrators);
             let photo = chat.photo.unwrap();
             assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.small_file_unique_id, "smallfileuniqueid");
             assert_eq!(photo.big_file_id, "bigfileid");
+            assert_eq!(photo.big_file_unique_id, "bigfileuniqueid");
             assert_eq!(chat.invite_link.unwrap(), "groupinvitelink");
             let permissions = chat.permissions.unwrap();
             assert!(permissions.can_send_messages.unwrap());
@@ -418,7 +426,9 @@ mod tests {
             "last_name": "testlastname",
             "photo": {
                 "small_file_id": "smallfileid",
-                "big_file_id": "bigfileid"
+                "small_file_unique_id": "smallfileuniqueid",
+                "big_file_id": "bigfileid",
+                "big_file_unique_id": "bigfileuniqueid",
             }
         }))
         .unwrap();
@@ -429,7 +439,9 @@ mod tests {
             assert_eq!(chat.last_name.unwrap(), "testlastname");
             let photo = chat.photo.unwrap();
             assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.small_file_unique_id, "smallfileuniqueid");
             assert_eq!(photo.big_file_id, "bigfileid");
+            assert_eq!(photo.big_file_unique_id, "bigfileuniqueid");
         } else {
             panic!("Unexpected chat: {:?}", chat)
         }
@@ -452,7 +464,7 @@ mod tests {
     }
 
     #[test]
-    fn deserialize_supergroup() {
+    fn deserialize_supergroup_full() {
         let chat: Chat = serde_json::from_value(serde_json::json!({
             "id": 1,
             "type": "supergroup",
@@ -460,7 +472,9 @@ mod tests {
             "username": "supergroupusername",
             "photo": {
                 "small_file_id": "smallfileid",
-                "big_file_id": "bigfileid"
+                "small_file_unique_id": "smallfileuniqueid",
+                "big_file_id": "bigfileid",
+                "big_file_unique_id": "bigfileuniqueid",
             },
             "description": "supergroupdescription",
             "invite_link": "supergroupinvitelink",
@@ -493,7 +507,9 @@ mod tests {
             assert_eq!(chat.username.unwrap(), "supergroupusername");
             let photo = chat.photo.unwrap();
             assert_eq!(photo.small_file_id, "smallfileid");
+            assert_eq!(photo.small_file_unique_id, "smallfileuniqueid");
             assert_eq!(photo.big_file_id, "bigfileid");
+            assert_eq!(photo.big_file_unique_id, "bigfileuniqueid");
             assert_eq!(chat.description.unwrap(), "supergroupdescription");
             assert_eq!(chat.invite_link.unwrap(), "supergroupinvitelink");
             assert_eq!(chat.sticker_set_name.unwrap(), "supergroupstickersetname");
@@ -504,7 +520,10 @@ mod tests {
         } else {
             panic!("Unexpected chat: {:?}", chat)
         }
+    }
 
+    #[test]
+    fn deserialize_supergroup_partial() {
         let chat: Chat = serde_json::from_value(serde_json::json!({
             "id": 1,
             "type": "supergroup",

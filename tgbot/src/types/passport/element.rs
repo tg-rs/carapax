@@ -3,6 +3,7 @@ use serde::{de::Error, Deserialize, Deserializer, Serialize};
 
 /// Information about documents or other Telegram Passport elements shared with the bot by the user
 #[derive(Clone, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum EncryptedPassportElement {
     /// Address
     Address(EncryptedPassportElementAddress),

@@ -11,8 +11,13 @@ use std::{fmt, io::Read, path::PathBuf};
 /// Maximum file size to download is 20 MB
 #[derive(Clone, Debug, Deserialize)]
 pub struct File {
-    /// Unique identifier for this file
+    /// Identifier for this file, which can be used to download or reuse the file
     pub file_id: String,
+    /// Unique identifier for this file
+    ///
+    /// It is supposed to be the same over time and for different bots.
+    /// Can't be used to download or reuse the file.
+    pub file_unique_id: String,
     /// File size, if known
     pub file_size: Option<Integer>,
     /// File path
@@ -187,11 +192,13 @@ mod tests {
     fn deserialize_file_full() {
         let data: File = serde_json::from_value(serde_json::json!({
             "file_id": "id",
+            "file_unique_id": "unique-id",
             "file_size": 123,
             "file_path": "path"
         }))
         .unwrap();
         assert_eq!(data.file_id, "id");
+        assert_eq!(data.file_unique_id, "unique-id");
         assert_eq!(data.file_size.unwrap(), 123);
         assert_eq!(data.file_path.unwrap(), "path");
     }
@@ -199,10 +206,12 @@ mod tests {
     #[test]
     fn deserialize_file_partial() {
         let data: File = serde_json::from_value(serde_json::json!({
-            "file_id": "id"
+            "file_id": "id",
+            "file_unique_id": "unique-id"
         }))
         .unwrap();
         assert_eq!(data.file_id, "id");
+        assert_eq!(data.file_unique_id, "unique-id");
         assert!(data.file_size.is_none());
         assert!(data.file_path.is_none());
     }

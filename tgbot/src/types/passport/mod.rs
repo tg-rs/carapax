@@ -23,8 +23,13 @@ pub struct PassportData {
 /// format when decrypted and don't exceed 10MB
 #[derive(Clone, Debug, Deserialize)]
 pub struct PassportFile {
-    /// Unique identifier for this file
+    /// Identifier for this file, which can be used to download or reuse the file
     pub file_id: String,
+    /// Unique identifier for this file
+    ///
+    /// It is supposed to be the same over time and for different bots.
+    /// Can't be used to download or reuse the file.
+    pub file_unique_id: String,
     /// File size
     pub file_size: Integer,
     /// Unix time when the file was uploaded
@@ -65,17 +70,17 @@ mod tests {
                 },
                 {
                     "type": "bank_statement",
-                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
-                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "files": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
                     "hash": "h"
                 },
                 {
                     "type": "driver_license",
                     "data": "d",
-                    "front_side": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "reverse_side": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "selfie": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "front_side": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "reverse_side": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "selfie": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "translation": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
                     "hash": "h"
                 },
                 {
@@ -86,32 +91,32 @@ mod tests {
                 {
                     "type": "identity_card",
                     "data": "d",
-                    "front_side": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "reverse_side": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "selfie": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "front_side": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "reverse_side": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "selfie": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "translation": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
                     "hash": "h"
                 },
                 {
                     "type": "internal_passport",
                     "data": "d",
-                    "front_side": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "selfie": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "front_side": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "selfie": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "translation": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
                     "hash": "h"
                 },
                 {
                     "type": "passport",
                     "data": "d",
-                    "front_side": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "selfie": {"file_id": "f", "file_size": 1, "file_date": 0},
-                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "front_side": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "selfie": {"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0},
+                    "translation": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
                     "hash": "h"
                 },
                 {
                     "type": "passport_registration",
-                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
-                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "files": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
                     "hash": "h"
                 },
                 {
@@ -126,20 +131,20 @@ mod tests {
                 },
                 {
                     "type": "rental_agreement",
-                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
-                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "files": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
                     "hash": "h"
                 },
                 {
                     "type": "temporary_registration",
-                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
-                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "files": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
                     "hash": "h"
                 },
                 {
                     "type": "utility_bill",
-                    "files": [{"file_id": "f", "file_size": 1, "file_date": 0}],
-                    "translation": [{"file_id": "f", "file_size": 1, "file_date": 0}],
+                    "files": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
+                    "translation": [{"file_id": "f", "file_unique_id": "uf", "file_size": 1, "file_date": 0}],
                     "hash": "h"
                 }
             ],
@@ -155,5 +160,4 @@ mod tests {
         assert_eq!(data.credentials.secret, String::from("s"));
         assert_eq!(data.data.len(), 13);
     }
-
 }

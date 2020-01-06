@@ -79,8 +79,13 @@ impl fmt::Display for MaskPositionError {
 /// Sticker
 #[derive(Clone, Debug, Deserialize)]
 pub struct Sticker {
-    /// Unique identifier for this file
+    /// Identifier for this file, which can be used to download or reuse the file
     pub file_id: String,
+    /// Unique identifier for this file
+    ///
+    /// It is supposed to be the same over time and for different bots.
+    /// Can't be used to download or reuse the file.
+    pub file_unique_id: String,
     /// Sticker width
     pub width: Integer,
     /// Sticker height
@@ -123,10 +128,12 @@ mod tests {
     fn deserialize_sticker_full() {
         let data: Sticker = serde_json::from_value(serde_json::json!({
             "file_id": "test file id",
+            "file_unique_id": "unique-id",
             "width": 512,
             "height": 512,
             "thumb": {
                 "file_id": "AdddddUuUUUUccccUUmm_PPP",
+                "file_unique_id": "unique-thumb-id",
                 "width": 24,
                 "height": 24,
                 "file_size": 12324
@@ -145,12 +152,14 @@ mod tests {
         .unwrap();
 
         assert_eq!(data.file_id, "test file id");
+        assert_eq!(data.file_unique_id, "unique-id");
         assert_eq!(data.width, 512);
         assert_eq!(data.height, 512);
         assert!(!data.is_animated);
 
         let thumb = data.thumb.unwrap();
         assert_eq!(thumb.file_id, "AdddddUuUUUUccccUUmm_PPP");
+        assert_eq!(thumb.file_unique_id, "unique-thumb-id");
         assert_eq!(thumb.width, 24);
         assert_eq!(thumb.height, 24);
         assert_eq!(thumb.file_size.unwrap(), 12324);
@@ -171,6 +180,7 @@ mod tests {
     fn deserialize_sticker_partial() {
         let data: Sticker = serde_json::from_value(serde_json::json!({
             "file_id": "test file id",
+            "file_unique_id": "unique-id",
             "width": 512,
             "height": 512,
             "is_animated": true
@@ -178,6 +188,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(data.file_id, "test file id");
+        assert_eq!(data.file_unique_id, "unique-id");
         assert_eq!(data.width, 512);
         assert_eq!(data.height, 512);
         assert!(data.is_animated);

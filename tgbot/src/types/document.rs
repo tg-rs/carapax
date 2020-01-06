@@ -4,8 +4,13 @@ use serde::Deserialize;
 /// General file (as opposed to photos, voice messages and audio files)
 #[derive(Clone, Debug, Deserialize)]
 pub struct Document {
-    /// Unique file identifier
+    /// Identifier for this file, which can be used to download or reuse the file
     pub file_id: String,
+    /// Unique identifier for this file
+    ///
+    /// It is supposed to be the same over time and for different bots.
+    /// Can't be used to download or reuse the file.
+    pub file_unique_id: String,
     /// Document thumbnail as defined by sender
     pub thumb: Option<PhotoSize>,
     /// Original filename as defined by sender
@@ -24,8 +29,10 @@ mod tests {
     fn deserialize_full() {
         let data: Document = serde_json::from_value(serde_json::json!({
             "file_id": "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA",
+            "file_unique_id": "unique-id",
             "thumb": {
                 "file_id": "AdddddUuUUUUccccUUmm_PPP",
+                "file_unique_id": "unique-thumb-id",
                 "width": 24,
                 "height": 24,
                 "file_size": 12324
@@ -37,9 +44,11 @@ mod tests {
         .unwrap();
 
         assert_eq!(data.file_id, "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA");
+        assert_eq!(data.file_unique_id, "unique-id");
 
         let thumb = data.thumb.unwrap();
         assert_eq!(thumb.file_id, "AdddddUuUUUUccccUUmm_PPP");
+        assert_eq!(thumb.file_unique_id, "unique-thumb-id");
         assert_eq!(thumb.width, 24);
         assert_eq!(thumb.height, 24);
         assert_eq!(thumb.file_size.unwrap(), 12324);
@@ -52,10 +61,12 @@ mod tests {
     #[test]
     fn deserialize_partial() {
         let data: Document = serde_json::from_value(serde_json::json!({
-            "file_id": "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA"
+            "file_id": "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA",
+            "file_unique_id": "unique-id"
         }))
         .unwrap();
         assert_eq!(data.file_id, "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA");
+        assert_eq!(data.file_unique_id, "unique-id");
         assert!(data.file_name.is_none());
         assert!(data.thumb.is_none());
         assert!(data.mime_type.is_none());

@@ -101,12 +101,14 @@ mod tests {
                 [
                     {
                         "file_id": "photo-1-big",
+                        "file_unique_id": "photo-1-big-unique",
                         "width": 500,
                         "height": 500,
                         "file_size": 9999
                     },
                     {
                         "file_id": "photo-1-small",
+                        "file_unique_id": "photo-1-small-unique",
                         "width": 100,
                         "height": 100,
                         "file_size": 1111
@@ -115,12 +117,14 @@ mod tests {
                 [
                     {
                         "file_id": "photo-2-big",
+                        "file_unique_id": "photo-2-big-unique",
                         "width": 500,
                         "height": 500,
                         "file_size": 9999
                     },
                     {
                         "file_id": "photo-2-small",
+                        "file_unique_id": "photo-2-small-unique",
                         "width": 100,
                         "height": 100,
                         "file_size": 1111
@@ -138,14 +142,18 @@ mod tests {
         let big = &group1[0];
         let small = &group1[1];
         assert_eq!(big.file_id, "photo-1-big");
+        assert_eq!(big.file_unique_id, "photo-1-big-unique");
         assert_eq!(small.file_id, "photo-1-small");
+        assert_eq!(small.file_unique_id, "photo-1-small-unique");
 
         let group2 = &data.photos[1];
         assert_eq!(group2.len(), 2);
         let big = &group2[0];
         let small = &group2[1];
         assert_eq!(big.file_id, "photo-2-big");
+        assert_eq!(big.file_unique_id, "photo-2-big-unique");
         assert_eq!(small.file_id, "photo-2-small");
+        assert_eq!(small.file_unique_id, "photo-2-small-unique");
     }
 
     #[test]

@@ -133,6 +133,7 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "animation": {
                 "file_id": "AwADBAADbXXXXXXXXXXXGBdhD2l6_XX",
+                "file_unique_id": "unique-id",
                 "width": 200,
                 "height": 200,
                 "duration": 243
@@ -142,6 +143,7 @@ mod tests {
         if let MessageData::Animation(data) = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "AwADBAADbXXXXXXXXXXXGBdhD2l6_XX");
+            assert_eq!(data.file_unique_id, "unique-id");
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
         }
@@ -155,6 +157,7 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "audio": {
                 "file_id": "AwADBAADbXXXXXXXXXXXGBdhD2l6_XX",
+                "file_unique_id": "unique-id",
                 "duration": 243
             }
         }))
@@ -162,6 +165,7 @@ mod tests {
         if let MessageData::Audio { data, caption } = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "AwADBAADbXXXXXXXXXXXGBdhD2l6_XX");
+            assert_eq!(data.file_unique_id, "unique-id");
             assert!(caption.is_none());
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
@@ -174,6 +178,7 @@ mod tests {
             "caption": "test audio caption",
             "audio": {
                 "file_id": "AwADBAADbXXXXXXXXXXXGBdhD2l6_XX",
+                "file_unique_id": "unique-id",
                 "duration": 243
             }
         }))
@@ -181,6 +186,7 @@ mod tests {
         if let MessageData::Audio { data, caption } = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "AwADBAADbXXXXXXXXXXXGBdhD2l6_XX");
+            assert_eq!(data.file_unique_id, "unique-id");
             assert_eq!(caption.unwrap().data, "test audio caption");
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
@@ -262,13 +268,15 @@ mod tests {
             "from": {"id": 1, "first_name": "firstname", "is_bot": false},
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "document": {
-                "file_id": "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA"
+                "file_id": "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA",
+                "file_unique_id": "unique-id",
             }
         }))
         .unwrap();
         if let MessageData::Document { data, caption } = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA");
+            assert_eq!(data.file_unique_id, "unique-id");
             assert!(caption.is_none());
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
@@ -280,13 +288,15 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "caption": "test document caption",
             "document": {
-                "file_id": "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA"
+                "file_id": "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA",
+                "file_unique_id": "unique-id",
             }
         }))
         .unwrap();
         if let MessageData::Document { data, caption } = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "SSSxmmmsmsIIsooofiiiiaiiaIII_XLA");
+            assert_eq!(data.file_unique_id, "unique-id");
             assert_eq!(caption.unwrap().data, "test document caption");
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
@@ -456,6 +466,7 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "new_chat_photo": [{
                 "file_id": "photo file id",
+                "file_unique_id": "unique-id",
                 "width": 200,
                 "height": 200
             }]
@@ -464,6 +475,7 @@ mod tests {
         if let MessageData::NewChatPhoto(photos) = msg.data {
             assert_eq!(photos.len(), 1);
             assert_eq!(photos[0].file_id, "photo file id");
+            assert_eq!(photos[0].file_unique_id, "unique-id");
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
         }
@@ -539,6 +551,7 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "photo": [{
                 "file_id": "photo-id",
+                "file_unique_id": "unique-id",
                 "width": 200,
                 "height": 200
             }]
@@ -549,6 +562,7 @@ mod tests {
             assert_eq!(data.len(), 1);
             let photo = &data[0];
             assert_eq!(photo.file_id, "photo-id");
+            assert_eq!(photo.file_unique_id, "unique-id");
             assert!(caption.is_none());
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
@@ -561,6 +575,7 @@ mod tests {
             "caption": "test photo caption",
             "photo": [{
                 "file_id": "photo-id",
+                "file_unique_id": "unique-id",
                 "width": 200,
                 "height": 200
             }]
@@ -571,6 +586,7 @@ mod tests {
             assert_eq!(data.len(), 1);
             let photo = &data[0];
             assert_eq!(photo.file_id, "photo-id");
+            assert_eq!(photo.file_unique_id, "unique-id");
             assert_eq!(caption.unwrap().data, "test photo caption");
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
@@ -610,6 +626,7 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "sticker": {
                 "file_id": "sticker-id",
+                "file_unique_id": "unique-id",
                 "width": 512,
                 "height": 512,
                 "is_animated": true
@@ -619,6 +636,7 @@ mod tests {
         if let MessageData::Sticker(data) = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "sticker-id");
+            assert_eq!(data.file_unique_id, "unique-id");
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
         }
@@ -712,6 +730,7 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "video": {
                 "file_id": "video-id",
+                "file_unique_id": "unique-id",
                 "width": 1,
                 "height": 2,
                 "duration": 3
@@ -721,6 +740,7 @@ mod tests {
         if let MessageData::Video { data, caption } = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "video-id");
+            assert_eq!(data.file_unique_id, "unique-id");
             assert!(caption.is_none());
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
@@ -733,6 +753,7 @@ mod tests {
             "caption": "test video caption",
             "video": {
                 "file_id": "video-id",
+                "file_unique_id": "unique-id",
                 "width": 1,
                 "height": 2,
                 "duration": 3
@@ -742,6 +763,7 @@ mod tests {
         if let MessageData::Video { data, caption } = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "video-id");
+            assert_eq!(data.file_unique_id, "unique-id");
             assert_eq!(caption.unwrap().data, "test video caption");
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
@@ -756,6 +778,7 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "video_note": {
                 "file_id": "video-note-id",
+                "file_unique_id": "unique-id",
                 "length": 124,
                 "duration": 1234
             }
@@ -764,6 +787,7 @@ mod tests {
         if let MessageData::VideoNote(data) = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "video-note-id");
+            assert_eq!(data.file_unique_id, "unique-id");
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
         }
@@ -777,6 +801,7 @@ mod tests {
             "chat": {"id": 1, "type": "supergroup", "title": "supergrouptitle"},
             "voice": {
                 "file_id": "voice-id",
+                "file_unique_id": "unique-id",
                 "duration": 123
             }
         }))
@@ -784,6 +809,7 @@ mod tests {
         if let MessageData::Voice { data, caption } = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "voice-id");
+            assert_eq!(data.file_unique_id, "unique-id");
             assert!(caption.is_none());
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
@@ -796,6 +822,7 @@ mod tests {
             "caption": "test voice caption",
             "voice": {
                 "file_id": "voice-id",
+                "file_unique_id": "unique-id",
                 "duration": 123
             }
         }))
@@ -803,6 +830,7 @@ mod tests {
         if let MessageData::Voice { data, caption } = msg.data {
             assert_eq!(msg.id, 1);
             assert_eq!(data.file_id, "voice-id");
+            assert_eq!(data.file_unique_id, "unique-id");
             assert_eq!(caption.unwrap().data, "test voice caption");
         } else {
             panic!("Unexpected message data: {:?}", msg.data);
