@@ -1,7 +1,7 @@
 #![warn(missing_docs)]
 //! A session utilities for carapax
 use carapax::{
-    types::{Message, Update},
+    types::{CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update},
     Command,
 };
 use seance::backend::SessionBackend;
@@ -75,5 +75,35 @@ impl From<&Message> for SessionId {
 impl From<&Command> for SessionId {
     fn from(command: &Command) -> SessionId {
         SessionId::from(command.get_message())
+    }
+}
+
+impl From<&InlineQuery> for SessionId {
+    fn from(inline_query: &InlineQuery) -> SessionId {
+        SessionId(inline_query.from.id.to_string())
+    }
+}
+
+impl From<&ChosenInlineResult> for SessionId {
+    fn from(chosen_inline_result: &ChosenInlineResult) -> SessionId {
+        SessionId(chosen_inline_result.from.id.to_string())
+    }
+}
+
+impl From<&CallbackQuery> for SessionId {
+    fn from(callback_query: &CallbackQuery) -> SessionId {
+        SessionId(callback_query.from.id.to_string())
+    }
+}
+
+impl From<&ShippingQuery> for SessionId {
+    fn from(shipping_query: &ShippingQuery) -> SessionId {
+        SessionId(shipping_query.from.id.to_string())
+    }
+}
+
+impl From<&PreCheckoutQuery> for SessionId {
+    fn from(pre_checkout_query: &PreCheckoutQuery) -> SessionId {
+        SessionId(pre_checkout_query.from.id.to_string())
     }
 }
