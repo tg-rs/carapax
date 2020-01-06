@@ -80,6 +80,7 @@ impl<'de> Deserialize<'de> for Chat {
                 sticker_set_name: raw_chat.sticker_set_name,
                 can_set_sticker_set: raw_chat.can_set_sticker_set,
                 permissions: raw_chat.permissions,
+                slow_mode_delay: raw_chat.slow_mode_delay,
             }),
         })
     }
@@ -195,6 +196,10 @@ pub struct SupergroupChat {
     ///
     /// Returned only in getChat
     pub permissions: Option<ChatPermissions>,
+    /// The minimum allowed delay between consecutive messages sent by each unpriviledged user
+    ///
+    /// Returned only in getChat
+    pub slow_mode_delay: Option<Integer>,
 }
 
 /// Chat ID or username
@@ -480,6 +485,7 @@ mod tests {
             "invite_link": "supergroupinvitelink",
             "sticker_set_name": "supergroupstickersetname",
             "can_set_sticker_set": true,
+            "slow_mode_delay": 10,
             "permissions": {
                 "can_send_messages": true
             },
@@ -513,6 +519,7 @@ mod tests {
             assert_eq!(chat.description.unwrap(), "supergroupdescription");
             assert_eq!(chat.invite_link.unwrap(), "supergroupinvitelink");
             assert_eq!(chat.sticker_set_name.unwrap(), "supergroupstickersetname");
+            assert_eq!(chat.slow_mode_delay.unwrap(), 10);
             assert!(chat.can_set_sticker_set.unwrap());
             assert!(chat.pinned_message.is_some());
             let permissions = chat.permissions.unwrap();

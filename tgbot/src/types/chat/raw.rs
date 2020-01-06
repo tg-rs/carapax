@@ -23,6 +23,7 @@ pub struct RawChat {
     pub sticker_set_name: Option<String>,
     pub can_set_sticker_set: Option<bool>,
     pub permissions: Option<ChatPermissions>,
+    pub slow_mode_delay: Option<Integer>,
 }
 
 #[derive(Debug, Deserialize)]
