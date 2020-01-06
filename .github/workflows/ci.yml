@@ -28,8 +28,15 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
-            - run: rustup component add clippy
-            - uses: actions-rs/clippy-check@v1
+            - name: Install toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
+                  override: true
+                  components: clippy
+            - name: cargo clippy
+              uses: actions-rs/clippy-check@v1
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   args: --all-targets --all-features -- -D warnings
