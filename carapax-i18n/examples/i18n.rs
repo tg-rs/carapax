@@ -1,5 +1,5 @@
 use carapax::{handler, longpoll::LongPoll, methods::SendMessage, types::Update, Api, Config, Dispatcher};
-use carapax_i18n::{Catalog, Translator, TranslatorStore, UserLocaleResolver};
+use carapax_i18n::{Catalog, Translator, TranslatorStore};
 use dotenv::dotenv;
 use env_logger;
 use std::env;
@@ -9,7 +9,7 @@ const EN: &[u8] = include_bytes!("../data/en.mo");
 
 struct Context {
     api: Api,
-    translators: TranslatorStore<UserLocaleResolver>,
+    translators: TranslatorStore,
 }
 
 #[handler]
@@ -42,7 +42,7 @@ async fn main() {
     let api = Api::new(config).expect("Failed to create API");
     let en = Translator::new("en", Catalog::parse(EN).unwrap());
     let ru = Translator::new("ru", Catalog::parse(RU).unwrap());
-    let translators = TranslatorStore::new(UserLocaleResolver, en).add_translator(ru);
+    let translators = TranslatorStore::new(en).add_translator(ru);
     let mut dispatcher = Dispatcher::new(Context {
         api: api.clone(),
         translators,
