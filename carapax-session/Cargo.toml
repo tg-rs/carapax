@@ -15,12 +15,12 @@ fs-backend = ["seance/fs-backend"]
 
 [dependencies]
 carapax = { path = "../carapax" }
-seance = "0.2.0"
-tokio = { version = "0.2.6", default-features = false, features = ["sync"] }
+seance = "0.2"
+tokio = { version = "0.2", default-features = false, features = ["sync"] }
 
 [dev-dependencies]
-dotenv = "0.15.0"
-env_logger = "0.7.1"
-log = "0.4.8"
-tempfile = "3.1.0"
-tokio = { version = "0.2.6", default-features = false, features = ["sync", "macros"] }
+dotenv = "0.15"
+env_logger = "0.7"
+log = "0.4"
+tempfile = "3.1"
+tokio = { version = "0.2", default-features = false, features = ["sync", "macros"] }
