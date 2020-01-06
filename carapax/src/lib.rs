@@ -26,7 +26,7 @@ pub use tgbot::{
 /// use carapax::{types::Update, handler};
 ///
 /// #[handler]
-/// async fn handle_update(context: &mut (), update: Update) {
+/// async fn handle_update(context: &(), update: Update) {
 ///     println!("Got update: {:?}", update);
 /// }
 /// ```
@@ -38,7 +38,7 @@ pub use tgbot::{
 /// use carapax::{Command, handler};
 ///
 /// #[handler(command = "/start")]
-/// async fn handle_start(context: &mut (), command: Command) {
+/// async fn handle_start(context: &(), command: Command) {
 ///     println!("Got command: {:?}", command);
 /// }
 /// ```

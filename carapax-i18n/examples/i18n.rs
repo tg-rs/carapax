@@ -13,7 +13,7 @@ struct Context {
 }
 
 #[handler]
-async fn update_handler(context: &mut Context, update: Update) {
+async fn update_handler(context: &Context, update: Update) {
     let translator = context.translators.get_translator(&update);
     println!("GOT UPDATE: {:?}; LOCALE: {:?}", update, translator.get_locale());
     context

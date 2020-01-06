@@ -148,7 +148,7 @@ pub(super) fn build(meta: HandlerMeta, args: Option<HandlerArgs>) -> TokenStream
             type Output = #output;
             async fn handle(
                 &mut self,
-                context: &mut #context,
+                context: &#context,
                 input: Self::Input
             ) -> Self::Output {
                 #inner_call

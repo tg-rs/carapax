@@ -4,13 +4,13 @@ use carapax::{
 use dotenv::dotenv;
 use std::{convert::Infallible, env};
 
-async fn is_ping(_api: &mut Api, message: &Message) -> Result<bool, Infallible> {
+async fn is_ping(_api: &Api, message: &Message) -> Result<bool, Infallible> {
     Ok(message.get_text().map(|text| text.data == "ping").unwrap_or(false))
 }
 
 // Handler will not run if message text not equals "ping"
 #[handler(predicate=is_ping)]
-async fn pingpong_handler(api: &mut Api, message: Message) -> Result<(), ExecuteError> {
+async fn pingpong_handler(api: &Api, message: Message) -> Result<(), ExecuteError> {
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, "pong");
     api.execute(method).await?;

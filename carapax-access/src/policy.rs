@@ -7,7 +7,7 @@ use carapax::{async_trait, types::Update};
 #[async_trait]
 pub trait AccessPolicy<C> {
     /// Return true if update is allowed and false otherwise
-    async fn is_granted(&mut self, context: &mut C, update: &Update) -> bool;
+    async fn is_granted(&mut self, context: &C, update: &Update) -> bool;
 }
 
 /// In-memory access policy
@@ -40,9 +40,9 @@ impl InMemoryAccessPolicy {
 #[async_trait]
 impl<C> AccessPolicy<C> for InMemoryAccessPolicy
 where
-    C: Send,
+    C: Send + Sync,
 {
-    async fn is_granted(&mut self, _context: &mut C, update: &Update) -> bool {
+    async fn is_granted(&mut self, _context: &C, update: &Update) -> bool {
         let mut result = false;
         for rule in &self.rules {
             if rule.accepts(&update) {
@@ -72,7 +72,7 @@ mod tests {
                     let mut policy = InMemoryAccessPolicy::new(rules);
                     for (flag, update) in $updates {
                         let update: Update = serde_json::from_value(update).unwrap();
-                        let is_granted = policy.is_granted(&mut (), &update).await;
+                        let is_granted = policy.is_granted(&(), &update).await;
                         assert_eq!(is_granted, flag);
                     }
                 }

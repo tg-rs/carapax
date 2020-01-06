@@ -18,7 +18,7 @@ pub struct CommandDispatcher<C> {
 
 impl<C> CommandDispatcher<C>
 where
-    C: Send,
+    C: Send + Sync,
 {
     /// Registers a command handler
     ///
@@ -46,12 +46,12 @@ where
 #[async_trait]
 impl<C> Handler<C> for CommandDispatcher<C>
 where
-    C: Send,
+    C: Send + Sync,
 {
     type Input = Command;
     type Output = HandlerResult;
 
-    async fn handle(&mut self, context: &mut C, input: Self::Input) -> Self::Output {
+    async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
         match self.handlers.get_mut(input.get_name()) {
             Some(handler) => handler.handle(context, input).await,
             None => match self.not_found_handler {
@@ -73,13 +73,13 @@ impl<H> ConvertHandler<H> {
 #[async_trait]
 impl<C, H> Handler<C> for ConvertHandler<H>
 where
-    C: Send,
+    C: Send + Sync,
     H: Handler<C, Input = Command> + Send,
 {
     type Input = Command;
     type Output = HandlerResult;
 
-    async fn handle(&mut self, context: &mut C, input: Self::Input) -> Self::Output {
+    async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
         self.0.handle(context, input).await.into()
     }
 }
@@ -192,6 +192,7 @@ impl TryFromUpdate for Command {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::sync::Mutex;
 
     fn create_command(command: &str) -> Command {
         let len = command.split_whitespace().next().unwrap().len();
@@ -225,7 +226,7 @@ mod tests {
         assert_eq!(command.get_update().id, 1);
     }
 
-    type Commands = Vec<String>;
+    type Commands = Mutex<Vec<String>>;
 
     struct MockHandler;
 
@@ -234,21 +235,22 @@ mod tests {
         type Input = Command;
         type Output = ();
 
-        async fn handle(&mut self, context: &mut Commands, input: Self::Input) -> Self::Output {
-            context.push(input.get_name().to_string());
+        async fn handle(&mut self, context: &Commands, input: Self::Input) -> Self::Output {
+            context.lock().await.push(input.get_name().to_string());
         }
     }
 
     #[tokio::test]
     async fn dispatch() {
-        let mut context = Commands::new();
+        let context = Mutex::new(Vec::new());
         let mut dispatcher = CommandDispatcher::default();
         dispatcher.add_handler("/start", MockHandler);
         dispatcher.set_not_found_handler(MockHandler);
         let command = create_command("/start arg1");
-        dispatcher.handle(&mut context, command).await;
+        dispatcher.handle(&context, command).await;
         let command = create_command("/notfound");
-        dispatcher.handle(&mut context, command).await;
+        dispatcher.handle(&context, command).await;
+        let context = context.lock().await;
         assert_eq!(context.len(), 2);
         assert!(context.contains(&String::from("/start")));
         assert!(context.contains(&String::from("/notfound")));

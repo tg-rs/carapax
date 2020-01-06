@@ -15,7 +15,7 @@ struct Context {
 }
 
 #[handler(command = "/set")]
-async fn handle_set(context: &mut Context, command: Command) -> HandlerResult {
+async fn handle_set(context: &Context, command: Command) -> HandlerResult {
     log::info!("got a command: {:?}\n", command);
     let message = command.get_message();
     let chat_id = message.get_chat_id();
@@ -42,7 +42,7 @@ async fn handle_set(context: &mut Context, command: Command) -> HandlerResult {
 }
 
 #[handler(command = "/expire")]
-async fn handle_expire(context: &mut Context, command: Command) -> HandlerResult {
+async fn handle_expire(context: &Context, command: Command) -> HandlerResult {
     log::info!("got a command: {:?}\n", command);
     let message = command.get_message();
     let chat_id = message.get_chat_id();
@@ -69,7 +69,7 @@ async fn handle_expire(context: &mut Context, command: Command) -> HandlerResult
 }
 
 #[handler(command = "/reset")]
-async fn handle_reset(context: &mut Context, command: Command) -> HandlerResult {
+async fn handle_reset(context: &Context, command: Command) -> HandlerResult {
     log::info!("got a command: {:?}\n", command);
     let message = command.get_message();
     let chat_id = message.get_chat_id();
@@ -80,7 +80,7 @@ async fn handle_reset(context: &mut Context, command: Command) -> HandlerResult 
 }
 
 #[handler]
-async fn handle_update(context: &mut Context, update: Update) -> HandlerResult {
+async fn handle_update(context: &Context, update: Update) -> HandlerResult {
     let message = update.get_message().unwrap();
     log::info!("got a message: {:?}\n", message);
     let chat_id = message.get_chat_id();
