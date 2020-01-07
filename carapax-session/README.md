@@ -12,7 +12,7 @@ Session handler for [carapax](https://github.com/tg-rs/tg-rs/tree/master/carapax
 
 ```toml
 [dependencies]
-carapax-session = { version = "0.1", features = ["redis-store", "fs-store"] }
+carapax-session = { version = "0.2", features = ["redis-backend", "fs-backend"] }
 ```
 
 # Example

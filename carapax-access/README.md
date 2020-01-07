@@ -12,7 +12,7 @@ Access handler for [carapax](https://github.com/tg-rs/tg-rs/tree/master/carapax)
 
 ```toml
 [dependencies]
-carapax-access = "0.1"
+carapax-access = "0.2"
 ```
 
 # Example

@@ -12,7 +12,7 @@ An i18n utilities for [carapax](https://github.com/tg-rs/tg-rs/tree/master/carap
 
 ```toml
 [dependencies]
-carapax-i18n = "0.1"
+carapax-i18n = "0.2"
 ```
 
 # Example

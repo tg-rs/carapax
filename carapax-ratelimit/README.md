@@ -12,7 +12,7 @@ Rate limit handler for [carapax](https://github.com/tg-rs/tg-rs/tree/master/cara
 
 ```toml
 [dependencies]
-carapax-ratelimit = "0.1"
+carapax-ratelimit = "0.2"
 ```
 
 # Example

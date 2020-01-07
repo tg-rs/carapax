@@ -12,7 +12,7 @@ A Telegram Bot library
 
 ```toml
 [dependencies]
-tgbot = "0.4"
+tgbot = "0.5"
 ```
 
 # Example
