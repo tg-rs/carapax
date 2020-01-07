@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 (07.01.2020)
+
+- Added async/await support.
+- Removed App struct, use Dispatcher instead.
+- Function handlers can be implemented using proc macro only.
+- Now context is global and generic.
+- Added Error variant to HandlerResult.
+- Removed CommandHandler trait in favor of Command struct.
+- Removed TextRule-based handlers.
+
 ## 0.2.0 (07.05.2019)
 
 - `App::new()` now takes no arguments.

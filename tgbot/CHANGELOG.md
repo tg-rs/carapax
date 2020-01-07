@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 (07.01.2020)
+
+- Added async/await support.
+- Added Bot API 4.5 support.
+- Added rustls support.
+- Fixed some errors when parsing update.
+- Temporarily disabled socks proxy support.
+
 ## 0.4.4 (31.07.2019)
 
 - Added Bot API 4.4 support.
