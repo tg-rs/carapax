@@ -25,12 +25,12 @@ impl DirectRateLimitHandler {
 #[async_trait]
 impl<C> Handler<C> for DirectRateLimitHandler
 where
-    C: Send,
+    C: Send + Sync,
 {
     type Input = Update;
     type Output = HandlerResult;
 
-    async fn handle(&mut self, _context: &mut C, _update: Self::Input) -> Self::Output {
+    async fn handle(&mut self, _context: &C, _update: Self::Input) -> Self::Output {
         if self.limiter.lock().await.check().is_ok() {
             HandlerResult::Continue
         } else {
@@ -61,7 +61,7 @@ mod tests {
         let mut handler = DirectRateLimitHandler::new(nonzero!(1u32), Duration::from_secs(1000));
         let mut results = Vec::new();
         for _ in 0..10 {
-            results.push(handler.handle(&mut (), update.clone()).await)
+            results.push(handler.handle(&(), update.clone()).await)
         }
         assert!(results.into_iter().any(|x| match x {
             HandlerResult::Stop => true,

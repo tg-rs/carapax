@@ -18,13 +18,13 @@ impl<P> AccessHandler<P> {
 #[async_trait]
 impl<C, P> Handler<C> for AccessHandler<P>
 where
-    C: Send,
+    C: Send + Sync,
     P: AccessPolicy<C> + Send + Sync,
 {
     type Input = Update;
     type Output = HandlerResult;
 
-    async fn handle(&mut self, context: &mut C, update: Self::Input) -> Self::Output {
+    async fn handle(&mut self, context: &C, update: Self::Input) -> Self::Output {
         if self.policy.is_granted(context, &update).await {
             HandlerResult::Continue
         } else {
@@ -48,9 +48,10 @@ mod tests {
         }
     }
 
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     #[async_trait]
     impl AccessPolicy<()> for Policy {
-        async fn is_granted(&mut self, _context: &mut (), _update: &Update) -> bool {
+        async fn is_granted(&mut self, _context: &(), _update: &Update) -> bool {
             self.flag
         }
     }
@@ -73,14 +74,14 @@ mod tests {
 
         let policy = Policy::new(true);
         let mut handler = AccessHandler::new(policy);
-        match handler.handle(&mut (), update.clone()).await {
+        match handler.handle(&(), update.clone()).await {
             HandlerResult::Continue => { /*ok*/ }
             result => panic!("Unexpected handler result: {:?}", result),
         }
 
         let policy = Policy::new(false);
         let mut handler = AccessHandler::new(policy);
-        match handler.handle(&mut (), update).await {
+        match handler.handle(&(), update).await {
             HandlerResult::Stop => { /*ok*/ }
             result => panic!("Unexpected handler result: {:?}", result),
         }

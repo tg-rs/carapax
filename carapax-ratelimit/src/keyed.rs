@@ -179,13 +179,13 @@ impl RateLimitKey for RateLimitList {
 #[async_trait]
 impl<C, K> Handler<C> for KeyedRateLimitHandler<K>
 where
-    C: Send,
+    C: Send + Sync,
     K: RateLimitKey + Send + Sync,
 {
     type Input = Update;
     type Output = HandlerResult;
 
-    async fn handle(&mut self, _context: &mut C, update: Self::Input) -> Self::Output {
+    async fn handle(&mut self, _context: &C, update: Self::Input) -> Self::Output {
         let should_pass = if let Some(key) = self.key.get_key(&update) {
             let mut limiter = self.limiter.lock().await;
             limiter.check(key).is_ok()
@@ -221,7 +221,7 @@ mod tests {
         let mut results = Vec::new();
         let mut handler = KeyedRateLimitHandler::new(limit_all_users, true, nonzero!(1u32), Duration::from_secs(1000));
         for _ in 0..10 {
-            results.push(handler.handle(&mut (), update.clone()).await);
+            results.push(handler.handle(&(), update.clone()).await);
         }
         assert!(results.into_iter().any(|x| match x {
             HandlerResult::Stop => true,
@@ -249,7 +249,7 @@ mod tests {
                 nonzero!(1u32),
                 Duration::from_secs(1000),
             );
-            let result = handler.handle(&mut (), update.clone()).await;
+            let result = handler.handle(&(), update.clone()).await;
             match result {
                 HandlerResult::Continue => assert_eq!(*on_missing, true),
                 HandlerResult::Stop => assert_eq!(*on_missing, false),

@@ -2,7 +2,6 @@ use crate::handler::{ConvertHandler, Handler, HandlerError, HandlerResult};
 use async_trait::async_trait;
 use std::sync::Arc;
 use tgbot::{types::Update, UpdateHandler};
-use tokio::sync::Mutex;
 
 type BoxedHandler<C> = Box<dyn Handler<C, Input = Update, Output = HandlerResult> + Send>;
 type BoxedErrorHandler = Box<dyn ErrorHandler + Send>;
@@ -10,13 +9,13 @@ type BoxedErrorHandler = Box<dyn ErrorHandler + Send>;
 /// A Telegram Update dispatcher
 pub struct Dispatcher<C> {
     handlers: Vec<BoxedHandler<C>>,
-    context: Arc<Mutex<C>>,
+    context: Arc<C>,
     error_handler: Option<BoxedErrorHandler>,
 }
 
 impl<C> Dispatcher<C>
 where
-    C: Send + 'static,
+    C: Send + Sync,
 {
     /// Creates a new Dispatcher
     ///
@@ -25,7 +24,7 @@ where
     /// * context - Context passed to each handler
     pub fn new(context: C) -> Self {
         Self {
-            context: Arc::new(Mutex::new(context)),
+            context: Arc::new(context),
             handlers: Vec::new(),
             error_handler: None,
         }
@@ -37,15 +36,15 @@ where
     pub fn add_handler<H>(&mut self, handler: H)
     where
         H: Handler<C> + Send + 'static,
+        H::Input: 'static,
     {
         self.handlers.push(ConvertHandler::boxed(handler))
     }
 
     pub(crate) async fn dispatch(&mut self, update: Update) {
         let context = self.context.clone();
-        let mut context = context.lock().await;
         for handler in &mut self.handlers {
-            let result = handler.handle(&mut context, update.clone()).await;
+            let result = handler.handle(&context, update.clone()).await;
             match result {
                 HandlerResult::Continue => { /* noop */ }
                 HandlerResult::Stop => {
@@ -73,7 +72,7 @@ where
 #[async_trait]
 impl<C> UpdateHandler for Dispatcher<C>
 where
-    C: Send + 'static,
+    C: Send + Sync,
 {
     async fn handle(&mut self, update: Update) {
         self.dispatch(update).await
@@ -108,8 +107,9 @@ pub enum ErrorPolicy {
 mod tests {
     use super::*;
     use std::{error::Error, fmt};
+    use tokio::sync::Mutex;
 
-    type Updates = Vec<Update>;
+    type Updates = Mutex<Vec<Update>>;
 
     struct HandlerMock {
         result: Option<HandlerResult>,
@@ -138,8 +138,8 @@ mod tests {
         type Input = Update;
         type Output = HandlerResult;
 
-        async fn handle(&mut self, context: &mut Updates, input: Self::Input) -> Self::Output {
-            context.push(input);
+        async fn handle(&mut self, context: &Updates, input: Self::Input) -> Self::Output {
+            context.lock().await.push(input);
             self.result.take().unwrap()
         }
     }
@@ -173,7 +173,7 @@ mod tests {
     async fn dispatch() {
         macro_rules! assert_dispatch {
             ($count:expr, $($handler:expr),*) => {{
-                let updates = Updates::new();
+                let updates = Mutex::new(Vec::new());
                 let mut dispatcher = Dispatcher::new(updates);
                 $(dispatcher.add_handler($handler);)*
                 let update = create_update();

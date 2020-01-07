@@ -11,8 +11,9 @@ use dotenv::dotenv;
 use env_logger;
 use std::{env, time::Duration};
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 #[handler]
-async fn handle_message(_context: &mut (), message: Message) {
+async fn handle_message(_context: &(), message: Message) {
     log::info!("Got a new message: {:?}", message);
 }
 
