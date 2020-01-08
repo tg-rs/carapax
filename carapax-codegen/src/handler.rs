@@ -2,10 +2,11 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{
     parse::{Parse, ParseStream},
-    FnArg, Ident, ItemFn, LitStr, Path, Result as SynResult, ReturnType, Token, Type,
+    FnArg, Ident, ItemFn, LitStr, Path, Result as SynResult, ReturnType, Token, Type, Visibility,
 };
 
 pub(super) struct HandlerMeta {
+    vis: Visibility,
     ident: Ident,
     ident_inner: Ident,
     handler: ItemFn,
@@ -32,10 +33,12 @@ impl Parse for HandlerMeta {
             ReturnType::Default => None,
             ReturnType::Type(_, output) => Some(output.clone()),
         };
+        let vis = handler.vis.clone();
         let ident = handler.sig.ident.clone();
         let ident_inner = Ident::new(&format!("__carapax_{}", ident), Span::call_site());
         handler.sig.ident = ident_inner.clone();
         Ok(HandlerMeta {
+            vis,
             handler,
             ident,
             ident_inner,
@@ -99,6 +102,7 @@ impl Parse for HandlerArgs {
 
 pub(super) fn build(meta: HandlerMeta, args: Option<HandlerArgs>) -> TokenStream {
     let HandlerMeta {
+        vis,
         ident,
         ident_inner,
         handler,
@@ -141,7 +145,7 @@ pub(super) fn build(meta: HandlerMeta, args: Option<HandlerArgs>) -> TokenStream
     quote! {
         #handler
         #[allow(non_camel_case_types)]
-        struct #ident;
+        #vis struct #ident;
         #[::carapax::async_trait]
         impl ::carapax::Handler<#context> for #ident {
             type Input = #input;
