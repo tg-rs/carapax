@@ -20,6 +20,14 @@ impl<C> CommandDispatcher<C>
 where
     C: Send + Sync,
 {
+    /// Creates a new handler
+    pub fn new() -> Self {
+        Self {
+            handlers: HashMap::new(),
+            not_found_handler: None,
+        }
+    }
+
     /// Registers a command handler
     ///
     /// # Arguments
