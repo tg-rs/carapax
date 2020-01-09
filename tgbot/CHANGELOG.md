@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1 (10.01.2020)
+
+- Return socks proxy support.
+- Deprecate some RestrictChatMember methods (to be removed in 0.6.0)
+
 ## 0.5.0 (07.01.2020)
 
 - Added async/await support.
