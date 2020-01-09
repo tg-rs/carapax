@@ -300,13 +300,12 @@ mod tests {
 
     #[test]
     fn config() {
-        // TODO: test socks when reqwest feature will be available
-        let config = Config::new("token");
-        // .proxy("socks5://user:password@127.0.0.1:1234")
-        // .unwrap();
+        let config = Config::new("token")
+            .proxy("socks5://user:password@127.0.0.1:1234")
+            .unwrap();
         assert_eq!(config.token, "token");
         assert_eq!(config.host, DEFAULT_HOST);
-        // assert!(config.proxy.is_some());
+        assert!(config.proxy.is_some());
 
         let config = Config::new("token")
             .host("https://example.com")
