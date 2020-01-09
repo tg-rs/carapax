@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 (10.01.2020)
+
+- Added `CommandDispatcher::new()` method in order to support context without Default impl.
+- Fixed handler visibility when using proc macro.
+
 ## 0.3.0 (07.01.2020)
 
 - Added async/await support.
