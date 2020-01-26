@@ -51,6 +51,13 @@ pub struct ResponseError {
     pub parameters: Option<ResponseParameters>,
 }
 
+impl ResponseError {
+    /// Whether request can be repeated
+    pub fn can_retry(&self) -> bool {
+        self.parameters.map(|x| x.retry_after.is_some()).unwrap_or(false)
+    }
+}
+
 impl StdError for ResponseError {}
 
 impl fmt::Display for ResponseError {
@@ -128,6 +135,7 @@ mod tests {
         if let Response::Error(err) = error {
             assert_eq!(err.description, String::from("test err"));
             assert_eq!(err.error_code.unwrap(), 1);
+            assert!(err.can_retry());
             let params = err.parameters.unwrap();
             assert_eq!(params.migrate_to_chat_id.unwrap(), 2);
             assert_eq!(params.retry_after.unwrap(), 3);
@@ -142,6 +150,7 @@ mod tests {
         .unwrap();
         if let Response::Error(err) = error {
             assert_eq!(err.description, String::from("test err"));
+            assert!(!err.can_retry());
             assert!(err.error_code.is_none());
             assert!(err.parameters.is_none());
         } else {
