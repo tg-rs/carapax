@@ -1,6 +1,25 @@
 use crate::types::{photo_size::PhotoSize, primitive::Integer};
 use serde::Deserialize;
 
+/// A Bot info returned in getMe
+#[derive(Clone, Debug, Deserialize, PartialEq, PartialOrd)]
+pub struct Me {
+    /// Unique identifier of this bot
+    pub id: Integer,
+    /// Bot's username
+    pub username: String,
+    /// Bot's first name
+    pub first_name: String,
+    /// Bot's last name
+    pub last_name: Option<String>,
+    /// True, if the bot can be invited to groups
+    pub can_join_groups: bool,
+    /// True, if privacy mode is disabled for the bot
+    pub can_read_all_group_messages: bool,
+    /// True, if the bot supports inline queries
+    pub supports_inline_queries: bool,
+}
+
 /// Telegram user or bot
 #[derive(Clone, Debug, Deserialize, PartialEq, PartialOrd)]
 pub struct User {
@@ -57,6 +76,28 @@ impl From<Integer> for UserId {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn deserialize_me() {
+        let data: Me = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "is_bot": true,
+            "first_name": "Loo",
+            "last_name": "Maclin",
+            "username": "loomaclinbot",
+            "can_join_groups": true,
+            "can_read_all_group_messages": true,
+            "supports_inline_queries": false
+        }))
+        .unwrap();
+        assert_eq!(data.id, 1);
+        assert_eq!(data.first_name, "Loo");
+        assert_eq!(data.last_name.unwrap(), "Maclin");
+        assert_eq!(data.username, "loomaclinbot");
+        assert!(data.can_join_groups);
+        assert!(data.can_read_all_group_messages);
+        assert!(!data.supports_inline_queries);
+    }
 
     #[test]
     fn deserialize_user_full() {

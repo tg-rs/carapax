@@ -1,11 +1,11 @@
-use crate::{methods::Method, request::Request, types::User};
+use crate::{methods::Method, request::Request, types::Me};
 
-/// Returns basic information about the bot in form of a User object
+/// Returns basic information about the bot
 #[derive(Clone, Copy, Debug)]
 pub struct GetMe;
 
 impl Method for GetMe {
-    type Response = User;
+    type Response = Me;
 
     fn into_request(self) -> Request {
         Request::empty("getMe")
