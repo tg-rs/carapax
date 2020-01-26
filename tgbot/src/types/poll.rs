@@ -1,5 +1,5 @@
 use crate::types::primitive::Integer;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Contains information about a poll
 #[derive(Clone, Debug, Deserialize)]
@@ -21,6 +21,18 @@ pub struct PollOption {
     pub text: String,
     /// Number of users that voted for this option
     pub voter_count: Integer,
+}
+
+/// Kind of a native poll
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PollKind {
+    /// Quiz Mode
+    ///
+    /// Such polls have one correct answer
+    Quiz,
+    /// A regular poll
+    Regular,
 }
 
 #[cfg(test)]
