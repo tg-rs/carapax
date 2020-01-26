@@ -80,6 +80,7 @@ pub(crate) struct RawMessageEntity {
     pub length: Integer,
     pub url: Option<String>,
     pub user: Option<User>,
+    pub language: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
