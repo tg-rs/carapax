@@ -1,6 +1,7 @@
 use std::{convert::Infallible, error::Error};
 use tgbot::types::{
-    CallbackQuery, ChosenInlineResult, InlineQuery, Message, Poll, PreCheckoutQuery, ShippingQuery, Update, UpdateKind,
+    CallbackQuery, ChosenInlineResult, InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Update,
+    UpdateKind,
 };
 
 /// Allows to create an input for a handler from given update
@@ -97,6 +98,17 @@ impl TryFromUpdate for Poll {
     fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
         Ok(match update.kind {
             UpdateKind::Poll(poll) => Some(poll),
+            _ => None,
+        })
+    }
+}
+
+impl TryFromUpdate for PollAnswer {
+    type Error = Infallible;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        Ok(match update.kind {
+            UpdateKind::PollAnswer(poll_answer) => Some(poll_answer),
             _ => None,
         })
     }
@@ -275,5 +287,26 @@ mod tests {
         .unwrap();
         assert!(Update::try_from_update(update.clone()).unwrap().is_some());
         assert!(Poll::try_from_update(update).unwrap().is_some());
+    }
+
+    #[test]
+    fn poll_answer() {
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "poll_answer": {
+                    "poll_id": "poll-id",
+                    "user": {
+                        "id": 1,
+                        "first_name": "Jamie",
+                        "is_bot": false
+                    },
+                    "option_ids": [0],
+                }
+            }
+        ))
+        .unwrap();
+        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
+        assert!(PollAnswer::try_from_update(update).unwrap().is_some());
     }
 }

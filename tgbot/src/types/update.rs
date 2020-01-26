@@ -3,7 +3,7 @@ use crate::types::{
     inline_mode::{ChosenInlineResult, InlineQuery},
     message::Message,
     payments::{PreCheckoutQuery, ShippingQuery},
-    poll::Poll,
+    poll::{Poll, PollAnswer},
     primitive::Integer,
     user::User,
 };
@@ -48,6 +48,7 @@ impl Update {
             UpdateKind::ShippingQuery(ref query) => &query.from,
             UpdateKind::PreCheckoutQuery(ref query) => &query.from,
             UpdateKind::Poll(_) => return None,
+            UpdateKind::PollAnswer(ref answer) => &answer.user,
         })
     }
 
@@ -78,18 +79,28 @@ pub enum UpdateKind {
     /// New incoming inline query
     InlineQuery(InlineQuery),
     /// The result of an inline query that was chosen by a user and sent to their chat partner
+    ///
     /// Please see our documentation on the feedback collecting
     /// for details on how to enable these updates for your bot
     ChosenInlineResult(ChosenInlineResult),
     /// New incoming callback query
     CallbackQuery(CallbackQuery),
     /// New incoming shipping query
+    ///
     /// Only for invoices with flexible price
     ShippingQuery(ShippingQuery),
-    /// New incoming pre-checkout query. Contains full information about checkout
+    /// New incoming pre-checkout query
+    ///
+    /// Contains full information about checkout
     PreCheckoutQuery(PreCheckoutQuery),
-    /// New poll state. Bots receive only updates about polls, which are sent or stopped by the bot
+    /// New poll state
+    ///
+    /// Bots receive only updates about polls, which are sent or stopped by the bot
     Poll(Poll),
+    /// A user changed their answer in a non-anonymous poll
+    ///
+    /// Bots receive new votes only in polls that were sent by the bot itself
+    PollAnswer(PollAnswer),
 }
 
 impl<'de> Deserialize<'de> for Update {
@@ -120,6 +131,8 @@ impl<'de> Deserialize<'de> for Update {
                 UpdateKind::PreCheckoutQuery(data)
             } else if let Some(data) = raw.poll {
                 UpdateKind::Poll(data)
+            } else if let Some(data) = raw.poll_answer {
+                UpdateKind::PollAnswer(data)
             } else {
                 return Err(D::Error::custom("Can not detect update kind"));
             },
@@ -149,37 +162,30 @@ pub struct WebhookInfo {
 
 /// Type of update to receive
 #[derive(Debug, Deserialize, Eq, Clone, Copy, Hash, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum AllowedUpdate {
     /// Message
-    #[serde(rename = "message")]
     Message,
     /// Edited message
-    #[serde(rename = "edited_message")]
     EditedMessage,
     /// Channel post
-    #[serde(rename = "channel_post")]
     ChannelPost,
     /// Edited channel post
-    #[serde(rename = "edited_channel_post")]
     EditedChannelPost,
     /// Inline query
-    #[serde(rename = "inline_query")]
     InlineQuery,
     /// Chosen inline result
-    #[serde(rename = "chosen_inline_result")]
     ChosenInlineResult,
     /// Callback query
-    #[serde(rename = "callback_query")]
     CallbackQuery,
     /// Shipping query
-    #[serde(rename = "shipping_query")]
     ShippingQuery,
     /// Pre checkout query
-    #[serde(rename = "pre_checkout_query")]
     PreCheckoutQuery,
     /// Poll
-    #[serde(rename = "poll")]
     Poll,
+    /// Poll answer
+    PollAnswer,
 }
 
 #[derive(Debug, Deserialize)]
@@ -195,6 +201,7 @@ struct RawUpdate {
     shipping_query: Option<ShippingQuery>,
     pre_checkout_query: Option<PreCheckoutQuery>,
     poll: Option<Poll>,
+    poll_answer: Option<PollAnswer>,
 }
 
 #[cfg(test)]
@@ -541,6 +548,36 @@ mod tests {
     }
 
     #[test]
+    fn deserialize_update_poll_answer() {
+        let update: Update = serde_json::from_value(serde_json::json!({
+            "update_id": 1,
+            "poll_answer": {
+                "poll_id": "poll-id",
+                "user": {
+                    "id": 1,
+                    "first_name": "Jamie",
+                    "is_bot": false
+                },
+                "option_ids": [0],
+            }
+        }))
+        .unwrap();
+        assert!(update.get_chat_id().is_none());
+        assert!(update.get_chat_username().is_none());
+        assert!(update.get_user().is_some());
+        if let Update {
+            id,
+            kind: UpdateKind::PollAnswer(data),
+        } = update
+        {
+            assert_eq!(id, 1);
+            assert_eq!(data.poll_id, "poll-id");
+        } else {
+            panic!("Unexpected update {:?}", update);
+        }
+    }
+
+    #[test]
     fn allowed_update() {
         assert_eq!(serde_json::to_string(&AllowedUpdate::Message).unwrap(), r#""message""#);
         assert_eq!(
@@ -576,6 +613,10 @@ mod tests {
             r#""pre_checkout_query""#
         );
         assert_eq!(serde_json::to_string(&AllowedUpdate::Poll).unwrap(), r#""poll""#);
+        assert_eq!(
+            serde_json::to_string(&AllowedUpdate::PollAnswer).unwrap(),
+            r#""poll_answer""#
+        );
 
         assert_eq!(
             AllowedUpdate::Message,
@@ -616,6 +657,10 @@ mod tests {
         assert_eq!(
             AllowedUpdate::Poll,
             serde_json::from_str::<AllowedUpdate>(r#""poll""#).unwrap()
+        );
+        assert_eq!(
+            AllowedUpdate::PollAnswer,
+            serde_json::from_str::<AllowedUpdate>(r#""poll_answer""#).unwrap()
         );
     }
 

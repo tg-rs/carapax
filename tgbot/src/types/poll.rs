@@ -1,4 +1,4 @@
-use crate::types::primitive::Integer;
+use crate::types::{primitive::Integer, user::User};
 use serde::{Deserialize, Serialize};
 
 /// Contains information about a poll
@@ -50,12 +50,25 @@ pub enum PollKind {
     Regular,
 }
 
+/// An answer of a user in a non-anonymous poll
+#[derive(Clone, Debug, Deserialize)]
+pub struct PollAnswer {
+    /// Unique poll identifier
+    pub poll_id: String,
+    /// The user, who changed the answer to the poll
+    pub user: User,
+    /// 0-based identifiers of answer options, chosen by the user
+    ///
+    /// May be empty if the user retracted their vote.
+    pub option_ids: Vec<Integer>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn deserialize() {
+    fn deserialize_poll() {
         let data: Poll = serde_json::from_value(serde_json::json!({
             "id": "poll-id",
             "question": "Rust?",
@@ -85,5 +98,22 @@ mod tests {
         assert_eq!(data.kind, PollKind::Regular);
         assert!(!data.allows_multiple_answers);
         assert!(data.correct_option_id.is_none());
+    }
+
+    #[test]
+    fn deserialize_poll_answer() {
+        let data: PollAnswer = serde_json::from_value(serde_json::json!({
+            "poll_id": "poll-id",
+            "user": {
+                "id": 1,
+                "first_name": "Jamie",
+                "is_bot": false
+            },
+            "option_ids": [0],
+        }))
+        .unwrap();
+        assert_eq!(data.poll_id, "poll-id");
+        assert_eq!(data.user.id, 1);
+        assert_eq!(data.option_ids, vec![0]);
     }
 }
