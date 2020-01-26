@@ -62,37 +62,6 @@ impl RestrictChatMember {
         self.until_date = Some(until_date);
         self
     }
-
-    /// Pass True, if the user can send text messages, contacts, locations and venues
-    #[deprecated(since = "0.5.1", note = "use with_permissions instead")]
-    pub fn can_send_messages(mut self, can_send_messages: bool) -> Self {
-        self.permissions = self.permissions.with_send_messages(can_send_messages);
-        self
-    }
-
-    /// Pass True, if the user can send audios, documents, photos,
-    /// videos, video notes and voice notes, implies can_send_messages
-    #[deprecated(since = "0.5.1", note = "use with_permissions instead")]
-    pub fn can_send_media_messages(mut self, can_send_media_messages: bool) -> Self {
-        self.permissions = self.permissions.with_send_media_messages(can_send_media_messages);
-        self
-    }
-
-    /// Pass True, if the user can send animations, games, stickers and
-    /// use inline bots, implies can_send_media_messages
-    #[deprecated(since = "0.5.1", note = "use with_permissions instead")]
-    pub fn can_send_other_messages(mut self, can_send_other_messages: bool) -> Self {
-        self.permissions = self.permissions.with_send_other_messages(can_send_other_messages);
-        self
-    }
-
-    /// Pass True, if the user may add web page previews to their messages,
-    /// implies can_send_media_messages
-    #[deprecated(since = "0.5.1", note = "use with_permissions instead")]
-    pub fn can_add_web_page_previews(mut self, can_add_web_page_previews: bool) -> Self {
-        self.permissions = self.permissions.with_add_web_page_previews(can_add_web_page_previews);
-        self
-    }
 }
 
 impl Method for RestrictChatMember {
@@ -174,14 +143,16 @@ mod tests {
         }
     }
 
-    #[allow(deprecated)]
     #[test]
     fn restrict_chat_member_custom() {
         let request = RestrictChatMember::new(1, 2)
-            .can_send_messages(true)
-            .can_send_media_messages(false)
-            .can_send_other_messages(true)
-            .can_add_web_page_previews(false)
+            .with_permissions(
+                ChatPermissions::default()
+                    .with_send_messages(true)
+                    .with_send_media_messages(false)
+                    .with_send_other_messages(true)
+                    .with_add_web_page_previews(false),
+            )
             .until_date(100)
             .into_request();
         assert_eq!(request.get_method(), RequestMethod::Post);
