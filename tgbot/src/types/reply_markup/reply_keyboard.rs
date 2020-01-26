@@ -1,3 +1,4 @@
+use crate::types::poll::PollKind;
 use serde::Serialize;
 use std::ops::Not;
 
@@ -82,6 +83,8 @@ pub struct KeyboardButton {
     request_contact: bool,
     #[serde(skip_serializing_if = "Not::not")]
     request_location: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    request_poll: Option<KeyboardButtonPollType>,
 }
 
 impl KeyboardButton {
@@ -97,23 +100,66 @@ impl KeyboardButton {
             text: text.into(),
             request_contact: false,
             request_location: false,
+            request_poll: None,
         }
     }
 
     /// The user's phone number will be sent as a contact when the button is pressed
+    ///
     /// Available in private chats only
     pub fn request_contact(mut self) -> Self {
         self.request_contact = true;
         self.request_location = false;
+        self.request_poll = None;
         self
     }
 
     /// The user's current location will be sent when the button is pressed
+    ///
     /// Available in private chats only
     pub fn request_location(mut self) -> Self {
         self.request_location = true;
         self.request_contact = false;
+        self.request_poll = None;
         self
+    }
+
+    /// The user will be asked to create a poll and send it to the bot when the button is pressed
+    ///
+    /// Available in private chats only
+    ///
+    /// If quiz is passed, the user will be allowed to create only polls in the quiz mode.
+    /// If regular is passed, only regular polls will be allowed.
+    /// Otherwise, the user will be allowed to create a poll of any type.
+    pub fn request_poll<T>(mut self, button_type: T) -> Self
+    where
+        T: Into<KeyboardButtonPollType>,
+    {
+        self.request_poll = Some(button_type.into());
+        self.request_contact = false;
+        self.request_location = false;
+        self
+    }
+}
+
+/// This object represents type of a poll which is allowed to be created
+/// and sent when the corresponding button is pressed
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, PartialOrd)]
+pub struct KeyboardButtonPollType {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type")]
+    kind: Option<PollKind>,
+}
+
+impl From<PollKind> for KeyboardButtonPollType {
+    fn from(kind: PollKind) -> Self {
+        KeyboardButtonPollType { kind: Some(kind) }
+    }
+}
+
+impl From<Option<PollKind>> for KeyboardButtonPollType {
+    fn from(kind: Option<PollKind>) -> Self {
+        KeyboardButtonPollType { kind }
     }
 }
 
@@ -167,6 +213,9 @@ mod tests {
             KeyboardButton::new("test"),
             KeyboardButton::new("request contact").request_contact(),
             KeyboardButton::new("request location").request_location(),
+            KeyboardButton::new("request quiz").request_poll(PollKind::Quiz),
+            KeyboardButton::new("request regular poll").request_poll(PollKind::Regular),
+            KeyboardButton::new("request any poll").request_poll(None),
         ];
 
         let markup = ReplyKeyboardMarkup::from(vec![row.clone()])
@@ -179,9 +228,12 @@ mod tests {
             serde_json::json!({
                 "keyboard": [
                     [
-                        {"text":"test"},
-                        {"text":"request contact","request_contact":true},
-                        {"text":"request location","request_location":true}
+                        {"text": "test"},
+                        {"text": "request contact", "request_contact": true},
+                        {"text": "request location", "request_location": true},
+                        {"text": "request quiz", "request_poll": {"type": "quiz"}},
+                        {"text": "request regular poll", "request_poll": {"type": "regular"}},
+                        {"text": "request any poll", "request_poll": {}},
                     ]
                 ],
                 "resize_keyboard": true,
@@ -197,9 +249,12 @@ mod tests {
             serde_json::json!({
                 "keyboard": [
                     [
-                        {"text":"test"},
-                        {"text":"request contact","request_contact":true},
-                        {"text":"request location","request_location":true}
+                        {"text": "test"},
+                        {"text": "request contact","request_contact":true},
+                        {"text": "request location","request_location":true},
+                        {"text": "request quiz", "request_poll": {"type": "quiz"}},
+                        {"text": "request regular poll", "request_poll": {"type": "regular"}},
+                        {"text": "request any poll", "request_poll": {}},
                     ]
                 ]
             })
