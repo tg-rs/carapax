@@ -264,7 +264,11 @@ mod tests {
                         {"text": "opt 1", "voter_count": 1},
                         {"text": "opt 2", "voter_count": 2}
                     ],
-                    "is_closed": false
+                    "is_closed": false,
+                    "total_voter_count": 3,
+                    "is_anonymous": true,
+                    "type": "regular",
+                    "allows_multiple_answers": false
                 }
             }
         ))

@@ -10,8 +10,23 @@ pub struct Poll {
     pub question: String,
     /// List of poll options
     pub options: Vec<PollOption>,
+    /// Total number of users that voted in the poll
+    pub total_voter_count: Integer,
     /// True, if the poll is closed
     pub is_closed: bool,
+    /// True, if the poll is anonymous
+    pub is_anonymous: bool,
+    #[serde(rename = "type")]
+    /// Poll kind, currently can be “regular” or “quiz”
+    pub kind: PollKind,
+    /// True, if the poll allows multiple answers
+    pub allows_multiple_answers: bool,
+    /// 0-based identifier of the correct answer option
+    ///
+    /// Available only for polls in the quiz mode, which are closed,
+    /// or was sent (not forwarded) by the bot or
+    /// to the private chat with the bot
+    pub correct_option_id: Option<Integer>,
 }
 
 /// Contains information about one answer option in a poll
@@ -24,7 +39,7 @@ pub struct PollOption {
 }
 
 /// Kind of a native poll
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PollKind {
     /// Quiz Mode
@@ -48,7 +63,11 @@ mod tests {
                 {"text": "Yes", "voter_count": 1000},
                 {"text": "No", "voter_count": 0}
             ],
-            "is_closed": true
+            "is_closed": true,
+            "total_voter_count": 100,
+            "is_anonymous": true,
+            "type": "regular",
+            "allows_multiple_answers": false
         }))
         .unwrap();
         assert_eq!(data.id, "poll-id");
@@ -61,5 +80,10 @@ mod tests {
         assert_eq!(no.text, "No");
         assert_eq!(no.voter_count, 0);
         assert!(data.is_closed);
+        assert_eq!(data.total_voter_count, 100);
+        assert!(data.is_anonymous);
+        assert_eq!(data.kind, PollKind::Regular);
+        assert!(!data.allows_multiple_answers);
+        assert!(data.correct_option_id.is_none());
     }
 }

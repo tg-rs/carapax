@@ -517,7 +517,11 @@ mod tests {
                     {"text": "Yes", "voter_count": 1000},
                     {"text": "No", "voter_count": 0}
                 ],
-                "is_closed": true
+                "is_closed": true,
+                "total_voter_count": 100,
+                "is_anonymous": true,
+                "type": "regular",
+                "allows_multiple_answers": false
             }
         }))
         .unwrap();
