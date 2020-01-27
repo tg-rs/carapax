@@ -1,5 +1,9 @@
-use crate::types::{photo_size::PhotoSize, primitive::Integer};
+use crate::types::{
+    photo_size::PhotoSize,
+    primitive::{Integer, ParseMode},
+};
 use serde::Deserialize;
+use std::{error::Error, fmt};
 
 /// A Bot info returned in getMe
 #[derive(Clone, Debug, Deserialize, PartialEq, PartialOrd)]
@@ -35,6 +39,60 @@ pub struct User {
     pub username: Option<String>,
     /// IETF language tag of the user's language
     pub language_code: Option<String>,
+}
+
+impl User {
+    /// Returns full name of the user (first name + last name)
+    pub fn get_full_name(&self) -> String {
+        let mut full_name = self.first_name.clone();
+        if let Some(ref last_name) = self.last_name {
+            full_name.push(' ');
+            full_name += last_name;
+        }
+        full_name
+    }
+
+    /// Returns a link to the user (tg://user?id=xxx)
+    ///
+    /// These links will work only if they are used inside an inline link.
+    /// For example, they will not work, when used in an inline keyboard button or in a message text.
+    pub fn get_link(&self) -> String {
+        format!("tg://user?id={}", self.id)
+    }
+
+    /// Returns a mention for the user
+    ///
+    /// These mentions are only guaranteed to work if the user has contacted the bot in the past,
+    /// has sent a callback query to the bot via inline button or is a member
+    /// in the group where he was mentioned.
+    pub fn get_mention(&self, parse_mode: ParseMode) -> Result<String, MentionError> {
+        let full_name = parse_mode.escape(self.get_full_name());
+        let user_link = self.get_link();
+        Ok(match parse_mode {
+            ParseMode::Markdown => return Err(MentionError::UnsupportedParseMode(parse_mode)),
+            ParseMode::MarkdownV2 => format!(r#"[{}]({})"#, full_name, user_link),
+            ParseMode::Html => format!(r#"<a href="{}">{}</a>"#, user_link, full_name),
+        })
+    }
+}
+
+/// An error occurred when getting user mention
+#[derive(Debug)]
+pub enum MentionError {
+    /// Parse mode is not supported
+    UnsupportedParseMode(ParseMode),
+}
+
+impl Error for MentionError {}
+
+impl fmt::Display for MentionError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MentionError::UnsupportedParseMode(parse_mode) => {
+                write!(out, "can not mention with {} parse mode", parse_mode)
+            }
+        }
+    }
 }
 
 /// User's profile pictures
@@ -132,6 +190,45 @@ mod tests {
         assert!(!data.is_bot);
         assert!(data.username.is_none());
         assert!(data.language_code.is_none());
+    }
+
+    #[test]
+    fn get_user_full_name() {
+        let user: User = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "first_name": "first",
+            "last_name": "last",
+            "is_bot": false
+        }))
+        .unwrap();
+        assert_eq!(user.get_full_name(), "first last");
+
+        let user: User = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "first_name": "first",
+            "is_bot": false
+        }))
+        .unwrap();
+        assert_eq!(user.get_full_name(), "first");
+    }
+
+    #[test]
+    fn get_user_mention() {
+        let user: User = serde_json::from_value(serde_json::json!({
+            "id": 1,
+            "first_name": r#"_*[]()~`>#+-=|{}.!<&"#,
+            "is_bot": false
+        }))
+        .unwrap();
+        assert_eq!(
+            user.get_mention(ParseMode::Html).unwrap(),
+            r#"<a href="tg://user?id=1">_*[]()~`&gt;#+-=|{}.!&lt;&amp;</a>"#
+        );
+        assert_eq!(
+            user.get_mention(ParseMode::MarkdownV2).unwrap(),
+            r#"[\_\*\[\]\(\)\~\`\>\#\+\-\=\|\{\}\.\!<&](tg://user?id=1)"#
+        );
+        assert!(user.get_mention(ParseMode::Markdown).is_err());
     }
 
     #[test]
