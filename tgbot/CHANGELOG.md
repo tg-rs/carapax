@@ -1,9 +1,17 @@
 # Changelog
 
+## 0.6.0 (27.01.2020)
+
+- Added Bot API 4.6 support.
+- Added `ResponseError::can_retry()` method.
+- Added `ParseMode::escape()` method.
+- Added `get_full_name`, `get_link` and `get_mention` methods to `User` type.
+- Removed deprecated `RestrictChatMember` methods.
+
 ## 0.5.1 (10.01.2020)
 
 - Return socks proxy support.
-- Deprecate some RestrictChatMember methods (to be removed in 0.6.0)
+- Deprecate some `RestrictChatMember` methods (to be removed in 0.6.0).
 
 ## 0.5.0 (07.01.2020)
 
@@ -17,12 +25,12 @@
 
 - Added Bot API 4.4 support.
 - Added information about response data to poll request error.
-- RestrictChatMember methods:
-  can_send_messages,
-  can_send_media_messages,
-  can_send_other_messages,
-  can_add_web_page_previews are now deprecated and will be removed in 0.5.0.
-  Use with_permissions method instead.
+- `RestrictChatMember` methods:
+  `can_send_messages`,
+  `can_send_media_messages`,
+  `can_send_other_messages`,
+  `can_add_web_page_previews` are now deprecated and will be removed in 0.5.0.
+  Use `with_permissions` method instead.
 
 ## 0.4.3 (07.07.2019)
 
