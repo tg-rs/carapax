@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 (27.01.2020)
+
+- Added tgbot 0.6 support.
+
 ## 0.3.1 (10.01.2020)
 
 - Added `CommandDispatcher::new()` method in order to support context without Default impl.
