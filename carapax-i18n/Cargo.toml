@@ -1,7 +1,7 @@
 [package]
 name = "carapax-i18n"
 description = "An i18n utilities for carapax"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Arsenii Lyashenko <arsenylyashenko.3@gmail.com>", "Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2018"
 readme = "README.md"
