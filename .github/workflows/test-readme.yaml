@@ -21,4 +21,5 @@ jobs:
             - uses: actions-rs/cargo@v1
               with:
                   command: test
+                  args: --all-targets --all-features
                   working-directory: ${{env.working-directory}}
