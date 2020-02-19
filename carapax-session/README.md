@@ -1,6 +1,6 @@
 # CARAPAX-SESSION
 
-Session handler for [carapax](https://github.com/tg-rs/tg-rs/tree/master/carapax)
+A session utilities for [carapax](https://github.com/tg-rs/tg-rs/tree/master/carapax)
 
 [![Version](https://img.shields.io/crates/v/carapax-session.svg?style=flat-square)](https://crates.io/crates/carapax-session)
 [![Downloads](https://img.shields.io/crates/d/carapax-session.svg?style=flat-square)](https://crates.io/crates/carapax-session)

@@ -7,10 +7,10 @@
 
 - [tgbot](tgbot) - A Telegram Bot API client
 - [carapax](carapax) - A Telegram Bot framework
-- [carapax-access](carapax-access) - An access handler for carapax
-- [carapax-i18n](carapax-i18n) - An i18n handler for carapax
-- [carapax-ratelimit](carapax-ratelimit) - A ratelimit handler for carapax
-- [carapax-session](carapax-session) - A session handler for carapax
+- [carapax-access](carapax-access) - An access handler
+- [carapax-i18n](carapax-i18n) - An i18n utilities
+- [carapax-ratelimit](carapax-ratelimit) - A ratelimit handler
+- [carapax-session](carapax-session) - A session utilities
 
 ## Examples
 
