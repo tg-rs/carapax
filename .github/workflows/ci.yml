@@ -42,30 +42,33 @@ jobs:
                   args: --all-targets --all-features -- -D warnings
     test:
         runs-on: ubuntu-latest
-        needs: clippy
         steps:
             - uses: actions/checkout@v1
-            # - name: Cache cargo registry
-            #   uses: actions/cache@v1
-            #   with:
-            #       path: ~/.cargo/registry
-            #       key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-            #       restore-keys: |
-            #           ${{ runner.os }}-cargo-registry-
-            # - name: Cache cargo index
-            #   uses: actions/cache@v1
-            #   with:
-            #       path: ~/.cargo/git
-            #       key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-            #       restore-keys: |
-            #           ${{ runner.os }}-cargo-index-
-            # - name: Cache cargo build
-            #   uses: actions/cache@v1
-            #   with:
-            #       path: target
-            #       key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-            #       restore-keys: |
-            #           ${{ runner.os }}-cargo-build-target-
+            - name: Generate Cargo.lock
+              uses: actions-rs/cargo@v1
+              with:
+                command: generate-lockfile
+            - name: Cache cargo registry
+              uses: actions/cache@v1
+              with:
+                path: ~/.cargo/registry
+                key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+                restore-keys: |
+                     ${{ runner.os }}-cargo-registry-
+            - name: Cache cargo index
+              uses: actions/cache@v1
+              with:
+                path: ~/.cargo/git
+                key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+                restore-keys: |
+                     ${{ runner.os }}-cargo-index-
+            - name: Cache cargo build
+              uses: actions/cache@v1
+              with:
+                path: target
+                key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+                restore-keys: |
+                     ${{ runner.os }}-cargo-build-target-
             - uses: actions-rs/toolchain@v1
               with:
                   profile: minimal
@@ -75,31 +78,3 @@ jobs:
               with:
                   command: test
                   args: --all-targets --all-features
-    coverage:
-        runs-on: ubuntu-latest
-        needs: test
-        steps:
-            - uses: actions/checkout@v1
-            - uses: actions-rs/toolchain@v1
-              with:
-                  profile: minimal
-                  toolchain: nightly
-                  override: true
-            - uses: actions-rs/cargo@v1
-              with:
-                  command: test
-                  args: --all-targets --all-features --no-fail-fast
-              env:
-                  CARGO_INCREMENTAL: '0'
-                  RUSTFLAGS: >-
-                      -Zprofile
-                      -Ccodegen-units=1
-                      -Cinline-threshold=0
-                      -Clink-dead-code
-                      -Coverflow-checks=off
-                      -Zno-landing-pads
-            - uses: actions-rs/grcov@v0.1
-            - uses: codecov/codecov-action@v1
-              with:
-                  token: ${{ secrets.CODECOV_TOKEN }}
-                  file: ./lcov.info
