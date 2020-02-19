@@ -1,0 +1,20 @@
+[package]
+name = "test-readme"
+description = "Tests for workspace's README.md"
+version = "0.0.0"
+authors = ["Ross Nomann <rossnomann@protonmail.com>"]
+edition = "2018"
+license = "MIT"
+
+[dependencies]
+
+carapax = { path = "../carapax" }
+carapax-access = { path = "../carapax-access" }
+carapax-i18n = { path = "../carapax-i18n" }
+carapax-ratelimit = { path = "../carapax-ratelimit" }
+carapax-session = { path = "../carapax-session", features = ["fs-backend"] }
+tempfile = "3.1"
+tgbot = { path = "../tgbot" }
+tokio = { version = "0.2", features = ["macros"] }
+
+[workspace]
