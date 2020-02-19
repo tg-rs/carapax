@@ -1,25 +1,23 @@
 name: Test README.md
 on:
-    push:
-        branches-ignore:
-            - gh-pages
-    pull_request:
-        branches-ignore:
-            - gh-pages
+  push:
+    branches-ignore:
+      - gh-pages
+  pull_request:
+    branches-ignore:
+      - gh-pages
 jobs:
-    test:
-        env:
-            working-directory: ./test-readme
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v1
-            - uses: actions-rs/toolchain@v1
-              with:
-                  profile: minimal
-                  toolchain: nightly
-                  override: true
-            - uses: actions-rs/cargo@v1
-              with:
-                  command: test
-                  args: --all-targets --all-features
-                  working-directory: ${{env.working-directory}}
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - name: Test
+        working-directory: ./test-readme
+        run: cargo test --all-features --all-targets
