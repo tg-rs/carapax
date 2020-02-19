@@ -20,4 +20,4 @@ jobs:
           override: true
       - name: Test
         working-directory: ./test-readme
-        run: cargo test --all-features --all-targets
+        run: cargo test --doc
