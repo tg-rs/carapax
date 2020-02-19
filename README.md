@@ -2,6 +2,7 @@
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/tg-rs/tg-rs/CI?style=flat-square)](https://github.com/tg-rs/tg-rs/actions/)
 [![Codecov](https://img.shields.io/codecov/c/github/tg-rs/tg-rs.svg?style=flat-square)](https://codecov.io/gh/tg-rs/tg-rs)
+[![Telegram Chat](https://img.shields.io/badge/telegram-@tgrsusers-blue?style=flat-square)](https://t.me/tgrsusers)
 
 ## Project layout
 
