@@ -9,7 +9,7 @@ mod handler;
 pub use self::{
     command::{Command, CommandDispatcher, CommandError},
     convert::TryFromUpdate,
-    dispatcher::{Dispatcher, ErrorHandler},
+    dispatcher::{Dispatcher, ErrorHandler, LoggingErrorHandler},
     handler::{Handler, HandlerError, HandlerResult},
 };
 pub use async_trait::async_trait;
