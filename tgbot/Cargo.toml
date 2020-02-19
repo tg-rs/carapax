@@ -29,9 +29,6 @@ url = "2"
 [dev-dependencies]
 dotenv = "0.15"
 env_logger = "0.7"
-mockito = "0.22"
+mockito = "0.23.2"
 tempfile = "3"
 tokio = {version = "0.2", features = ["fs", "macros"]}
-
-[dependencies.assert-json-diff]
-version = '=1.0.0'
