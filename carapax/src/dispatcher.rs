@@ -30,7 +30,7 @@ where
         }
     }
 
-    /// Add a handler to dispatcher
+    /// Adds a handler to dispatcher
     ///
     /// Handlers will be dispatched in the same order as they are added
     pub fn add_handler<H>(&mut self, handler: H)
@@ -41,9 +41,10 @@ where
         self.handlers.push(ConvertHandler::boxed(handler))
     }
 
-    /// Add an error handler to dispatcher
+    /// Sets a handler to be executed when an error has occurred
     ///
-    /// Error handler will be dispatched if handler returns [`HandlerResult::Error`](enum.HandlerResult.html)
+    /// Error handler will be called if one of update handlers returned
+    /// [`HandlerResult::Error`](enum.HandlerResult.html)
     pub fn error_handler<H>(&mut self, handler: H)
     where
         H: ErrorHandler + Send + 'static,
@@ -91,6 +92,7 @@ pub trait ErrorHandler {
 /// A default dispatcher error handler that logs error
 ///
 /// By default it stops propagation
+/// (see [ErrorPolicy](enum.ErrorPolicy.html) for more information)
 pub struct LoggingErrorHandler(ErrorPolicy);
 
 impl LoggingErrorHandler {
@@ -102,7 +104,7 @@ impl LoggingErrorHandler {
 
 impl Default for LoggingErrorHandler {
     fn default() -> Self {
-        Self(ErrorPolicy::Stop)
+        Self::new(ErrorPolicy::Stop)
     }
 }
 
