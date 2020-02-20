@@ -10,10 +10,9 @@ use tgbot::types::{Message, Update};
 type BoxedHandler<C> = Box<dyn Handler<C, Input = Command, Output = HandlerResult> + Send>;
 
 /// A simple commands handler
-#[derive(Default)]
 pub struct CommandDispatcher<C> {
     handlers: HashMap<String, BoxedHandler<C>>,
-    not_found_handler: Option<BoxedHandler<C>>,
+    not_found_handler: BoxedHandler<C>,
 }
 
 impl<C> CommandDispatcher<C>
@@ -22,10 +21,7 @@ where
 {
     /// Creates a new handler
     pub fn new() -> Self {
-        Self {
-            handlers: HashMap::new(),
-            not_found_handler: None,
-        }
+        Self::default()
     }
 
     /// Registers a command handler
@@ -47,7 +43,19 @@ where
     where
         H: Handler<C, Input = Command> + Send + 'static,
     {
-        self.not_found_handler = Some(ConvertHandler::boxed(handler));
+        self.not_found_handler = ConvertHandler::boxed(handler);
+    }
+}
+
+impl<C> Default for CommandDispatcher<C>
+where
+    C: Send + Sync,
+{
+    fn default() -> Self {
+        Self {
+            handlers: HashMap::new(),
+            not_found_handler: Box::new(NotFoundHandler),
+        }
     }
 }
 
@@ -60,13 +68,11 @@ where
     type Output = HandlerResult;
 
     async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
-        match self.handlers.get_mut(input.get_name()) {
-            Some(handler) => handler.handle(context, input).await,
-            None => match self.not_found_handler {
-                Some(ref mut handler) => handler.handle(context, input).await,
-                None => HandlerResult::Continue,
-            },
-        }
+        self.handlers
+            .get_mut(input.get_name())
+            .unwrap_or(&mut self.not_found_handler)
+            .handle(context, input)
+            .await
     }
 }
 
@@ -89,6 +95,21 @@ where
 
     async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
         self.0.handle(context, input).await.into()
+    }
+}
+
+struct NotFoundHandler;
+
+#[async_trait]
+impl<C> Handler<C> for NotFoundHandler
+where
+    C: Send + Sync,
+{
+    type Input = Command;
+    type Output = HandlerResult;
+
+    async fn handle(&mut self, _context: &C, _input: Self::Input) -> Self::Output {
+        HandlerResult::Continue
     }
 }
 

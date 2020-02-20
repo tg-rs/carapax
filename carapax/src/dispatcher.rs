@@ -10,7 +10,7 @@ type BoxedErrorHandler = Box<dyn ErrorHandler + Send>;
 pub struct Dispatcher<C> {
     handlers: Vec<BoxedHandler<C>>,
     context: Arc<C>,
-    error_handler: Option<BoxedErrorHandler>,
+    error_handler: BoxedErrorHandler,
 }
 
 impl<C> Dispatcher<C>
@@ -26,11 +26,11 @@ where
         Self {
             context: Arc::new(context),
             handlers: Vec::new(),
-            error_handler: None,
+            error_handler: Box::new(LoggingErrorHandler::default()),
         }
     }
 
-    /// Add a handler to dispatcher
+    /// Adds a handler to dispatcher
     ///
     /// Handlers will be dispatched in the same order as they are added
     pub fn add_handler<H>(&mut self, handler: H)
@@ -41,28 +41,27 @@ where
         self.handlers.push(ConvertHandler::boxed(handler))
     }
 
+    /// Sets a handler to be executed when an error has occurred
+    ///
+    /// Error handler will be called if one of update handlers returned
+    /// [`HandlerResult::Error`](enum.HandlerResult.html)
+    pub fn error_handler<H>(&mut self, handler: H)
+    where
+        H: ErrorHandler + Send + 'static,
+    {
+        self.error_handler = Box::new(handler);
+    }
+
     pub(crate) async fn dispatch(&mut self, update: Update) {
         let context = self.context.clone();
         for handler in &mut self.handlers {
             let result = handler.handle(&context, update.clone()).await;
             match result {
-                HandlerResult::Continue => { /* noop */ }
-                HandlerResult::Stop => {
-                    break;
-                }
-                HandlerResult::Error(err) => match &mut self.error_handler {
-                    Some(handler) => {
-                        match handler.handle(err).await {
-                            ErrorPolicy::Continue => { /*noop*/ }
-                            ErrorPolicy::Stop => {
-                                break;
-                            }
-                        }
-                    }
-                    None => {
-                        log::error!("An error has occurred: {}", err);
-                        break;
-                    }
+                HandlerResult::Continue => continue,
+                HandlerResult::Stop => break,
+                HandlerResult::Error(err) => match self.error_handler.handle(err).await {
+                    ErrorPolicy::Continue => continue,
+                    ErrorPolicy::Stop => break,
                 },
             }
         }
@@ -88,6 +87,33 @@ pub trait ErrorHandler {
     /// [ErrorPolicy](enum.ErrorPolicy.html) defines
     /// whether next handler should process current update or not.
     async fn handle(&mut self, err: HandlerError) -> ErrorPolicy;
+}
+
+/// A default dispatcher error handler that logs error
+///
+/// By default it stops propagation
+/// (see [ErrorPolicy](enum.ErrorPolicy.html) for more information)
+pub struct LoggingErrorHandler(ErrorPolicy);
+
+impl LoggingErrorHandler {
+    /// Creates a new logger error handler with a specified error policy
+    pub fn new(error_policy: ErrorPolicy) -> Self {
+        Self(error_policy)
+    }
+}
+
+impl Default for LoggingErrorHandler {
+    fn default() -> Self {
+        Self::new(ErrorPolicy::Stop)
+    }
+}
+
+#[async_trait]
+impl ErrorHandler for LoggingErrorHandler {
+    async fn handle(&mut self, err: HandlerError) -> ErrorPolicy {
+        log::error!("An error has occurred: {}", err);
+        self.0
+    }
 }
 
 /// A policy for error handler
