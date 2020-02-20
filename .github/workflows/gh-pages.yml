@@ -1,23 +1,23 @@
 name: GitHub Pages
 on:
-    push:
-        branches:
-            - master
+  push:
+    branches:
+      - master
 
 jobs:
-    docs:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v1
-            - uses: actions-rs/cargo@v1
-              with:
-                  command: doc
-                  args: --all --all-features
-            - uses: peaceiris/actions-gh-pages@v2
-              with:
-                  emptyCommits: false
-                  forceOrphan: true
-              env:
-                  ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-                  PUBLISH_BRANCH: gh-pages
-                  PUBLISH_DIR: ./target/doc
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --all --all-features
+      - uses: peaceiris/actions-gh-pages@v2
+        with:
+          emptyCommits: false
+          forceOrphan: true
+        env:
+          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: ./target/doc
