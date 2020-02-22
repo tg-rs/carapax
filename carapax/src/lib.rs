@@ -1,14 +1,6 @@
 //! A Telegram Bot framework
 #![warn(missing_docs)]
 
-/// Access handler
-#[cfg(feature = "access")]
-pub mod access;
-
-/// i18n utilities
-#[cfg(feature = "i18n")]
-pub mod i18n;
-
 mod core;
 
 pub use self::core::*;
@@ -65,3 +57,15 @@ pub use tgbot::{
 /// }
 /// ```
 pub use carapax_codegen::handler;
+
+/// Access handler
+#[cfg(feature = "access")]
+pub mod access;
+
+/// i18n utilities
+#[cfg(feature = "i18n")]
+pub mod i18n;
+
+/// Ratelimit handler
+#[cfg(feature = "ratelimit")]
+pub mod ratelimit;

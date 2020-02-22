@@ -1,6 +1,8 @@
-use carapax::{async_trait, types::Update, Handler, HandlerResult};
+use crate::core::{Handler, HandlerResult};
+use async_trait::async_trait;
 use ratelimit_meter::{DirectRateLimiter, GCRA};
 use std::{num::NonZeroU32, sync::Arc, time::Duration};
+use tgbot::types::Update;
 use tokio::sync::Mutex;
 
 /// Limits all updates
@@ -42,8 +44,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nonzero;
-    use carapax::types::Update;
+    use nonzero_ext::nonzero;
+    use tgbot::types::Update;
 
     #[tokio::test]
     async fn handler() {

@@ -1,11 +1,14 @@
+#[cfg(not(feature = "ratelimit"))]
+compile_error!("Enable ratelimit feature");
+
 use carapax::{
     handler,
     longpoll::LongPoll,
+    ratelimit::{
+        limit_all_chats, limit_all_users, nonzero, DirectRateLimitHandler, KeyedRateLimitHandler, RateLimitList,
+    },
     types::{ChatId, Integer, Message, UserId},
     Api, Config, Dispatcher,
-};
-use carapax_ratelimit::{
-    limit_all_chats, limit_all_users, nonzero, DirectRateLimitHandler, KeyedRateLimitHandler, RateLimitList,
 };
 use dotenv::dotenv;
 use env_logger;

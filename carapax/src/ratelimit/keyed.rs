@@ -1,10 +1,8 @@
-use carapax::{
-    async_trait,
-    types::{ChatId, Integer, Update, UserId},
-    Handler, HandlerResult,
-};
+use crate::core::{Handler, HandlerResult};
+use async_trait::async_trait;
 use ratelimit_meter::{KeyedRateLimiter, GCRA};
 use std::{hash::Hash, num::NonZeroU32, sync::Arc, time::Duration};
+use tgbot::types::{ChatId, Integer, Update, UserId};
 use tokio::sync::Mutex;
 
 /// Limits updates accroding to given rules
@@ -203,7 +201,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nonzero;
+    use nonzero_ext::nonzero;
 
     #[tokio::test]
     async fn handler_key_found() {

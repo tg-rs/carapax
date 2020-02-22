@@ -2,6 +2,5 @@
 members = [
     "carapax",
     "carapax-codegen",
-    "carapax-ratelimit",
     "carapax-session",
 ]

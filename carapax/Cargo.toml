@@ -13,12 +13,15 @@ exclude = ["data/**"]
 [features]
 access = []
 i18n = ["gettext"]
+ratelimit = ["nonzero_ext", "ratelimit_meter"]
 
 [dependencies]
 async-trait = "0.1"
 carapax-codegen = { path = "../carapax-codegen" }
 gettext = { version = "0.4", optional = true }
 log = "0.4"
+nonzero_ext = { version = "0.2", default-features = false, optional = true }
+ratelimit_meter = { version = "5", optional = true}
 shellwords = "1"
 tgbot = { git = "https://github.com/tg-rs/tgbot" }
 tokio = "0.2"
