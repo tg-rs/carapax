@@ -14,6 +14,9 @@ exclude = ["data/**"]
 access = []
 i18n = ["gettext"]
 ratelimit = ["nonzero_ext", "ratelimit_meter"]
+session = ["seance"]
+session-redis = ["session", "seance/redis-backend"]
+session-fs = ["session", "seance/fs-backend"]
 
 [dependencies]
 async-trait = "0.1"
@@ -25,9 +28,11 @@ ratelimit_meter = { version = "5", optional = true}
 shellwords = "1"
 tgbot = { git = "https://github.com/tg-rs/tgbot" }
 tokio = "0.2"
+seance = { version = "0.2", optional = true }
 
 [dev-dependencies]
 dotenv = "0.15"
 env_logger = "0.7"
 serde_json = "1"
+tempfile = "3"
 tokio = { version = "0.2", features = ["macros"]}

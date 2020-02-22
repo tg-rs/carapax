@@ -69,3 +69,7 @@ pub mod i18n;
 /// Ratelimit handler
 #[cfg(feature = "ratelimit")]
 pub mod ratelimit;
+
+/// Session manager
+#[cfg(feature = "session")]
+pub mod session;

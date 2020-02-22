@@ -1,10 +1,14 @@
-#[cfg(not(feature = "fs-backend"))]
-compile_error!("Enable fs-backend feature");
+#[cfg(not(feature = "session-fs"))]
+compile_error!("Enable session-fs feature");
 
 use carapax::{
-    handler, longpoll::LongPoll, methods::SendMessage, types::Update, Api, Command, Config, Dispatcher, HandlerResult,
+    handler,
+    longpoll::LongPoll,
+    methods::SendMessage,
+    session::{backend::fs::FilesystemBackend, SessionCollector, SessionManager},
+    types::Update,
+    Api, Command, Config, Dispatcher, HandlerResult,
 };
-use carapax_session::{backend::fs::FilesystemBackend, SessionCollector, SessionManager};
 use dotenv::dotenv;
 use std::{env, time::Duration};
 use tempfile::tempdir;

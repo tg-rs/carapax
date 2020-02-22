@@ -1,10 +1,6 @@
-#![warn(missing_docs)]
-//! A session utilities for carapax
-use carapax::{
-    types::{CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update},
-    Command,
-};
+use crate::core::Command;
 use seance::backend::SessionBackend;
+use tgbot::types::{CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update};
 
 pub use seance::{
     backend, Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager as BaseSessionManager,
