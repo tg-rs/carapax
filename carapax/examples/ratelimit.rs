@@ -1,6 +1,3 @@
-#[cfg(not(feature = "ratelimit"))]
-compile_error!("Enable ratelimit feature");
-
 use carapax::{
     handler,
     longpoll::LongPoll,

@@ -36,3 +36,19 @@ env_logger = "0.7"
 serde_json = "1"
 tempfile = "3"
 tokio = { version = "0.2", features = ["macros"]}
+
+[[example]]
+name = "access"
+required-features = ["access"]
+
+[[example]]
+name = "i18n"
+required-features = ["i18n"]
+
+[[example]]
+name = "ratelimit"
+required-features = ["ratelimit"]
+
+[[example]]
+name = "session"
+required-features = ["session-fs"]

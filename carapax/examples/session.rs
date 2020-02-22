@@ -1,6 +1,3 @@
-#[cfg(not(feature = "session-fs"))]
-compile_error!("Enable session-fs feature");
-
 use carapax::{
     handler,
     longpoll::LongPoll,

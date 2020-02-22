@@ -1,6 +1,3 @@
-#[cfg(not(feature = "i18n"))]
-compile_error!("Enable i18n feature");
-
 use carapax::{
     handler,
     i18n::{Catalog, Translator, TranslatorStore},

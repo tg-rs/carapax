@@ -1,6 +1,3 @@
-#[cfg(not(feature = "access"))]
-compile_error!("Enable access feature");
-
 use carapax::{
     access::{AccessHandler, AccessRule, InMemoryAccessPolicy},
     handler,
