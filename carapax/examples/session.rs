@@ -102,8 +102,8 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let token = env::var("TGRS_TOKEN").expect("TGRS_TOKEN is not set");
-    let proxy = env::var("TGRS_PROXY").ok();
+    let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
+    let proxy = env::var("CARAPAX_PROXY").ok();
 
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
