@@ -1,4 +1,3 @@
-//! Access handler
 mod handler;
 mod policy;
 mod rules;

@@ -1,5 +1,14 @@
-use carapax::{handler, longpoll::LongPoll, methods::SendMessage, types::Update, Api, Config, Dispatcher};
-use carapax_i18n::{Catalog, Translator, TranslatorStore};
+#[cfg(not(feature = "i18n"))]
+compile_error!("Enable i18n feature");
+
+use carapax::{
+    handler,
+    i18n::{Catalog, Translator, TranslatorStore},
+    longpoll::LongPoll,
+    methods::SendMessage,
+    types::Update,
+    Api, Config, Dispatcher,
+};
 use dotenv::dotenv;
 use env_logger;
 use std::env;

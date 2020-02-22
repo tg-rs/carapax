@@ -1,8 +1,13 @@
 //! A Telegram Bot framework
 #![warn(missing_docs)]
 
+/// Access handler
 #[cfg(feature = "access")]
 pub mod access;
+
+/// i18n utilities
+#[cfg(feature = "i18n")]
+pub mod i18n;
 
 mod core;
 

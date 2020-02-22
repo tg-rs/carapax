@@ -8,13 +8,16 @@ readme = "README.md"
 license = "MIT"
 documentation = "https://docs.rs/carapax"
 repository = "https://github.com/tg-rs/tg-rs"
+exclude = ["data/**"]
 
 [features]
 access = []
+i18n = ["gettext"]
 
 [dependencies]
 async-trait = "0.1"
 carapax-codegen = { path = "../carapax-codegen" }
+gettext = { version = "0.4", optional = true }
 log = "0.4"
 shellwords = "1"
 tgbot = { git = "https://github.com/tg-rs/tgbot" }
