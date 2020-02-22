@@ -1,17 +1,9 @@
 //! A Telegram Bot framework
 #![warn(missing_docs)]
 
-mod command;
-mod convert;
-mod dispatcher;
-mod handler;
+mod core;
 
-pub use self::{
-    command::{Command, CommandDispatcher, CommandError},
-    convert::TryFromUpdate,
-    dispatcher::{Dispatcher, ErrorHandler, ErrorPolicy, LoggingErrorHandler},
-    handler::{Handler, HandlerError, HandlerResult},
-};
+pub use self::core::*;
 pub use async_trait::async_trait;
 pub use tgbot::{
     longpoll, methods, mime, types, webhook, Api, ApiError, Config, DownloadFileError, ExecuteError, ParseProxyError,

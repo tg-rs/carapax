@@ -1,4 +1,4 @@
-use crate::convert::TryFromUpdate;
+use crate::core::convert::TryFromUpdate;
 use async_trait::async_trait;
 use std::{error::Error, fmt};
 use tgbot::types::Update;

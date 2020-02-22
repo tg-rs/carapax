@@ -1,4 +1,4 @@
-use crate::{
+use crate::core::{
     convert::TryFromUpdate,
     handler::{Handler, HandlerResult},
 };
