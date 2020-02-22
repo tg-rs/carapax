@@ -1,5 +1,13 @@
-use carapax::{handler, longpoll::LongPoll, types::Message, Api, Config, Dispatcher};
-use carapax_access::{AccessHandler, AccessRule, InMemoryAccessPolicy};
+#[cfg(not(feature = "access"))]
+compile_error!("Enable access feature");
+
+use carapax::{
+    access::{AccessHandler, AccessRule, InMemoryAccessPolicy},
+    handler,
+    longpoll::LongPoll,
+    types::Message,
+    Api, Config, Dispatcher,
+};
 use dotenv::dotenv;
 use env_logger;
 use std::env;

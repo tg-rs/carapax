@@ -9,6 +9,9 @@ license = "MIT"
 documentation = "https://docs.rs/carapax"
 repository = "https://github.com/tg-rs/tg-rs"
 
+[features]
+access = []
+
 [dependencies]
 async-trait = "0.1"
 carapax-codegen = { path = "../carapax-codegen" }

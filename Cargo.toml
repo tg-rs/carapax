@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "carapax",
-    "carapax-access",
     "carapax-codegen",
     "carapax-i18n",
     "carapax-ratelimit",

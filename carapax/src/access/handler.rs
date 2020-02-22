@@ -1,5 +1,9 @@
-use crate::policy::AccessPolicy;
-use carapax::{async_trait, types::Update, Handler, HandlerResult};
+use crate::{
+    access::policy::AccessPolicy,
+    core::{Handler, HandlerResult},
+};
+use async_trait::async_trait;
+use tgbot::types::Update;
 
 /// Access control handler
 ///
@@ -36,7 +40,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::policy::AccessPolicy;
+    use crate::access::policy::AccessPolicy;
 
     struct Policy {
         flag: bool,

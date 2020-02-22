@@ -1,5 +1,6 @@
-use crate::rules::AccessRule;
-use carapax::{async_trait, types::Update};
+use crate::access::rules::AccessRule;
+use async_trait::async_trait;
+use tgbot::types::Update;
 
 /// An access policy
 ///

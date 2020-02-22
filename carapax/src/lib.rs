@@ -1,6 +1,9 @@
 //! A Telegram Bot framework
 #![warn(missing_docs)]
 
+#[cfg(feature = "access")]
+pub mod access;
+
 mod core;
 
 pub use self::core::*;
