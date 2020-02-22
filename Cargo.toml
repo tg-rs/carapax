@@ -6,5 +6,4 @@ members = [
     "carapax-i18n",
     "carapax-ratelimit",
     "carapax-session",
-    "tgbot",
 ]

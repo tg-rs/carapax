@@ -14,7 +14,7 @@ async-trait = "0.1"
 carapax-codegen = { path = "../carapax-codegen" }
 log = "0.4"
 shellwords = "1"
-tgbot = { path = "../tgbot" }
+tgbot = { git = "https://github.com/tg-rs/tgbot" }
 tokio = "0.2"
 
 [dev-dependencies]

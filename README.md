@@ -6,7 +6,6 @@
 
 ## Project layout
 
-- [tgbot](tgbot) - A Telegram Bot API client
 - [carapax](carapax) - A Telegram Bot framework
 - [carapax-access](carapax-access) - An access handler
 - [carapax-i18n](carapax-i18n) - An i18n utilities
@@ -14,64 +13,6 @@
 - [carapax-session](carapax-session) - A session utilities
 
 ## Usage
-
-### tgbot
-
-tgbot is a core library which provides access to Telegram Bot API.
-
-Using longpolling:
-```rust no_run
-use std::env;
-use tgbot::{Api, Config, UpdateHandler, async_trait};
-use tgbot::longpoll::LongPoll;
-use tgbot::methods::SendMessage;
-use tgbot::types::{Update, UpdateKind};
-
-struct Handler {
-    api: Api,
-}
-
-#[async_trait]
-impl UpdateHandler for Handler {
-    async fn handle(&mut self, update: Update) {
-        println!("got an update: {:?}\n", update);
-        if let UpdateKind::Message(message) = update.kind {
-            if let Some(text) = message.get_text() {
-                let api = self.api.clone();
-                let chat_id = message.get_chat_id();
-                let method = SendMessage::new(chat_id, text.data.clone());
-                api.execute(method).await.unwrap();
-            }
-        }
-    }
-}
-
-#[tokio::main]
-async fn main() {
-    let token = env::var("TGRS_TOKEN").expect("TGRS_TOKEN is not set");
-    let api = Api::new(Config::new(token)).expect("Failed to create API");
-    LongPoll::new(api.clone(), Handler { api }).run().await;
-}
-```
-
-Using webhook:
-```rust no_run
-use tgbot::{types::Update, async_trait, webhook, UpdateHandler};
-
-struct Handler;
-
-#[async_trait]
-impl UpdateHandler for Handler {
-    async fn handle(&mut self, update: Update) {
-        println!("got an update: {:?}\n", update);
-    }
-}
-
-#[tokio::main]
-async fn main() {
-    webhook::run_server(([127, 0, 0, 1], 8080), "/", Handler).await.unwrap();
-}
-```
 
 ### carapax
 
