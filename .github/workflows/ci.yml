@@ -83,4 +83,4 @@ jobs:
           override: true
       - name: Run tests
         working-directory: ./carapax
-        command: cargo test --features=full
+        run: cargo test --features=full
