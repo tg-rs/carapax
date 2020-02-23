@@ -19,5 +19,5 @@ jobs:
           toolchain: nightly
           override: true
       - name: Test
-        working-directory: ./test-readme
+        working-directory: ./tests-readme
         run: cargo test --doc

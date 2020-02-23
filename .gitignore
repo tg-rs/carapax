@@ -1,5 +1,5 @@
-/target/
-/test-readme/target/
-/test-readme/Cargo.lock
-Cargo.lock
 .env
+Cargo.lock
+/target/
+/tests-readme/Cargo.lock
+/tests-readme/target/

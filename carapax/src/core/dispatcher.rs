@@ -45,7 +45,7 @@ where
     ///
     /// Error handler will be called if one of update handlers returned
     /// [`HandlerResult::Error`](enum.HandlerResult.html)
-    pub fn error_handler<H>(&mut self, handler: H)
+    pub fn set_error_handler<H>(&mut self, handler: H)
     where
         H: ErrorHandler + Send + 'static,
     {
