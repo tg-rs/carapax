@@ -19,7 +19,7 @@ full = ["access", "i18n", "ratelimit", "session-redis", "session-fs"]
 
 access = []
 i18n = ["gettext"]
-ratelimit = ["nonzero_ext", "ratelimit_meter"]
+ratelimit = ["nonzero_ext", "ratelimit_meter", "tokio/sync"]
 session = ["seance"]
 session-redis = ["session", "seance/redis-backend"]
 session-fs = ["session", "seance/fs-backend"]
