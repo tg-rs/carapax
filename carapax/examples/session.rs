@@ -94,13 +94,29 @@ async fn handle_update(context: &Context, update: Update) -> HandlerResult {
     HandlerResult::Continue
 }
 
+fn getenv(name: &str) -> String {
+    env::var(name).expect(&format!("{} is not set", name))
+}
+
 #[tokio::main]
 async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
+    let token = getenv("CARAPAX_TOKEN");
     let proxy = env::var("CARAPAX_PROXY").ok();
+    let gc_period = getenv("CARAPAX_SESSION_GC_PERIOD");
+    let gc_period = Duration::from_secs(
+        gc_period
+            .parse::<u64>()
+            .expect("CARAPAX_SESSION_GC_PERIOD must be integer"),
+    ); // period between GC calls
+    let session_lifetime = getenv("CARAPAX_SESSION_LIFETIME");
+    let session_lifetime = Duration::from_secs(
+        session_lifetime
+            .parse::<u64>()
+            .expect("CARAPAX_SESSION_LIFETIME must be integer"),
+    ); // how long session lives
 
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
@@ -114,8 +130,6 @@ async fn main() {
     let backend = FilesystemBackend::new(tmpdir.path());
 
     // spawn GC to remove old sessions
-    let gc_period = Duration::from_secs(1); // period between GC calls
-    let session_lifetime = Duration::from_secs(1); // how long session lives
     let mut collector = SessionCollector::new(backend.clone(), gc_period, session_lifetime);
     tokio::spawn(async move { collector.run().await });
 
