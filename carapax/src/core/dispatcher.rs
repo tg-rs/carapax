@@ -133,7 +133,10 @@ pub enum ErrorPolicy {
 mod tests {
     use super::*;
     use std::{error::Error, fmt};
-    use tokio::sync::Mutex;
+    use tokio::sync::{
+        oneshot::{channel, Sender},
+        Mutex,
+    };
 
     type Updates = Mutex<Vec<Update>>;
 
@@ -196,17 +199,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn dispatch() {
+    async fn dispatch_default() {
         macro_rules! assert_dispatch {
             ($count:expr, $($handler:expr),*) => {{
                 let updates = Mutex::new(Vec::new());
                 let mut dispatcher = Dispatcher::new(updates);
                 $(dispatcher.add_handler($handler);)*
                 let update = create_update();
-                let result = dispatcher.dispatch(update).await;
+                dispatcher.dispatch(update).await;
                 let context = dispatcher.context.lock().await;
                 assert_eq!(context.len(), $count);
-                result
             }};
         }
 
@@ -230,5 +232,45 @@ mod tests {
             HandlerMock::with_stop(),
             HandlerMock::with_continue()
         );
+    }
+
+    struct MockErrorHandler {
+        error_policy: ErrorPolicy,
+        sender: Option<Sender<HandlerError>>,
+    }
+
+    impl MockErrorHandler {
+        fn new(error_policy: ErrorPolicy, sender: Sender<HandlerError>) -> Self {
+            MockErrorHandler {
+                error_policy,
+                sender: Some(sender),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl ErrorHandler for MockErrorHandler {
+        async fn handle(&mut self, err: HandlerError) -> ErrorPolicy {
+            let sender = self.sender.take().unwrap();
+            sender.send(err).unwrap();
+            self.error_policy
+        }
+    }
+
+    #[tokio::test]
+    async fn dispatch_custom_error_handler() {
+        let update = create_update();
+        for (count, error_policy) in &[(1usize, ErrorPolicy::Stop), (2usize, ErrorPolicy::Continue)] {
+            let mut dispatcher = Dispatcher::new(Mutex::new(Vec::new()));
+            dispatcher.add_handler(HandlerMock::with_error());
+            dispatcher.add_handler(HandlerMock::with_continue());
+            let (tx, mut rx) = channel();
+            dispatcher.set_error_handler(MockErrorHandler::new(*error_policy, tx));
+            dispatcher.dispatch(update.clone()).await;
+            rx.close();
+            let context = dispatcher.context.lock().await;
+            assert_eq!(context.len(), *count);
+            assert!(rx.try_recv().is_ok());
+        }
     }
 }
