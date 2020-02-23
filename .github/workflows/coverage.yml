@@ -9,15 +9,19 @@ on:
 
 jobs:
   coverage:
+    name: Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Install nightly toolchain
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: nightly
           override: true
-      - uses: actions-rs/cargo@v1
+      - name: Prepare
+        uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all-targets --all-features --no-fail-fast
@@ -30,8 +34,10 @@ jobs:
             -Clink-dead-code
             -Coverflow-checks=off
             -Zno-landing-pads
-      - uses: actions-rs/grcov@v0.1
-      - uses: codecov/codecov-action@v1
+      - name: Aggregate
+        uses: actions-rs/grcov@v0.1
+      - name: Publish
+        uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./lcov.info

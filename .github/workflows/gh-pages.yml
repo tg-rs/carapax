@@ -6,14 +6,18 @@ on:
 
 jobs:
   docs:
+    name: Generate master API documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/cargo@v1
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Generate
+        uses: actions-rs/cargo@v1
         with:
           command: doc
           args: --all --all-features
-      - uses: peaceiris/actions-gh-pages@v2
+      - name: Publish
+        uses: peaceiris/actions-gh-pages@v2
         with:
           emptyCommits: false
           forceOrphan: true
