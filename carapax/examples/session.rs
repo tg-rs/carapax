@@ -95,7 +95,7 @@ async fn handle_update(context: &Context, update: Update) -> HandlerResult {
 }
 
 fn getenv(name: &str) -> String {
-    env::var(name).expect(&format!("{} is not set", name))
+    env::var(name).unwrap_or_else(|_| panic!("{} is not set", name))
 }
 
 #[tokio::main]
