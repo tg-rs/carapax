@@ -28,7 +28,7 @@ ratelimit_meter = { version = "5", optional = true}
 shellwords = "1"
 tgbot = { git = "https://github.com/tg-rs/tgbot" }
 tokio = "0.2"
-seance = { version = "0.2", optional = true }
+seance = { version = "0.3", optional = true }
 
 [dev-dependencies]
 dotenv = "0.15"
