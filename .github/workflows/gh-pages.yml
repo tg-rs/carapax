@@ -8,14 +8,26 @@ jobs:
   docs:
     name: Generate master API documentation
     runs-on: ubuntu-latest
+    env: RUSDOCFLAGS: --cfg=nightly
     steps:
       - name: Checkout
         uses: actions/checkout@v1
+      - name: Install nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --doc --all-features
       - name: Generate
         uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --all --all-features
+          args: --workspace --all-features
       - name: Publish
         uses: peaceiris/actions-gh-pages@v2
         with:

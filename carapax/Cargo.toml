@@ -52,3 +52,7 @@ required-features = ["ratelimit"]
 [[example]]
 name = "session"
 required-features = ["session-fs"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "nightly"]

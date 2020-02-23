@@ -1,4 +1,6 @@
 //! A Telegram Bot framework
+#![cfg_attr(nightly, feature(doc_cfg, external_doc))]
+#![cfg_attr(nightly, doc(include = "../../README.md"))]
 #![warn(missing_docs)]
 
 mod core;
@@ -60,16 +62,20 @@ pub use carapax_codegen::handler;
 
 /// Access handler
 #[cfg(feature = "access")]
+#[cfg_attr(nightly, doc(cfg(feature = "access")))]
 pub mod access;
 
 /// i18n utilities
 #[cfg(feature = "i18n")]
+#[cfg_attr(nightly, doc(cfg(feature = "i18n")))]
 pub mod i18n;
 
 /// Ratelimit handler
 #[cfg(feature = "ratelimit")]
+#[cfg_attr(nightly, doc(cfg(feature = "ratelimit")))]
 pub mod ratelimit;
 
 /// Session manager
 #[cfg(feature = "session")]
+#[cfg_attr(nightly, doc(cfg(feature = "session")))]
 pub mod session;
