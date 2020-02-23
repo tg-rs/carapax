@@ -1,7 +1,0 @@
-P-carapax: carapax/**/*
-P-carapax-access: carapax-access/**/*
-P-carapax-codegen: carapax-codegen/**/*
-P-carapax-i18n: carapax-i18n/**/*
-P-carapax-ratelimit: carapax-ratelimit/**/*
-P-carapax-session: carapax-session/**/*
-P-tgbot: tgbot/**/*
