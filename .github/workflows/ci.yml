@@ -84,6 +84,6 @@ jobs:
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
+          working-directory: ./carapax
           command: test
           args: --features=full
-          working-directory: ./carapax
