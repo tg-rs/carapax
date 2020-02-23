@@ -1,7 +1,7 @@
 # CARAPAX
 
-[![CI](https://img.shields.io/github/workflow/status/tg-rs/tg-rs/CI?style=flat-square)](https://github.com/tg-rs/carapax/actions/)
-[![Codecov](https://img.shields.io/codecov/c/github/tg-rs/tg-rs.svg?style=flat-square)](https://codecov.io/gh/tg-rs/carapax)
+[![CI](https://img.shields.io/github/workflow/status/tg-rs/carapax/CI?style=flat-square)](https://github.com/tg-rs/carapax/actions/)
+[![Codecov](https://img.shields.io/codecov/c/github/tg-rs/carapax.svg?style=flat-square)](https://codecov.io/gh/tg-rs/carapax)
 [![Version](https://img.shields.io/crates/v/carapax.svg?style=flat-square)](https://crates.io/crates/carapax)
 [![Downloads](https://img.shields.io/crates/d/carapax.svg?style=flat-square)](https://crates.io/crates/carapax)
 [![Release Documentation](https://img.shields.io/badge/docs-release-brightgreen.svg?style=flat-square)](https://docs.rs/carapax)
