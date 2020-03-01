@@ -18,13 +18,23 @@ async fn handle_start(api: &Api, command: Command) -> Result<HandlerResult, Exec
 }
 
 #[handler(command = "/user_id")]
-async fn handle_user_id(api: &Api, command: Command) -> Result<(), ExecuteError> {
+async fn handle_user_id(api: &Api, command: Command) -> Result<HandlerResult, ExecuteError> {
     log::info!("handle /user_id command\n");
     let message = command.get_message();
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, format!("Your ID is: {:?}", message.get_user().map(|u| u.id)));
     let result = api.execute(method).await?;
     log::info!("sendMessage result: {:?}\n", result);
+    Ok(HandlerResult::Stop)
+}
+
+#[handler]
+async fn handle_any(api: &Api, command: Command) -> Result<(), ExecuteError> {
+    let name = command.get_name();
+    log::info!("handle {} command\n", name);
+    let chat_id = command.get_message().get_chat_id();
+    api.execute(SendMessage::new(chat_id, format!("Got {} command", name)))
+        .await?;
     Ok(())
 }
 
@@ -43,5 +53,6 @@ async fn main() {
     let mut dispatcher = Dispatcher::new(api.clone());
     dispatcher.add_handler(handle_start);
     dispatcher.add_handler(handle_user_id);
+    dispatcher.add_handler(handle_any);
     LongPoll::new(api, dispatcher).run().await;
 }
