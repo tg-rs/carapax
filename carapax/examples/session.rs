@@ -1,10 +1,11 @@
 use carapax::{
+    command::Command,
     handler,
     longpoll::LongPoll,
     methods::SendMessage,
     session::{backend::fs::FilesystemBackend, SessionCollector, SessionManager},
     types::Update,
-    Api, Command, Config, Dispatcher, HandlerResult,
+    Api, Config, Dispatcher, HandlerResult,
 };
 use dotenv::dotenv;
 use std::{env, time::Duration};

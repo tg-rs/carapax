@@ -1,5 +1,6 @@
 use carapax::{
-    handler, longpoll::LongPoll, methods::SendMessage, Api, Command, Config, Dispatcher, ExecuteError, HandlerResult,
+    command::Command, handler, longpoll::LongPoll, methods::SendMessage, Api, Config, Dispatcher, ExecuteError,
+    HandlerResult,
 };
 use dotenv::dotenv;
 use env_logger;

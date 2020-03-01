@@ -1,4 +1,4 @@
-use crate::core::Command;
+use crate::command::Command;
 use seance::backend::SessionBackend;
 use tgbot::types::{CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update};
 
