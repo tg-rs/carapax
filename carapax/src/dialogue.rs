@@ -1,5 +1,5 @@
 use crate::{
-    core::{Handler, HandlerError, HandlerResult, TryFromUpdate},
+    core::{Handler, HandlerResult, TryFromUpdate},
     session::SessionManager,
 };
 use async_trait::async_trait;
@@ -99,29 +99,29 @@ where
         let input = match TryFromUpdate::try_from_update(input) {
             Ok(Some(input)) => input,
             Ok(None) => return HandlerResult::Continue,
-            Err(err) => return HandlerResult::Error(HandlerError::new(err)),
+            Err(err) => return HandlerResult::error(err),
         };
 
         let state: S = {
             match session.get(&self.session_key).await {
                 Ok(Some(state)) => state,
                 Ok(None) => State::new(),
-                Err(err) => return HandlerResult::Error(HandlerError::new(err)),
+                Err(err) => return HandlerResult::error(err),
             }
         };
         match self.handler.handle(state, context, input).await {
             Ok(DialogueResult::Next(state)) => {
                 if let Err(err) = session.set(&self.session_key, &state).await {
-                    return HandlerResult::Error(HandlerError::new(err));
+                    return HandlerResult::error(err);
                 }
             }
             Ok(DialogueResult::Exit) => {
                 if let Err(err) = session.remove(&self.session_key).await {
-                    return HandlerResult::Error(HandlerError::new(err));
+                    return HandlerResult::error(err);
                 };
             }
             Err(err) => {
-                return HandlerResult::Error(HandlerError::new(err));
+                return HandlerResult::error(err);
             }
         }
         HandlerResult::Continue

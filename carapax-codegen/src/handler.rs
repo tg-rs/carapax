@@ -131,7 +131,7 @@ pub(super) fn build(meta: HandlerMeta, args: Option<HandlerArgs>) -> TokenStream
                 inner_call = quote! {
                     let result = match #predicate(context, &input).await {
                         Ok(result) => result,
-                        Err(err) => return ::carapax::HandlerError::new(err).into()
+                        Err(err) => return ::carapax::HandlerResult::error(err)
                     };
                     if result {
                         #inner_call.into()

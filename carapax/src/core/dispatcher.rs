@@ -1,4 +1,7 @@
-use crate::core::handler::{ConvertHandler, Handler, HandlerError, HandlerResult};
+use crate::core::{
+    handler::{ConvertHandler, Handler},
+    result::{HandlerError, HandlerResult},
+};
 use async_trait::async_trait;
 use std::sync::Arc;
 use tgbot::{types::Update, UpdateHandler};

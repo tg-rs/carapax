@@ -1,6 +1,5 @@
-use crate::core::convert::TryFromUpdate;
+use crate::core::{convert::TryFromUpdate, result::HandlerResult};
 use async_trait::async_trait;
-use std::{error::Error, fmt};
 use tgbot::types::Update;
 
 /// An update handler
@@ -25,74 +24,6 @@ pub trait Handler<C> {
     async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output;
 }
 
-/// Result of a handler
-#[derive(Debug)]
-pub enum HandlerResult {
-    /// Continue propagation
-    ///
-    /// Next handler (if exists) will run after current has finished
-    Continue,
-    /// Stop propagation
-    ///
-    /// Next handler (if exists) will not run after current has finished
-    Stop,
-    /// An error has occurred, stop propagation
-    ///
-    /// Next handler (if exists) will not run after current has finished
-    Error(HandlerError),
-}
-
-/// An error returned by handler
-#[derive(Debug)]
-pub struct HandlerError(Box<dyn Error + Send + Sync>);
-
-impl HandlerError {
-    /// Creates a new error
-    pub fn new<E>(err: E) -> Self
-    where
-        E: Error + Send + Sync + 'static,
-    {
-        Self(Box::new(err))
-    }
-}
-
-impl Error for HandlerError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(self.0.as_ref())
-    }
-}
-
-impl fmt::Display for HandlerError {
-    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
-        write!(out, "{}", self.0)
-    }
-}
-
-impl From<()> for HandlerResult {
-    fn from(_: ()) -> Self {
-        HandlerResult::Continue
-    }
-}
-
-impl<T, E> From<Result<T, E>> for HandlerResult
-where
-    T: Into<HandlerResult>,
-    E: Error + Send + Sync + 'static,
-{
-    fn from(result: Result<T, E>) -> Self {
-        match result {
-            Ok(res) => res.into(),
-            Err(err) => HandlerResult::Error(HandlerError::new(err)),
-        }
-    }
-}
-
-impl From<HandlerError> for HandlerResult {
-    fn from(err: HandlerError) -> Self {
-        HandlerResult::Error(err)
-    }
-}
-
 pub(crate) struct ConvertHandler<H>(H);
 
 impl<H> ConvertHandler<H> {
@@ -115,7 +46,7 @@ where
         match TryFromUpdate::try_from_update(input) {
             Ok(Some(input)) => self.0.handle(context, input).await.into(),
             Ok(None) => HandlerResult::Continue,
-            Err(err) => HandlerResult::Error(HandlerError::new(err)),
+            Err(err) => HandlerResult::error(err),
         }
     }
 }
