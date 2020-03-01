@@ -1,114 +1,7 @@
-use crate::core::{Handler, HandlerResult, TryFromUpdate};
-use async_trait::async_trait;
+use crate::core::TryFromUpdate;
 use shellwords::MismatchedQuotes;
-use std::{collections::HashMap, error::Error, fmt, string::FromUtf16Error};
+use std::{error::Error, fmt, string::FromUtf16Error};
 use tgbot::types::{Message, Update};
-
-type BoxedHandler<C> = Box<dyn Handler<C, Input = Command, Output = HandlerResult> + Send>;
-
-/// A simple commands handler
-pub struct CommandDispatcher<C> {
-    handlers: HashMap<String, BoxedHandler<C>>,
-    not_found_handler: BoxedHandler<C>,
-}
-
-impl<C> CommandDispatcher<C>
-where
-    C: Send + Sync,
-{
-    /// Creates a new handler
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Registers a command handler
-    ///
-    /// # Arguments
-    ///
-    /// * name - Command name (starts with /)
-    /// * handler - Handler itself
-    pub fn add_handler<N, H>(&mut self, name: N, handler: H)
-    where
-        N: Into<String>,
-        H: Handler<C, Input = Command> + Send + 'static,
-    {
-        self.handlers.insert(name.into(), ConvertHandler::boxed(handler));
-    }
-
-    /// Sets a handler to be executed when the command is not found
-    pub fn set_not_found_handler<H>(&mut self, handler: H)
-    where
-        H: Handler<C, Input = Command> + Send + 'static,
-    {
-        self.not_found_handler = ConvertHandler::boxed(handler);
-    }
-}
-
-impl<C> Default for CommandDispatcher<C>
-where
-    C: Send + Sync,
-{
-    fn default() -> Self {
-        Self {
-            handlers: HashMap::new(),
-            not_found_handler: Box::new(NotFoundHandler),
-        }
-    }
-}
-
-#[async_trait]
-impl<C> Handler<C> for CommandDispatcher<C>
-where
-    C: Send + Sync,
-{
-    type Input = Command;
-    type Output = HandlerResult;
-
-    async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
-        self.handlers
-            .get_mut(input.get_name())
-            .unwrap_or(&mut self.not_found_handler)
-            .handle(context, input)
-            .await
-    }
-}
-
-struct ConvertHandler<H>(H);
-
-impl<H> ConvertHandler<H> {
-    fn boxed(handler: H) -> Box<Self> {
-        Box::new(Self(handler))
-    }
-}
-
-#[async_trait]
-impl<C, H> Handler<C> for ConvertHandler<H>
-where
-    C: Send + Sync,
-    H: Handler<C, Input = Command> + Send,
-{
-    type Input = Command;
-    type Output = HandlerResult;
-
-    async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
-        self.0.handle(context, input).await.into()
-    }
-}
-
-struct NotFoundHandler;
-
-#[async_trait]
-impl<C> Handler<C> for NotFoundHandler
-where
-    C: Send + Sync,
-{
-    type Input = Command;
-    type Output = HandlerResult;
-
-    async fn handle(&mut self, _context: &C, _input: Self::Input) -> Self::Output {
-        HandlerResult::Continue
-    }
-}
 
 /// Contains information about command
 ///
@@ -218,7 +111,6 @@ impl TryFromUpdate for Command {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::sync::Mutex;
 
     fn create_command(command: &str) -> Command {
         let len = command.split_whitespace().next().unwrap().len();
@@ -244,41 +136,11 @@ mod tests {
         .unwrap()
     }
 
-    #[tokio::test]
-    async fn command() {
+    #[test]
+    fn command() {
         let command = create_command("/testcommand 'arg1 v' arg2");
         assert_eq!(command.get_name(), "/testcommand");
         assert_eq!(command.get_args(), &["arg1 v", "arg2"]);
         assert_eq!(command.get_update().id, 1);
-    }
-
-    type Commands = Mutex<Vec<String>>;
-
-    struct MockHandler;
-
-    #[async_trait]
-    impl Handler<Commands> for MockHandler {
-        type Input = Command;
-        type Output = ();
-
-        async fn handle(&mut self, context: &Commands, input: Self::Input) -> Self::Output {
-            context.lock().await.push(input.get_name().to_string());
-        }
-    }
-
-    #[tokio::test]
-    async fn dispatch() {
-        let context = Mutex::new(Vec::new());
-        let mut dispatcher = CommandDispatcher::default();
-        dispatcher.add_handler("/start", MockHandler);
-        dispatcher.set_not_found_handler(MockHandler);
-        let command = create_command("/start arg1");
-        dispatcher.handle(&context, command).await;
-        let command = create_command("/notfound");
-        dispatcher.handle(&context, command).await;
-        let context = context.lock().await;
-        assert_eq!(context.len(), 2);
-        assert!(context.contains(&String::from("/start")));
-        assert!(context.contains(&String::from("/notfound")));
     }
 }
