@@ -18,6 +18,9 @@ pub(super) struct HandlerMeta {
 impl Parse for HandlerMeta {
     fn parse(input: ParseStream) -> SynResult<Self> {
         let mut handler = input.parse::<ItemFn>()?;
+        if handler.sig.asyncness.is_none() {
+            return Err(input.error("function must be async"));
+        }
         let context = match handler.sig.inputs.first() {
             Some(FnArg::Typed(typed)) => match &*typed.ty {
                 Type::Reference(reference) => reference.elem.clone(),
