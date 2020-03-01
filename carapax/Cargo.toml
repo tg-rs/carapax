@@ -15,9 +15,10 @@ exclude = ["data/**"]
 default = []
 
 # enable everything
-full = ["access", "i18n", "ratelimit", "session-redis", "session-fs"]
+full = ["access", "dialogue", "i18n", "ratelimit", "session-redis", "session-fs"]
 
 access = []
+dialogue = ["serde", "session"]
 i18n = ["gettext"]
 ratelimit = ["nonzero_ext", "ratelimit_meter", "tokio/sync"]
 session = ["seance"]
@@ -30,7 +31,8 @@ carapax-codegen = { path = "../carapax-codegen" }
 gettext = { version = "0.4", optional = true }
 log = "0.4"
 nonzero_ext = { version = "0.2", default-features = false, optional = true }
-ratelimit_meter = { version = "5", optional = true}
+ratelimit_meter = { version = "5", optional = true }
+serde = { version = "1", optional = true }
 shellwords = "1"
 tgbot = { git = "https://github.com/tg-rs/tgbot" }
 tokio = "0.2"
@@ -46,6 +48,10 @@ tokio = { version = "0.2", features = ["sync", "macros"]}
 [[example]]
 name = "access"
 required-features = ["access"]
+
+[[example]]
+name = "dialogue"
+required-features = ["dialogue", "session-fs"]
 
 [[example]]
 name = "i18n"

@@ -65,6 +65,11 @@ pub use carapax_codegen::handler;
 #[cfg_attr(nightly, doc(cfg(feature = "access")))]
 pub mod access;
 
+/// Dialogue adapter
+#[cfg(feature = "dialogue")]
+#[cfg_attr(nightly, doc(cfg(feature = "dialogue")))]
+pub mod dialogue;
+
 /// i18n utilities
 #[cfg(feature = "i18n")]
 #[cfg_attr(nightly, doc(cfg(feature = "i18n")))]
