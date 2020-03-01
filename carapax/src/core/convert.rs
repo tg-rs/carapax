@@ -1,8 +1,37 @@
+use crate::core::{handler::Handler, result::HandlerResult};
+use async_trait::async_trait;
 use std::{convert::Infallible, error::Error};
 use tgbot::types::{
     CallbackQuery, ChosenInlineResult, InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Update,
     UpdateKind,
 };
+
+pub(super) struct ConvertHandler<H>(H);
+
+impl<H> ConvertHandler<H> {
+    pub(super) fn boxed(handler: H) -> Box<Self> {
+        Box::new(Self(handler))
+    }
+}
+
+#[async_trait]
+impl<C, H, I> Handler<C> for ConvertHandler<H>
+where
+    C: Send + Sync,
+    H: Handler<C, Input = I> + Send,
+    I: TryFromUpdate + Send + Sync + 'static,
+{
+    type Input = Update;
+    type Output = HandlerResult;
+
+    async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
+        match TryFromUpdate::try_from_update(input) {
+            Ok(Some(input)) => self.0.handle(context, input).await.into(),
+            Ok(None) => HandlerResult::Continue,
+            Err(err) => HandlerResult::error(err),
+        }
+    }
+}
 
 /// Allows to create an input for a handler from given update
 pub trait TryFromUpdate: Sized {
