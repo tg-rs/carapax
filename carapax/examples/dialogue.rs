@@ -1,7 +1,6 @@
 use carapax::{
-    async_trait,
     dialogue::{
-        Dialogue, DialogueHandler,
+        dialogue, Dialogue,
         DialogueResult::{self, *},
         State,
     },
@@ -35,55 +34,47 @@ impl State for ExampleState {
     }
 }
 
-struct ExampleDialogueHandler;
+#[dialogue]
+async fn handle(
+    state: ExampleState,
+    context: &Context,
+    input: Message,
+) -> Result<DialogueResult<ExampleState>, Infallible> {
+    use self::ExampleState::*;
+    let chat_id = input.get_chat_id();
+    let mut session = context.session_manager.get_session(&input);
 
-#[async_trait]
-impl DialogueHandler<Context, ExampleState> for ExampleDialogueHandler {
-    type Input = Message;
-    type Error = Infallible;
-
-    async fn handle(
-        &mut self,
-        state: ExampleState,
-        context: &Context,
-        input: Self::Input,
-    ) -> Result<DialogueResult<ExampleState>, Infallible> {
-        use self::ExampleState::*;
-        let chat_id = input.get_chat_id();
-        let mut session = context.session_manager.get_session(&input);
-
-        Ok(match state {
-            Start => {
-                context
-                    .api
-                    .execute(SendMessage::new(chat_id, "What is your first name?"))
-                    .await
-                    .unwrap();
-                Next(FirstName)
-            }
-            FirstName => {
-                let first_name = input.get_text().unwrap();
-                session.set("first_name", &first_name.data).await.unwrap();
-                context
-                    .api
-                    .execute(SendMessage::new(chat_id, "What is your last name?"))
-                    .await
-                    .unwrap();
-                Next(LastName)
-            }
-            LastName => {
-                let last_name = input.get_text().unwrap();
-                let first_name: String = session.get("first_name").await.unwrap().unwrap();
-                let text = format!(
-                    "First name: {first_name}\nLast name: {last_name}",
-                    first_name = first_name,
-                    last_name = last_name.data,
-                );
-                context.api.execute(SendMessage::new(chat_id, text)).await.unwrap();
-                Exit
-            }
-        })
-    }
+    Ok(match state {
+        Start => {
+            context
+                .api
+                .execute(SendMessage::new(chat_id, "What is your first name?"))
+                .await
+                .unwrap();
+            Next(FirstName)
+        }
+        FirstName => {
+            let first_name = input.get_text().unwrap();
+            session.set("first_name", &first_name.data).await.unwrap();
+            context
+                .api
+                .execute(SendMessage::new(chat_id, "What is your last name?"))
+                .await
+                .unwrap();
+            Next(LastName)
+        }
+        LastName => {
+            let last_name = input.get_text().unwrap();
+            let first_name: String = session.get("first_name").await.unwrap().unwrap();
+            let text = format!(
+                "First name: {first_name}\nLast name: {last_name}",
+                first_name = first_name,
+                last_name = last_name.data,
+            );
+            context.api.execute(SendMessage::new(chat_id, text)).await.unwrap();
+            Exit
+        }
+    })
 }
 
 #[tokio::main]
@@ -109,6 +100,6 @@ async fn main() {
         api: api.clone(),
         session_manager: session_manager.clone(),
     });
-    dispatcher.add_handler(Dialogue::new(session_manager, dialogue_name, ExampleDialogueHandler));
+    dispatcher.add_handler(Dialogue::new(session_manager, dialogue_name, handle));
     LongPoll::new(api, dispatcher).run().await
 }
