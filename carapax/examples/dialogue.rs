@@ -42,7 +42,7 @@ async fn handle(
 ) -> Result<DialogueResult<ExampleState>, Infallible> {
     use self::ExampleState::*;
     let chat_id = input.get_chat_id();
-    let mut session = context.session_manager.get_session(&input);
+    let mut session = context.session_manager.get_session(&input).unwrap();
 
     Ok(match state {
         Start => {

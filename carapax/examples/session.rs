@@ -37,7 +37,7 @@ async fn handle_set(context: &Context, command: Command) -> HandlerResult {
             }
         }
     };
-    let mut session = context.session_manager.get_session(&command);
+    let mut session = context.session_manager.get_session(&command).unwrap();
     session.set("counter", &val).await.unwrap();
     context.api.execute(SendMessage::new(chat_id, "OK")).await.unwrap();
     HandlerResult::Stop
@@ -64,7 +64,7 @@ async fn handle_expire(context: &Context, command: Command) -> HandlerResult {
             }
         }
     };
-    let mut session = context.session_manager.get_session(&command);
+    let mut session = context.session_manager.get_session(&command).unwrap();
     session.expire("counter", seconds).await.unwrap();
     context.api.execute(SendMessage::new(chat_id, "OK")).await.unwrap();
     HandlerResult::Stop
@@ -75,7 +75,7 @@ async fn handle_reset(context: &Context, command: Command) -> HandlerResult {
     log::info!("got a command: {:?}\n", command);
     let message = command.get_message();
     let chat_id = message.get_chat_id();
-    let mut session = context.session_manager.get_session(&command);
+    let mut session = context.session_manager.get_session(&command).unwrap();
     session.remove("counter").await.unwrap();
     context.api.execute(SendMessage::new(chat_id, "OK")).await.unwrap();
     HandlerResult::Stop
@@ -86,7 +86,7 @@ async fn handle_update(context: &Context, update: Update) -> HandlerResult {
     let message = update.get_message().unwrap();
     log::info!("got a message: {:?}\n", message);
     let chat_id = message.get_chat_id();
-    let mut session = context.session_manager.get_session(&update);
+    let mut session = context.session_manager.get_session(&update).unwrap();
     let val: Option<usize> = session.get("counter").await.unwrap();
     let val = val.unwrap_or(0) + 1;
     session.set("counter", &val).await.unwrap();

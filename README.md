@@ -284,7 +284,7 @@ async fn handle_update(context: &Context, update: Update) {
     println!("got a message: {:?}\n", message);
     let chat_id = message.get_chat_id();
     // get user session from update
-    let mut session = context.session_manager.get_session(&update);
+    let mut session = context.session_manager.get_session(&update).unwrap();
     // get a value from session
     let val: Option<usize> = session.get("counter").await.unwrap();
     let val = val.unwrap_or(0) + 1;

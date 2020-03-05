@@ -97,7 +97,10 @@ where
     type Output = HandlerResult;
 
     async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
-        let mut session = self.session_manager.get_session(&input);
+        let mut session = match self.session_manager.get_session(&input) {
+            Ok(session) => session,
+            Err(err) => return HandlerResult::error(err),
+        };
         let input = match TryFromUpdate::try_from_update(input) {
             Ok(Some(input)) => input,
             Ok(None) => return HandlerResult::Continue,
@@ -200,7 +203,7 @@ mod tests {
         let update = create_update();
         match dialogue.handle(&context, update.clone()).await {
             HandlerResult::Continue => {
-                let mut session = session_manager.get_session(&update);
+                let mut session = session_manager.get_session(&update).unwrap();
                 let key = format!("{}:{}", SESSION_KEY_PREFIX, name);
                 let state: MockState = session
                     .get(key)
@@ -214,7 +217,7 @@ mod tests {
         }
         match dialogue.handle(&context, update.clone()).await {
             HandlerResult::Continue => {
-                let mut session = session_manager.get_session(&update);
+                let mut session = session_manager.get_session(&update).unwrap();
                 let key = format!("{}:{}", SESSION_KEY_PREFIX, name);
                 let state: Option<MockState> = session.get(key).await.expect("Failed to get dialogue state");
                 assert!(state.is_none());
