@@ -8,6 +8,8 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, fmt::Display, marker::PhantomData};
 use tgbot::types::Update;
 
+pub use carapax_codegen::dialogue;
+
 const SESSION_KEY_PREFIX: &str = "__carapax_dialogue";
 
 /// Adapts dialogue handlers for [Dispatcher](../struct.Dispatcher.html)
