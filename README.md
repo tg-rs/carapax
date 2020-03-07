@@ -180,6 +180,72 @@ dispatcher.add_handler(AccessHandler::new(policy));
 
 ```
 
+### Dialogues
+
+You can easily implement dialogues by enabling `dialogue` and [`session-fs` or `session-redis`] features:
+
+```rust no_run
+use carapax::{
+    Dispatcher,
+    session::{backend::fs::FilesystemBackend, SessionManager},
+    dialogue::{
+        Dialogue,
+        DialogueResult::{self, *},
+        State,
+        dialogue
+    },
+    types::Message
+};
+use std::convert::Infallible;
+use serde::{Serialize, Deserialize};
+use tempfile::tempdir;
+
+// First we describe dialogue state
+
+#[derive(Serialize, Deserialize)]
+enum ExampleState {
+    Start,
+    Step1,
+    Step2,
+}
+
+impl State for ExampleState {
+    // Returns initial state
+    fn new() -> Self {
+        ExampleState::Start
+    }
+}
+
+// A special dialogue handler which takes an old state and returns a new state
+#[dialogue]
+async fn my_dialogue(
+    state: ExampleState,
+    context: &(),
+    input: Message,
+) -> Result<DialogueResult<ExampleState>, Infallible> {
+    Ok(match state {
+        ExampleState::Start => {
+            Next(ExampleState::Step1)
+        },
+        ExampleState::Step1 => {
+            Next(ExampleState::Step2)
+        }
+        ExampleState::Step2 => {
+            Exit
+        }
+    })
+}
+
+let tmpdir = tempdir().expect("Failed to create temp directory");
+let session_backend = FilesystemBackend::new(tmpdir.path());
+let session_manager = SessionManager::new(session_backend);
+let mut dispatcher = Dispatcher::new(());
+let dialogue_name = "example";  // unique dialogue name used to store state
+// `Dialogue` is responsible for loading and saving state
+let handler = Dialogue::new(session_manager, dialogue_name, my_dialogue);
+dispatcher.add_handler(handler);
+```
+
 ### Internationalization
 
 Carapax has i18n support provided by [gettext](https://www.gnu.org/software/gettext/).
