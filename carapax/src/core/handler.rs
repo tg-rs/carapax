@@ -18,7 +18,7 @@ pub trait Handler<C> {
     ///
     /// # Arguments
     ///
-    /// * context - A context which provides access to any type you have set before
+    /// * context - A context provided to [Dispatcher](struct.Dispatcher.html)
     /// * input - An object obtained from update (update itself, message, etc...)
     async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output;
 }

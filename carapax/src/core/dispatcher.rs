@@ -93,7 +93,7 @@ pub trait ErrorHandler {
     async fn handle(&mut self, err: HandlerError) -> ErrorPolicy;
 }
 
-/// A default dispatcher error handler that logs error
+/// A default error handler which logs error
 ///
 /// By default it stops propagation
 /// (see [ErrorPolicy](enum.ErrorPolicy.html) for more information)

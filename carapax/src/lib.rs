@@ -65,7 +65,7 @@ pub use carapax_codegen::handler;
 #[cfg_attr(nightly, doc(cfg(feature = "access")))]
 pub mod access;
 
-/// Commands dispatcher
+/// Commands
 pub mod command;
 
 /// Dialogue adapter

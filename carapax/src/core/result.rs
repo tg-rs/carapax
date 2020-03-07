@@ -14,9 +14,12 @@ pub enum HandlerResult {
     ///
     /// Next handler (if exists) will not run after current has finished
     Stop,
-    /// An error has occurred, stop propagation
+    /// An error has occurred
     ///
-    /// Next handler (if exists) will not run after current has finished
+    /// This error will be passed to [ErrorHandler](trait.ErrorHandler.html).
+    /// If error handler returned [ErrorPolicy::Continue](enum.ErrorPolicy.html),
+    /// next handler will run after current has finished
+    /// For `ErrorPolicy::Stop` next handler will not run (default behavior).
     Error(HandlerError),
 }
 
