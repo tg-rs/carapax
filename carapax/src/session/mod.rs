@@ -1,11 +1,10 @@
-use crate::command::Command;
 use seance::backend::SessionBackend;
 use std::{
     convert::{TryFrom, TryInto},
     error::Error,
     fmt,
 };
-use tgbot::types::{Integer, Message, Update};
+use tgbot::types::{Command, Integer, Message, Update};
 
 pub use seance::{
     backend, Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager as BaseSessionManager,

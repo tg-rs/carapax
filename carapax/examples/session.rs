@@ -1,10 +1,9 @@
 use carapax::{
-    command::Command,
     handler,
     longpoll::LongPoll,
     methods::SendMessage,
     session::{backend::fs::FilesystemBackend, SessionCollector, SessionManager},
-    types::Update,
+    types::{Command, Update},
     Api, Config, Dispatcher, HandlerResult,
 };
 use dotenv::dotenv;

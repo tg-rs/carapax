@@ -29,7 +29,7 @@ pub use tgbot::{
 ///
 /// Example:
 /// ```
-/// use carapax::{command::Command, handler};
+/// use carapax::{types::Command, handler};
 ///
 /// #[handler(command = "/start")]
 /// async fn handle_start(context: &(), command: Command) {
@@ -64,9 +64,6 @@ pub use carapax_codegen::handler;
 #[cfg(feature = "access")]
 #[cfg_attr(nightly, doc(cfg(feature = "access")))]
 pub mod access;
-
-/// Commands
-pub mod command;
 
 /// Dialogue adapter
 #[cfg(feature = "dialogue")]

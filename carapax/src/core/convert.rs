@@ -1,9 +1,12 @@
 use crate::core::{handler::Handler, result::HandlerResult};
 use async_trait::async_trait;
-use std::{convert::Infallible, error::Error};
+use std::{
+    convert::{Infallible, TryFrom},
+    error::Error,
+};
 use tgbot::types::{
-    CallbackQuery, ChosenInlineResult, InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Update,
-    UpdateKind,
+    CallbackQuery, ChosenInlineResult, Command, CommandError, InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery,
+    ShippingQuery, Update, UpdateKind,
 };
 
 pub(super) struct ConvertHandler<H>(H);
@@ -63,6 +66,25 @@ impl TryFromUpdate for Message {
             | UpdateKind::EditedChannelPost(msg) => Some(msg),
             _ => None,
         })
+    }
+}
+
+impl TryFromUpdate for Command {
+    type Error = CommandError;
+
+    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
+        // Should never panic as the error type is Infallible
+        let message: Option<Message> =
+            TryFromUpdate::try_from_update(update).expect("Could not convert update to message");
+        if let Some(message) = message {
+            match Command::try_from(message) {
+                Ok(command) => Ok(Some(command)),
+                Err(CommandError::NotFound) => Ok(None),
+                Err(err) => Err(err),
+            }
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -196,6 +218,28 @@ mod tests {
             assert!(Update::try_from_update(update.clone()).unwrap().is_some());
             assert!(Message::try_from_update(update).unwrap().is_some());
         }
+    }
+
+    #[test]
+    fn command() {
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "/test",
+                    "entities": [
+                        {"type": "bot_command", "offset": 0, "length": 5}
+                    ]
+                }
+            }
+        ))
+        .unwrap();
+        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
+        assert!(Command::try_from_update(update).unwrap().is_some());
     }
 
     #[test]

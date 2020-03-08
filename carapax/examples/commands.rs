@@ -1,5 +1,5 @@
 use carapax::{
-    command::Command, handler, longpoll::LongPoll, methods::SendMessage, Api, Config, Dispatcher, ExecuteError,
+    handler, longpoll::LongPoll, methods::SendMessage, types::Command, Api, Config, Dispatcher, ExecuteError,
     HandlerResult,
 };
 use dotenv::dotenv;

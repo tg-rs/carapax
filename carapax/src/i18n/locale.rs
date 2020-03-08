@@ -1,7 +1,6 @@
-use crate::command::Command;
 use std::{convert::TryFrom, error::Error, fmt};
 use tgbot::types::{
-    CallbackQuery, ChosenInlineResult, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update, User,
+    CallbackQuery, ChosenInlineResult, Command, InlineQuery, Message, PreCheckoutQuery, ShippingQuery, Update, User,
 };
 
 /// A locale

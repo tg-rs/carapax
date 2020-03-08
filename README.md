@@ -52,7 +52,7 @@ use carapax::Dispatcher;
 let mut dispatcher = Dispatcher::new(api.clone());
 
 // Let's add a command handler
-use carapax::{command::Command, handler};
+use carapax::{types::Command, handler};
 
 #[handler(command = "/start")]
 async fn command_handler(_context: &Api, _command: Command) {
