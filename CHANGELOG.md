@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.5.0 (08.03.2020)
+
+- All `carapax-*` crates was merged into one `carapax` crate.
+  Now you need to enable a corresponding feature in order
+  to get access to features provided by those crates.
+- Added `Dispatcher::set_error_handler` method.
+  Introduced `LoggingErrorHandler` as default error handler.
+  Now `ErrorPolicy` is available in public API.
+  So that you can easily override error handler and/or change update propagation behavior.
+- `seance` dependency was upgraded to 0.3 version.
+- Added dialogues support.
+- `HandlerError` now is a type alias for `Box<dyn Error>`.
+- `CommandDispatcher` was removed, use `#[handler(command = "/name")]` instead.
+- `#[handler]` proc macro emits a clear error message when function is not async.
+- Value of `command` argument in `#[handler]` proc macro now always requires a leading slash.
+- Use `TryFrom/TryInto` when converting an `Update` to `SessionId`.
+  We must be sure that `SessionId` always contains `chat_id` and `user_id` in order to prevent bugs.
+- `Command` type was moved to `types` module.
+- Added tgbot 0.7.0 support.
+
 ## 0.4.0 (27.01.2020)
 
 - Added tgbot 0.6 support.

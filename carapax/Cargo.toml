@@ -1,7 +1,7 @@
 [package]
 name = "carapax"
 description = "A Telegram Bot Framework"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2018"
 readme = "README.md"
@@ -27,13 +27,13 @@ session-fs = ["session", "seance/fs-backend"]
 
 [dependencies]
 async-trait = "0.1"
-carapax-codegen = { path = "../carapax-codegen" }
+carapax-codegen = "0.2"
 gettext = { version = "0.4", optional = true }
 log = "0.4"
 nonzero_ext = { version = "0.2", default-features = false, optional = true }
 ratelimit_meter = { version = "5", optional = true }
 serde = { version = "1", optional = true }
-tgbot = { git = "https://github.com/tg-rs/tgbot", rev = "824899" }
+tgbot = "0.7"
 tokio = "0.2"
 seance = { version = "0.3", optional = true }
 
