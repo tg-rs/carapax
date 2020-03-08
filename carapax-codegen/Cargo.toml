@@ -1,6 +1,6 @@
 [package]
 name = "carapax-codegen"
-version = "0.1.1"
+version = "0.2.0"
 description = "Procedural macroses for carapax"
 authors = ["Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2018"
