@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1 (28.03.2020)
+
+- Fixed docs.rs build.
+
 ## 0.5.0 (08.03.2020)
 
 - All `carapax-*` crates was merged into one `carapax` crate.
