@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0 (01.04.2020)
+
+- Added tgbot 0.8 support.
+
 ## 0.5.1 (28.03.2020)
 
 - Fixed docs.rs build.

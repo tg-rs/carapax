@@ -1,7 +1,7 @@
 [package]
 name = "carapax"
 description = "A Telegram Bot Framework"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2018"
 readme = "../README.md"
@@ -33,7 +33,7 @@ log = "0.4"
 nonzero_ext = { version = "0.2", default-features = false, optional = true }
 ratelimit_meter = { version = "5", optional = true }
 serde = { version = "1", optional = true }
-tgbot = "0.7"
+tgbot = "0.8"
 tokio = "0.2"
 seance = { version = "0.3", optional = true }
 
