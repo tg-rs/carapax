@@ -17,7 +17,7 @@ Name comes from [Carapace](https://en.wikipedia.org/wiki/Carapace) (carapax in l
 
 ```toml
 [dependencies]
-carapax = "0.5.0"
+carapax = "0.6.0"
 ```
 
 ## Examples
