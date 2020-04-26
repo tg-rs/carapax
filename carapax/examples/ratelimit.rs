@@ -8,7 +8,6 @@ use carapax::{
     Api, Config, Dispatcher,
 };
 use dotenv::dotenv;
-use env_logger;
 use std::{env, time::Duration};
 
 #[allow(clippy::trivially_copy_pass_by_ref)]

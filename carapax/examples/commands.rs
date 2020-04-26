@@ -3,8 +3,6 @@ use carapax::{
     HandlerResult,
 };
 use dotenv::dotenv;
-use env_logger;
-use log;
 use std::env;
 
 #[handler(command = "/start")]

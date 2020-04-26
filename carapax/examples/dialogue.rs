@@ -11,7 +11,6 @@ use carapax::{
     Api, Config, Dispatcher,
 };
 use dotenv::dotenv;
-use env_logger;
 use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, env};
 use tempfile::tempdir;
