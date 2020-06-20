@@ -33,7 +33,7 @@ log = "0.4"
 nonzero_ext = { version = "0.2", default-features = false, optional = true }
 ratelimit_meter = { version = "5", optional = true }
 serde = { version = "1", optional = true }
-tgbot = "0.9"
+tgbot = "0.10"
 tokio = "0.2"
 seance = { version = "0.3", optional = true }
 
