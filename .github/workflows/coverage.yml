@@ -33,7 +33,6 @@ jobs:
             -Cinline-threshold=0
             -Clink-dead-code
             -Coverflow-checks=off
-            -Zno-landing-pads
       - name: Aggregate
         uses: actions-rs/grcov@v0.1
       - name: Publish
