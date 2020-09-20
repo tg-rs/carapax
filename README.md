@@ -56,7 +56,7 @@ use carapax::{types::Command, handler};
 
 #[handler(command = "/start")]
 async fn command_handler(_context: &Api, _command: Command) {
-    // handler takes a reference to context passed to dispathcer
+    // handler takes a reference to context passed to dispatcher
 }
 
 dispatcher.add_handler(command_handler);
