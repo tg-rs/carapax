@@ -1,8 +1,12 @@
 # Changelog
 
+## 0.9.0 (15.11.2020)
+
+- Added tgbot 0.11.0 support.
+
 ## 0.8.0 (20.06.2020)
 
-- Added tgbot 0.10.0 support
+- Added tgbot 0.10.0 support.
 
 ## 0.7.0 (26.04.2020)
 
