@@ -65,9 +65,6 @@ mod tests {
         for _ in 0..10 {
             results.push(handler.handle(&(), update.clone()).await)
         }
-        assert!(results.into_iter().any(|x| match x {
-            HandlerResult::Stop => true,
-            _ => false,
-        }));
+        assert!(results.into_iter().any(|x| matches!(x, HandlerResult::Stop)));
     }
 }
