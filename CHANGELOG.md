@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.0 (09.01.2020)
+
+- Added tokio 1.0 and tgbot 0.12 support.
+
 ## 0.9.0 (15.11.2020)
 
 - Added tgbot 0.11.0 support.
