@@ -1,16 +1,9 @@
 //! A Telegram Bot framework
 #![cfg_attr(nightly, feature(doc_cfg, external_doc))]
-#![warn(missing_docs)]
+// TODO: uncomment
+//#![warn(missing_docs)]
 
-mod core;
-
-pub use self::core::*;
 pub use async_trait::async_trait;
-pub use tgbot::{
-    longpoll, methods, mime, types, webhook, Api, ApiError, Config, DownloadFileError, ExecuteError, ParseProxyError,
-    UpdateHandler,
-};
-
 /// Mark an async function as update handler
 ///
 /// If called without arguments it simply will implement [Handler](trait.Handler.html) for given function.
@@ -58,6 +51,14 @@ pub use tgbot::{
 /// }
 /// ```
 pub use carapax_codegen::handler;
+pub use tgbot::{
+    longpoll, methods, mime, types, webhook, Api, ApiError, Config, DownloadFileError, ExecuteError, ParseProxyError,
+    UpdateHandler,
+};
+
+pub use self::core::*;
+
+mod core;
 
 /// Access handler
 #[cfg(feature = "access")]
@@ -83,3 +84,6 @@ pub mod ratelimit;
 #[cfg(feature = "session")]
 #[cfg_attr(nightly, doc(cfg(feature = "session")))]
 pub mod session;
+
+mod app;
+pub use app::App;

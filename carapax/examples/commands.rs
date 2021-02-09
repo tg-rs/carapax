@@ -1,39 +1,119 @@
-use carapax::{
-    handler, longpoll::LongPoll, methods::SendMessage, types::Command, Api, Config, Dispatcher, ExecuteError,
-    HandlerResult,
-};
+use carapax::types::Command as RawCommand;
+use carapax::{App, Client, Command, CommandMeta, ExecuteError, HandlerError, HandlerResult};
 use dotenv::dotenv;
-use std::env;
+use std::convert::TryFrom;
+use std::num::ParseIntError;
 
-#[handler(command = "/start")]
-async fn handle_start(api: &Api, command: Command) -> Result<HandlerResult, ExecuteError> {
-    log::info!("handle /start command\n");
-    let chat_id = command.get_message().get_chat_id();
-    let method = SendMessage::new(chat_id, "Hello!");
-    let result = api.execute(method).await;
-    log::info!("sendMessage result: {:?}\n", result);
+type Result<T, E = Error> = std::result::Result<T, E>;
+
+#[derive(Debug, thiserror::Error)]
+enum Error {
+    #[error("{0}")]
+    Execute(
+        #[from]
+        #[source]
+        ExecuteError,
+    ),
+}
+
+impl HandlerError for Error {
+    fn result(&self) -> HandlerResult {
+        HandlerResult::Stop
+    }
+}
+
+#[derive(Debug)]
+struct Start;
+
+impl CommandMeta for Start {
+    const NAME: &'static str = "/start";
+}
+
+impl From<RawCommand> for Start {
+    fn from(_: RawCommand) -> Self {
+        Self
+    }
+}
+
+async fn handle_start(_start: Command<Start>, client: Client) -> Result<HandlerResult> {
+    let msg = client.send_message("Hello!").reply_to_user().execute().await?;
+    log::info!("sendMessage result: {:?}", msg);
     Ok(HandlerResult::Stop)
 }
 
-#[handler(command = "/user_id")]
-async fn handle_user_id(api: &Api, command: Command) -> Result<HandlerResult, ExecuteError> {
-    log::info!("handle /user_id command\n");
-    let message = command.get_message();
-    let chat_id = message.get_chat_id();
-    let method = SendMessage::new(chat_id, format!("Your ID is: {:?}", message.get_user().map(|u| u.id)));
-    let result = api.execute(method).await?;
-    log::info!("sendMessage result: {:?}\n", result);
+#[derive(Debug)]
+struct UserId;
+
+impl CommandMeta for UserId {
+    const NAME: &'static str = "/user_id";
+}
+
+impl From<RawCommand> for UserId {
+    fn from(_: RawCommand) -> Self {
+        Self
+    }
+}
+
+async fn handle_user_id(_user_id: Command<UserId>, client: Client) -> Result<HandlerResult> {
+    let user_id = client
+        .message()
+        .get_user()
+        .map(|user| user.id.to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+    let msg = client.send_message(format!("Your ID is {}", user_id)).execute().await?;
+    log::info!("sendMessage result: {:?}", msg);
     Ok(HandlerResult::Stop)
 }
 
-#[handler]
-async fn handle_any(api: &Api, command: Command) -> Result<(), ExecuteError> {
+struct Sum {
+    a: i64,
+    b: i64,
+}
+
+impl CommandMeta for Sum {
+    const NAME: &'static str = "/sum";
+}
+
+impl TryFrom<RawCommand> for Sum {
+    type Error = SumError;
+
+    fn try_from(cmd: RawCommand) -> Result<Self, Self::Error> {
+        let args = cmd.get_args();
+        let a = args.get(0).ok_or(SumError::NotEnoughArgs)?.parse()?;
+        let b = args.get(1).ok_or(SumError::NotEnoughArgs)?.parse()?;
+        Ok(Self { a, b })
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+enum SumError {
+    #[error("{0}")]
+    ParseInt(
+        #[from]
+        #[source]
+        ParseIntError,
+    ),
+    #[error("Not enough arguments")]
+    NotEnoughArgs,
+}
+
+async fn handle_sum(Command(Sum { a, b }): Command<Sum>, client: Client) -> Result<HandlerResult> {
+    let sum = a + b;
+    let msg = client.send_message(sum.to_string()).reply_to_user().execute().await?;
+    log::info!("{:?}", msg);
+    Ok(HandlerResult::Stop)
+}
+
+async fn handle_any(client: Client, command: RawCommand) -> Result<()> {
     let name = command.get_name();
-    log::info!("handle {} command\n", name);
-    let chat_id = command.get_message().get_chat_id();
-    api.execute(SendMessage::new(chat_id, format!("Got {} command", name)))
-        .await?;
+    log::info!("handle {} command", name);
+    client.send_message(format!("Got {} command", name)).execute().await?;
     Ok(())
+}
+
+#[derive(Debug)]
+struct State {
+    b: i32,
 }
 
 #[tokio::main]
@@ -41,16 +121,15 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
-    let proxy = env::var("CARAPAX_PROXY").ok();
-    let mut config = Config::new(token);
-    if let Some(proxy) = proxy {
-        config = config.proxy(proxy).expect("Failed to set proxy");
-    }
-    let api = Api::new(config).expect("Failed to create API");
-    let mut dispatcher = Dispatcher::new(api.clone());
-    dispatcher.add_handler(handle_start);
-    dispatcher.add_handler(handle_user_id);
-    dispatcher.add_handler(handle_any);
-    LongPoll::new(api, dispatcher).run().await;
+    App::from_env()
+        .with_dispatcher(|dispatcher| {
+            dispatcher
+                .add_handler(handle_start)
+                .add_handler(handle_user_id)
+                .add_handler(handle_sum)
+                .add_handler(handle_any);
+        })
+        .long_poll()
+        .run()
+        .await;
 }

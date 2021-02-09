@@ -1,10 +1,9 @@
-use std::error::Error;
+use std::fmt;
 
 /// An error returned by handler
-pub type HandlerError = Box<dyn Error + Send>;
+pub type HandlerResultError = Box<dyn fmt::Display + Send>;
 
 /// Result of a handler
-#[derive(Debug)]
 pub enum HandlerResult {
     /// Continue propagation
     ///
@@ -20,14 +19,14 @@ pub enum HandlerResult {
     /// If error handler returned [ErrorPolicy::Continue](enum.ErrorPolicy.html),
     /// next handler will run after current has finished
     /// For `ErrorPolicy::Stop` next handler will not run (default behavior).
-    Error(HandlerError),
+    Error(HandlerResultError),
 }
 
 impl HandlerResult {
     /// Creates an error result
     pub fn error<E>(err: E) -> Self
     where
-        E: Error + Send + 'static,
+        E: fmt::Display + Send + 'static,
     {
         HandlerResult::Error(Box::new(err))
     }
@@ -42,12 +41,39 @@ impl From<()> for HandlerResult {
 impl<T, E> From<Result<T, E>> for HandlerResult
 where
     T: Into<HandlerResult>,
-    E: Error + Send + Sync + 'static,
+    E: HandlerError,
 {
     fn from(result: Result<T, E>) -> Self {
         match result {
             Ok(res) => res.into(),
-            Err(err) => HandlerResult::error(err),
+            Err(err) => err.result(),
         }
     }
+}
+
+impl fmt::Debug for HandlerResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            HandlerResult::Continue => f.debug_tuple("Continue").finish(),
+            HandlerResult::Stop => f.debug_tuple("Stop").finish(),
+            HandlerResult::Error(err) => f.debug_tuple("Error").field(&format_args!("{}", err)).finish(),
+        }
+    }
+}
+
+pub struct Error {
+    inner: Box<dyn HandlerError>,
+}
+
+impl<T> From<T> for Error
+where
+    T: HandlerError + 'static,
+{
+    fn from(err: T) -> Self {
+        Self { inner: Box::new(err) }
+    }
+}
+
+pub trait HandlerError {
+    fn result(&self) -> HandlerResult;
 }

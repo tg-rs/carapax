@@ -1,5 +1,5 @@
 use crate::{
-    core::{Handler, HandlerResult, TryFromUpdate},
+    core::{FromUpdate, Handler, HandlerResult},
     session::SessionManager,
 };
 use async_trait::async_trait;
@@ -90,7 +90,7 @@ pub trait State: Serialize + DeserializeOwned {
 #[async_trait]
 pub trait DialogueHandler<C, S> {
     /// An object to handle (Update, Message, Command, etc...)
-    type Input: TryFromUpdate + Send + Sync;
+    type Input: FromUpdate + Send + Sync;
 
     /// An error occurred in handler
     type Error: Error + Send + Sync;
@@ -122,7 +122,7 @@ where
     H: DialogueHandler<C, S> + Send,
     S: State + Send + Sync,
     <H as DialogueHandler<C, S>>::Error: 'static,
-    <<H as DialogueHandler<C, S>>::Input as TryFromUpdate>::Error: 'static,
+    <<H as DialogueHandler<C, S>>::Input as FromUpdate>::Error: 'static,
 {
     type Input = Update;
     type Output = HandlerResult;
@@ -132,7 +132,7 @@ where
             Ok(session) => session,
             Err(err) => return HandlerResult::error(err),
         };
-        let input = match TryFromUpdate::try_from_update(input) {
+        let input = match FromUpdate::from_update(input) {
             Ok(Some(input)) => input,
             Ok(None) => return HandlerResult::Continue,
             Err(err) => return HandlerResult::error(err),

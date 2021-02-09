@@ -33,9 +33,12 @@ log = "0.4"
 nonzero_ext = { version = "0.2", default-features = false, optional = true }
 ratelimit_meter = { version = "5.0", optional = true }
 serde = { version = "1.0", optional = true }
-tgbot = "0.12"
+tgbot = { git = "https://github.com/tg-rs/tgbot", branch = "no-async-trait" }
 tokio = "1.0"
 seance = { version = "0.5", optional = true }
+# TODO: use util instead
+futures = "0.3.12"
+anyhow = "1.0.38"
 
 [dev-dependencies]
 dotenv = "0.15"
@@ -43,6 +46,7 @@ env_logger = "0.8"
 serde_json = "1.0"
 tempfile = "3.1"
 tokio = { version = "1.0", features = ["sync", "macros", "rt-multi-thread"]}
+thiserror = "1.0.23"
 
 [[example]]
 name = "access"

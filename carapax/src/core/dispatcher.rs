@@ -1,84 +1,139 @@
-use crate::core::{
-    convert::ConvertHandler,
-    handler::Handler,
-    result::{HandlerError, HandlerResult},
+use crate::core::convert::BoxedConvertFuture;
+use crate::{
+    core::{
+        convert::ConvertHandler,
+        handler::Handler,
+        result::{HandlerResult, HandlerResultError},
+    },
+    Data, FromUpdate, ServiceUpdate,
 };
 use async_trait::async_trait;
+use futures::future::BoxFuture;
+use std::any::{Any, TypeId};
+use std::collections::HashMap;
+use std::fmt::Display;
+use std::future::Future;
 use std::sync::Arc;
-use tgbot::{types::Update, UpdateHandler};
+use tgbot::{types::Update, Api, UpdateHandler};
 
-type BoxedHandler<C> = Box<dyn Handler<C, Input = Update, Output = HandlerResult> + Send>;
+type BoxedHandler = Box<dyn Handler<ServiceUpdate, BoxedConvertFuture> + Send>;
 type BoxedErrorHandler = Box<dyn ErrorHandler + Send>;
 
 /// A Telegram Update dispatcher
-pub struct Dispatcher<C> {
-    handlers: Vec<BoxedHandler<C>>,
-    context: Arc<C>,
-    error_handler: BoxedErrorHandler,
+pub struct Dispatcher {
+    api: Api,
+    handlers: Vec<BoxedHandler>,
+    //error_handler: BoxedErrorHandler,
+    data: Arc<DispatcherData>,
 }
 
-impl<C> Dispatcher<C>
-where
-    C: Send + Sync,
-{
+impl Dispatcher {
     /// Creates a new Dispatcher
-    ///
-    /// # Arguments
-    ///
-    /// * context - Context passed to each handler
-    pub fn new(context: C) -> Self {
+    pub fn new(api: Api) -> Self {
         Self {
-            context: Arc::new(context),
+            api,
             handlers: Vec::new(),
-            error_handler: Box::new(LoggingErrorHandler::default()),
+            //error_handler: Box::new(LoggingErrorHandler::default()),
+            data: Arc::new(DispatcherData::default()),
         }
+    }
+
+    pub fn data<T: Send + Sync + 'static>(&mut self, value: impl Into<Data<T>>) -> &mut Self {
+        let data = Arc::get_mut(&mut self.data).unwrap();
+        data.insert(value.into());
+        self
     }
 
     /// Adds a handler to dispatcher
     ///
     /// Handlers will be dispatched in the same order as they are added
-    pub fn add_handler<H>(&mut self, handler: H)
+    pub fn add_handler<H, T, R>(&mut self, handler: H) -> &mut Self
     where
-        H: Handler<C> + Send + 'static,
-        H::Input: 'static,
+        H: Handler<T, R> + Send + 'static,
+        T: FromUpdate + Send + 'static,
+        T::Error: Display,
+        R: Future + Send + 'static,
+        R::Output: Into<HandlerResult>,
     {
-        self.handlers.push(ConvertHandler::boxed(handler))
+        self.handlers.push(ConvertHandler::boxed(handler));
+        self
     }
 
     /// Sets a handler to be executed when an error has occurred
     ///
     /// Error handler will be called if one of update handlers returned
     /// [`HandlerResult::Error`](enum.HandlerResult.html)
-    pub fn set_error_handler<H>(&mut self, handler: H)
+    /*pub fn set_error_handler<H>(mut self, handler: H) -> Self
     where
         H: ErrorHandler + Send + 'static,
     {
         self.error_handler = Box::new(handler);
+        self
+    }*/
+
+    /// Returns [`Api`]
+    ///
+    /// [`Api`]: tgbot::Api
+    pub fn get_api(&self) -> Api {
+        self.api.clone()
     }
 
-    pub(crate) async fn dispatch(&mut self, update: Update) {
-        let context = self.context.clone();
-        for handler in &mut self.handlers {
-            let result = handler.handle(&context, update.clone()).await;
-            match result {
-                HandlerResult::Continue => continue,
-                HandlerResult::Stop => break,
-                HandlerResult::Error(err) => match self.error_handler.handle(err).await {
-                    ErrorPolicy::Continue => continue,
-                    ErrorPolicy::Stop => break,
-                },
+    fn dispatch(&self, update: Update) -> impl Future<Output = ()> {
+        let service_update = ServiceUpdate {
+            update,
+            api: self.api.clone(),
+            data: self.data.clone(),
+        };
+
+        let futs: Vec<(&'static str, _)> = self
+            .handlers
+            .iter()
+            .map(|h| (h.name(), h.call(service_update.clone())))
+            .collect();
+
+        async move {
+            for (name, fut) in futs {
+                log::debug!("Run {} handler", name);
+
+                let result = fut.await;
+                match result {
+                    HandlerResult::Continue => continue,
+                    HandlerResult::Stop => break,
+                    HandlerResult::Error(err) => log::error!("{}", err), // TODO: error handling
+                                                                         /*match self.error_handler.handle(err).await {
+                                                                             ErrorPolicy::Continue => continue,
+                                                                             ErrorPolicy::Stop => break,
+                                                                         }*/
+                }
             }
         }
     }
 }
 
-#[async_trait]
-impl<C> UpdateHandler for Dispatcher<C>
-where
-    C: Send + Sync,
-{
-    async fn handle(&mut self, update: Update) {
-        self.dispatch(update).await
+impl UpdateHandler for Dispatcher {
+    type Future = BoxFuture<'static, ()>;
+
+    fn handle(&self, update: Update) -> Self::Future {
+        Box::pin(self.dispatch(update))
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct DispatcherData {
+    inner: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
+}
+
+impl DispatcherData {
+    pub fn get<T: 'static>(&self) -> Option<&T> {
+        self.inner
+            .get(&TypeId::of::<T>())
+            .and_then(|boxed| boxed.downcast_ref())
+    }
+
+    pub fn insert<T: Send + Sync + 'static>(&mut self, value: T) {
+        self.inner.insert(TypeId::of::<T>(), Box::new(value));
+        // TODO: return old value
+        //.and_then(|boxed| boxed.downcast().ok().map(|boxed| *boxed))
     }
 }
 
@@ -90,7 +145,7 @@ pub trait ErrorHandler {
     /// This method is called on each error returned by a handler
     /// [ErrorPolicy](enum.ErrorPolicy.html) defines
     /// whether next handler should process current update or not.
-    async fn handle(&mut self, err: HandlerError) -> ErrorPolicy;
+    async fn handle(&mut self, err: HandlerResultError) -> ErrorPolicy;
 }
 
 /// A default error handler which logs error
@@ -114,7 +169,7 @@ impl Default for LoggingErrorHandler {
 
 #[async_trait]
 impl ErrorHandler for LoggingErrorHandler {
-    async fn handle(&mut self, err: HandlerError) -> ErrorPolicy {
+    async fn handle(&mut self, err: HandlerResultError) -> ErrorPolicy {
         log::error!("An error has occurred: {}", err);
         self.0
     }
@@ -240,11 +295,11 @@ mod tests {
 
     struct MockErrorHandler {
         error_policy: ErrorPolicy,
-        sender: Option<Sender<HandlerError>>,
+        sender: Option<Sender<HandlerResultError>>,
     }
 
     impl MockErrorHandler {
-        fn new(error_policy: ErrorPolicy, sender: Sender<HandlerError>) -> Self {
+        fn new(error_policy: ErrorPolicy, sender: Sender<HandlerResultError>) -> Self {
             MockErrorHandler {
                 error_policy,
                 sender: Some(sender),
@@ -254,7 +309,7 @@ mod tests {
 
     #[async_trait]
     impl ErrorHandler for MockErrorHandler {
-        async fn handle(&mut self, err: HandlerError) -> ErrorPolicy {
+        async fn handle(&mut self, err: HandlerResultError) -> ErrorPolicy {
             let sender = self.sender.take().unwrap();
             sender.send(err).unwrap();
             self.error_policy
