@@ -1,5 +1,5 @@
 use crate::core::{Handler, HandlerResult};
-use async_trait::async_trait;
+use futures::future::BoxFuture;
 use ratelimit_meter::{KeyedRateLimiter, GCRA};
 use std::{hash::Hash, num::NonZeroU32, sync::Arc, time::Duration};
 use tgbot::types::{ChatId, Integer, Update, UserId};
@@ -174,27 +174,44 @@ impl RateLimitKey for RateLimitList {
     }
 }
 
-#[async_trait]
-impl<C, K> Handler<C> for KeyedRateLimitHandler<K>
+impl<K> Handler<Update, BoxFuture<'static, HandlerResult>> for KeyedRateLimitHandler<K>
 where
-    C: Send + Sync,
     K: RateLimitKey + Send + Sync,
+    K::Key: 'static,
 {
-    type Input = Update;
-    type Output = HandlerResult;
-
-    async fn handle(&mut self, _context: &C, update: Self::Input) -> Self::Output {
-        let should_pass = if let Some(key) = self.key.get_key(&update) {
-            let mut limiter = self.limiter.lock().await;
-            limiter.check(key).is_ok()
-        } else {
-            self.on_missing
-        };
-        if should_pass {
-            HandlerResult::Continue
-        } else {
-            HandlerResult::Stop
+    fn call(&self, update: Update) -> BoxFuture<'static, HandlerResult> {
+        enum Ret<K: Clone + Eq + Hash> {
+            OnMissing(bool),
+            Check {
+                limiter: Arc<Mutex<KeyedRateLimiter<K, GCRA>>>,
+                key: K,
+            },
         }
+
+        let ret = if let Some(key) = self.key.get_key(&update) {
+            Ret::Check {
+                limiter: self.limiter.clone(),
+                key,
+            }
+        } else {
+            Ret::OnMissing(self.on_missing)
+        };
+
+        Box::pin(async move {
+            let should_pass = match ret {
+                Ret::Check { limiter, key } => {
+                    let mut limiter = limiter.lock().await;
+                    limiter.check(key).is_ok()
+                }
+                Ret::OnMissing(on_missing) => on_missing,
+            };
+
+            if should_pass {
+                HandlerResult::Continue
+            } else {
+                HandlerResult::Stop
+            }
+        })
     }
 }
 
@@ -217,9 +234,9 @@ mod tests {
         }))
         .unwrap();
         let mut results = Vec::new();
-        let mut handler = KeyedRateLimitHandler::new(limit_all_users, true, nonzero!(1u32), Duration::from_secs(1000));
+        let handler = KeyedRateLimitHandler::new(limit_all_users, true, nonzero!(1u32), Duration::from_secs(1000));
         for _ in 0..10 {
-            results.push(handler.handle(&(), update.clone()).await);
+            results.push(handler.call(update.clone()).await);
         }
         assert!(results.into_iter().any(|x| matches!(x, HandlerResult::Stop)))
     }
@@ -238,13 +255,13 @@ mod tests {
         }))
         .unwrap();
         for on_missing in &[true, false] {
-            let mut handler = KeyedRateLimitHandler::new(
+            let handler = KeyedRateLimitHandler::new(
                 RateLimitList::default().with_user(1),
                 *on_missing,
                 nonzero!(1u32),
                 Duration::from_secs(1000),
             );
-            let result = handler.handle(&(), update.clone()).await;
+            let result = handler.call(update.clone()).await;
             match result {
                 HandlerResult::Continue => assert_eq!(*on_missing, true),
                 HandlerResult::Stop => assert_eq!(*on_missing, false),

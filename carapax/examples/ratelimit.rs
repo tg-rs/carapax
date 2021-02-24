@@ -1,5 +1,4 @@
 use carapax::{
-    handler,
     longpoll::LongPoll,
     ratelimit::{
         limit_all_chats, limit_all_users, nonzero, DirectRateLimitHandler, KeyedRateLimitHandler, RateLimitList,
@@ -10,9 +9,7 @@ use carapax::{
 use dotenv::dotenv;
 use std::{env, time::Duration};
 
-#[allow(clippy::trivially_copy_pass_by_ref)]
-#[handler]
-async fn handle_message(_context: &(), message: Message) {
+async fn handle_message(message: Message) {
     log::info!("Got a new message: {:?}", message);
 }
 
@@ -38,7 +35,7 @@ async fn main() {
     // Allow update when key is missing
     let on_missing = true;
 
-    let mut dispatcher = Dispatcher::new(());
+    let mut dispatcher = Dispatcher::new(api.clone());
 
     match strategy.as_str() {
         "direct" => {
