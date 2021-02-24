@@ -6,9 +6,73 @@ use std::{
 };
 use tgbot::types::{Command, Integer, Message, Update};
 
+use crate::{Data, FromUpdate, ServiceUpdate};
 pub use seance::{
-    backend, Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager as BaseSessionManager,
+    backend, Session, SessionCollector, SessionCollectorHandle, SessionError as SeanceSessionError,
+    SessionManager as BaseSessionManager,
 };
+use std::convert::Infallible;
+
+#[derive(Debug)]
+#[allow(missing_docs)]
+pub enum SessionError {
+    SeanceSession(SeanceSessionError),
+    Id(SessionIdError),
+    NoManagerInData,
+}
+
+impl From<SeanceSessionError> for SessionError {
+    fn from(err: SeanceSessionError) -> Self {
+        Self::SeanceSession(err)
+    }
+}
+
+impl From<SessionIdError> for SessionError {
+    fn from(err: SessionIdError) -> Self {
+        Self::Id(err)
+    }
+}
+
+impl fmt::Display for SessionError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SessionError::SeanceSession(err) => fmt::Display::fmt(err, f),
+            SessionError::Id(err) => fmt::Display::fmt(err, f),
+            SessionError::NoManagerInData => f.write_str("SessionManager was not added in Dispatcher::data"),
+        }
+    }
+}
+
+impl Error for SessionError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            SessionError::SeanceSession(err) => Some(err),
+            SessionError::Id(err) => Some(err),
+            SessionError::NoManagerInData => None,
+        }
+    }
+}
+
+impl From<Infallible> for SessionError {
+    fn from(err: Infallible) -> Self {
+        match err {}
+    }
+}
+
+impl<B> FromUpdate for Session<B>
+where
+    B: SessionBackend + 'static,
+{
+    type Error = SessionError;
+
+    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
+        let session_id = SessionId::try_from(&service_update.update)?;
+        let manager = Data::<SessionManager<B>>::from_update(service_update)
+            .map_err(|_| SessionError::NoManagerInData)?
+            .expect("Data always returns Some");
+        Ok(Some(manager.get_session(session_id)?))
+    }
+}
 
 /// A session manager
 #[derive(Clone)]
