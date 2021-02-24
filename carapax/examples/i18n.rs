@@ -1,5 +1,4 @@
 use carapax::{
-    handler,
     i18n::{Catalog, Translator, TranslatorStore},
     longpoll::LongPoll,
     methods::SendMessage,
@@ -12,23 +11,14 @@ use std::env;
 const RU: &[u8] = include_bytes!("../data/ru.mo");
 const EN: &[u8] = include_bytes!("../data/en.mo");
 
-struct Context {
-    api: Api,
-    translators: TranslatorStore,
-}
-
-#[handler]
-async fn update_handler(context: &Context, update: Update) {
-    let translator = context.translators.get_translator(&update);
+async fn update_handler(api: Api, translator: Translator, update: Update) {
     println!("GOT UPDATE: {:?}; LOCALE: {:?}", update, translator.get_locale());
-    context
-        .api
-        .execute(SendMessage::new(
-            update.get_chat_id().unwrap(),
-            translator.translate("Hello, stranger!"),
-        ))
-        .await
-        .unwrap();
+    api.execute(SendMessage::new(
+        update.get_chat_id().unwrap(),
+        translator.translate("Hello, stranger!"),
+    ))
+    .await
+    .unwrap();
 }
 
 #[tokio::main]
@@ -48,11 +38,8 @@ async fn main() {
     let en = Translator::new("en", Catalog::parse(EN).unwrap());
     let ru = Translator::new("ru", Catalog::parse(RU).unwrap());
     let translators = TranslatorStore::new(en).add_translator(ru);
-    let mut dispatcher = Dispatcher::new(Context {
-        api: api.clone(),
-        translators,
-    });
-    dispatcher.add_handler(update_handler);
+    let mut dispatcher = Dispatcher::new(api.clone());
+    dispatcher.add_handler(update_handler).data(translators);
 
     LongPoll::new(api, dispatcher).run().await
 }
