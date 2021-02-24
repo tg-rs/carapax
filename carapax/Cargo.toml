@@ -26,16 +26,17 @@ session-redis = ["session", "seance/redis-backend"]
 session-fs = ["session", "seance/fs-backend"]
 
 [dependencies]
-async-trait = "0.1"
 carapax-codegen = "0.2"
 gettext = { version = "0.4", optional = true }
 log = "0.4"
 nonzero_ext = { version = "0.2", default-features = false, optional = true }
 ratelimit_meter = { version = "5.0", optional = true }
 serde = { version = "1.0", optional = true }
-tgbot = "0.12"
+tgbot = { git = "https://github.com/tg-rs/tgbot" }
 tokio = "1.0"
 seance = { version = "0.5", optional = true }
+# TODO: use util instead
+futures = "0.3.12" 
 
 [dev-dependencies]
 dotenv = "0.15"

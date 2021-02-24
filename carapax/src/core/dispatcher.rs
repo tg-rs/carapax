@@ -1,96 +1,178 @@
-use crate::core::{
-    convert::ConvertHandler,
-    handler::Handler,
-    result::{HandlerError, HandlerResult},
+use crate::{
+    core::{
+        convert::{BoxedConvertFuture, ConvertHandler},
+        handler::Handler,
+        result::{HandlerResult, HandlerResultError},
+    },
+    Data, FromUpdate, ServiceUpdate,
 };
-use async_trait::async_trait;
-use std::sync::Arc;
-use tgbot::{types::Update, UpdateHandler};
+use futures::future::BoxFuture;
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+    future::Future,
+    sync::Arc,
+};
+use tgbot::{types::Update, Api, UpdateHandler};
 
-type BoxedHandler<C> = Box<dyn Handler<C, Input = Update, Output = HandlerResult> + Send>;
-type BoxedErrorHandler = Box<dyn ErrorHandler + Send>;
+type BoxedHandler = Box<dyn Handler<ServiceUpdate, BoxedConvertFuture> + Send>;
+type BoxedErrorHandler = Box<dyn ErrorHandler<Future = BoxFuture<'static, ErrorPolicy>> + Send + Sync>;
 
 /// A Telegram Update dispatcher
-pub struct Dispatcher<C> {
-    handlers: Vec<BoxedHandler<C>>,
-    context: Arc<C>,
-    error_handler: BoxedErrorHandler,
+pub struct Dispatcher {
+    api: Api,
+    handlers: Vec<BoxedHandler>,
+    error_handler: Arc<BoxedErrorHandler>,
+    data: Arc<DispatcherData>,
 }
 
-impl<C> Dispatcher<C>
-where
-    C: Send + Sync,
-{
+impl Dispatcher {
     /// Creates a new Dispatcher
-    ///
-    /// # Arguments
-    ///
-    /// * context - Context passed to each handler
-    pub fn new(context: C) -> Self {
+    pub fn new(api: Api) -> Self {
         Self {
-            context: Arc::new(context),
+            api,
             handlers: Vec::new(),
-            error_handler: Box::new(LoggingErrorHandler::default()),
+            error_handler: Arc::new(Box::new(LoggingErrorHandler::default())),
+            data: Arc::new(DispatcherData::default()),
         }
+    }
+
+    /// Adds a user data wrapping it into [`Arc`]
+    ///
+    /// If your data is already wrapped into [`Arc`] it will be automatically taken into account
+    /// because of [`impl From<Arc<T>> for Data<T>`]
+    ///
+    /// [`impl From<Arc<T>> for Data<T>`]: Data#impl-From<Arc<T>>
+    pub fn data<T: Send + Sync + 'static>(&mut self, value: impl Into<Data<T>>) -> &mut Self {
+        let data = Arc::get_mut(&mut self.data).unwrap();
+        data.push(value.into());
+        self
     }
 
     /// Adds a handler to dispatcher
     ///
     /// Handlers will be dispatched in the same order as they are added
-    pub fn add_handler<H>(&mut self, handler: H)
+    pub fn add_handler<H, T, R>(&mut self, handler: H) -> &mut Self
     where
-        H: Handler<C> + Send + 'static,
-        H::Input: 'static,
+        H: Handler<T, R> + Send + 'static,
+        T: FromUpdate + Send + 'static,
+        T::Error: std::error::Error,
+        R: Future + Send + 'static,
+        R::Output: Into<HandlerResult>,
     {
-        self.handlers.push(ConvertHandler::boxed(handler))
+        self.handlers.push(ConvertHandler::boxed(handler));
+        self
     }
 
     /// Sets a handler to be executed when an error has occurred
     ///
     /// Error handler will be called if one of update handlers returned
     /// [`HandlerResult::Error`](enum.HandlerResult.html)
-    pub fn set_error_handler<H>(&mut self, handler: H)
+    pub fn set_error_handler<H>(&mut self, handler: H) -> &mut Self
     where
-        H: ErrorHandler + Send + 'static,
+        H: ErrorHandler + Send + Sync + 'static,
+        H::Future: Send,
     {
-        self.error_handler = Box::new(handler);
+        self.error_handler = Arc::new(ConvertErrorHandler::boxed(handler));
+        self
     }
 
-    pub(crate) async fn dispatch(&mut self, update: Update) {
-        let context = self.context.clone();
-        for handler in &mut self.handlers {
-            let result = handler.handle(&context, update.clone()).await;
-            match result {
-                HandlerResult::Continue => continue,
-                HandlerResult::Stop => break,
-                HandlerResult::Error(err) => match self.error_handler.handle(err).await {
-                    ErrorPolicy::Continue => continue,
-                    ErrorPolicy::Stop => break,
-                },
+    #[allow(missing_docs)]
+    pub fn get_api(&self) -> Api {
+        self.api.clone()
+    }
+
+    fn dispatch(&self, update: Update) -> impl Future<Output = ()> + Send {
+        let service_update = ServiceUpdate {
+            update,
+            api: self.api.clone(),
+            data: self.data.clone(),
+        };
+
+        let futs: Vec<(&'static str, _)> = self
+            .handlers
+            .iter()
+            .map(|h| (h.name(), h.call(service_update.clone())))
+            .collect();
+
+        let error_handler = self.error_handler.clone();
+
+        async move {
+            for (name, fut) in futs {
+                log::debug!("Run {} handler", name);
+
+                let result = fut.await;
+                match result {
+                    HandlerResult::Continue => continue,
+                    HandlerResult::Stop => break,
+                    HandlerResult::Error(err) => match error_handler.handle(err).await {
+                        ErrorPolicy::Continue => continue,
+                        ErrorPolicy::Stop => break,
+                    },
+                }
             }
         }
     }
 }
 
-#[async_trait]
-impl<C> UpdateHandler for Dispatcher<C>
-where
-    C: Send + Sync,
-{
-    async fn handle(&mut self, update: Update) {
-        self.dispatch(update).await
+impl UpdateHandler for Dispatcher {
+    type Future = BoxFuture<'static, ()>;
+
+    fn handle(&self, update: Update) -> Self::Future {
+        Box::pin(self.dispatch(update))
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct DispatcherData {
+    inner: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
+}
+
+impl DispatcherData {
+    pub fn get<T: 'static>(&self) -> Option<&T> {
+        self.inner
+            .get(&TypeId::of::<T>())
+            .and_then(|boxed| boxed.downcast_ref())
+    }
+
+    pub fn push<T: Send + Sync + 'static>(&mut self, value: T) {
+        self.inner.insert(TypeId::of::<T>(), Box::new(value));
+        // TODO: return old value
+        //.and_then(|boxed| boxed.downcast().ok().map(|boxed| *boxed))
     }
 }
 
 /// A handler for errors occurred when dispatching update
-#[async_trait]
 pub trait ErrorHandler {
+    /// A future returned from error handler
+    type Future: Future<Output = ErrorPolicy>;
+
     /// Handles a error
     ///
     /// This method is called on each error returned by a handler
     /// [ErrorPolicy](enum.ErrorPolicy.html) defines
     /// whether next handler should process current update or not.
-    async fn handle(&mut self, err: HandlerError) -> ErrorPolicy;
+    fn handle(&self, err: HandlerResultError) -> Self::Future;
+}
+
+struct ConvertErrorHandler<H>(H);
+
+impl<H> ConvertErrorHandler<H> {
+    fn boxed(handler: H) -> Box<Self> {
+        Box::new(Self(handler))
+    }
+}
+
+impl<H> ErrorHandler for ConvertErrorHandler<H>
+where
+    H: ErrorHandler,
+    H::Future: Send + 'static,
+{
+    type Future = BoxFuture<'static, ErrorPolicy>;
+
+    fn handle(&self, err: HandlerResultError) -> Self::Future {
+        Box::pin(self.0.handle(err))
+    }
 }
 
 /// A default error handler which logs error
@@ -112,11 +194,15 @@ impl Default for LoggingErrorHandler {
     }
 }
 
-#[async_trait]
 impl ErrorHandler for LoggingErrorHandler {
-    async fn handle(&mut self, err: HandlerError) -> ErrorPolicy {
-        log::error!("An error has occurred: {}", err);
-        self.0
+    type Future = BoxFuture<'static, ErrorPolicy>;
+
+    fn handle(&self, err: HandlerResultError) -> Self::Future {
+        let ret = self.0;
+        Box::pin(async move {
+            log::error!("An error has occurred: {}", err);
+            ret
+        })
     }
 }
 
@@ -144,37 +230,19 @@ mod tests {
 
     type Updates = Mutex<Vec<Update>>;
 
-    struct HandlerMock {
-        result: Option<HandlerResult>,
+    async fn handler_with_continue(updates: Data<Updates>, update: Update) -> HandlerResult {
+        updates.lock().await.push(update);
+        HandlerResult::Continue
     }
 
-    impl HandlerMock {
-        fn new(result: HandlerResult) -> Self {
-            Self { result: Some(result) }
-        }
-
-        fn with_continue() -> Self {
-            Self::new(HandlerResult::Continue)
-        }
-
-        fn with_stop() -> Self {
-            Self::new(HandlerResult::Stop)
-        }
-
-        fn with_error() -> Self {
-            Self::new(HandlerResult::from(Err::<(), ErrorMock>(ErrorMock)))
-        }
+    async fn handler_with_stop(updates: Data<Updates>, update: Update) -> HandlerResult {
+        updates.lock().await.push(update);
+        HandlerResult::Stop
     }
 
-    #[async_trait]
-    impl Handler<Updates> for HandlerMock {
-        type Input = Update;
-        type Output = HandlerResult;
-
-        async fn handle(&mut self, context: &Updates, input: Self::Input) -> Self::Output {
-            context.lock().await.push(input);
-            self.result.take().unwrap()
-        }
+    async fn handler_with_error(updates: Data<Updates>, update: Update) -> HandlerResult {
+        updates.lock().await.push(update);
+        HandlerResult::error(ErrorMock)
     }
 
     #[derive(Debug)]
@@ -206,58 +274,50 @@ mod tests {
     async fn dispatch_default() {
         macro_rules! assert_dispatch {
             ($count:expr, $($handler:expr),*) => {{
-                let updates = Mutex::new(Vec::new());
-                let mut dispatcher = Dispatcher::new(updates);
+                let api = Api::new("123").unwrap();
+                let updates = Mutex::new(Vec::<Update>::new());
+                let mut dispatcher = Dispatcher::new(api);
+                dispatcher.data(updates);
                 $(dispatcher.add_handler($handler);)*
                 let update = create_update();
                 dispatcher.dispatch(update).await;
-                let context = dispatcher.context.lock().await;
+                let context = dispatcher.data.get::<Data<Updates>>().unwrap().lock().await;
                 assert_eq!(context.len(), $count);
             }};
         }
 
-        assert_dispatch!(
-            2,
-            HandlerMock::with_continue(),
-            HandlerMock::with_stop(),
-            HandlerMock::with_error()
-        );
+        assert_dispatch!(2, handler_with_continue, handler_with_stop, handler_with_error);
 
-        assert_dispatch!(
-            1,
-            HandlerMock::with_stop(),
-            HandlerMock::with_continue(),
-            HandlerMock::with_error()
-        );
+        assert_dispatch!(1, handler_with_stop, handler_with_continue, handler_with_error);
 
-        assert_dispatch!(
-            1,
-            HandlerMock::with_error(),
-            HandlerMock::with_stop(),
-            HandlerMock::with_continue()
-        );
+        assert_dispatch!(1, handler_with_error, handler_with_stop, handler_with_continue);
     }
 
     struct MockErrorHandler {
         error_policy: ErrorPolicy,
-        sender: Option<Sender<HandlerError>>,
+        sender: Arc<Mutex<Option<Sender<HandlerResultError>>>>,
     }
 
     impl MockErrorHandler {
-        fn new(error_policy: ErrorPolicy, sender: Sender<HandlerError>) -> Self {
+        fn new(error_policy: ErrorPolicy, sender: Sender<HandlerResultError>) -> Self {
             MockErrorHandler {
                 error_policy,
-                sender: Some(sender),
+                sender: Arc::new(Mutex::new(Some(sender))),
             }
         }
     }
 
-    #[async_trait]
     impl ErrorHandler for MockErrorHandler {
-        async fn handle(&mut self, err: HandlerError) -> ErrorPolicy {
-            let sender = self.sender.take().unwrap();
-            sender.send(err).unwrap();
-            self.error_policy
+        type Future = BoxFuture<'static, ErrorPolicy>;
+
+        fn handle(&self, err: HandlerResultError) -> Self::Future {
+            let sender = self.sender.clone();
+            let error_policy = self.error_policy;
+            Box::pin(async move {
+                let sender = sender.lock().await.take().unwrap();
+                sender.send(err).unwrap();
+                error_policy
+            })
         }
     }
 
@@ -265,14 +325,16 @@ mod tests {
     async fn dispatch_custom_error_handler() {
         let update = create_update();
         for (count, error_policy) in &[(1usize, ErrorPolicy::Stop), (2usize, ErrorPolicy::Continue)] {
-            let mut dispatcher = Dispatcher::new(Mutex::new(Vec::new()));
-            dispatcher.add_handler(HandlerMock::with_error());
-            dispatcher.add_handler(HandlerMock::with_continue());
+            let mut dispatcher = Dispatcher::new(Api::new("123").unwrap());
+            dispatcher.data(Mutex::new(Vec::<Update>::new()));
+            dispatcher.add_handler(handler_with_error);
+            dispatcher.add_handler(handler_with_continue);
             let (tx, mut rx) = channel();
             dispatcher.set_error_handler(MockErrorHandler::new(*error_policy, tx));
             dispatcher.dispatch(update.clone()).await;
             rx.close();
-            let context = dispatcher.context.lock().await;
+            let context = dispatcher.data.get::<Data<Updates>>().unwrap();
+            let context = context.lock().await;
             assert_eq!(context.len(), *count);
             assert!(rx.try_recv().is_ok());
         }

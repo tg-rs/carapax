@@ -1,16 +1,14 @@
 use carapax::{
-    handler, longpoll::LongPoll, methods::SendMessage, types::Message, Api, Config, Dispatcher, ExecuteError,
+    longpoll::LongPoll, methods::SendMessage, types::Message, Api, Config, Dispatcher, ExecuteError, HandlerExt,
 };
 use dotenv::dotenv;
-use std::{convert::Infallible, env};
+use std::env;
 
-async fn is_ping(_api: &Api, message: &Message) -> Result<bool, Infallible> {
-    Ok(message.get_text().map(|text| text.data == "ping").unwrap_or(false))
+async fn is_ping(message: Message) -> bool {
+    message.get_text().map(AsRef::as_ref) == Some("ping")
 }
 
-// Handler will not run if message text not equals "ping"
-#[handler(predicate=is_ping)]
-async fn pingpong_handler(api: &Api, message: Message) -> Result<(), ExecuteError> {
+async fn pingpong_handler(api: Api, message: Message) -> Result<(), ExecuteError> {
     let chat_id = message.get_chat_id();
     let method = SendMessage::new(chat_id, "pong");
     api.execute(method).await?;
@@ -30,6 +28,6 @@ async fn main() {
     }
     let api = Api::new(config).expect("Failed to create API");
     let mut dispatcher = Dispatcher::new(api.clone());
-    dispatcher.add_handler(pingpong_handler);
+    dispatcher.add_handler(pingpong_handler.guard(is_ping));
     LongPoll::new(api, dispatcher).run().await
 }
