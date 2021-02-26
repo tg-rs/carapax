@@ -7,6 +7,7 @@ use std::{
 use tgbot::types::{Command, Integer, Message, Update};
 
 use crate::{Data, FromUpdate, ServiceUpdate};
+use futures::future::BoxFuture;
 pub use seance::{
     backend, Session, SessionCollector, SessionCollectorHandle, SessionError as SeanceSessionError,
     SessionManager as BaseSessionManager,
@@ -61,16 +62,20 @@ impl From<Infallible> for SessionError {
 
 impl<B> FromUpdate for Session<B>
 where
-    B: SessionBackend + 'static,
+    B: SessionBackend + Send + 'static,
 {
     type Error = SessionError;
+    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        let session_id = SessionId::try_from(&service_update.update)?;
-        let manager = Data::<SessionManager<B>>::from_update(service_update)
-            .map_err(|_| SessionError::NoManagerInData)?
-            .expect("Data always returns Some");
-        Ok(Some(manager.get_session(session_id)?))
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        Box::pin(async move {
+            let session_id = SessionId::try_from(&service_update.update)?;
+            let manager = Data::<SessionManager<B>>::from_update(service_update)
+                .await
+                .map_err(|_| SessionError::NoManagerInData)?
+                .expect("Data always returns Some");
+            Ok(Some(manager.get_session(session_id)?))
+        })
     }
 }
 

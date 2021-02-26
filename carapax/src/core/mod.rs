@@ -6,7 +6,7 @@ pub use self::{
 };
 
 mod convert;
-mod dispatcher;
+pub(crate) mod dispatcher;
 mod from_update;
 mod handler;
 mod result;

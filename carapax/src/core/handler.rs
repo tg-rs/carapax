@@ -1,8 +1,9 @@
 use crate::HandlerResult;
 use futures::future::BoxFuture;
-use std::future::ready;
-use std::future::Ready;
-use std::{future::Future, marker::PhantomData};
+use std::{
+    future::{ready, Future, Ready},
+    marker::PhantomData,
+};
 
 /// Base utility trait that implemented for [`Fn`]
 ///
@@ -145,6 +146,21 @@ pub struct Guard<H, F, R1, R2> {
     inner: F,
     _r1: PhantomData<R1>,
     _r2: PhantomData<R2>,
+}
+
+impl<H, F, R1, R2> Clone for Guard<H, F, R1, R2>
+where
+    H: Clone,
+    F: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            handler: self.handler.clone(),
+            inner: self.inner.clone(),
+            _r1: PhantomData,
+            _r2: PhantomData,
+        }
+    }
 }
 
 impl<H, F, T1, T2, R1, R2> Handler<(T1, T2), BoxFuture<'static, HandlerResult>> for Guard<H, F, R1, R2>

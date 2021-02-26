@@ -15,7 +15,7 @@ use std::{
 };
 use tgbot::{types::Update, Api, UpdateHandler};
 
-type BoxedHandler = Box<dyn Handler<ServiceUpdate, BoxedConvertFuture> + Send>;
+pub(crate) type BoxedHandler = Box<dyn Handler<ServiceUpdate, BoxedConvertFuture> + Send>;
 type BoxedErrorHandler = Box<dyn ErrorHandler<Future = BoxFuture<'static, ErrorPolicy>> + Send + Sync>;
 
 /// A Telegram Update dispatcher
@@ -54,9 +54,10 @@ impl Dispatcher {
     /// Handlers will be dispatched in the same order as they are added
     pub fn add_handler<H, T, R>(&mut self, handler: H) -> &mut Self
     where
-        H: Handler<T, R> + Send + 'static,
+        H: Handler<T, R> + Send + Clone + 'static,
         T: FromUpdate + Send + 'static,
         T::Error: std::error::Error,
+        T::Future: Send,
         R: Future + Send + 'static,
         R::Output: Into<HandlerResult>,
     {

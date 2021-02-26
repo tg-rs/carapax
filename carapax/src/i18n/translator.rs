@@ -1,10 +1,9 @@
-use crate::i18n::{Locale, LocaleNotFound, TranslatorStore};
-use crate::{Data, DataError, FromUpdate, ServiceUpdate};
+use crate::{
+    i18n::{Locale, LocaleNotFound, TranslatorStore},
+    Data, DataError, FromUpdate, ServiceUpdate,
+};
 use gettext::Catalog;
-use std::convert::TryFrom;
-use std::error::Error;
-use std::fmt;
-use std::sync::Arc;
+use std::{convert::TryFrom, error::Error, fmt, sync::Arc};
 
 /// An i18n translator uses `gettext` crate
 #[derive(Debug, Clone)]

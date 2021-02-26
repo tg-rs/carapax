@@ -25,14 +25,28 @@ impl<H, T, R> ConvertHandler<H, T, R> {
 
 impl<H, T, R> Handler<ServiceUpdate, BoxedConvertFuture> for ConvertHandler<H, T, R>
 where
-    H: Handler<T, R> + 'static + Send,
+    H: Handler<T, R> + 'static + Send + Clone,
     T: FromUpdate + Send,
     T::Error: std::error::Error + 'static,
+    T::Future: Send,
     R: Future + Send + 'static,
     R::Output: Into<HandlerResult>,
 {
     fn call(&self, service_update: ServiceUpdate) -> BoxedConvertFuture {
-        // TODO: describe what Ret for
+        let handler = self.handler.clone();
+        Box::pin(async move {
+            match T::from_update(service_update).await {
+                Ok(Some(t)) => {
+                    let fut = handler.call(t);
+                    tokio::pin!(fut);
+                    fut.await.into()
+                }
+                Ok(None) => HandlerResult::Continue,
+                Err(err) => HandlerResult::error(err),
+            }
+        })
+
+        /*// TODO: describe what Ret for
 
         enum Ret<F> {
             Fut(F),
@@ -50,7 +64,7 @@ where
                 Ret::Fut(fut) => fut.await.into(),
                 Ret::HandlerResult(res) => res,
             }
-        })
+        })*/
     }
 
     fn name(&self) -> &'static str {

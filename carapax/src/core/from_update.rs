@@ -6,9 +6,11 @@ use crate::{
     },
     Api,
 };
+use futures::future::{ok, ready, BoxFuture, Ready};
 use std::{
     convert::{Infallible, TryFrom},
     fmt,
+    future::Future,
     ops::Deref,
     sync::Arc,
 };
@@ -29,33 +31,39 @@ pub trait FromUpdate: Sized {
     /// An error when converting update
     type Error: fmt::Debug + Send + Sync;
 
+    #[allow(missing_docs)]
+    type Future: Future<Output = Result<Option<Self>, Self::Error>>;
+
     /// Returns a handler input
     ///
     /// Handler will not run if None or Error returned
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error>;
+    fn from_update(service_update: ServiceUpdate) -> Self::Future;
 }
 
 impl FromUpdate for () {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(_service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(Some(()))
+    fn from_update(_service_update: ServiceUpdate) -> Self::Future {
+        ok(Some(()))
     }
 }
 
 impl FromUpdate for Update {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(Some(service_update.update))
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(Some(service_update.update))
     }
 }
 
 impl FromUpdate for Message {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(match service_update.update.kind {
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(match service_update.update.kind {
             UpdateKind::Message(msg)
             | UpdateKind::EditedMessage(msg)
             | UpdateKind::ChannelPost(msg)
@@ -67,28 +75,33 @@ impl FromUpdate for Message {
 
 impl FromUpdate for Command {
     type Error = CommandError;
+    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        // Should never panic as the error type is Infallible
-        let message: Option<Message> =
-            FromUpdate::from_update(service_update).expect("Could not convert update to message");
-        if let Some(message) = message {
-            match Command::try_from(message) {
-                Ok(command) => Ok(Some(command)),
-                Err(CommandError::NotFound) => Ok(None),
-                Err(err) => Err(err),
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        Box::pin(async move {
+            // Should never panic as the error type is Infallible
+            let message = Message::from_update(service_update)
+                .await
+                .expect("Could not convert update to message");
+            if let Some(message) = message {
+                match Command::try_from(message) {
+                    Ok(command) => Ok(Some(command)),
+                    Err(CommandError::NotFound) => Ok(None),
+                    Err(err) => Err(err),
+                }
+            } else {
+                Ok(None)
             }
-        } else {
-            Ok(None)
-        }
+        })
     }
 }
 
 impl FromUpdate for InlineQuery {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(match service_update.update.kind {
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(match service_update.update.kind {
             UpdateKind::InlineQuery(query) => Some(query),
             _ => None,
         })
@@ -97,9 +110,10 @@ impl FromUpdate for InlineQuery {
 
 impl FromUpdate for ChosenInlineResult {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(match service_update.update.kind {
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(match service_update.update.kind {
             UpdateKind::ChosenInlineResult(result) => Some(result),
             _ => None,
         })
@@ -108,9 +122,10 @@ impl FromUpdate for ChosenInlineResult {
 
 impl FromUpdate for CallbackQuery {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(match service_update.update.kind {
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(match service_update.update.kind {
             UpdateKind::CallbackQuery(query) => Some(query),
             _ => None,
         })
@@ -119,9 +134,10 @@ impl FromUpdate for CallbackQuery {
 
 impl FromUpdate for ShippingQuery {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(match service_update.update.kind {
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(match service_update.update.kind {
             UpdateKind::ShippingQuery(query) => Some(query),
             _ => None,
         })
@@ -130,9 +146,10 @@ impl FromUpdate for ShippingQuery {
 
 impl FromUpdate for PreCheckoutQuery {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(match service_update.update.kind {
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(match service_update.update.kind {
             UpdateKind::PreCheckoutQuery(query) => Some(query),
             _ => None,
         })
@@ -141,9 +158,10 @@ impl FromUpdate for PreCheckoutQuery {
 
 impl FromUpdate for Poll {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(match service_update.update.kind {
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(match service_update.update.kind {
             UpdateKind::Poll(poll) => Some(poll),
             _ => None,
         })
@@ -152,9 +170,10 @@ impl FromUpdate for Poll {
 
 impl FromUpdate for PollAnswer {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(match service_update.update.kind {
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(match service_update.update.kind {
             UpdateKind::PollAnswer(poll_answer) => Some(poll_answer),
             _ => None,
         })
@@ -163,9 +182,10 @@ impl FromUpdate for PollAnswer {
 
 impl FromUpdate for Api {
     type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        Ok(Some(service_update.api))
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ok(Some(service_update.api))
     }
 }
 
@@ -205,26 +225,30 @@ macro_rules! impl_from_update_for_tuple {
         impl<$($T),+> FromUpdate for ($($T,)+)
         where
             $(
-                $T: FromUpdate,
+                $T: FromUpdate + Send,
                 $T::Error: std::error::Error + Send + Sync + 'static,
+                $T::Future: Send,
             )+
         {
             type Error = TupleError;
+            type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
 
-            fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-                $( let $T: Option<$T> = FromUpdate::from_update(service_update.clone()).map_err(TupleError::from_err)?; )+
+            fn from_update(service_update: ServiceUpdate) -> Self::Future {
+                Box::pin(async move {
+                    $( let $T = <$T>::from_update(service_update.clone()).await.map_err(TupleError::from_err)?; )+
 
-                // same as
-                // ```
-                // A.zip(B).zip(C) ...
-                // ```
-                // which produce `((A, B), C)`
-                // but with 1 nesting level of tuples - `(A, B, C)`
-                let f = move || {
-                    Some(($($T?,)+))
-                };
+                    // same as
+                    // ```
+                    // A.zip(B).zip(C) ...
+                    // ```
+                    // which produce `((A, B), C)`
+                    // but with 1 nesting level of tuples - `(A, B, C)`
+                    let f = move || {
+                        Some(($($T?,)+))
+                    };
 
-                Ok(f())
+                    Ok(f())
+                })
             }
         }
     };
@@ -274,10 +298,10 @@ impl<T> From<Arc<T>> for Data<T> {
 
 impl<T: 'static> FromUpdate for Data<T> {
     type Error = DataError;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        let data = service_update.data.get::<Self>().cloned().ok_or(DataError)?;
-        Ok(Some(data))
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        ready(service_update.data.get::<Self>().cloned().ok_or(DataError).map(Some))
     }
 }
 
@@ -325,25 +349,30 @@ pub enum Either<A, B> {
 
 impl<A, B> FromUpdate for Either<A, B>
 where
-    A: FromUpdate,
+    A: FromUpdate + Send,
     A::Error: std::error::Error + Send + Sync + 'static,
-    B: FromUpdate,
+    A::Future: Send,
+    B: FromUpdate + Send,
     B::Error: std::error::Error + Send + Sync + 'static,
+    B::Future: Send,
 {
     type Error = Box<dyn std::error::Error + Send + Sync>;
+    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        let a = FromUpdate::from_update(service_update.clone())?;
-        if let Some(a) = a {
-            return Ok(Some(Either::Left(a)));
-        }
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        Box::pin(async move {
+            let a = A::from_update(service_update.clone()).await?;
+            if let Some(a) = a {
+                return Ok(Some(Either::Left(a)));
+            }
 
-        let b = FromUpdate::from_update(service_update)?;
-        if let Some(b) = b {
-            return Ok(Some(Either::Right(b)));
-        }
+            let b = B::from_update(service_update).await?;
+            if let Some(b) = b {
+                return Ok(Some(Either::Right(b)));
+            }
 
-        Ok(None)
+            Ok(None)
+        })
     }
 }
 
@@ -359,8 +388,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn message() {
+    #[tokio::test]
+    async fn message() {
         for data in vec![
             serde_json::json!({
                 "update_id": 1,
@@ -406,13 +435,13 @@ mod tests {
         ] {
             let update: Update = serde_json::from_value(data).unwrap();
             let update = create_service_update(update);
-            assert!(Update::from_update(update.clone()).unwrap().is_some());
-            assert!(Message::from_update(update).unwrap().is_some());
+            assert!(Update::from_update(update.clone()).await.unwrap().is_some());
+            assert!(Message::from_update(update).await.unwrap().is_some());
         }
     }
 
-    #[test]
-    fn command() {
+    #[tokio::test]
+    async fn command() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -430,12 +459,12 @@ mod tests {
         ))
         .unwrap();
         let update = create_service_update(update);
-        assert!(Update::from_update(update.clone()).unwrap().is_some());
-        assert!(Command::from_update(update).unwrap().is_some());
+        assert!(Update::from_update(update.clone()).await.unwrap().is_some());
+        assert!(Command::from_update(update).await.unwrap().is_some());
     }
 
-    #[test]
-    fn inline_query() {
+    #[tokio::test]
+    async fn inline_query() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -449,12 +478,12 @@ mod tests {
         ))
         .unwrap();
         let update = create_service_update(update);
-        assert!(Update::from_update(update.clone()).unwrap().is_some());
-        assert!(InlineQuery::from_update(update).unwrap().is_some());
+        assert!(Update::from_update(update.clone()).await.unwrap().is_some());
+        assert!(InlineQuery::from_update(update).await.unwrap().is_some());
     }
 
-    #[test]
-    fn chosen_inline_result() {
+    #[tokio::test]
+    async fn chosen_inline_result() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -467,12 +496,12 @@ mod tests {
         ))
         .unwrap();
         let update = create_service_update(update);
-        assert!(Update::from_update(update.clone()).unwrap().is_some());
-        assert!(ChosenInlineResult::from_update(update).unwrap().is_some());
+        assert!(Update::from_update(update.clone()).await.unwrap().is_some());
+        assert!(ChosenInlineResult::from_update(update).await.unwrap().is_some());
     }
 
-    #[test]
-    fn callback_query() {
+    #[tokio::test]
+    async fn callback_query() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -484,12 +513,12 @@ mod tests {
         ))
         .unwrap();
         let update = create_service_update(update);
-        assert!(Update::from_update(update.clone()).unwrap().is_some());
-        assert!(CallbackQuery::from_update(update).unwrap().is_some());
+        assert!(Update::from_update(update.clone()).await.unwrap().is_some());
+        assert!(CallbackQuery::from_update(update).await.unwrap().is_some());
     }
 
-    #[test]
-    fn shipping_query() {
+    #[tokio::test]
+    async fn shipping_query() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -510,12 +539,12 @@ mod tests {
         ))
         .unwrap();
         let update = create_service_update(update);
-        assert!(Update::from_update(update.clone()).unwrap().is_some());
-        assert!(ShippingQuery::from_update(update).unwrap().is_some());
+        assert!(Update::from_update(update.clone()).await.unwrap().is_some());
+        assert!(ShippingQuery::from_update(update).await.unwrap().is_some());
     }
 
-    #[test]
-    fn pre_checkout_query() {
+    #[tokio::test]
+    async fn pre_checkout_query() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -530,12 +559,12 @@ mod tests {
         ))
         .unwrap();
         let update = create_service_update(update);
-        assert!(Update::from_update(update.clone()).unwrap().is_some());
-        assert!(PreCheckoutQuery::from_update(update).unwrap().is_some());
+        assert!(Update::from_update(update.clone()).await.unwrap().is_some());
+        assert!(PreCheckoutQuery::from_update(update).await.unwrap().is_some());
     }
 
-    #[test]
-    fn poll() {
+    #[tokio::test]
+    async fn poll() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -556,12 +585,12 @@ mod tests {
         ))
         .unwrap();
         let update = create_service_update(update);
-        assert!(Update::from_update(update.clone()).unwrap().is_some());
-        assert!(Poll::from_update(update).unwrap().is_some());
+        assert!(Update::from_update(update.clone()).await.unwrap().is_some());
+        assert!(Poll::from_update(update).await.unwrap().is_some());
     }
 
-    #[test]
-    fn poll_answer() {
+    #[tokio::test]
+    async fn poll_answer() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -578,7 +607,7 @@ mod tests {
         ))
         .unwrap();
         let update = create_service_update(update);
-        assert!(Update::from_update(update.clone()).unwrap().is_some());
-        assert!(PollAnswer::from_update(update).unwrap().is_some());
+        assert!(Update::from_update(update.clone()).await.unwrap().is_some());
+        assert!(PollAnswer::from_update(update).await.unwrap().is_some());
     }
 }

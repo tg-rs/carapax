@@ -1,8 +1,7 @@
-use carapax::session::Session;
 use carapax::{
     longpoll::LongPoll,
     methods::SendMessage,
-    session::{backend::fs::FilesystemBackend, SessionCollector, SessionManager},
+    session::{backend::fs::FilesystemBackend, Session, SessionCollector, SessionManager},
     types::{Command, Update},
     Api, Config, Dispatcher, HandlerResult,
 };
