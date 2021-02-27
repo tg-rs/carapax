@@ -1,23 +1,45 @@
 use carapax::{
     dialogue::{
-        dialogue, Dialogue,
-        DialogueResult::{self, *},
+        Dialogue,
+        DialogueState::{self, *},
         State,
     },
     longpoll::LongPoll,
     methods::SendMessage,
-    session::{backend::fs::FilesystemBackend, SessionManager},
+    session::{backend::fs::FilesystemBackend, Session, SessionManager},
     types::Message,
-    Api, Config, Dispatcher,
+    Api, Config, Dispatcher, ExecuteError, HandlerExt,
 };
 use dotenv::dotenv;
+use seance::SessionError;
 use serde::{Deserialize, Serialize};
-use std::{convert::Infallible, env};
+use std::{env, fmt};
 use tempfile::tempdir;
 
-struct Context {
-    api: Api,
-    session_manager: SessionManager<FilesystemBackend>,
+#[derive(Debug)]
+enum Error {
+    Execute(ExecuteError),
+    Session(SessionError),
+}
+
+impl From<ExecuteError> for Error {
+    fn from(err: ExecuteError) -> Self {
+        Self::Execute(err)
+    }
+}
+
+impl From<SessionError> for Error {
+    fn from(err: SessionError) -> Self {
+        Self::Session(err)
+    }
+}
+
+impl std::error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("Example error")
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -27,50 +49,50 @@ enum ExampleState {
     LastName,
 }
 
-impl State for ExampleState {
-    fn new() -> Self {
-        ExampleState::Start
+impl Default for ExampleState {
+    fn default() -> Self {
+        Self::Start
     }
 }
 
-#[dialogue]
-async fn handle(
-    state: ExampleState,
-    context: &Context,
-    input: Message,
-) -> Result<DialogueResult<ExampleState>, Infallible> {
+impl State for ExampleState {
+    fn session_name() -> &'static str {
+        "example-state"
+    }
+}
+
+async fn handler(
+    api: Api,
+    Dialogue { state, .. }: Dialogue<ExampleState, FilesystemBackend>,
+    mut session: Session<FilesystemBackend>,
+    message: Message,
+) -> Result<DialogueState<ExampleState>, Error> {
     use self::ExampleState::*;
-    let chat_id = input.get_chat_id();
-    let mut session = context.session_manager.get_session(&input).unwrap();
+
+    let chat_id = message.get_chat_id();
 
     Ok(match state {
         Start => {
-            context
-                .api
-                .execute(SendMessage::new(chat_id, "What is your first name?"))
-                .await
-                .unwrap();
+            api.execute(SendMessage::new(chat_id, "What is your first name?"))
+                .await?;
             Next(FirstName)
         }
         FirstName => {
-            let first_name = input.get_text().unwrap();
-            session.set("first_name", &first_name.data).await.unwrap();
-            context
-                .api
-                .execute(SendMessage::new(chat_id, "What is your last name?"))
-                .await
-                .unwrap();
+            let first_name = message.get_text().unwrap();
+            session.set("first_name", &first_name.data).await?;
+            api.execute(SendMessage::new(chat_id, "What is your last name?"))
+                .await?;
             Next(LastName)
         }
         LastName => {
-            let last_name = input.get_text().unwrap();
-            let first_name: String = session.get("first_name").await.unwrap().unwrap();
+            let last_name = message.get_text().unwrap();
+            let first_name: String = session.get("first_name").await?.unwrap();
             let text = format!(
                 "First name: {first_name}\nLast name: {last_name}",
                 first_name = first_name,
                 last_name = last_name.data,
             );
-            context.api.execute(SendMessage::new(chat_id, text)).await.unwrap();
+            api.execute(SendMessage::new(chat_id, text)).await?;
             Exit
         }
     })
@@ -94,11 +116,9 @@ async fn main() {
     let session_manager = SessionManager::new(session_backend);
 
     let api = Api::new(config).expect("Failed to create API");
-    let dialogue_name = "example"; // unique dialogue name used to store state
-    let mut dispatcher = Dispatcher::new(Context {
-        api: api.clone(),
-        session_manager: session_manager.clone(),
-    });
-    dispatcher.add_handler(Dialogue::new(session_manager, dialogue_name, handle));
+
+    let mut dispatcher = Dispatcher::new(api.clone());
+    dispatcher.add_handler(handler.dialogue::<FilesystemBackend>());
+    dispatcher.data(session_manager);
     LongPoll::new(api, dispatcher).run().await
 }

@@ -114,6 +114,63 @@ pub trait HandlerExt<T, R>: Sized {
     {
         ConvertHandler::boxed(self)
     }
+
+    /// A dialogue that to be used in handler
+    ///
+    /// ```rust,no_run
+    /// # use serde::{Serialize, Deserialize};
+    /// use carapax::dialogue::{Dialogue, State, DialogueState};
+    /// use carapax::session::backend::fs::FilesystemBackend;
+    /// use carapax::{Api, HandlerExt, Dispatcher};
+    /// use carapax::methods::SendMessage;
+    /// use carapax::types::Message;
+    ///
+    /// # type Result<T> = std::result::Result<T, carapax::ExecuteError>;
+    ///
+    /// #[derive(Serialize, Deserialize)]
+    /// enum MyState {
+    ///     Start,
+    ///     UserMessage,
+    /// }
+    ///
+    /// impl Default for MyState {
+    ///     fn default() -> Self {
+    ///         Self::Start
+    ///     }
+    /// }
+    ///
+    /// impl State for MyState {
+    ///     fn session_name() -> &'static str {
+    ///         "super_session"
+    ///     }
+    /// }
+    ///
+    /// async fn my_handler(api: Api, message: Message, Dialogue { state, .. }: Dialogue<MyState, FilesystemBackend>) -> Result<DialogueState<MyState>> {
+    ///     match state {
+    ///         MyState::Start => {
+    ///             api.execute(SendMessage::new(message.id, "Hi. Write something more!")).await?;
+    ///             Ok(DialogueState::Next(MyState::UserMessage))
+    ///         }
+    ///         MyState::UserMessage => {
+    ///             api.execute(SendMessage::new(message.id, format!("Your username is {}",
+    ///                 message
+    ///                     .get_user()
+    ///                     .map(|user| user.username.as_deref())
+    ///                     .flatten()
+    ///                     .unwrap_or_default()))
+    ///             ).await?;
+    ///             Ok(DialogueState::Exit)
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// # let mut  dispatcher = Dispatcher::new(Api::new("123").unwrap());
+    /// dispatcher.add_handler(my_handler.dialogue::<FilesystemBackend>());
+    /// ```
+    #[cfg(feature = "dialogue")]
+    fn dialogue<B>(self) -> crate::dialogue::DialogueHandler<Self, B, R> {
+        crate::dialogue::DialogueHandler::from(self)
+    }
 }
 
 impl<H, T, R> HandlerExt<T, R> for H where H: Handler<T, R> {}

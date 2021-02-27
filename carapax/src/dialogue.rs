@@ -1,50 +1,16 @@
 use crate::{
-    core::{Handler, HandlerResult, TryFromUpdate},
-    session::SessionManager,
+    core::FromUpdate,
+    session::{backend::SessionBackend, Session, SessionError},
+    Handler, HandlerResult, ServiceUpdate,
 };
-use async_trait::async_trait;
-use seance::backend::SessionBackend;
+use futures::future::BoxFuture;
 use serde::{de::DeserializeOwned, Serialize};
-use std::{error::Error, fmt::Display, marker::PhantomData};
-use tgbot::types::Update;
-
-/// Mark an async function as dialogue handler
-///
-/// # Example
-///
-/// ```
-/// use carapax::{dialogue::{DialogueResult, State, dialogue}, types::Message};
-/// use serde::{Serialize, Deserialize};
-/// use std::convert::Infallible;
-///
-/// #[derive(Serialize, Deserialize)]
-/// enum ExampleState {
-///     Start,
-///     Step1,
-///     Step2,
-/// }
-///
-/// impl State for ExampleState {
-///     fn new() -> Self {
-///         ExampleState::Start
-///     }
-/// }
-///
-/// #[dialogue]
-/// async fn handler(
-///    state: ExampleState,
-///    context: &(),
-///    input: Message,
-/// ) -> Result<DialogueResult<ExampleState>, Infallible> {
-///     unimplemented!()
-/// }
-/// ```
-pub use carapax_codegen::dialogue;
+use std::{convert::Infallible, error::Error, future::Future, marker::PhantomData};
 
 const SESSION_KEY_PREFIX: &str = "__carapax_dialogue";
 
 /// Adapts dialogue handlers for [Dispatcher](../struct.Dispatcher.html)
-pub struct Dialogue<C, B, H, S>
+/*pub struct Dialogue<C, B, H, S>
 where
     H: DialogueHandler<C, S>,
     S: State,
@@ -78,89 +44,153 @@ where
             _marker: PhantomData,
         }
     }
+}*/
+
+/// See [`HandlerExt::dialogue`]
+pub struct Dialogue<S, B> {
+    /// The user's state itself
+    pub state: S,
+    _b: PhantomData<B>,
+}
+
+impl<S, B> FromUpdate for Dialogue<S, B>
+where
+    S: State,
+    B: SessionBackend + Send + 'static,
+{
+    type Error = SessionError;
+
+    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
+
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        Box::pin(async move {
+            let mut session = Session::<B>::from_update(service_update)
+                .await?
+                .expect("Session::from_update always returns Some");
+            let state: S = session.get(S::session_key()).await?.unwrap_or_default();
+            Ok(Some(Dialogue { state, _b: PhantomData }))
+        })
+    }
 }
 
 /// Dialogue state
-pub trait State: Serialize + DeserializeOwned {
-    /// Returns initial state
-    fn new() -> Self;
-}
+pub trait State: Default + Serialize + DeserializeOwned {
+    /// Name of session to be used to identify dialog session
+    fn session_name() -> &'static str;
 
-/// Dialogue handler
-#[async_trait]
-pub trait DialogueHandler<C, S> {
-    /// An object to handle (Update, Message, Command, etc...)
-    type Input: TryFromUpdate + Send + Sync;
-
-    /// An error occurred in handler
-    type Error: Error + Send + Sync;
-
-    /// Handles an update
+    /// Key for [session](Session)
     ///
-    /// # Arguments
-    ///
-    /// * state - State of dialogue
-    /// * context - A context provided to dispatcher (same as in [Handler](../trait.Handler.html) trait)
-    /// * input - An object to handle (same as in [Handler](../trait.Handler.html) trait)
-    async fn handle(&mut self, state: S, context: &C, input: Self::Input) -> Result<DialogueResult<S>, Self::Error>;
+    /// By default, it is "__carapax_dialogue:" + [`session_name()`](State::session_name)
+    fn session_key() -> String {
+        format!("{}:{}", SESSION_KEY_PREFIX, Self::session_name())
+    }
 }
 
 /// Result of dialogue handler
-#[derive(Debug)]
-pub enum DialogueResult<S> {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum DialogueState<S> {
     /// Next state
     Next(S),
-    /// Exit from dialogue
+    /// Dialogue session key is removed when this variant is passed
     Exit,
 }
 
-#[async_trait]
-impl<C, B, H, S> Handler<C> for Dialogue<C, B, H, S>
+/// This utility trait is used to process what dialogue handler returned
+pub trait DialogueResult<B> {
+    #[allow(missing_docs)]
+    type Future: Future<Output = HandlerResult>;
+
+    #[allow(missing_docs)]
+    fn process_handler(self, session: Session<B>) -> Self::Future;
+}
+
+impl<S, B> DialogueResult<B> for DialogueState<S>
 where
-    C: Send + Sync,
-    B: SessionBackend + Send,
-    H: DialogueHandler<C, S> + Send,
-    S: State + Send + Sync,
-    <H as DialogueHandler<C, S>>::Error: 'static,
-    <<H as DialogueHandler<C, S>>::Input as TryFromUpdate>::Error: 'static,
+    S: State + Send + Sync + 'static,
+    B: SessionBackend + Send + 'static,
 {
-    type Input = Update;
-    type Output = HandlerResult;
+    type Future = BoxFuture<'static, HandlerResult>;
 
-    async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
-        let mut session = match self.session_manager.get_session(&input) {
-            Ok(session) => session,
-            Err(err) => return HandlerResult::error(err),
-        };
-        let input = match TryFromUpdate::try_from_update(input) {
-            Ok(Some(input)) => input,
-            Ok(None) => return HandlerResult::Continue,
-            Err(err) => return HandlerResult::error(err),
-        };
+    fn process_handler(self, session: Session<B>) -> Self::Future {
+        Result::<DialogueState<S>, Infallible>::process_handler(Ok(self), session)
+    }
+}
 
-        let state: S = {
-            match session.get(&self.session_key).await {
-                Ok(Some(state)) => state,
-                Ok(None) => State::new(),
-                Err(err) => return HandlerResult::error(err),
-            }
-        };
-        match self.handler.handle(state, context, input).await {
-            Ok(DialogueResult::Next(state)) => {
-                if let Err(err) = session.set(&self.session_key, &state).await {
-                    return HandlerResult::error(err);
+impl<S, B, E> DialogueResult<B> for Result<DialogueState<S>, E>
+where
+    E: Error + Send + 'static,
+    S: State + Send + Sync + 'static, // FIXME: get rid of Sync
+    B: SessionBackend + Send + 'static,
+{
+    type Future = BoxFuture<'static, HandlerResult>;
+
+    fn process_handler(self, session: Session<B>) -> Self::Future {
+        Box::pin(async move {
+            tokio::pin!(session);
+
+            match self {
+                Ok(DialogueState::Next(state)) => {
+                    if let Err(err) = Session::set(&mut session, S::session_key(), &state).await {
+                        HandlerResult::error(err)
+                    } else {
+                        HandlerResult::Continue
+                    }
                 }
+                Ok(DialogueState::Exit) => {
+                    if let Err(err) = session.remove(S::session_key()).await {
+                        HandlerResult::error(err)
+                    } else {
+                        HandlerResult::Continue
+                    }
+                }
+                Err(err) => HandlerResult::error(err),
             }
-            Ok(DialogueResult::Exit) => {
-                if let Err(err) = session.remove(&self.session_key).await {
-                    return HandlerResult::error(err);
-                };
-            }
-            Err(err) => {
-                return HandlerResult::error(err);
-            }
+        })
+    }
+}
+
+/// A dialogue handler that automatically add and remove state to session
+pub struct DialogueHandler<H, B, R> {
+    handler: H,
+    _b: PhantomData<B>, // B generic is used to be able to annotate type for DialogueResult
+    _r: PhantomData<R>,
+}
+
+impl<H: Clone, B, R> Clone for DialogueHandler<H, B, R> {
+    fn clone(&self) -> Self {
+        Self {
+            handler: self.handler.clone(),
+            _b: PhantomData,
+            _r: PhantomData,
         }
-        HandlerResult::Continue
+    }
+}
+
+impl<H, B, R> From<H> for DialogueHandler<H, B, R> {
+    fn from(handler: H) -> Self {
+        Self {
+            handler,
+            _b: PhantomData,
+            _r: PhantomData,
+        }
+    }
+}
+
+impl<H, B, T, R> Handler<(Session<B>, T), BoxFuture<'static, HandlerResult>> for DialogueHandler<H, B, R>
+where
+    H: Handler<T, R>,
+    B: SessionBackend + Send + 'static,
+    T: FromUpdate,
+    R: Future + Send + 'static,
+    R::Output: DialogueResult<B> + Send,
+    <R::Output as DialogueResult<B>>::Future: Send,
+{
+    fn call(&self, (session, param): (Session<B>, T)) -> BoxFuture<'static, HandlerResult> {
+        let handler = self.handler.call(param);
+        Box::pin(async move {
+            let res = handler.await;
+            res.process_handler(session).await
+        })
     }
 }
 
@@ -168,30 +198,35 @@ where
 #[cfg(feature = "session-fs")]
 mod tests {
     use super::*;
-    use crate::session::backend::fs::FilesystemBackend;
+    use crate::{
+        dispatcher::DispatcherData,
+        session::{backend::fs::FilesystemBackend, SessionManager},
+        Api, Data, HandlerExt,
+    };
     use serde::{Deserialize, Serialize};
-    use std::convert::Infallible;
+    use std::sync::Arc;
     use tempfile::tempdir;
-    use tgbot::types::Message;
 
-    struct MockDialogueHandler;
-
-    #[derive(Debug, Serialize, Deserialize, PartialEq)]
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
     enum MockState {
         Start,
         Stop,
     }
 
-    impl State for MockState {
-        fn new() -> Self {
+    impl Default for MockState {
+        fn default() -> Self {
             Self::Start
         }
     }
 
-    struct Context;
+    impl State for MockState {
+        fn session_name() -> &'static str {
+            "mock"
+        }
+    }
 
-    fn create_update() -> Update {
-        serde_json::from_value(serde_json::json!({
+    fn create_update() -> ServiceUpdate {
+        let update = serde_json::from_value(serde_json::json!({
             "update_id": 1,
             "message": {
                 "message_id": 1111,
@@ -201,25 +236,21 @@ mod tests {
                 "text": "test message from private chat"
             }
         }))
-        .unwrap()
+        .unwrap();
+
+        ServiceUpdate {
+            update,
+            api: Api::new("123").unwrap(),
+            data: Arc::new(DispatcherData::default()),
+        }
     }
 
-    #[async_trait]
-    impl DialogueHandler<Context, MockState> for MockDialogueHandler {
-        type Input = Message;
-        type Error = Infallible;
-
-        async fn handle(
-            &mut self,
-            state: MockState,
-            _context: &Context,
-            _input: Self::Input,
-        ) -> Result<DialogueResult<MockState>, Self::Error> {
-            use self::DialogueResult::*;
-            Ok(match state {
-                MockState::Start => Next(MockState::Stop),
-                MockState::Stop => Exit,
-            })
+    async fn dialogue_handler(
+        Dialogue { state, .. }: Dialogue<MockState, FilesystemBackend>,
+    ) -> DialogueState<MockState> {
+        match state {
+            MockState::Start => DialogueState::Next(MockState::Stop),
+            MockState::Stop => DialogueState::Exit,
         }
     }
 
@@ -228,33 +259,26 @@ mod tests {
         let tmpdir = tempdir().expect("Failed to create temp directory");
         let session_backend = FilesystemBackend::new(tmpdir.path());
         let session_manager = SessionManager::new(session_backend);
-        let name = "test";
-        let mut dialogue = Dialogue::new(session_manager.clone(), name, MockDialogueHandler);
-        let context = Context;
-        let update = create_update();
-        match dialogue.handle(&context, update.clone()).await {
-            HandlerResult::Continue => {
-                let mut session = session_manager.get_session(&update).unwrap();
-                let key = format!("{}:{}", SESSION_KEY_PREFIX, name);
-                let state: MockState = session
-                    .get(key)
-                    .await
-                    .expect("Failed to get dialogue state")
-                    .expect("Dialogue state is None");
-                assert_eq!(state, MockState::Stop);
+
+        let mut service_update = create_update();
+        let data = Arc::get_mut(&mut service_update.data).unwrap();
+        data.push(Data::from(session_manager.clone()));
+
+        let dialogue = dialogue_handler.dialogue::<FilesystemBackend>().boxed();
+
+        for case in [Some(MockState::Stop), None].iter().cloned() {
+            match dialogue.call(service_update.clone()).await {
+                HandlerResult::Continue => {
+                    let mut session = session_manager.get_session(&service_update.update).unwrap();
+                    let state = session
+                        .get(MockState::session_key())
+                        .await
+                        .expect("Failed to get dialogue state");
+                    assert_eq!(state, case);
+                }
+                HandlerResult::Stop => panic!("Unexpected handler result"),
+                HandlerResult::Error(err) => panic!("Dialogue error: {:?}", err),
             }
-            HandlerResult::Stop => panic!("Unexpected handler result"),
-            HandlerResult::Error(err) => panic!("Dialogue error: {:?}", err),
-        }
-        match dialogue.handle(&context, update.clone()).await {
-            HandlerResult::Continue => {
-                let mut session = session_manager.get_session(&update).unwrap();
-                let key = format!("{}:{}", SESSION_KEY_PREFIX, name);
-                let state: Option<MockState> = session.get(key).await.expect("Failed to get dialogue state");
-                assert!(state.is_none());
-            }
-            HandlerResult::Stop => panic!("Unexpected handler result"),
-            HandlerResult::Error(err) => panic!("Dialogue error: {:?}", err),
         }
     }
 }
