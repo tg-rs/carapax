@@ -1,8 +1,10 @@
-use crate::core::convert::{BoxedConvertFuture, ConvertHandler};
-use crate::{FromUpdate, HandlerResult, ServiceUpdate};
+use crate::{
+    core::convert::{BoxedConvertFuture, ConvertHandler},
+    FromUpdate, HandlerResult, ServiceUpdate,
+};
 use futures::future::BoxFuture;
-use std::error::Error;
 use std::{
+    error::Error,
     future::{ready, Future, Ready},
     marker::PhantomData,
 };

@@ -1,7 +1,6 @@
-use crate::core::handler::BoxedHandler;
 use crate::{
     core::{
-        handler::Handler,
+        handler::{BoxedHandler, Handler},
         result::{HandlerResult, HandlerResultError},
     },
     Data, FromUpdate, HandlerExt, ServiceUpdate,
