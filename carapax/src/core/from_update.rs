@@ -257,6 +257,12 @@ macro_rules! impl_from_update_for_tuple {
 impl_from_update_for_tuple!(A);
 impl_from_update_for_tuple!(A, B);
 impl_from_update_for_tuple!(A, B, C);
+impl_from_update_for_tuple!(A, B, C, D);
+impl_from_update_for_tuple!(A, B, C, D, E);
+impl_from_update_for_tuple!(A, B, C, D, E, F);
+impl_from_update_for_tuple!(A, B, C, D, E, F, G);
+impl_from_update_for_tuple!(A, B, C, D, E, F, G, H);
+impl_from_update_for_tuple!(A, B, C, D, E, F, G, H, I); // 9 arguments
 
 /// A user data wrapped in [`Arc`] that can be used in handler
 ///

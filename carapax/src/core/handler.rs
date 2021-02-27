@@ -42,9 +42,9 @@ where
 macro_rules! impl_handler_for_fn {
     ($($T:ident),+) => {
         #[allow(non_snake_case)]
-        impl<F, $($T,)+ R> Handler<($($T,)+), R> for F
+        impl<Func, $($T,)+ R> Handler<($($T,)+), R> for Func
         where
-            F: Fn($($T,)+) -> R,
+            Func: Fn($($T,)+) -> R,
         {
             fn call(&self, ($($T,)+): ($($T,)+)) -> R {
                 (self)($($T,)+)
@@ -56,6 +56,12 @@ macro_rules! impl_handler_for_fn {
 impl_handler_for_fn!(A);
 impl_handler_for_fn!(A, B);
 impl_handler_for_fn!(A, B, C);
+impl_handler_for_fn!(A, B, C, D);
+impl_handler_for_fn!(A, B, C, D, E);
+impl_handler_for_fn!(A, B, C, D, E, F);
+impl_handler_for_fn!(A, B, C, D, E, F, G);
+impl_handler_for_fn!(A, B, C, D, E, F, G, H);
+impl_handler_for_fn!(A, B, C, D, E, F, G, H, I); // 9 arguments
 
 /// Extension for [`Handler`] with utility functions
 pub trait HandlerExt<T, R>: Sized {
