@@ -1,9 +1,14 @@
-use crate::HandlerResult;
+use crate::core::convert::{BoxedConvertFuture, ConvertHandler};
+use crate::{FromUpdate, HandlerResult, ServiceUpdate};
 use futures::future::BoxFuture;
+use std::error::Error;
 use std::{
     future::{ready, Future, Ready},
     marker::PhantomData,
 };
+
+/// Universality type of handler
+pub type BoxedHandler = Box<dyn Handler<ServiceUpdate, BoxedConvertFuture> + Send>;
 
 /// Base utility trait that implemented for [`Fn`]
 ///
@@ -87,6 +92,21 @@ pub trait HandlerExt<T, R>: Sized {
             _r1: PhantomData,
             _r2: PhantomData,
         }
+    }
+
+    /// Wrap handler to box
+    ///
+    /// Conveniently for universality
+    fn boxed(self) -> BoxedHandler
+    where
+        Self: Handler<T, R> + Send + Clone + 'static,
+        T: FromUpdate + Send + 'static,
+        T::Error: Error + Send,
+        T::Future: Send,
+        R: Future + Send + 'static,
+        R::Output: Into<HandlerResult>,
+    {
+        ConvertHandler::boxed(self)
     }
 }
 

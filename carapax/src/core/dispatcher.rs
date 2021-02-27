@@ -1,10 +1,10 @@
+use crate::core::handler::BoxedHandler;
 use crate::{
     core::{
-        convert::{BoxedConvertFuture, ConvertHandler},
         handler::Handler,
         result::{HandlerResult, HandlerResultError},
     },
-    Data, FromUpdate, ServiceUpdate,
+    Data, FromUpdate, HandlerExt, ServiceUpdate,
 };
 use futures::future::BoxFuture;
 use std::{
@@ -15,7 +15,6 @@ use std::{
 };
 use tgbot::{types::Update, Api, UpdateHandler};
 
-pub(crate) type BoxedHandler = Box<dyn Handler<ServiceUpdate, BoxedConvertFuture> + Send>;
 type BoxedErrorHandler = Box<dyn ErrorHandler<Future = BoxFuture<'static, ErrorPolicy>> + Send + Sync>;
 
 /// A Telegram Update dispatcher
@@ -61,7 +60,7 @@ impl Dispatcher {
         R: Future + Send + 'static,
         R::Output: Into<HandlerResult>,
     {
-        self.handlers.push(ConvertHandler::boxed(handler));
+        self.handlers.push(handler.boxed());
         self
     }
 
