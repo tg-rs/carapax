@@ -34,8 +34,9 @@ impl HandlerResult {
 
 impl From<()> for HandlerResult {
     fn from(_: ()) -> Self {
-        // TODO: change to Stop
-        HandlerResult::Continue
+        // default behavior is stop because we continue propagation
+        // when handler's arguments (types implementing FromUpdate) return None
+        HandlerResult::Stop
     }
 }
 
