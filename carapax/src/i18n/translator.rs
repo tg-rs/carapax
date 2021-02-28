@@ -2,7 +2,7 @@ use crate::{
     i18n::{Locale, LocaleNotFound, TranslatorStore},
     Data, DataError, FromUpdate, ServiceUpdate,
 };
-use futures::future::BoxFuture;
+use futures_util::future::BoxFuture;
 use gettext::Catalog;
 use std::{convert::TryFrom, error::Error, fmt, sync::Arc};
 

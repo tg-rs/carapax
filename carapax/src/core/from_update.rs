@@ -6,7 +6,7 @@ use crate::{
     },
     Api,
 };
-use futures::future::{ok, ready, BoxFuture, Ready};
+use futures_util::future::{ok, ready, BoxFuture, Ready};
 use std::{
     convert::{Infallible, TryFrom},
     fmt,

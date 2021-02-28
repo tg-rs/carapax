@@ -1,5 +1,5 @@
 use crate::core::{Handler, HandlerResult};
-use futures::future::BoxFuture;
+use futures_util::future::BoxFuture;
 use ratelimit_meter::{KeyedRateLimiter, GCRA};
 use std::{hash::Hash, num::NonZeroU32, sync::Arc, time::Duration};
 use tgbot::types::{ChatId, Integer, Update, UserId};

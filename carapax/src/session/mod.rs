@@ -7,7 +7,7 @@ use std::{
 use tgbot::types::{Command, Integer, Message, Update};
 
 use crate::{Data, FromUpdate, ServiceUpdate};
-use futures::future::BoxFuture;
+use futures_util::future::BoxFuture;
 pub use seance::{
     backend, Session, SessionCollector, SessionCollectorHandle, SessionError as SeanceSessionError,
     SessionManager as BaseSessionManager,

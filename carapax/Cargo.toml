@@ -35,8 +35,7 @@ serde = { version = "1.0", optional = true }
 tgbot = { git = "https://github.com/tg-rs/tgbot" }
 tokio = "1.0"
 seance = { version = "0.5", optional = true }
-# TODO: use util instead
-futures = "0.3.12" 
+futures-util = "0.3.8" 
 
 [dev-dependencies]
 dotenv = "0.15"

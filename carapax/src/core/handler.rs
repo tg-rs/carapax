@@ -2,7 +2,7 @@ use crate::{
     core::convert::{BoxedConvertFuture, ConvertHandler},
     FromUpdate, HandlerResult, ServiceUpdate,
 };
-use futures::future::BoxFuture;
+use futures_util::future::BoxFuture;
 use std::{
     error::Error,
     future::{ready, Future, Ready},

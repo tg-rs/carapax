@@ -3,7 +3,7 @@ use crate::{
     session::{backend::SessionBackend, Session, SessionError},
     Handler, HandlerResult, ServiceUpdate,
 };
-use futures::future::BoxFuture;
+use futures_util::future::BoxFuture;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{convert::Infallible, error::Error, future::Future, marker::PhantomData};
 

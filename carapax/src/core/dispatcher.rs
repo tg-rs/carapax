@@ -5,7 +5,7 @@ use crate::{
     },
     Data, FromUpdate, HandlerExt, ServiceUpdate,
 };
-use futures::future::BoxFuture;
+use futures_util::future::BoxFuture;
 use std::{
     any::{Any, TypeId},
     collections::HashMap,

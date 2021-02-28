@@ -1,5 +1,5 @@
 use crate::{access::rules::AccessRule, Handler};
-use futures::future::BoxFuture;
+use futures_util::future::BoxFuture;
 use std::sync::Arc;
 use tgbot::types::Update;
 

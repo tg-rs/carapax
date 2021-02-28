@@ -1,5 +1,5 @@
 use crate::{core::HandlerResult, Guard, GuardResult, Handler, HandlerExt, StopHandler};
-use futures::future::BoxFuture;
+use futures_util::future::BoxFuture;
 use std::future::{Future, Ready};
 
 /// See [`HandlerExt::access`]
