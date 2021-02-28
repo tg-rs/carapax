@@ -45,26 +45,6 @@ where
                 Err(err) => HandlerResult::error(err),
             }
         })
-
-        /*// TODO: describe what Ret for
-
-        enum Ret<F> {
-            Fut(F),
-            HandlerResult(HandlerResult),
-        }
-
-        let ret = match T::from_update(service_update) {
-            Ok(Some(t)) => Ret::Fut(self.handler.call(t)),
-            Ok(None) => Ret::HandlerResult(HandlerResult::Continue),
-            Err(err) => Ret::HandlerResult(HandlerResult::error(err)),
-        };
-
-        Box::pin(async move {
-            match ret {
-                Ret::Fut(fut) => fut.await.into(),
-                Ret::HandlerResult(res) => res,
-            }
-        })*/
     }
 
     fn name(&self) -> &'static str {
