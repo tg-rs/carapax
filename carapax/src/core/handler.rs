@@ -290,6 +290,7 @@ where
 }
 
 /// Handler that always returns [`HandlerResult::Continue`]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ContinueHandler;
 
 impl Handler<(), Ready<HandlerResult>> for ContinueHandler {
@@ -299,6 +300,7 @@ impl Handler<(), Ready<HandlerResult>> for ContinueHandler {
 }
 
 /// Handler that always returns [`HandlerResult::Stop`]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StopHandler;
 
 impl Handler<(), Ready<HandlerResult>> for StopHandler {
