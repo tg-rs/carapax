@@ -2,6 +2,7 @@ use crate::{
     i18n::{Locale, LocaleNotFound, TranslatorStore},
     Data, DataError, FromUpdate, ServiceUpdate,
 };
+use futures::future::BoxFuture;
 use gettext::Catalog;
 use std::{convert::TryFrom, error::Error, fmt, sync::Arc};
 
@@ -47,13 +48,17 @@ impl Translator {
 
 impl FromUpdate for Translator {
     type Error = TranslatorError;
+    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
 
-    fn from_update(service_update: ServiceUpdate) -> Result<Option<Self>, Self::Error> {
-        let locale = Locale::try_from(&service_update.update)?;
-        let store = Data::<TranslatorStore>::from_update(service_update)
-            .map_err(|_: DataError| TranslatorError::NoStoreInData)?
-            .expect("Data always returns Some");
-        Ok(Some(store.get_translator(locale)))
+    fn from_update(service_update: ServiceUpdate) -> Self::Future {
+        Box::pin(async move {
+            let locale = Locale::try_from(&service_update.update)?;
+            let store = Data::<TranslatorStore>::from_update(service_update)
+                .await
+                .map_err(|_: DataError| TranslatorError::NoStoreInData)?
+                .expect("Data always returns Some");
+            Ok(Some(store.get_translator(locale)))
+        })
     }
 }
 
