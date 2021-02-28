@@ -176,6 +176,45 @@ pub trait HandlerExt<T, R>: Sized {
     fn dialogue<B>(self) -> crate::dialogue::DialogueHandler<Self, B, R> {
         crate::dialogue::DialogueHandler::from(self)
     }
+
+    /// Wrapper for policy handler
+    ///
+    /// ```rust,no_run
+    /// # use carapax::{Api, Dispatcher, HandlerExt};
+    /// use carapax::types::Message;
+    ///
+    /// async fn my_policy(message: Message) -> bool {
+    ///     message.get_user().map(|user| user.id == 123).unwrap_or(false)
+    /// }
+    ///
+    /// # let mut  dispatcher = Dispatcher::new(Api::new("123").unwrap());
+    /// dispatcher.add_handler(my_policy.access());
+    /// ```
+    ///
+    /// This method same as:
+    /// ```rust,no_run
+    /// # use carapax::{Dispatcher, Api};
+    /// # async fn my_policy() -> bool { false }
+    /// # trait InvertResult: Sized {
+    /// #     fn invert_result(self) -> Self { self }
+    /// # }
+    /// # impl<T> InvertResult for T {}
+    /// use carapax::{HandlerExt, StopHandler};
+    ///
+    /// # let mut  dispatcher = Dispatcher::new(Api::new("123").unwrap());
+    /// # dispatcher.add_handler(
+    /// StopHandler.guard(my_policy).invert_result()
+    /// # );
+    /// ```
+    /// where `invert_result()` is imaginary function that inverts [`HandlerResult`]:
+    ///
+    /// [`HandlerResult::Continue`] => [`HandlerResult::Stop`]
+    ///
+    /// [`HandlerResult::Stop`] => [`HandlerResult::Continue`]
+    #[cfg(feature = "access")]
+    fn access(self) -> crate::access::AccessHandler<Self, R> {
+        crate::access::AccessHandler::from(self)
+    }
 }
 
 impl<H, T, R> HandlerExt<T, R> for H where H: Handler<T, R> {}

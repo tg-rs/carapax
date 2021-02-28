@@ -1,15 +1,7 @@
-use crate::access::rules::AccessRule;
-use async_trait::async_trait;
+use crate::{access::rules::AccessRule, Handler};
+use futures::future::BoxFuture;
+use std::sync::Arc;
 use tgbot::types::Update;
-
-/// An access policy
-///
-/// Decides whether update is allowed or not
-#[async_trait]
-pub trait AccessPolicy<C> {
-    /// Return true if update is allowed and false otherwise
-    async fn is_granted(&mut self, context: &C, update: &Update) -> bool;
-}
 
 /// In-memory access policy
 ///
@@ -20,39 +12,40 @@ pub trait AccessPolicy<C> {
 ///
 /// [is_granted()]: trait.AccessPolicy.html#tymethod.is_granted
 /// [allow_all()]: struct.AccessRule.html#method.allow_all
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InMemoryAccessPolicy {
-    rules: Vec<AccessRule>,
+    rules: Arc<Vec<AccessRule>>,
 }
 
 impl InMemoryAccessPolicy {
     /// Creates a new policy
     pub fn new(rules: Vec<AccessRule>) -> Self {
-        InMemoryAccessPolicy { rules }
+        InMemoryAccessPolicy { rules: Arc::new(rules) }
     }
 
     /// Adds a rule to the end of the list
     pub fn push_rule(mut self, rule: AccessRule) -> Self {
-        self.rules.push(rule);
+        let rules = Arc::get_mut(&mut self.rules).unwrap();
+        rules.push(rule);
         self
     }
 }
 
-#[async_trait]
-impl<C> AccessPolicy<C> for InMemoryAccessPolicy
-where
-    C: Send + Sync,
-{
-    async fn is_granted(&mut self, _context: &C, update: &Update) -> bool {
-        let mut result = false;
-        for rule in &self.rules {
-            if rule.accepts(&update) {
-                result = rule.is_granted();
-                log::info!("Found rule: {:?}", rule);
-                break;
+impl Handler<Update, BoxFuture<'static, bool>> for InMemoryAccessPolicy {
+    fn call(&self, update: Update) -> BoxFuture<'static, bool> {
+        let rules = Arc::clone(&self.rules);
+        Box::pin(async move {
+            let mut result = false;
+            for rule in rules.iter() {
+                if rule.accepts(&update) {
+                    result = rule.is_granted();
+                    log::info!("Found rule: {:?}", rule);
+                    break;
+                }
             }
-        }
-        result
+
+            result
+        })
     }
 }
 
@@ -70,10 +63,10 @@ mod tests {
         macro_rules! check_access {
             ($rules:expr, $updates:expr) => {{
                 for rules in $rules {
-                    let mut policy = InMemoryAccessPolicy::new(rules);
+                    let policy = InMemoryAccessPolicy::new(rules);
                     for (flag, update) in $updates {
                         let update: Update = serde_json::from_value(update).unwrap();
-                        let is_granted = policy.is_granted(&(), &update).await;
+                        let is_granted = policy.call(update).await;
                         assert_eq!(is_granted, flag);
                     }
                 }

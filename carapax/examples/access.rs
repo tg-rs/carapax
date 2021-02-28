@@ -1,16 +1,13 @@
 use carapax::{
-    access::{AccessHandler, AccessRule, InMemoryAccessPolicy},
-    handler,
+    access::{AccessRule, InMemoryAccessPolicy},
     longpoll::LongPoll,
     types::Message,
-    Api, Config, Dispatcher,
+    Api, Config, Dispatcher, HandlerExt,
 };
 use dotenv::dotenv;
 use std::env;
 
-#[allow(clippy::trivially_copy_pass_by_ref)]
-#[handler]
-async fn handle_message(_context: &(), message: Message) {
+async fn handle_message(message: Message) {
     log::info!("Got a new message: {:?}", message);
 }
 
@@ -34,8 +31,8 @@ async fn main() {
     let rule = AccessRule::allow_user(username);
     let policy = InMemoryAccessPolicy::default().push_rule(rule);
 
-    let mut dispatcher = Dispatcher::new(());
-    dispatcher.add_handler(AccessHandler::new(policy));
+    let mut dispatcher = Dispatcher::new(api.clone());
+    dispatcher.add_handler(policy.access());
     dispatcher.add_handler(handle_message);
     LongPoll::new(api, dispatcher).run().await
 }
