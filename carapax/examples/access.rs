@@ -2,7 +2,7 @@ use carapax::{
     access::{AccessRule, InMemoryAccessPolicy},
     longpoll::LongPoll,
     types::Message,
-    Api, Config, Dispatcher, HandlerExt,
+    Api, Config, Dispatcher, Handler,
 };
 use dotenv::dotenv;
 use std::env;

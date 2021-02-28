@@ -9,7 +9,7 @@ use std::{convert::Infallible, error::Error, future::Future, marker::PhantomData
 
 const SESSION_KEY_PREFIX: &str = "__carapax_dialogue";
 
-/// See [`HandlerExt::dialogue`](crate::HandlerExt::dialogue)
+/// See [`Handler::dialogue`](crate::Handler::dialogue)
 pub struct Dialogue<S, B> {
     /// The user's state itself
     pub state: S,
@@ -164,7 +164,7 @@ mod tests {
     use crate::{
         dispatcher::DispatcherData,
         session::{backend::fs::FilesystemBackend, SessionManager},
-        Api, Data, HandlerExt,
+        Api, Data,
     };
     use serde::{Deserialize, Serialize};
     use std::sync::Arc;

@@ -30,49 +30,13 @@ pub trait Handler<T, R> {
     fn name(&self) -> &'static str {
         std::any::type_name::<Self>()
     }
-}
 
-impl<F, R> Handler<(), R> for F
-where
-    F: Fn() -> R,
-{
-    fn call(&self, _: ()) -> R {
-        (self)()
-    }
-}
-
-macro_rules! impl_handler_for_fn {
-    ($($T:ident),+) => {
-        #[allow(non_snake_case)]
-        impl<Func, $($T,)+ R> Handler<($($T,)+), R> for Func
-        where
-            Func: Fn($($T,)+) -> R,
-        {
-            fn call(&self, ($($T,)+): ($($T,)+)) -> R {
-                (self)($($T,)+)
-            }
-        }
-    };
-}
-
-impl_handler_for_fn!(A);
-impl_handler_for_fn!(A, B);
-impl_handler_for_fn!(A, B, C);
-impl_handler_for_fn!(A, B, C, D);
-impl_handler_for_fn!(A, B, C, D, E);
-impl_handler_for_fn!(A, B, C, D, E, F);
-impl_handler_for_fn!(A, B, C, D, E, F, G);
-impl_handler_for_fn!(A, B, C, D, E, F, G, H);
-impl_handler_for_fn!(A, B, C, D, E, F, G, H, I); // 9 arguments
-
-/// Extension for [`Handler`] with utility functions
-pub trait HandlerExt<T, R>: Sized {
     /// Allows you to skip handler execution if false is returned
     ///
     /// ```rust,no_run
     /// # use carapax::types::Message;
     /// # use carapax::{Api, Dispatcher, Guard};
-    /// use carapax::HandlerExt;
+    /// use carapax::Handler;
     ///
     /// async fn handler(api: Api) {
     ///     // some code...
@@ -93,7 +57,10 @@ pub trait HandlerExt<T, R>: Sized {
     /// ```
     ///
     /// You can return not only boolean, see [`GuardResult`] implementations
-    fn guard<F, R1, R2>(self, guard: F) -> Guard<Self, F, R1, R2> {
+    fn guard<F, R1, R2>(self, guard: F) -> Guard<Self, F, R1, R2>
+    where
+        Self: Sized,
+    {
         Guard {
             handler: self,
             inner: guard,
@@ -123,7 +90,7 @@ pub trait HandlerExt<T, R>: Sized {
     /// # use serde::{Serialize, Deserialize};
     /// use carapax::dialogue::{Dialogue, State, DialogueState};
     /// use carapax::session::backend::fs::FilesystemBackend;
-    /// use carapax::{Api, HandlerExt, Dispatcher};
+    /// use carapax::{Api, Handler, Dispatcher};
     /// use carapax::methods::SendMessage;
     /// use carapax::types::Message;
     ///
@@ -173,14 +140,17 @@ pub trait HandlerExt<T, R>: Sized {
     /// You can check what dialogue handler (like `my_handler` above) can return looking at
     /// [`DialogueResult` implementations](crate::dialogue::DialogueResult)
     #[cfg(feature = "dialogue")]
-    fn dialogue<B>(self) -> crate::dialogue::DialogueHandler<Self, B, R> {
+    fn dialogue<B>(self) -> crate::dialogue::DialogueHandler<Self, B, R>
+    where
+        Self: Sized,
+    {
         crate::dialogue::DialogueHandler::from(self)
     }
 
     /// Wrapper for policy handler
     ///
     /// ```rust,no_run
-    /// # use carapax::{Api, Dispatcher, HandlerExt};
+    /// # use carapax::{Api, Dispatcher, Handler};
     /// use carapax::types::Message;
     ///
     /// async fn my_policy(message: Message) -> bool {
@@ -199,7 +169,7 @@ pub trait HandlerExt<T, R>: Sized {
     /// #     fn invert_result(self) -> Self { self }
     /// # }
     /// # impl<T> InvertResult for T {}
-    /// use carapax::{HandlerExt, StopHandler};
+    /// use carapax::{Handler, StopHandler};
     ///
     /// # let mut  dispatcher = Dispatcher::new(Api::new("123").unwrap());
     /// # dispatcher.add_handler(
@@ -212,16 +182,50 @@ pub trait HandlerExt<T, R>: Sized {
     ///
     /// [`HandlerResult::Stop`] => [`HandlerResult::Continue`]
     #[cfg(feature = "access")]
-    fn access(self) -> crate::access::AccessHandler<Self, R> {
+    fn access(self) -> crate::access::AccessHandler<Self, R>
+    where
+        Self: Sized,
+    {
         crate::access::AccessHandler::from(self)
     }
 }
 
-impl<H, T, R> HandlerExt<T, R> for H where H: Handler<T, R> {}
+impl<F, R> Handler<(), R> for F
+where
+    F: Fn() -> R,
+{
+    fn call(&self, _: ()) -> R {
+        (self)()
+    }
+}
+
+macro_rules! impl_handler_for_fn {
+    ($($T:ident),+) => {
+        #[allow(non_snake_case)]
+        impl<Func, $($T,)+ R> Handler<($($T,)+), R> for Func
+        where
+            Func: Fn($($T,)+) -> R,
+        {
+            fn call(&self, ($($T,)+): ($($T,)+)) -> R {
+                (self)($($T,)+)
+            }
+        }
+    };
+}
+
+impl_handler_for_fn!(A);
+impl_handler_for_fn!(A, B);
+impl_handler_for_fn!(A, B, C);
+impl_handler_for_fn!(A, B, C, D);
+impl_handler_for_fn!(A, B, C, D, E);
+impl_handler_for_fn!(A, B, C, D, E, F);
+impl_handler_for_fn!(A, B, C, D, E, F, G);
+impl_handler_for_fn!(A, B, C, D, E, F, G, H);
+impl_handler_for_fn!(A, B, C, D, E, F, G, H, I); // 9 arguments
 
 /// This utility trait is used to process what guard handler returned
 ///
-/// See [`HandlerExt::guard`]
+/// See [`Handler::guard`]
 pub trait GuardResult<H> {
     #[allow(missing_docs)]
     type Future: Future<Output = HandlerResult>;
@@ -267,7 +271,7 @@ where
     }
 }
 
-/// See [`HandlerExt::guard`]
+/// See [`Handler::guard`]
 pub struct Guard<H, F, R1, R2> {
     handler: H,
     inner: F,

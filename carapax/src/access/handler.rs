@@ -1,8 +1,8 @@
-use crate::{core::HandlerResult, Guard, GuardResult, Handler, HandlerExt, StopHandler};
+use crate::{core::HandlerResult, Guard, GuardResult, Handler, StopHandler};
 use futures_util::future::BoxFuture;
 use std::future::{Future, Ready};
 
-/// See [`HandlerExt::access`]
+/// See [`Handler::access`]
 pub struct AccessHandler<H, R>(Guard<StopHandler, H, Ready<HandlerResult>, R>);
 
 impl<H: Clone, R> Clone for AccessHandler<H, R> {

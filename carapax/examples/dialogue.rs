@@ -8,7 +8,7 @@ use carapax::{
     methods::SendMessage,
     session::{backend::fs::FilesystemBackend, Session, SessionManager},
     types::Message,
-    Api, Config, Dispatcher, ExecuteError, HandlerExt,
+    Api, Config, Dispatcher, ExecuteError, Handler,
 };
 use dotenv::dotenv;
 use seance::SessionError;

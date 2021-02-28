@@ -1,7 +1,7 @@
 pub use self::{
     dispatcher::{Dispatcher, ErrorHandler, ErrorPolicy, LoggingErrorHandler},
     from_update::{Data, DataError, Either, FromUpdate, ServiceUpdate},
-    handler::{BoxedHandler, ContinueHandler, Guard, GuardResult, Handler, HandlerExt, StopHandler},
+    handler::{BoxedHandler, ContinueHandler, Guard, GuardResult, Handler, StopHandler},
     result::{HandlerResult, HandlerResultError},
 };
 

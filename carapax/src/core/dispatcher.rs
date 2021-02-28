@@ -3,7 +3,7 @@ use crate::{
         handler::{BoxedHandler, Handler},
         result::{HandlerResult, HandlerResultError},
     },
-    Data, FromUpdate, HandlerExt, ServiceUpdate,
+    Data, FromUpdate, ServiceUpdate,
 };
 use futures_util::future::BoxFuture;
 use std::{

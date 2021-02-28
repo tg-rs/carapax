@@ -1,5 +1,5 @@
 use carapax::{
-    longpoll::LongPoll, methods::SendMessage, types::Message, Api, Config, Dispatcher, ExecuteError, HandlerExt,
+    longpoll::LongPoll, methods::SendMessage, types::Message, Api, Config, Dispatcher, ExecuteError, Handler,
 };
 use dotenv::dotenv;
 use std::env;
