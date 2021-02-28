@@ -9,44 +9,7 @@ use std::{convert::Infallible, error::Error, future::Future, marker::PhantomData
 
 const SESSION_KEY_PREFIX: &str = "__carapax_dialogue";
 
-/// Adapts dialogue handlers for [Dispatcher](../struct.Dispatcher.html)
-/*pub struct Dialogue<C, B, H, S>
-where
-    H: DialogueHandler<C, S>,
-    S: State,
-{
-    session_manager: SessionManager<B>,
-    session_key: String,
-    handler: H,
-    _marker: PhantomData<(C, S)>,
-}
-
-impl<C, B, H, S> Dialogue<C, B, H, S>
-where
-    H: DialogueHandler<C, S>,
-    S: State,
-{
-    /// Creates a new adapter
-    ///
-    /// # Arguments
-    ///
-    /// * session_manager - Session manager to store dialogue state
-    /// * name - Key used to store dialogue
-    /// * handler - Dialogue handler
-    pub fn new<N>(session_manager: SessionManager<B>, name: N, handler: H) -> Self
-    where
-        N: Display,
-    {
-        Self {
-            session_manager,
-            session_key: format!("{}:{}", SESSION_KEY_PREFIX, name),
-            handler,
-            _marker: PhantomData,
-        }
-    }
-}*/
-
-/// See [`HandlerExt::dialogue`]
+/// See [`HandlerExt::dialogue`](crate::HandlerExt::dialogue)
 pub struct Dialogue<S, B> {
     /// The user's state itself
     pub state: S,
@@ -95,7 +58,7 @@ pub enum DialogueState<S> {
     Exit,
 }
 
-/// This utility trait is used to process what dialogue handler returned
+/// This utility trait is used to process what user's dialogue handler returned
 pub trait DialogueResult<B> {
     #[allow(missing_docs)]
     type Future: Future<Output = HandlerResult>;

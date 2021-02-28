@@ -169,6 +169,9 @@ pub trait HandlerExt<T, R>: Sized {
     /// # let mut  dispatcher = Dispatcher::new(Api::new("123").unwrap());
     /// dispatcher.add_handler(my_handler.dialogue::<FilesystemBackend>());
     /// ```
+    ///
+    /// You can check what dialogue handler (like `my_handler` above) can return looking at
+    /// [`DialogueResult` implementations](crate::dialogue::DialogueResult)
     #[cfg(feature = "dialogue")]
     fn dialogue<B>(self) -> crate::dialogue::DialogueHandler<Self, B, R> {
         crate::dialogue::DialogueHandler::from(self)
