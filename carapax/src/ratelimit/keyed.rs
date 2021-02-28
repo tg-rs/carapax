@@ -6,6 +6,7 @@ use tgbot::types::{ChatId, Integer, Update, UserId};
 use tokio::sync::Mutex;
 
 /// Limits updates accroding to given rules
+#[derive(Clone)]
 pub struct KeyedRateLimitHandler<K: RateLimitKey> {
     limiter: Arc<Mutex<KeyedRateLimiter<K::Key, GCRA>>>,
     key: K,

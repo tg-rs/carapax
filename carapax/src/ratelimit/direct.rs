@@ -5,6 +5,7 @@ use std::{num::NonZeroU32, sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
 /// Limits all updates
+#[derive(Clone)]
 pub struct DirectRateLimitHandler {
     limiter: Arc<Mutex<DirectRateLimiter<GCRA>>>,
 }
