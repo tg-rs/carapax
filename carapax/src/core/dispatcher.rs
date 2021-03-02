@@ -37,13 +37,23 @@ impl Dispatcher {
 
     /// Adds a user data wrapping it into [`Arc`]
     ///
-    /// If your data is already wrapped into [`Arc`] it will be automatically taken into account
-    /// because of [`impl From<Arc<T>> for Data<T>`]
-    ///
-    /// [`impl From<Arc<T>> for Data<T>`]: Data#impl-From<Arc<T>>
-    pub fn data<T: Send + Sync + 'static>(&mut self, value: impl Into<Data<T>>) -> &mut Self {
+    /// Use [`data_arc()`](Dispatcher::data_arc) if your data already wrapped in [`Arc`]
+    pub fn data<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Send + Sync + 'static,
+    {
         let data = Arc::get_mut(&mut self.data).unwrap();
-        data.push(value.into());
+        data.push(Data::from(value));
+        self
+    }
+
+    /// Adds a user data that already wrapped in [`Arc`]
+    pub fn data_arc<T>(&mut self, value: Arc<T>) -> &mut Self
+    where
+        T: Send + Sync + 'static,
+    {
+        let data = Arc::get_mut(&mut self.data).unwrap();
+        data.push(Data::from_arc(value));
         self
     }
 

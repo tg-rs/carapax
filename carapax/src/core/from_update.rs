@@ -284,6 +284,14 @@ impl_from_update_for_tuple!(A, B, C, D, E, F, G, H, I); // 9 arguments
 #[derive(Debug)]
 pub struct Data<T>(Arc<T>);
 
+impl<T> Data<T> {
+    /// Creates Data with value that already wrapped in [`Arc`]
+    /// because [`Data::from`](Data#impl-From<T>)
+    pub fn from_arc(arc: Arc<T>) -> Self {
+        Self(arc)
+    }
+}
+
 impl<T> Clone for Data<T> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
@@ -293,12 +301,6 @@ impl<T> Clone for Data<T> {
 impl<T> From<T> for Data<T> {
     fn from(t: T) -> Self {
         Self(Arc::new(t))
-    }
-}
-
-impl<T> From<Arc<T>> for Data<T> {
-    fn from(ptr: Arc<T>) -> Self {
-        Self(ptr)
     }
 }
 
