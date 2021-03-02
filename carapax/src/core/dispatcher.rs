@@ -14,7 +14,7 @@ use std::{
 };
 use tgbot::{types::Update, Api, UpdateHandler};
 
-type BoxedErrorHandler = Box<dyn ErrorHandler<Future = BoxFuture<'static, ErrorPolicy>> + Send + Sync>;
+type BoxedErrorHandler = Box<dyn ErrorHandler<Future = BoxFuture<'static, ()>> + Send + Sync>;
 
 /// A Telegram Update dispatcher
 pub struct Dispatcher {
@@ -114,10 +114,10 @@ impl Dispatcher {
                 match result {
                     HandlerResult::Continue => continue,
                     HandlerResult::Stop => break,
-                    HandlerResult::Error(err) => match error_handler.handle(err).await {
-                        ErrorPolicy::Continue => continue,
-                        ErrorPolicy::Stop => break,
-                    },
+                    HandlerResult::Error(err) => {
+                        error_handler.handle(err).await;
+                        break;
+                    }
                 }
             }
         }
@@ -154,13 +154,12 @@ impl DispatcherData {
 /// A handler for errors occurred when dispatching update
 pub trait ErrorHandler {
     /// A future returned from error handler
-    type Future: Future<Output = ErrorPolicy>;
+    type Future: Future<Output = ()>;
 
     /// Handles a error
     ///
     /// This method is called on each error returned by a handler
-    /// [ErrorPolicy](enum.ErrorPolicy.html) defines
-    /// whether next handler should process current update or not.
+    /// Next handler will not  process current update.
     fn handle(&self, err: HandlerResultError) -> Self::Future;
 }
 
@@ -177,7 +176,7 @@ where
     H: ErrorHandler,
     H::Future: Send + 'static,
 {
-    type Future = BoxFuture<'static, ErrorPolicy>;
+    type Future = BoxFuture<'static, ()>;
 
     fn handle(&self, err: HandlerResultError) -> Self::Future {
         Box::pin(self.0.handle(err))
@@ -185,57 +184,29 @@ where
 }
 
 /// A default error handler which logs error
-///
-/// By default it stops propagation
-/// (see [ErrorPolicy](enum.ErrorPolicy.html) for more information)
-pub struct LoggingErrorHandler(ErrorPolicy);
-
-impl LoggingErrorHandler {
-    /// Creates a new logger error handler with a specified error policy
-    pub fn new(error_policy: ErrorPolicy) -> Self {
-        Self(error_policy)
-    }
-}
+pub struct LoggingErrorHandler(());
 
 impl Default for LoggingErrorHandler {
     fn default() -> Self {
-        Self::new(ErrorPolicy::Stop)
+        Self(())
     }
 }
 
 impl ErrorHandler for LoggingErrorHandler {
-    type Future = BoxFuture<'static, ErrorPolicy>;
+    type Future = BoxFuture<'static, ()>;
 
     fn handle(&self, err: HandlerResultError) -> Self::Future {
-        let ret = self.0;
         Box::pin(async move {
             log::error!("An error has occurred: {}", err);
-            ret
         })
     }
-}
-
-/// A policy for error handler
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
-pub enum ErrorPolicy {
-    /// Continue propagation
-    ///
-    /// Next handler will run
-    Continue,
-    /// Stop propagation
-    ///
-    /// Next handler will not run
-    Stop,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::{error::Error, fmt};
-    use tokio::sync::{
-        oneshot::{channel, Sender},
-        Mutex,
-    };
+    use tokio::sync::Mutex;
 
     type Updates = Mutex<Vec<Update>>;
 
@@ -300,52 +271,5 @@ mod tests {
         assert_dispatch!(1, handler_with_stop, handler_with_continue, handler_with_error);
 
         assert_dispatch!(1, handler_with_error, handler_with_stop, handler_with_continue);
-    }
-
-    struct MockErrorHandler {
-        error_policy: ErrorPolicy,
-        sender: Arc<Mutex<Option<Sender<HandlerResultError>>>>,
-    }
-
-    impl MockErrorHandler {
-        fn new(error_policy: ErrorPolicy, sender: Sender<HandlerResultError>) -> Self {
-            MockErrorHandler {
-                error_policy,
-                sender: Arc::new(Mutex::new(Some(sender))),
-            }
-        }
-    }
-
-    impl ErrorHandler for MockErrorHandler {
-        type Future = BoxFuture<'static, ErrorPolicy>;
-
-        fn handle(&self, err: HandlerResultError) -> Self::Future {
-            let sender = self.sender.clone();
-            let error_policy = self.error_policy;
-            Box::pin(async move {
-                let sender = sender.lock().await.take().unwrap();
-                sender.send(err).unwrap();
-                error_policy
-            })
-        }
-    }
-
-    #[tokio::test]
-    async fn dispatch_custom_error_handler() {
-        let update = create_update();
-        for (count, error_policy) in &[(1usize, ErrorPolicy::Stop), (2usize, ErrorPolicy::Continue)] {
-            let mut dispatcher = Dispatcher::new(Api::new("123").unwrap());
-            dispatcher.data(Mutex::new(Vec::<Update>::new()));
-            dispatcher.add_handler(handler_with_error);
-            dispatcher.add_handler(handler_with_continue);
-            let (tx, mut rx) = channel();
-            dispatcher.set_error_handler(MockErrorHandler::new(*error_policy, tx));
-            dispatcher.dispatch(update.clone()).await;
-            rx.close();
-            let context = dispatcher.data.get::<Data<Updates>>().unwrap();
-            let context = context.lock().await;
-            assert_eq!(context.len(), *count);
-            assert!(rx.try_recv().is_ok());
-        }
     }
 }
