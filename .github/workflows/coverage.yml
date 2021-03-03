@@ -20,21 +20,19 @@ jobs:
           profile: minimal
           toolchain: nightly
           override: true
+          components: llvm-tools-preview
+      - name: Install grcov
+        run: curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
       - name: Prepare
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all-targets --all-features --no-fail-fast
         env:
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: >-
-            -Zprofile
-            -Ccodegen-units=1
-            -Cinline-threshold=0
-            -Clink-dead-code
-            -Coverflow-checks=off
+          RUSTFLAGS: -Zinstrument-coverage
+          LLVM_PROFILE_FILE: "carapax-%p-%m.profraw"
       - name: Aggregate
-        uses: actions-rs/grcov@v0.1
+        run: ./grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o ./lcov.info
       - name: Publish
         uses: codecov/codecov-action@v1
         with:
