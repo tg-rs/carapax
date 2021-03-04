@@ -28,10 +28,9 @@ jobs:
           curl -L https://github.com/Kogia-sima/rust-covfix/releases/download/v0.2.2/rust-covfix-linux-x86_64.tar.xz | tar Jxf -
           mv rust-covfix-linux-x86_64/rust-covfix ./
       - name: Prepare
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-targets --all-features --no-fail-fast
+        run: |
+          cargo build --all-targets --all-features
+          cargo test --all-targets --all-features --no-fail-fast
         env:
           RUSTFLAGS: -Zinstrument-coverage
           LLVM_PROFILE_FILE: "carapax-%p-%m.profraw"
