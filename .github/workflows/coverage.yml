@@ -35,7 +35,7 @@ jobs:
           RUSTFLAGS: -Zinstrument-coverage
           LLVM_PROFILE_FILE: "carapax-%p-%m.profraw"
       - name: Aggregate
-        run: ./grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o ./lcov.info
+        run: ./grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" --ignore "**/examples/*" -o ./lcov.info
       - name: Fix coverage info
         run: ./rust-covfix -o lcov.info lcov.info
       - name: Publish
