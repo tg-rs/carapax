@@ -1,82 +1,59 @@
-// use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
+use carapax::{
+    longpoll::LongPoll,
+    ratelimit::{
+        nonzero, DirectRateLimitPredicate, Jitter, KeyChat, KeyChatUser, KeyUser, KeyedRateLimitPredicate, Quota,
+    },
+    types::Update,
+    Api, Config, Context, Dispatcher, PredicateExt,
+};
 use dotenv::dotenv;
-// use std::env;
+use std::{env, time::Duration};
 
-// #[allow(clippy::trivially_copy_pass_by_ref)]
-// async fn handle_message(_context: &(), message: Message) {
-//     log::info!("Got a new message: {:?}", message);
-// }
+async fn update_handler(update: Update) {
+    log::info!("Got an update: {:?}", update)
+}
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    // let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
-    // let proxy = env::var("CARAPAX_PROXY").ok();
-    // // let strategy = env::var("TGRS_RATE_LIMIT_STRATEGY").expect("TGRS_RATE_LIMIT_STRATEGY is not set");
+    let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
+    let proxy = env::var("CARAPAX_PROXY").ok();
+    let strategy = env::var("CARAPAX_RATE_LIMIT_STRATEGY").expect("CARAPAX_RATE_LIMIT_STRATEGY is not set");
+    let mut config = Config::new(token);
+    if let Some(proxy) = proxy {
+        config = config.proxy(proxy).expect("Failed to set proxy");
+    }
+    let api = Api::new(config).expect("Failed to create API");
+    let mut dispatcher = Dispatcher::new(Context::default());
+    let quota = Quota::with_period(Duration::from_secs(5))
+        .expect("Failed to create quota")
+        .allow_burst(nonzero!(1u32));
+    let jitter = Jitter::up_to(Duration::from_secs(5));
+    match strategy.as_str() {
+        "direct_discard" => {
+            dispatcher.add_handler(update_handler.predicate(DirectRateLimitPredicate::discard(quota)));
+        }
+        "direct_wait" => {
+            dispatcher.add_handler(update_handler.predicate(DirectRateLimitPredicate::wait(quota)));
+        }
+        "direct_wait_with_jitter" => {
+            dispatcher.add_handler(update_handler.predicate(DirectRateLimitPredicate::wait_with_jitter(quota, jitter)));
+        }
+        "keyed_discard" => {
+            dispatcher.add_handler(update_handler.predicate(<KeyedRateLimitPredicate<KeyChat, _, _>>::discard(quota)));
+        }
+        "keyed_wait" => {
+            dispatcher.add_handler(update_handler.predicate(<KeyedRateLimitPredicate<KeyUser, _, _>>::wait(quota)));
+        }
+        "keyed_wait_with_jitter" => {
+            dispatcher.add_handler(update_handler.predicate(
+                <KeyedRateLimitPredicate<KeyChatUser, _, _>>::wait_with_jitter(quota, jitter),
+            ));
+        }
+        key => panic!("Unknown ratelimit stragey: {}", key),
+    }
 
-    // let mut config = Config::new(token);
-    // if let Some(proxy) = proxy {
-    //     config = config.proxy(proxy).expect("Failed to set proxy");
-    // }
-
-    // let api = Api::new(config).unwrap();
-
-    // 1 update per 5 seconds
-    // let (capacity, interval) = (nonzero!(1u32), Duration::from_secs(5));
-
-    // Allow update when key is missing
-    // let on_missing = true;
-
-    // let dispatcher = Dispatcher::new(());
-
-    // match strategy.as_str() {
-    //     "direct" => {
-    //         // Limit all updates
-    //         dispatcher.add_handler(DirectRateLimitHandler::new(capacity, interval))
-    //     }
-    //     "all_users" => {
-    //         // Limit updates per user ID for all users
-    //         dispatcher.add_handler(KeyedRateLimitHandler::new(
-    //             limit_all_chats,
-    //             on_missing,
-    //             capacity,
-    //             interval,
-    //         ))
-    //     }
-    //     "all_chats" => {
-    //         // Limit updates per chat ID for all chats
-    //         dispatcher.add_handler(KeyedRateLimitHandler::new(
-    //             limit_all_users,
-    //             on_missing,
-    //             capacity,
-    //             interval,
-    //         ))
-    //     }
-    //     "list" => {
-    //         // Limit updates for specific chat id or user id
-    //         let user_id = env::var("TGRS_RATE_LIMIT_USER_ID").expect("TGRS_RATE_LIMIT_USER_ID is not set");
-    //         let user_id = match user_id.parse::<Integer>() {
-    //             Ok(user_id) => UserId::Id(user_id),
-    //             Err(_) => UserId::Username(user_id),
-    //         };
-    //         let chat_id = env::var("TGRS_RATE_LIMIT_CHAT_ID").expect("TGRS_RATE_LIMIT_CHAT_ID is not set");
-    //         let chat_id = match chat_id.parse::<Integer>() {
-    //             Ok(chat_id) => ChatId::Id(chat_id),
-    //             Err(_) => ChatId::Username(chat_id),
-    //         };
-    //         dispatcher.add_handler(KeyedRateLimitHandler::new(
-    //             RateLimitList::default().with_user(user_id).with_chat(chat_id),
-    //             on_missing,
-    //             capacity,
-    //             interval,
-    //         ))
-    //     }
-    //     _ => panic!("Unknown rate limit strategy: {:?}", strategy),
-    // };
-
-    // dispatcher.add_handler(handle_message);
-
-    // LongPoll::new(api, dispatcher).run().await
+    LongPoll::new(api, dispatcher).run().await
 }
