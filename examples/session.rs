@@ -1,93 +1,87 @@
-use carapax::{
-    longpoll::LongPoll,
-    methods::SendMessage,
-    session::{backend::fs::FilesystemBackend, SessionCollector, SessionManager},
-    types::{Command, Update},
-    Api, Config, Dispatcher, HandlerResult,
-};
+use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
 use dotenv::dotenv;
-use std::{env, time::Duration};
+use std::env;
 use tempfile::tempdir;
 
 struct Context {
-    api: Api,
-    session_manager: SessionManager<FilesystemBackend>,
+    // api: Api,
+// session_manager: SessionManager<FilesystemBackend>,
 }
 
-async fn handle_set(context: &Context, command: Command) -> HandlerResult {
-    log::info!("got a command: {:?}\n", command);
-    let message = command.get_message();
-    let chat_id = message.get_chat_id();
-    let args = command.get_args();
-    let val = if args.is_empty() {
-        0
-    } else {
-        match args[0].parse::<usize>() {
-            Ok(x) => x,
-            Err(err) => {
-                context
-                    .api
-                    .execute(SendMessage::new(chat_id, err.to_string()))
-                    .await
-                    .unwrap();
-                return HandlerResult::Stop;
-            }
-        }
-    };
-    let mut session = context.session_manager.get_session(&command).unwrap();
-    session.set("counter", &val).await.unwrap();
-    context.api.execute(SendMessage::new(chat_id, "OK")).await.unwrap();
-    HandlerResult::Stop
-}
+// async fn handle_set(context: &Context, command: Command) -> HandlerResult {
+//     log::info!("got a command: {:?}\n", command);
+//     let message = command.get_message();
+//     let chat_id = message.get_chat_id();
+//     let args = command.get_args();
+//     let val = if args.is_empty() {
+//         0
+//     } else {
+//         match args[0].parse::<usize>() {
+//             Ok(x) => x,
+//             Err(err) => {
+//                 context
+//                     .api
+//                     .execute(SendMessage::new(chat_id, err.to_string()))
+//                     .await
+//                     .unwrap();
+//                 return HandlerResult::Stop;
+//             }
+//         }
+//     };
+//     let mut session = context.session_manager.get_session(&command).unwrap();
+//     session.set("counter", &val).await.unwrap();
+//     context.api.execute(SendMessage::new(chat_id, "OK")).await.unwrap();
+//     HandlerResult::Stop
+// }
 
-async fn handle_expire(context: &Context, command: Command) -> HandlerResult {
-    log::info!("got a command: {:?}\n", command);
-    let message = command.get_message();
-    let chat_id = message.get_chat_id();
-    let args = command.get_args();
-    let seconds = if args.is_empty() {
-        0
-    } else {
-        match args[0].parse::<u64>() {
-            Ok(x) => x,
-            Err(err) => {
-                context
-                    .api
-                    .execute(SendMessage::new(chat_id, err.to_string()))
-                    .await
-                    .unwrap();
-                return HandlerResult::Stop;
-            }
-        }
-    };
-    let mut session = context.session_manager.get_session(&command).unwrap();
-    session.expire("counter", seconds).await.unwrap();
-    context.api.execute(SendMessage::new(chat_id, "OK")).await.unwrap();
-    HandlerResult::Stop
-}
+// async fn handle_expire(context: &Context, command: Command) -> HandlerResult {
+//     log::info!("got a command: {:?}\n", command);
+//     let message = command.get_message();
+//     let chat_id = message.get_chat_id();
+//     let args = command.get_args();
+//     let seconds = if args.is_empty() {
+//         0
+//     } else {
+//         match args[0].parse::<u64>() {
+//             Ok(x) => x,
+//             Err(err) => {
+//                 context
+//                     .api
+//                     .execute(SendMessage::new(chat_id, err.to_string()))
+//                     .await
+//                     .unwrap();
+//                 return HandlerResult::Stop;
+//             }
+//         }
+//     };
+//     let mut session = context.session_manager.get_session(&command).unwrap();
+//     session.expire("counter", seconds).await.unwrap();
+//     context.api.execute(SendMessage::new(chat_id, "OK")).await.unwrap();
+//     HandlerResult::Stop
+// }
 
-async fn handle_reset(context: &Context, command: Command) -> HandlerResult {
-    log::info!("got a command: {:?}\n", command);
-    let message = command.get_message();
-    let chat_id = message.get_chat_id();
-    let mut session = context.session_manager.get_session(&command).unwrap();
-    session.remove("counter").await.unwrap();
-    context.api.execute(SendMessage::new(chat_id, "OK")).await.unwrap();
-    HandlerResult::Stop
-}
+// async fn handle_reset(context: &Context, command: Command) -> HandlerResult {
+//     log::info!("got a command: {:?}\n", command);
+//     let message = command.get_message();
+//     let chat_id = message.get_chat_id();
+//     let mut session = context.session_manager.get_session(&command).unwrap();
+//     session.remove("counter").await.unwrap();
+//     context.api.execute(SendMessage::new(chat_id, "OK")).await.unwrap();
+//     HandlerResult::Stop
+// }
 
-async fn handle_update(context: &Context, update: Update) -> HandlerResult {
-    let message = update.get_message().unwrap();
-    log::info!("got a message: {:?}\n", message);
-    let chat_id = message.get_chat_id();
-    let mut session = context.session_manager.get_session(&update).unwrap();
-    let val: Option<usize> = session.get("counter").await.unwrap();
-    let val = val.unwrap_or(0) + 1;
-    session.set("counter", &val).await.unwrap();
-    let msg = format!("Count: {}", val);
-    context.api.execute(SendMessage::new(chat_id, msg)).await.unwrap();
-    HandlerResult::Continue
-}
+// async fn handle_update(context: &Context, update: Update) -> HandlerResult {
+//     let message = update.get_message().unwrap();
+//     log::info!("got a message: {:?}\n", message);
+//     let chat_id = message.get_chat_id();
+//     let mut session = context.session_manager.get_session(&update).unwrap();
+//     let val: Option<usize> = session.get("counter").await.unwrap();
+//     let val = val.unwrap_or(0) + 1;
+//     session.set("counter", &val).await.unwrap();
+//     let msg = format!("Count: {}", val);
+//     context.api.execute(SendMessage::new(chat_id, msg)).await.unwrap();
+//     HandlerResult::Continue
+// }
 
 fn getenv(name: &str) -> String {
     env::var(name).unwrap_or_else(|_| panic!("{} is not set", name))
@@ -100,18 +94,18 @@ async fn main() {
 
     let token = getenv("CARAPAX_TOKEN");
     let proxy = env::var("CARAPAX_PROXY").ok();
-    let gc_period = getenv("CARAPAX_SESSION_GC_PERIOD");
-    let gc_period = Duration::from_secs(
-        gc_period
-            .parse::<u64>()
-            .expect("CARAPAX_SESSION_GC_PERIOD must be integer"),
-    ); // period between GC calls
-    let session_lifetime = getenv("CARAPAX_SESSION_LIFETIME");
-    let session_lifetime = Duration::from_secs(
-        session_lifetime
-            .parse::<u64>()
-            .expect("CARAPAX_SESSION_LIFETIME must be integer"),
-    ); // how long session lives
+    // let gc_period = getenv("CARAPAX_SESSION_GC_PERIOD");
+    // let gc_period = Duration::from_secs(
+    //     gc_period
+    //         .parse::<u64>()
+    //         .expect("CARAPAX_SESSION_GC_PERIOD must be integer"),
+    // ); // period between GC calls
+    // let session_lifetime = getenv("CARAPAX_SESSION_LIFETIME");
+    // let session_lifetime = Duration::from_secs(
+    //     session_lifetime
+    //         .parse::<u64>()
+    //         .expect("CARAPAX_SESSION_LIFETIME must be integer"),
+    // ); // how long session lives
 
     let mut config = Config::new(token);
     if let Some(proxy) = proxy {
@@ -122,15 +116,15 @@ async fn main() {
     let tmpdir = tempdir().expect("Failed to create temp directory");
     log::info!("Session directory: {}", tmpdir.path().display());
 
-    let backend = FilesystemBackend::new(tmpdir.path());
+    // let backend = FilesystemBackend::new(tmpdir.path());
 
     // spawn GC to remove old sessions
-    let mut collector = SessionCollector::new(backend.clone(), gc_period, session_lifetime);
-    tokio::spawn(async move { collector.run().await });
+    // let mut collector = SessionCollector::new(backend.clone(), gc_period, session_lifetime);
+    // tokio::spawn(async move { collector.run().await });
 
-    let mut dispatcher = Dispatcher::new(Context {
-        api: api.clone(),
-        session_manager: SessionManager::new(backend),
+    let dispatcher = Dispatcher::new(Context {
+        // api: api.clone(),
+        // session_manager: SessionManager::new(backend),
     });
     // dispatcher.add_handler(handle_expire);
     // dispatcher.add_handler(handle_reset);

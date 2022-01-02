@@ -1,18 +1,18 @@
-use carapax::{longpoll::LongPoll, methods::SendMessage, types::Message, Api, Config, Dispatcher, ExecuteError};
+use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
 use dotenv::dotenv;
-use std::{convert::Infallible, env};
+use std::env;
 
-async fn is_ping(_api: &Api, message: &Message) -> Result<bool, Infallible> {
-    Ok(message.get_text().map(|text| text.data == "ping").unwrap_or(false))
-}
+// async fn is_ping(_api: &Api, message: &Message) -> Result<bool, Infallible> {
+//     Ok(message.get_text().map(|text| text.data == "ping").unwrap_or(false))
+// }
 
 // Handler will not run if message text not equals "ping"
-async fn pingpong_handler(api: &Api, message: Message) -> Result<(), ExecuteError> {
-    let chat_id = message.get_chat_id();
-    let method = SendMessage::new(chat_id, "pong");
-    api.execute(method).await?;
-    Ok(())
-}
+// async fn pingpong_handler(api: &Api, message: Message) -> Result<(), ExecuteError> {
+//     let chat_id = message.get_chat_id();
+//     let method = SendMessage::new(chat_id, "pong");
+//     api.execute(method).await?;
+//     Ok(())
+// }
 
 #[tokio::main]
 async fn main() {
@@ -26,7 +26,7 @@ async fn main() {
         config = config.proxy(proxy).expect("Failed to set proxy");
     }
     let api = Api::new(config).expect("Failed to create API");
-    let mut dispatcher = Dispatcher::new(api.clone());
+    let dispatcher = Dispatcher::new(api.clone());
     // dispatcher.add_handler(pingpong_handler);
     LongPoll::new(api, dispatcher).run().await
 }
