@@ -1,91 +1,6 @@
-use tgbot::types::{Integer, Update};
+use crate::types::{Integer, Update};
 
-/// An access rule - contains information about principal and grant
-#[derive(Debug)]
-pub struct AccessRule {
-    principal: Principal,
-    is_granted: bool,
-}
-
-impl AccessRule {
-    /// Creates a new rule
-    pub fn new<P: Into<Principal>>(principal: P, is_granted: bool) -> Self {
-        AccessRule {
-            principal: principal.into(),
-            is_granted,
-        }
-    }
-
-    /// Creates a new rule with granted access
-    pub fn allow<P: Into<Principal>>(principal: P) -> Self {
-        Self::new(principal, true)
-    }
-
-    /// Creates a new rule with forbidden access
-    pub fn deny<P: Into<Principal>>(principal: P) -> Self {
-        Self::new(principal, false)
-    }
-
-    /// Creates a new rule with granted access for all
-    pub fn allow_all() -> Self {
-        Self::allow(Principal::All)
-    }
-
-    /// Creates a new rule with forbidden access for all
-    pub fn deny_all() -> Self {
-        Self::deny(Principal::All)
-    }
-
-    /// Creates a new rule with granted access for user
-    pub fn allow_user<P: Into<PrincipalUser>>(principal: P) -> Self {
-        Self::allow(principal.into())
-    }
-
-    /// Creates a new rule with forbidden access for user
-    pub fn deny_user<P: Into<PrincipalUser>>(principal: P) -> Self {
-        Self::deny(principal.into())
-    }
-
-    /// Creates a new rule with granted access for chat
-    pub fn allow_chat<P: Into<PrincipalChat>>(principal: P) -> Self {
-        Self::allow(principal.into())
-    }
-
-    /// Creates a new rule with forbidden access for chat
-    pub fn deny_chat<P: Into<PrincipalChat>>(principal: P) -> Self {
-        Self::deny(principal.into())
-    }
-
-    /// Creates a new rule with granted access for chat user
-    pub fn allow_chat_user<C, U>(chat: C, user: U) -> Self
-    where
-        C: Into<PrincipalChat>,
-        U: Into<PrincipalUser>,
-    {
-        Self::allow((chat.into(), user.into()))
-    }
-
-    /// Creates a new rule with forbidden access for chat user
-    pub fn deny_chat_user<C, U>(chat: C, user: U) -> Self
-    where
-        C: Into<PrincipalChat>,
-        U: Into<PrincipalUser>,
-    {
-        Self::deny((chat.into(), user.into()))
-    }
-
-    /// Whether rule accepts an update
-    pub fn accepts(&self, update: &Update) -> bool {
-        self.principal.accepts(update)
-    }
-
-    /// Is access granted
-    pub fn is_granted(&self) -> bool {
-        self.is_granted
-    }
-}
-
-/// Principal helps to decide should rule accept an update or not
+/// Allows to decide should rule accept an update or not
 #[derive(Clone, Debug, PartialEq)]
 pub enum Principal {
     /// Accepts all updates
@@ -118,22 +33,45 @@ impl From<(PrincipalChat, PrincipalUser)> for Principal {
 
 impl Principal {
     /// Creates a principal for user
+    ///
+    /// # Arguments
+    ///
+    /// * principal - User principal
     pub fn user<P: Into<PrincipalUser>>(principal: P) -> Self {
         Principal::User(principal.into())
     }
 
     /// Creates a principal for chat
+    ///
+    /// # Arguments
+    ///
+    /// * principal - Chat principal
     pub fn chat<P: Into<PrincipalChat>>(principal: P) -> Self {
         Principal::Chat(principal.into())
     }
 
     /// Creates a principal for chat user
+    ///
+    /// # Arguments
+    ///
+    /// * principal - Chat user principal
     pub fn chat_user<C, U>(chat: C, user: U) -> Self
     where
         C: Into<PrincipalChat>,
         U: Into<PrincipalUser>,
     {
         Principal::ChatUser(chat.into(), user.into())
+    }
+
+    pub(super) fn accepts(&self, update: &Update) -> bool {
+        match self {
+            Principal::User(principal) => principal.accepts(update),
+            Principal::Chat(principal) => principal.accepts(update),
+            Principal::ChatUser(chat_principal, user_principal) => {
+                chat_principal.accepts(update) && user_principal.accepts(update)
+            }
+            Principal::All => true,
+        }
     }
 }
 
@@ -168,13 +106,9 @@ impl PrincipalUser {
     fn accepts(&self, update: &Update) -> bool {
         match self {
             PrincipalUser::Id(user_id) => update.get_user().map(|u| u.id == *user_id),
-            PrincipalUser::Username(ref username) => update.get_user().and_then(|u| {
-                if let Some(ref x) = u.username {
-                    Some(x == username)
-                } else {
-                    None
-                }
-            }),
+            PrincipalUser::Username(ref username) => update
+                .get_user()
+                .and_then(|u| u.username.as_ref().map(|x| x == username)),
         }
         .unwrap_or(false)
     }
@@ -217,189 +151,9 @@ impl PrincipalChat {
     }
 }
 
-impl Principal {
-    fn accepts(&self, update: &Update) -> bool {
-        match self {
-            Principal::User(principal) => principal.accepts(&update),
-            Principal::Chat(principal) => principal.accepts(&update),
-            Principal::ChatUser(chat_principal, user_principal) => {
-                chat_principal.accepts(&update) && user_principal.accepts(&update)
-            }
-            Principal::All => true,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tgbot::types::Update;
-
-    #[test]
-    fn access_rule_new() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 1,
-            "message": {
-                "message_id": 1,
-                "date": 1,
-                "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
-                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
-                "text": "test"
-            }
-        }))
-        .unwrap();
-
-        let principal_chat = Principal::from(PrincipalChat::from(1));
-        let principal_user = Principal::from(PrincipalUser::from(1));
-
-        let rule = AccessRule::new(principal_user.clone(), true);
-        assert_eq!(rule.principal, principal_user);
-        assert!(rule.is_granted());
-        assert!(rule.accepts(&update));
-
-        let rule = AccessRule::new(principal_chat.clone(), false);
-        assert_eq!(rule.principal, principal_chat);
-        assert!(!rule.is_granted());
-        assert!(rule.accepts(&update));
-    }
-
-    #[test]
-    fn access_rule_allow_deny() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 1,
-            "message": {
-                "message_id": 1,
-                "date": 1,
-                "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
-                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
-                "text": "test"
-            }
-        }))
-        .unwrap();
-
-        let principal_chat = Principal::from(PrincipalChat::from(1));
-        let principal_user = Principal::from(PrincipalUser::from(1));
-
-        let rule = AccessRule::allow(principal_user.clone());
-        assert_eq!(rule.principal, principal_user);
-        assert!(rule.is_granted());
-        assert!(rule.accepts(&update));
-
-        let rule = AccessRule::deny(principal_chat.clone());
-        assert_eq!(rule.principal, principal_chat);
-        assert!(!rule.is_granted());
-        assert!(rule.accepts(&update));
-    }
-
-    #[test]
-    fn access_rule_principal_all() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 1,
-            "message": {
-                "message_id": 1,
-                "date": 1,
-                "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
-                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
-                "text": "test"
-            }
-        }))
-        .unwrap();
-
-        let rule = AccessRule::allow_all();
-        assert_eq!(rule.principal, Principal::All);
-        assert!(rule.is_granted());
-        assert!(rule.accepts(&update));
-
-        let rule = AccessRule::deny_all();
-        assert_eq!(rule.principal, Principal::All);
-        assert!(!rule.is_granted());
-        assert!(rule.accepts(&update));
-    }
-
-    #[test]
-    fn access_rule_principal_user() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 1,
-            "message": {
-                "message_id": 1,
-                "date": 1,
-                "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
-                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
-                "text": "test"
-            }
-        }))
-        .unwrap();
-
-        let principal_user = Principal::from(PrincipalUser::from(1));
-
-        let rule = AccessRule::allow_user(1);
-        assert_eq!(rule.principal, principal_user);
-        assert!(rule.is_granted());
-        assert!(rule.accepts(&update));
-
-        let rule = AccessRule::deny_user(1);
-        assert_eq!(rule.principal, principal_user);
-        assert!(!rule.is_granted());
-        assert!(rule.accepts(&update));
-    }
-
-    #[test]
-    fn access_rule_principal_chat() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 1,
-            "message": {
-                "message_id": 1,
-                "date": 1,
-                "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
-                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
-                "text": "test"
-            }
-        }))
-        .unwrap();
-
-        let principal_chat = Principal::from(PrincipalChat::from(1));
-
-        let rule = AccessRule::allow_chat(1);
-        assert_eq!(rule.principal, principal_chat);
-        assert!(rule.is_granted());
-        assert!(rule.accepts(&update));
-
-        let rule = AccessRule::deny_chat(1);
-        assert_eq!(rule.principal, principal_chat);
-        assert!(!rule.is_granted());
-        assert!(rule.accepts(&update));
-    }
-
-    #[test]
-    fn access_rule_principal_chat_user() {
-        let update: Update = serde_json::from_value(serde_json::json!({
-            "update_id": 1,
-            "message": {
-                "message_id": 1,
-                "date": 1,
-                "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username_user"},
-                "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username_chat"},
-                "text": "test"
-            }
-        }))
-        .unwrap();
-
-        let rule = AccessRule::allow_chat_user(1, 1);
-        assert_eq!(
-            rule.principal,
-            Principal::from((PrincipalChat::from(1), PrincipalUser::from(1)))
-        );
-        assert!(rule.is_granted());
-        assert!(rule.accepts(&update));
-
-        let rule = AccessRule::deny_chat_user(1, 1);
-        assert_eq!(
-            rule.principal,
-            Principal::from((PrincipalChat::from(1), PrincipalUser::from(1)))
-        );
-        assert!(!rule.is_granted());
-        assert!(rule.accepts(&update));
-    }
 
     #[test]
     fn principal() {

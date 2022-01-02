@@ -1,5 +1,7 @@
-mod handler;
+mod ext;
 mod policy;
-mod rules;
+mod predicate;
+mod principal;
+mod rule;
 
-pub use self::{handler::*, policy::*, rules::*};
+pub use self::{ext::*, policy::*, predicate::*, principal::*, rule::*};

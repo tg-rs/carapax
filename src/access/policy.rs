@@ -1,217 +1,96 @@
-use crate::access::rules::AccessRule;
-use async_trait::async_trait;
-use tgbot::types::Update;
+use crate::{access::rule::AccessRule, core::HandlerInput};
+use futures_util::future::{ok, Ready};
+use std::{convert::Infallible, error::Error, future::Future, sync::Arc};
 
-/// An access policy
-///
-/// Decides whether update is allowed or not
-#[async_trait]
-pub trait AccessPolicy<C> {
-    /// Return true if update is allowed and false otherwise
-    async fn is_granted(&mut self, context: &C, update: &Update) -> bool;
+/// Decides whether input should be processed or not
+pub trait AccessPolicy: Send {
+    /// An error returned by `is_granted` method
+    type Error: Error + Send;
+    /// A future returned by `is_granted` method
+    type Future: Future<Output = Result<bool, Self::Error>> + Send;
+
+    /// Returns `true` if access is allowed and `false` otherwise
+    fn is_granted(&self, input: HandlerInput) -> Self::Future;
 }
 
 /// In-memory access policy
 ///
-/// Stores all rules in a Vec
-///
-/// If there are no rules found for update, [is_granted()] will return false
-/// You can use [allow_all()] as a last rule in order to change this behaviour
-///
-/// [is_granted()]: trait.AccessPolicy.html#tymethod.is_granted
-/// [allow_all()]: struct.AccessRule.html#method.allow_all
-#[derive(Default)]
+/// If there are no rules found, `is_granted()` will return `false`.
+/// You can use [`allow_all()`](struct.AccessRule.html#method.allow_all)
+/// as a last rule in order to change this behaviour.
+#[derive(Default, Clone)]
 pub struct InMemoryAccessPolicy {
-    rules: Vec<AccessRule>,
+    rules: Arc<Vec<AccessRule>>,
 }
 
-impl InMemoryAccessPolicy {
-    /// Creates a new policy
-    pub fn new(rules: Vec<AccessRule>) -> Self {
-        InMemoryAccessPolicy { rules }
-    }
-
-    /// Adds a rule to the end of the list
-    pub fn push_rule(mut self, rule: AccessRule) -> Self {
-        self.rules.push(rule);
-        self
-    }
-}
-
-#[async_trait]
-impl<C> AccessPolicy<C> for InMemoryAccessPolicy
+impl<T> From<T> for InMemoryAccessPolicy
 where
-    C: Send + Sync,
+    T: IntoIterator<Item = AccessRule>,
 {
-    async fn is_granted(&mut self, _context: &C, update: &Update) -> bool {
+    fn from(rules: T) -> Self {
+        Self {
+            rules: Arc::new(rules.into_iter().collect()),
+        }
+    }
+}
+
+impl AccessPolicy for InMemoryAccessPolicy {
+    type Error = Infallible;
+    type Future = Ready<Result<bool, Self::Error>>;
+
+    fn is_granted(&self, input: HandlerInput) -> Self::Future {
         let mut result = false;
-        for rule in &self.rules {
-            if rule.accepts(&update) {
+        let rules = Arc::clone(&self.rules);
+        for rule in rules.iter() {
+            if rule.accepts(&input.update) {
                 result = rule.is_granted();
-                log::info!("Found rule: {:?}", rule);
+                log::info!("Found rule: {:?} (is_granted={:?})", rule, result);
                 break;
             }
         }
-        result
+        ok(result)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::Update;
 
     #[tokio::test]
-    async fn in_memory_policy() {
-        let mut policy = InMemoryAccessPolicy::default();
-        assert!(policy.rules.is_empty());
-        policy = policy.push_rule(AccessRule::allow_user(1));
-        assert_eq!(policy.rules.len(), 1);
+    async fn in_memory_access_policy() {
+        let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user(1)]);
 
-        macro_rules! check_access {
-            ($rules:expr, $updates:expr) => {{
-                for rules in $rules {
-                    let mut policy = InMemoryAccessPolicy::new(rules);
-                    for (flag, update) in $updates {
-                        let update: Update = serde_json::from_value(update).unwrap();
-                        let is_granted = policy.is_granted(&(), &update).await;
-                        assert_eq!(is_granted, flag);
-                    }
+        let update_granted: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "test",
                 }
-            }};
-        }
+            }
+        ))
+        .unwrap();
+        let input_granted = HandlerInput::from(update_granted);
+        assert!(policy.is_granted(input_granted).await.unwrap());
 
-        check_access!(
-            vec![
-                vec![AccessRule::allow_user(1)],
-                vec![AccessRule::allow_user("username1")],
-                vec![AccessRule::deny_user(2), AccessRule::allow_all()],
-                vec![AccessRule::deny_user("username2"), AccessRule::allow_all()],
-            ],
-            vec![
-                (
-                    true,
-                    serde_json::json!({
-                        "update_id": 1,
-                        "message": {
-                            "message_id": 1,
-                            "date": 0,
-                            "from": {"id": 1, "is_bot": false, "first_name": "test", "username": "username1"},
-                            "chat": {"id": 1, "type": "private", "first_name": "test", "username": "username1"},
-                            "text": "test allowed for user #1"
-                        }
-                    })
-                ),
-                (
-                    false,
-                    serde_json::json!({
-                        "update_id": 1,
-                        "message": {
-                            "message_id": 2,
-                            "date": 1,
-                            "from": {"id": 2, "is_bot": false, "first_name": "test", "username": "username2"},
-                            "chat": {"id": 2, "type": "private", "first_name": "test", "username": "username2"},
-                            "text": "test denied for user #2"
-                        }
-                    })
-                )
-            ]
-        );
-
-        check_access!(
-            vec![
-                vec![AccessRule::allow_chat(1)],
-                vec![AccessRule::allow_chat("username1")],
-                vec![AccessRule::deny_chat(2), AccessRule::allow_all()],
-                vec![AccessRule::deny_chat("username2"), AccessRule::allow_all()],
-            ],
-            vec![
-                (
-                    true,
-                    serde_json::json!({
-                        "update_id": 1,
-                        "message": {
-                            "message_id": 1,
-                            "date": 0,
-                            "from": {"id": 111, "is_bot": false, "first_name": "test"},
-                            "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username1"},
-                            "text": "test allowed for chat #1"
-                        }
-                    })
-                ),
-                (
-                    false,
-                    serde_json::json!({
-                        "update_id": 1,
-                        "message": {
-                            "message_id": 2,
-                            "date": 1,
-                            "from": {"id": 111, "is_bot": false, "first_name": "test"},
-                            "chat": {"id": 2, "type": "supergroup", "title": "test", "username": "username2"},
-                            "text": "test denied for chat #2"
-                        }
-                    })
-                )
-            ]
-        );
-
-        check_access!(
-            vec![
-                vec![AccessRule::allow_chat_user(1, 2)],
-                vec![AccessRule::allow_chat_user("username1", 2)],
-                vec![AccessRule::allow_chat_user(1, "username2")],
-                vec![AccessRule::allow_chat_user("username1", "username2")],
-                vec![
-                    AccessRule::deny_chat_user(1, 3),
-                    AccessRule::deny_chat_user(4, 3),
-                    AccessRule::allow_all()
-                ],
-                vec![
-                    AccessRule::deny_chat_user("username1", "username3"),
-                    AccessRule::deny_chat_user(4, 3),
-                    AccessRule::allow_all()
-                ],
-            ],
-            vec![
-                (
-                    true,
-                    serde_json::json!({
-                        "update_id": 1,
-                        "message": {
-                            "message_id": 1,
-                            "date": 0,
-                            "from": {"id": 2, "is_bot": false, "first_name": "test", "username": "username2"},
-                            "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username1"},
-                            "text": "test allowed for user in chat"
-                        }
-                    })
-                ),
-                (
-                    false,
-                    serde_json::json!({
-                        "update_id": 1,
-                        "message": {
-                            "message_id": 2,
-                            "date": 1,
-                            "from": {"id": 3, "is_bot": false, "first_name": "test", "username": "username3"},
-                            "chat": {"id": 1, "type": "supergroup", "title": "test", "username": "username1"},
-                            "text": "test denied for user in chat"
-                        }
-                    })
-                ),
-                (
-                    false,
-                    serde_json::json!({
-                        "update_id": 1,
-                        "message": {
-                            "message_id": 2,
-                            "date": 1,
-                            "from": {"id": 3, "is_bot": false, "first_name": "test", "username": "username3"},
-                            "chat": {"id": 4, "type": "supergroup", "title": "test", "username": "username4"},
-                            "text": "test denied for chat and user"
-                        }
-                    })
-                )
-            ]
-        );
+        let update_forbidden: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 2, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "test",
+                }
+            }
+        ))
+        .unwrap();
+        let input_forbidden = HandlerInput::from(update_forbidden);
+        assert!(!policy.is_granted(input_forbidden).await.unwrap());
     }
 }
