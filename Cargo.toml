@@ -1,14 +1,13 @@
 [package]
 name = "carapax"
 description = "A Telegram Bot Framework"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["Ross Nomann <rossnomann@protonmail.com>"]
-edition = "2018"
-readme = "../README.md"
+edition = "2021"
+readme = "./README.md"
 license = "MIT"
 documentation = "https://docs.rs/carapax"
 repository = "https://github.com/tg-rs/carapax"
-exclude = ["data/**"]
 
 [features]
 # include nothing by default
@@ -18,28 +17,28 @@ default = []
 full = ["access", "dialogue", "ratelimit", "session-redis", "session-fs"]
 
 access = []
-dialogue = ["serde", "session"]
-ratelimit = ["nonzero_ext", "ratelimit_meter", "tokio/sync"]
+dialogue = ["session", "serde"]
+ratelimit = ["governor", "nonzero_ext"]
 session = ["seance"]
-session-redis = ["session", "seance/redis-backend"]
 session-fs = ["session", "seance/fs-backend"]
+session-redis = ["session", "seance/redis-backend"]
 
 [dependencies]
-async-trait = "0.1"
+futures-util = "0.3"
+governor = { version = "0.4", optional = true }
 log = "0.4"
-nonzero_ext = { version = "0.2", default-features = false, optional = true }
-ratelimit_meter = { version = "5.0", optional = true }
+nonzero_ext = { version = "0.3", optional = true }
+seance = { version = "0.6", optional = true }
 serde = { version = "1.0", optional = true }
-tgbot = "0.12"
-tokio = "1.0"
-seance = { version = "0.5", optional = true }
+tgbot = "0.15"
+tokio = "1.15"
 
 [dev-dependencies]
 dotenv = "0.15"
-env_logger = "0.8"
+env_logger = "0.9"
 serde_json = "1.0"
-tempfile = "3.1"
-tokio = { version = "1.0", features = ["sync", "macros", "rt-multi-thread"]}
+tempfile = "3.2"
+tokio = { version = "1.15", features = ["macros", "rt-multi-thread"]}
 
 [[example]]
 name = "access"
