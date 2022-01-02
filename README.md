@@ -246,39 +246,6 @@ let handler = Dialogue::new(session_manager, dialogue_name, my_dialogue);
 dispatcher.add_handler(handler);
 ```
 
-### Internationalization
-
-Carapax has i18n support provided by [gettext](https://www.gnu.org/software/gettext/).
-
-Note that you should enable `i18n` feature in `Cargo.toml`.
-
-```rust no_run
-use carapax::{handler, methods::SendMessage, types::Update, Api};
-use carapax::i18n::{Catalog, Translator, TranslatorStore};
-
-const RU: &[u8] = include_bytes!("../../carapax/data/ru.mo");
-const EN: &[u8] = include_bytes!("../../carapax/data/en.mo");
-
-struct Context {
-    api: Api,
-    translators: TranslatorStore,
-}
-
-#[handler]
-async fn update_handler(context: &Context, update: Update) {
-    let translator = context.translators.get_translator(&update);
-    println!("GOT UPDATE: {:?}; LOCALE: {:?}", update, translator.get_locale());
-    context
-        .api
-        .execute(SendMessage::new(
-            update.get_chat_id().unwrap(),
-            translator.translate("Hello, stranger!"),
-        ))
-        .await
-        .unwrap();
-}
-```
-
 ### Ratelimit
 
 You can limit number of updates received by a handler.

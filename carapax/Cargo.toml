@@ -15,11 +15,10 @@ exclude = ["data/**"]
 default = []
 
 # enable everything
-full = ["access", "dialogue", "i18n", "ratelimit", "session-redis", "session-fs"]
+full = ["access", "dialogue", "ratelimit", "session-redis", "session-fs"]
 
 access = []
 dialogue = ["serde", "session"]
-i18n = ["gettext"]
 ratelimit = ["nonzero_ext", "ratelimit_meter", "tokio/sync"]
 session = ["seance"]
 session-redis = ["session", "seance/redis-backend"]
@@ -28,7 +27,6 @@ session-fs = ["session", "seance/fs-backend"]
 [dependencies]
 async-trait = "0.1"
 carapax-codegen = "0.2"
-gettext = { version = "0.4", optional = true }
 log = "0.4"
 nonzero_ext = { version = "0.2", default-features = false, optional = true }
 ratelimit_meter = { version = "5.0", optional = true }
@@ -51,10 +49,6 @@ required-features = ["access"]
 [[example]]
 name = "dialogue"
 required-features = ["dialogue", "session-fs"]
-
-[[example]]
-name = "i18n"
-required-features = ["i18n"]
 
 [[example]]
 name = "ratelimit"
