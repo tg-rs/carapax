@@ -1,12 +1,12 @@
-use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
+// use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
 use dotenv::dotenv;
-use std::env;
-use tempfile::tempdir;
+// use std::env;
+// use tempfile::tempdir;
 
-struct Context {
-    // api: Api,
+// struct Context {
+// api: Api,
 // session_manager: SessionManager<FilesystemBackend>,
-}
+// }
 
 // async fn handle_set(context: &Context, command: Command) -> HandlerResult {
 //     log::info!("got a command: {:?}\n", command);
@@ -83,17 +83,17 @@ struct Context {
 //     HandlerResult::Continue
 // }
 
-fn getenv(name: &str) -> String {
-    env::var(name).unwrap_or_else(|_| panic!("{} is not set", name))
-}
+// fn getenv(name: &str) -> String {
+//     env::var(name).unwrap_or_else(|_| panic!("{} is not set", name))
+// }
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let token = getenv("CARAPAX_TOKEN");
-    let proxy = env::var("CARAPAX_PROXY").ok();
+    // let token = getenv("CARAPAX_TOKEN");
+    // let proxy = env::var("CARAPAX_PROXY").ok();
     // let gc_period = getenv("CARAPAX_SESSION_GC_PERIOD");
     // let gc_period = Duration::from_secs(
     //     gc_period
@@ -107,14 +107,14 @@ async fn main() {
     //         .expect("CARAPAX_SESSION_LIFETIME must be integer"),
     // ); // how long session lives
 
-    let mut config = Config::new(token);
-    if let Some(proxy) = proxy {
-        config = config.proxy(proxy).expect("Failed to set proxy");
-    }
+    // let mut config = Config::new(token);
+    // if let Some(proxy) = proxy {
+    //     config = config.proxy(proxy).expect("Failed to set proxy");
+    // }
 
-    let api = Api::new(config).expect("Failed to create API");
-    let tmpdir = tempdir().expect("Failed to create temp directory");
-    log::info!("Session directory: {}", tmpdir.path().display());
+    // let api = Api::new(config).expect("Failed to create API");
+    // let tmpdir = tempdir().expect("Failed to create temp directory");
+    // log::info!("Session directory: {}", tmpdir.path().display());
 
     // let backend = FilesystemBackend::new(tmpdir.path());
 
@@ -122,13 +122,13 @@ async fn main() {
     // let mut collector = SessionCollector::new(backend.clone(), gc_period, session_lifetime);
     // tokio::spawn(async move { collector.run().await });
 
-    let dispatcher = Dispatcher::new(Context {
-        // api: api.clone(),
-        // session_manager: SessionManager::new(backend),
-    });
+    // let dispatcher = Dispatcher::new(Context {
+    // api: api.clone(),
+    // session_manager: SessionManager::new(backend),
+    // });
     // dispatcher.add_handler(handle_expire);
     // dispatcher.add_handler(handle_reset);
     // dispatcher.add_handler(handle_set);
     // dispatcher.add_handler(handle_update);
-    LongPoll::new(api, dispatcher).run().await
+    // LongPoll::new(api, dispatcher).run().await
 }

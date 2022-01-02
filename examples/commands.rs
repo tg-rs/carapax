@@ -1,6 +1,6 @@
-use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
+// use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
 use dotenv::dotenv;
-use std::env;
+// use std::env;
 
 // async fn handle_start(api: &Api, command: Command) -> Result<HandlerResult, ExecuteError> {
 //     log::info!("handle /start command\n");
@@ -35,16 +35,16 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
-    let proxy = env::var("CARAPAX_PROXY").ok();
-    let mut config = Config::new(token);
-    if let Some(proxy) = proxy {
-        config = config.proxy(proxy).expect("Failed to set proxy");
-    }
-    let api = Api::new(config).expect("Failed to create API");
-    let dispatcher = Dispatcher::new(api.clone());
+    // let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
+    // let proxy = env::var("CARAPAX_PROXY").ok();
+    // let mut config = Config::new(token);
+    // if let Some(proxy) = proxy {
+    //     config = config.proxy(proxy).expect("Failed to set proxy");
+    // }
+    // let api = Api::new(config).expect("Failed to create API");
+    // let dispatcher = Dispatcher::new(api.clone());
     // dispatcher.add_handler(handle_start);
     // dispatcher.add_handler(handle_user_id);
     // dispatcher.add_handler(handle_any);
-    LongPoll::new(api, dispatcher).run().await;
+    // LongPoll::new(api, dispatcher).run().await;
 }
