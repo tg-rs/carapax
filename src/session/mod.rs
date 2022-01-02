@@ -1,115 +1,90 @@
+use crate::{
+    core::{HandlerInput, TryFromInput},
+    types::Integer,
+};
+use futures_util::future::{ok, BoxFuture, Ready};
 use seance::backend::SessionBackend;
-use std::{
-    convert::{TryFrom, TryInto},
-    error::Error,
-    fmt,
-};
-use tgbot::types::{Command, Integer, Message, Update};
+use std::{convert::Infallible, error::Error, fmt};
 
-pub use seance::{
-    backend, Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager as BaseSessionManager,
-};
+pub use seance::{backend, Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager};
 
-/// A session manager
-#[derive(Clone)]
-pub struct SessionManager<B> {
-    inner: BaseSessionManager<B>,
-}
-
-impl<B> SessionManager<B>
+impl<B> TryFromInput for Session<B>
 where
-    B: SessionBackend,
+    B: SessionBackend + Send + 'static,
 {
-    /// Creates a new manager
-    ///
-    /// # Arguments
-    ///
-    /// * backend - A session store backend
-    pub fn new(backend: B) -> Self {
-        Self {
-            inner: BaseSessionManager::new(backend),
-        }
-    }
+    type Error = CreateSessionError;
+    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
 
-    /// Returns a session by ID obtained from an Update/Message/Command
-    ///
-    /// Feel free to pass a reference to one of types mentioned above
-    pub fn get_session<I>(&self, input: I) -> Result<Session<B>, I::Error>
-    where
-        I: TryInto<SessionId>,
-    {
-        Ok(self.inner.get_session(&input.try_into()?.0))
-    }
-
-    /// Returns a session by raw ID
-    pub fn get_session_by_raw_id<I>(&self, id: I) -> Session<B>
-    where
-        I: AsRef<str>,
-    {
-        self.inner.get_session(id.as_ref())
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        Box::pin(async move {
+            match input.context.get::<SessionManager<B>>() {
+                Some(manager) => match SessionId::try_from_input(input.clone()).await {
+                    Ok(Some(session_id)) => {
+                        let session = manager.get_session(session_id.0);
+                        Ok(Some(session))
+                    }
+                    Ok(None) => Err(CreateSessionError::SessionIdNotFound),
+                    Err(_) => unreachable!(),
+                },
+                None => Err(CreateSessionError::ManagerNotFound),
+            }
+        })
     }
 }
 
-/// Session ID obtained from Update, Message, etc...
+/// Represents an ID of a session
 pub struct SessionId(String);
 
 impl SessionId {
-    /// Creates a new session ID
+    /// Creates a new SessionID
     ///
     /// # Arguments
     ///
-    /// * chat_id - Unique ID of chat
-    /// * user_id - Unique ID of user in the chat
+    /// * chat_id - ID of a chat
+    /// * user_id - ID of a user
     pub fn new(chat_id: Integer, user_id: Integer) -> Self {
         Self(format!("{}-{}", chat_id, user_id))
     }
 }
 
-impl TryFrom<&Update> for SessionId {
-    type Error = SessionIdError;
+impl TryFromInput for SessionId {
+    type Error = Infallible;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
 
-    fn try_from(update: &Update) -> Result<Self, Self::Error> {
-        if let (Some(chat_id), Some(user_id)) = (update.get_chat_id(), update.get_user().map(|x| x.id)) {
-            Ok(SessionId::new(chat_id, user_id))
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        let chat_id = input.update.get_chat_id();
+        let user_id = input.update.get_user_id();
+        ok(if let (Some(chat_id), Some(user_id)) = (chat_id, user_id) {
+            Some(SessionId::new(chat_id, user_id))
         } else {
-            Err(SessionIdError)
-        }
+            None
+        })
     }
 }
 
-impl TryFrom<&Message> for SessionId {
-    type Error = SessionIdError;
-
-    fn try_from(message: &Message) -> Result<Self, Self::Error> {
-        if let (chat_id, Some(user_id)) = (message.get_chat_id(), message.get_user().map(|x| x.id)) {
-            Ok(SessionId::new(chat_id, user_id))
-        } else {
-            Err(SessionIdError)
-        }
-    }
-}
-
-impl TryFrom<&Command> for SessionId {
-    type Error = SessionIdError;
-
-    fn try_from(command: &Command) -> Result<Self, Self::Error> {
-        SessionId::try_from(command.get_message())
-    }
-}
-
-/// Session ID could not be created from update
-///
-/// This error happens when a received update
-/// does not contain information about Chat ID and User ID.
-///
-/// Consider create a SessionId directly via SessionId::new
+/// An error when creating a session
 #[derive(Debug)]
-pub struct SessionIdError;
+pub enum CreateSessionError {
+    /// Session manager not found in context
+    ManagerNotFound,
+    /// Could not create session ID
+    ///
+    /// Chat or user ID is missing
+    SessionIdNotFound,
+}
 
-impl Error for SessionIdError {}
-
-impl fmt::Display for SessionIdError {
+impl fmt::Display for CreateSessionError {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
-        write!(out, "Could not obtain a session ID from update")
+        use self::CreateSessionError::*;
+        write!(
+            out,
+            "{}",
+            match self {
+                ManagerNotFound => "Session manager not found in context",
+                SessionIdNotFound => "Could not create session ID: chat or user ID is missing",
+            }
+        )
     }
 }
+
+impl Error for CreateSessionError {}
