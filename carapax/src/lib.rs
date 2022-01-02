@@ -69,11 +69,6 @@ pub mod access;
 #[cfg_attr(nightly, doc(cfg(feature = "dialogue")))]
 pub mod dialogue;
 
-/// i18n utilities
-#[cfg(feature = "i18n")]
-#[cfg_attr(nightly, doc(cfg(feature = "i18n")))]
-pub mod i18n;
-
 /// Ratelimit handler
 #[cfg(feature = "ratelimit")]
 #[cfg_attr(nightly, doc(cfg(feature = "ratelimit")))]
