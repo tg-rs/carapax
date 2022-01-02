@@ -8,39 +8,6 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, fmt::Display, marker::PhantomData};
 use tgbot::types::Update;
 
-/// Mark an async function as dialogue handler
-///
-/// # Example
-///
-/// ```
-/// use carapax::{dialogue::{DialogueResult, State, dialogue}, types::Message};
-/// use serde::{Serialize, Deserialize};
-/// use std::convert::Infallible;
-///
-/// #[derive(Serialize, Deserialize)]
-/// enum ExampleState {
-///     Start,
-///     Step1,
-///     Step2,
-/// }
-///
-/// impl State for ExampleState {
-///     fn new() -> Self {
-///         ExampleState::Start
-///     }
-/// }
-///
-/// #[dialogue]
-/// async fn handler(
-///    state: ExampleState,
-///    context: &(),
-///    input: Message,
-/// ) -> Result<DialogueResult<ExampleState>, Infallible> {
-///     unimplemented!()
-/// }
-/// ```
-pub use carapax_codegen::dialogue;
-
 const SESSION_KEY_PREFIX: &str = "__carapax_dialogue";
 
 /// Adapts dialogue handlers for [Dispatcher](../struct.Dispatcher.html)

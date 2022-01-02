@@ -1,6 +1,6 @@
 use carapax::{
     dialogue::{
-        dialogue, Dialogue,
+        Dialogue,
         DialogueResult::{self, *},
         State,
     },
@@ -33,7 +33,6 @@ impl State for ExampleState {
     }
 }
 
-#[dialogue]
 async fn handle(
     state: ExampleState,
     context: &Context,
@@ -99,6 +98,6 @@ async fn main() {
         api: api.clone(),
         session_manager: session_manager.clone(),
     });
-    dispatcher.add_handler(Dialogue::new(session_manager, dialogue_name, handle));
+    // dispatcher.add_handler(Dialogue::new(session_manager, dialogue_name, handle));
     LongPoll::new(api, dispatcher).run().await
 }
