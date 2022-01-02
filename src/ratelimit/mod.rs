@@ -1,5 +1,6 @@
-mod direct;
-mod keyed;
+mod jitter;
+mod key;
+mod method;
+mod predicate;
 
-pub use self::{direct::*, keyed::*};
-pub use nonzero_ext::nonzero;
+pub use self::{jitter::*, key::*, method::*, predicate::*};
