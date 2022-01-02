@@ -1,5 +1,5 @@
 //! A Telegram Bot framework
-#![cfg_attr(nightly, feature(doc_cfg, external_doc))]
+#![cfg_attr(nightly, feature(doc_cfg))]
 #![warn(missing_docs)]
 
 mod core;
