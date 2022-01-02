@@ -7,10 +7,10 @@ mod core;
 pub use self::core::*;
 pub use tgbot::*;
 
-// /// Access handler
-// #[cfg(feature = "access")]
-// #[cfg_attr(nightly, doc(cfg(feature = "access")))]
-// pub mod access;
+/// Access control
+#[cfg(feature = "access")]
+#[cfg_attr(nightly, doc(cfg(feature = "access")))]
+pub mod access;
 
 // /// Dialogue adapter
 // #[cfg(feature = "dialogue")]
