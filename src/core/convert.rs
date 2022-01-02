@@ -1,65 +1,108 @@
-use crate::core::{handler::Handler, result::HandlerResult};
-use async_trait::async_trait;
-use std::{
-    convert::{Infallible, TryFrom},
-    error::Error,
+use crate::{
+    core::{context::Ref, handler::HandlerInput},
+    types::{
+        CallbackQuery, ChatId, ChatJoinRequest, ChatMemberUpdated, ChosenInlineResult, Command, CommandError, Message,
+        Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Text, Update, UpdateKind, User,
+    },
 };
-use tgbot::types::{
-    CallbackQuery, ChosenInlineResult, Command, CommandError, InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery,
-    ShippingQuery, Update, UpdateKind,
-};
+use futures_util::future::{ok, BoxFuture, Ready};
+use std::{convert::Infallible, error::Error, fmt, future::Future};
+use tgbot::types::InlineQuery;
 
-pub(super) struct ConvertHandler<H>(H);
+/// Allows to create a specific handler input
+pub trait TryFromInput: Send + Sized {
+    /// A future returned by `try_from_input` method
+    type Future: Future<Output = Result<Option<Self>, Self::Error>> + Send;
 
-impl<H> ConvertHandler<H> {
-    pub(super) fn boxed(handler: H) -> Box<Self> {
-        Box::new(Self(handler))
-    }
-}
+    /// An error when conversion failed
+    type Error: Error + Send;
 
-#[async_trait]
-impl<C, H, I> Handler<C> for ConvertHandler<H>
-where
-    C: Send + Sync,
-    H: Handler<C, Input = I> + Send,
-    I: TryFromUpdate + Send + Sync + 'static,
-{
-    type Input = Update;
-    type Output = HandlerResult;
-
-    async fn handle(&mut self, context: &C, input: Self::Input) -> Self::Output {
-        match TryFromUpdate::try_from_update(input) {
-            Ok(Some(input)) => self.0.handle(context, input).await.into(),
-            Ok(None) => HandlerResult::Continue,
-            Err(err) => HandlerResult::error(err),
-        }
-    }
-}
-
-/// Allows to create an input for a handler from given update
-pub trait TryFromUpdate: Sized {
-    /// An error when converting update
-    type Error: Error + Send + Sync;
-
-    /// Returns a handler input
+    /// Performs conversion
     ///
-    /// Handler will not run if None or Error returned
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error>;
+    /// # Arguments
+    ///
+    /// * input - A value to convert from
+    fn try_from_input(input: HandlerInput) -> Self::Future;
 }
 
-impl TryFromUpdate for Update {
+impl TryFromInput for HandlerInput {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        Ok(Some(update))
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(Some(input))
     }
 }
 
-impl TryFromUpdate for Message {
+impl TryFromInput for () {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        Ok(match update.kind {
+    fn try_from_input(_input: HandlerInput) -> Self::Future {
+        ok(Some(()))
+    }
+}
+
+impl<T> TryFromInput for Ref<T>
+where
+    T: Clone + Send + 'static,
+{
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(input.context.get::<T>().cloned().map(Ref::new))
+    }
+}
+
+impl TryFromInput for Update {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(Some(input.update))
+    }
+}
+
+impl TryFromInput for ChatId {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(input.update.get_chat_id().map(ChatId::Id))
+    }
+}
+
+impl TryFromInput for User {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(input.update.get_user().cloned())
+    }
+}
+
+impl TryFromInput for Text {
+    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        Box::pin(async move {
+            match Message::try_from_input(input).await {
+                Ok(Some(message)) => Ok(message.get_text().cloned()),
+                Ok(None) => Ok(None),
+                Err(err) => Err(err),
+            }
+        })
+    }
+}
+
+impl TryFromInput for Message {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
             UpdateKind::Message(msg)
             | UpdateKind::EditedMessage(msg)
             | UpdateKind::ChannelPost(msg)
@@ -69,108 +112,295 @@ impl TryFromUpdate for Message {
     }
 }
 
-impl TryFromUpdate for Command {
+impl TryFromInput for Command {
+    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
     type Error = CommandError;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        // Should never panic as the error type is Infallible
-        let message: Option<Message> =
-            TryFromUpdate::try_from_update(update).expect("Could not convert update to message");
-        if let Some(message) = message {
-            match Command::try_from(message) {
-                Ok(command) => Ok(Some(command)),
-                Err(CommandError::NotFound) => Ok(None),
-                Err(err) => Err(err),
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        Box::pin(async move {
+            match Message::try_from_input(input).await {
+                Ok(Some(message)) => match Command::try_from(message) {
+                    Ok(command) => Ok(Some(command)),
+                    Err(CommandError::NotFound) => Ok(None),
+                    Err(err) => Err(err),
+                },
+                Ok(None) | Err(_) => Ok(None),
             }
-        } else {
-            Ok(None)
-        }
+        })
     }
 }
 
-impl TryFromUpdate for InlineQuery {
+impl TryFromInput for InlineQuery {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        Ok(match update.kind {
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
             UpdateKind::InlineQuery(query) => Some(query),
             _ => None,
         })
     }
 }
 
-impl TryFromUpdate for ChosenInlineResult {
+impl TryFromInput for ChosenInlineResult {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        Ok(match update.kind {
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
             UpdateKind::ChosenInlineResult(result) => Some(result),
             _ => None,
         })
     }
 }
 
-impl TryFromUpdate for CallbackQuery {
+impl TryFromInput for CallbackQuery {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        Ok(match update.kind {
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
             UpdateKind::CallbackQuery(query) => Some(query),
             _ => None,
         })
     }
 }
 
-impl TryFromUpdate for ShippingQuery {
+impl TryFromInput for ShippingQuery {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        Ok(match update.kind {
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
             UpdateKind::ShippingQuery(query) => Some(query),
             _ => None,
         })
     }
 }
 
-impl TryFromUpdate for PreCheckoutQuery {
+impl TryFromInput for PreCheckoutQuery {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        Ok(match update.kind {
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
             UpdateKind::PreCheckoutQuery(query) => Some(query),
             _ => None,
         })
     }
 }
 
-impl TryFromUpdate for Poll {
+impl TryFromInput for Poll {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        Ok(match update.kind {
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
             UpdateKind::Poll(poll) => Some(poll),
             _ => None,
         })
     }
 }
 
-impl TryFromUpdate for PollAnswer {
+impl TryFromInput for PollAnswer {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_update(update: Update) -> Result<Option<Self>, Self::Error> {
-        Ok(match update.kind {
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
             UpdateKind::PollAnswer(poll_answer) => Some(poll_answer),
             _ => None,
         })
     }
 }
 
+impl TryFromInput for ChatMemberUpdated {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
+            UpdateKind::BotStatus(status) | UpdateKind::UserStatus(status) => Some(status),
+            _ => None,
+        })
+    }
+}
+
+impl TryFromInput for ChatJoinRequest {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(match input.update.kind {
+            UpdateKind::ChatJoinRequest(request) => Some(request),
+            _ => None,
+        })
+    }
+}
+
+macro_rules! convert_tuple {
+    ($($T:ident),+) => {
+        #[allow(non_snake_case)]
+        impl<$($T),+> TryFromInput for ($($T,)+)
+        where
+            $(
+                $T: TryFromInput,
+                $T::Error: 'static,
+            )+
+        {
+            type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
+            type Error = ConvertUpdateError;
+
+            fn try_from_input(input: HandlerInput) -> Self::Future {
+                Box::pin(async move {
+                    $(
+                        let $T = match <$T>::try_from_input(
+                            input.clone()
+                        ).await.map_err(ConvertUpdateError::new)? {
+                            Some(v) => v,
+                            None => return Ok(None)
+                        };
+                    )+
+                    Ok(Some(($($T,)+)))
+                })
+            }
+        }
+    };
+}
+
+convert_tuple!(A);
+convert_tuple!(A, B);
+convert_tuple!(A, B, C);
+convert_tuple!(A, B, C, D);
+convert_tuple!(A, B, C, D, E);
+convert_tuple!(A, B, C, D, E, F);
+convert_tuple!(A, B, C, D, E, F, G);
+convert_tuple!(A, B, C, D, E, F, G, H);
+convert_tuple!(A, B, C, D, E, F, G, H, I);
+convert_tuple!(A, B, C, D, E, F, G, H, I, J);
+
+/// An error when converting an update from a tuple
+#[derive(Debug)]
+pub struct ConvertUpdateError(Box<dyn Error + Send>);
+
+impl ConvertUpdateError {
+    fn new<E: Error + Send + 'static>(err: E) -> Self {
+        Self(Box::new(err))
+    }
+}
+
+impl Error for ConvertUpdateError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        self.0.source()
+    }
+}
+
+impl fmt::Display for ConvertUpdateError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::context::Context;
+    use std::sync::Arc;
 
-    #[test]
-    fn message() {
+    #[tokio::test]
+    async fn empty_tuple() {
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "test",
+                }
+            }
+        ))
+        .unwrap();
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(matches!(<()>::try_from_input(input).await, Ok(Some(()))));
+    }
+
+    #[tokio::test]
+    async fn context_ref() {
+        let mut context = Context::default();
+        context.insert(3usize);
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "test",
+                }
+            }
+        ))
+        .unwrap();
+        let input = HandlerInput {
+            update,
+            context: Arc::new(context),
+        };
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert_eq!(
+            <Ref<usize>>::try_from_input(input.clone()).await.unwrap().as_deref(),
+            Some(&3)
+        );
+    }
+
+    #[tokio::test]
+    async fn chat_id() {
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "test",
+                }
+            }
+        ))
+        .unwrap();
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(matches!(ChatId::try_from_input(input).await, Ok(Some(ChatId::Id(1)))));
+    }
+
+    #[tokio::test]
+    async fn user() {
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "test",
+                }
+            }
+        ))
+        .unwrap();
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(User::try_from_input(input).await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn message() {
         for data in vec![
             serde_json::json!({
                 "update_id": 1,
@@ -215,13 +445,15 @@ mod tests {
             }),
         ] {
             let update: Update = serde_json::from_value(data).unwrap();
-            assert!(Update::try_from_update(update.clone()).unwrap().is_some());
-            assert!(Message::try_from_update(update).unwrap().is_some());
+            let input = HandlerInput::from(update);
+            assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+            assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+            assert!(Message::try_from_input(input).await.unwrap().is_some());
         }
     }
 
-    #[test]
-    fn command() {
+    #[tokio::test]
+    async fn command() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -238,12 +470,14 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
-        assert!(Command::try_from_update(update).unwrap().is_some());
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Command::try_from_input(input).await.unwrap().is_some());
     }
 
-    #[test]
-    fn inline_query() {
+    #[tokio::test]
+    async fn inline_query() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -256,12 +490,14 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
-        assert!(InlineQuery::try_from_update(update).unwrap().is_some());
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(InlineQuery::try_from_input(input).await.unwrap().is_some());
     }
 
-    #[test]
-    fn chosen_inline_result() {
+    #[tokio::test]
+    async fn chosen_inline_result() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -273,12 +509,14 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
-        assert!(ChosenInlineResult::try_from_update(update).unwrap().is_some());
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(ChosenInlineResult::try_from_input(input).await.unwrap().is_some());
     }
 
-    #[test]
-    fn callback_query() {
+    #[tokio::test]
+    async fn callback_query() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -289,12 +527,14 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
-        assert!(CallbackQuery::try_from_update(update).unwrap().is_some());
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(CallbackQuery::try_from_input(input).await.unwrap().is_some());
     }
 
-    #[test]
-    fn shipping_query() {
+    #[tokio::test]
+    async fn shipping_query() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -314,12 +554,14 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
-        assert!(ShippingQuery::try_from_update(update).unwrap().is_some());
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(ShippingQuery::try_from_input(input).await.unwrap().is_some());
     }
 
-    #[test]
-    fn pre_checkout_query() {
+    #[tokio::test]
+    async fn pre_checkout_query() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -333,12 +575,14 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
-        assert!(PreCheckoutQuery::try_from_update(update).unwrap().is_some());
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(PreCheckoutQuery::try_from_input(input).await.unwrap().is_some());
     }
 
-    #[test]
-    fn poll() {
+    #[tokio::test]
+    async fn poll() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -358,12 +602,14 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
-        assert!(Poll::try_from_update(update).unwrap().is_some());
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Poll::try_from_input(input).await.unwrap().is_some());
     }
 
-    #[test]
-    fn poll_answer() {
+    #[tokio::test]
+    async fn poll_answer() {
         let update: Update = serde_json::from_value(serde_json::json!(
             {
                 "update_id": 1,
@@ -379,7 +625,153 @@ mod tests {
             }
         ))
         .unwrap();
-        assert!(Update::try_from_update(update.clone()).unwrap().is_some());
-        assert!(PollAnswer::try_from_update(update).unwrap().is_some());
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(PollAnswer::try_from_input(input).await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn bot_status() {
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "my_chat_member": {
+                    "chat": {
+                        "id": 1,
+                        "type": "group",
+                        "title": "grouptitle"
+                    },
+                    "from": {
+                        "id": 1,
+                        "is_bot": true,
+                        "first_name": "firstname"
+                    },
+                    "date": 0,
+                    "old_chat_member": {
+                        "status": "member",
+                        "user": {
+                            "id": 2,
+                            "is_bot": true,
+                            "first_name": "firstname"
+                        }
+                    },
+                    "new_chat_member": {
+                        "status": "kicked",
+                        "user": {
+                            "id": 2,
+                            "is_bot": true,
+                            "first_name": "firstname",
+                        },
+                        "until_date": 0
+                    }
+                }
+            }
+        ))
+        .unwrap();
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(ChatMemberUpdated::try_from_input(input).await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn user_status() {
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "chat_member": {
+                    "chat": {
+                        "id": 1,
+                        "type": "group",
+                        "title": "grouptitle"
+                    },
+                    "from": {
+                        "id": 1,
+                        "is_bot": true,
+                        "first_name": "firstname"
+                    },
+                    "date": 0,
+                    "old_chat_member": {
+                        "status": "member",
+                        "user": {
+                            "id": 2,
+                            "is_bot": false,
+                            "first_name": "firstname"
+                        }
+                    },
+                    "new_chat_member": {
+                        "status": "kicked",
+                        "user": {
+                            "id": 2,
+                            "is_bot": false,
+                            "first_name": "firstname",
+                        },
+                        "until_date": 0
+                    }
+                }
+            }
+        ))
+        .unwrap();
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(ChatMemberUpdated::try_from_input(input).await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn chat_join_request() {
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "chat_join_request": {
+                    "chat": {
+                        "id": 1,
+                        "type": "group",
+                        "title": "grouptitle"
+                    },
+                    "from": {
+                        "id": 1,
+                        "is_bot": false,
+                        "first_name": "firstname"
+                    },
+                    "date": 0
+                }
+            }
+        ))
+        .unwrap();
+        let input = HandlerInput::from(update);
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(ChatJoinRequest::try_from_input(input).await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn tuple() {
+        let mut context = Context::default();
+        context.insert(3usize);
+        let update: Update = serde_json::from_value(serde_json::json!(
+            {
+                "update_id": 1,
+                "message": {
+                    "message_id": 1111,
+                    "date": 0,
+                    "from": {"id": 1, "is_bot": false, "first_name": "test"},
+                    "chat": {"id": 1, "type": "private", "first_name": "test"},
+                    "text": "test",
+                }
+            }
+        ))
+        .unwrap();
+        let input = HandlerInput {
+            update,
+            context: Arc::new(context),
+        };
+        assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
+        assert!(<(Ref<usize>, Update, User, Message)>::try_from_input(input.clone())
+            .await
+            .unwrap()
+            .is_some());
     }
 }
