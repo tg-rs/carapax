@@ -26,7 +26,6 @@ session-fs = ["session", "seance/fs-backend"]
 
 [dependencies]
 async-trait = "0.1"
-carapax-codegen = "0.2"
 log = "0.4"
 nonzero_ext = { version = "0.2", default-features = false, optional = true }
 ratelimit_meter = { version = "5.0", optional = true }

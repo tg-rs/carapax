@@ -1,5 +1,4 @@
 use carapax::{
-    handler,
     longpoll::LongPoll,
     methods::SendMessage,
     session::{backend::fs::FilesystemBackend, SessionCollector, SessionManager},
@@ -15,7 +14,6 @@ struct Context {
     session_manager: SessionManager<FilesystemBackend>,
 }
 
-#[handler(command = "/set")]
 async fn handle_set(context: &Context, command: Command) -> HandlerResult {
     log::info!("got a command: {:?}\n", command);
     let message = command.get_message();
@@ -42,7 +40,6 @@ async fn handle_set(context: &Context, command: Command) -> HandlerResult {
     HandlerResult::Stop
 }
 
-#[handler(command = "/expire")]
 async fn handle_expire(context: &Context, command: Command) -> HandlerResult {
     log::info!("got a command: {:?}\n", command);
     let message = command.get_message();
@@ -69,7 +66,6 @@ async fn handle_expire(context: &Context, command: Command) -> HandlerResult {
     HandlerResult::Stop
 }
 
-#[handler(command = "/reset")]
 async fn handle_reset(context: &Context, command: Command) -> HandlerResult {
     log::info!("got a command: {:?}\n", command);
     let message = command.get_message();
@@ -80,7 +76,6 @@ async fn handle_reset(context: &Context, command: Command) -> HandlerResult {
     HandlerResult::Stop
 }
 
-#[handler]
 async fn handle_update(context: &Context, update: Update) -> HandlerResult {
     let message = update.get_message().unwrap();
     log::info!("got a message: {:?}\n", message);
@@ -137,9 +132,9 @@ async fn main() {
         api: api.clone(),
         session_manager: SessionManager::new(backend),
     });
-    dispatcher.add_handler(handle_expire);
-    dispatcher.add_handler(handle_reset);
-    dispatcher.add_handler(handle_set);
-    dispatcher.add_handler(handle_update);
+    // dispatcher.add_handler(handle_expire);
+    // dispatcher.add_handler(handle_reset);
+    // dispatcher.add_handler(handle_set);
+    // dispatcher.add_handler(handle_update);
     LongPoll::new(api, dispatcher).run().await
 }

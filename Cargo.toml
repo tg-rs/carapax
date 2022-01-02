@@ -1,5 +1,4 @@
 [workspace]
 members = [
-    "carapax",
-    "carapax-codegen",
+    "carapax"
 ]

@@ -1,11 +1,9 @@
 use carapax::{
-    handler, longpoll::LongPoll, methods::SendMessage, types::Command, Api, Config, Dispatcher, ExecuteError,
-    HandlerResult,
+    longpoll::LongPoll, methods::SendMessage, types::Command, Api, Config, Dispatcher, ExecuteError, HandlerResult,
 };
 use dotenv::dotenv;
 use std::env;
 
-#[handler(command = "/start")]
 async fn handle_start(api: &Api, command: Command) -> Result<HandlerResult, ExecuteError> {
     log::info!("handle /start command\n");
     let chat_id = command.get_message().get_chat_id();
@@ -15,7 +13,6 @@ async fn handle_start(api: &Api, command: Command) -> Result<HandlerResult, Exec
     Ok(HandlerResult::Stop)
 }
 
-#[handler(command = "/user_id")]
 async fn handle_user_id(api: &Api, command: Command) -> Result<HandlerResult, ExecuteError> {
     log::info!("handle /user_id command\n");
     let message = command.get_message();
@@ -26,7 +23,6 @@ async fn handle_user_id(api: &Api, command: Command) -> Result<HandlerResult, Ex
     Ok(HandlerResult::Stop)
 }
 
-#[handler]
 async fn handle_any(api: &Api, command: Command) -> Result<(), ExecuteError> {
     let name = command.get_name();
     log::info!("handle {} command\n", name);
@@ -49,8 +45,8 @@ async fn main() {
     }
     let api = Api::new(config).expect("Failed to create API");
     let mut dispatcher = Dispatcher::new(api.clone());
-    dispatcher.add_handler(handle_start);
-    dispatcher.add_handler(handle_user_id);
-    dispatcher.add_handler(handle_any);
+    // dispatcher.add_handler(handle_start);
+    // dispatcher.add_handler(handle_user_id);
+    // dispatcher.add_handler(handle_any);
     LongPoll::new(api, dispatcher).run().await;
 }

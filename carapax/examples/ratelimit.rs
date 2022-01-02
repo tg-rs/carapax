@@ -1,5 +1,4 @@
 use carapax::{
-    handler,
     longpoll::LongPoll,
     ratelimit::{
         limit_all_chats, limit_all_users, nonzero, DirectRateLimitHandler, KeyedRateLimitHandler, RateLimitList,
@@ -11,7 +10,6 @@ use dotenv::dotenv;
 use std::{env, time::Duration};
 
 #[allow(clippy::trivially_copy_pass_by_ref)]
-#[handler]
 async fn handle_message(_context: &(), message: Message) {
     log::info!("Got a new message: {:?}", message);
 }
@@ -85,7 +83,7 @@ async fn main() {
         _ => panic!("Unknown rate limit strategy: {:?}", strategy),
     };
 
-    dispatcher.add_handler(handle_message);
+    // dispatcher.add_handler(handle_message);
 
     LongPoll::new(api, dispatcher).run().await
 }
