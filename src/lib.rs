@@ -12,10 +12,10 @@ pub use tgbot::*;
 #[cfg_attr(nightly, doc(cfg(feature = "access")))]
 pub mod access;
 
-// /// Dialogue adapter
-// #[cfg(feature = "dialogue")]
-// #[cfg_attr(nightly, doc(cfg(feature = "dialogue")))]
-// pub mod dialogue;
+/// Dialogue support
+#[cfg(feature = "dialogue")]
+#[cfg_attr(nightly, doc(cfg(feature = "dialogue")))]
+pub mod dialogue;
 
 // /// Ratelimit handler
 // #[cfg(feature = "ratelimit")]
