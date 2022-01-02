@@ -17,10 +17,10 @@ pub mod access;
 #[cfg_attr(nightly, doc(cfg(feature = "dialogue")))]
 pub mod dialogue;
 
-// /// Ratelimit handler
-// #[cfg(feature = "ratelimit")]
-// #[cfg_attr(nightly, doc(cfg(feature = "ratelimit")))]
-// pub mod ratelimit;
+/// Ratelimit support
+#[cfg(feature = "ratelimit")]
+#[cfg_attr(nightly, doc(cfg(feature = "ratelimit")))]
+pub mod ratelimit;
 
 /// Session support
 #[cfg(feature = "session")]
