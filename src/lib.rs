@@ -22,7 +22,7 @@ pub mod access;
 // #[cfg_attr(nightly, doc(cfg(feature = "ratelimit")))]
 // pub mod ratelimit;
 
-// /// Session manager
-// #[cfg(feature = "session")]
-// #[cfg_attr(nightly, doc(cfg(feature = "session")))]
-// pub mod session;
+/// Session support
+#[cfg(feature = "session")]
+#[cfg_attr(nightly, doc(cfg(feature = "session")))]
+pub mod session;
