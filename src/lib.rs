@@ -5,11 +5,7 @@
 mod core;
 
 pub use self::core::*;
-pub use async_trait::async_trait;
-pub use tgbot::{
-    longpoll, methods, mime, types, webhook, Api, ApiError, Config, DownloadFileError, ExecuteError, ParseProxyError,
-    UpdateHandler,
-};
+pub use tgbot::*;
 
 // /// Access handler
 // #[cfg(feature = "access")]
