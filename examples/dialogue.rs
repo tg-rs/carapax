@@ -1,92 +1,111 @@
-// use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
+use carapax::{
+    dialogue::{DialogueDecorator, DialogueInput, DialogueState},
+    methods::SendMessage,
+    session::{backend::fs::FilesystemBackend, SessionCollector, SessionManager},
+    types::ChatId,
+    Api, Config, Context, Dispatcher, ExecuteError, Ref,
+};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-// use std::env;
-// use tempfile::tempdir;
+use std::{env, time::Duration};
+use tempfile::tempdir;
+use tgbot::{longpoll::LongPoll, types::Text};
 
-// struct Context {
-//     // api: Api,
-// // session_manager: SessionManager<FilesystemBackend>,
-// }
+type ExampleDialogueInput = DialogueInput<ExampleDialogueState, FilesystemBackend>;
 
-#[derive(Serialize, Deserialize)]
-enum ExampleState {
+#[derive(Clone, Deserialize, Serialize)]
+enum ExampleDialogueState {
     Start,
     FirstName,
-    LastName,
+    LastName { first_name: String },
 }
 
-// impl State for ExampleState {
-//     fn new() -> Self {
-//         ExampleState::Start
-//     }
-// }
+impl Default for ExampleDialogueState {
+    fn default() -> Self {
+        Self::Start
+    }
+}
 
-// async fn handle(
-//     state: ExampleState,
-//     context: &Context,
-//     input: Message,
-// ) -> Result<DialogueResult<ExampleState>, Infallible> {
-//     use self::ExampleState::*;
-//     let chat_id = input.get_chat_id();
-//     let mut session = context.session_manager.get_session(&input).unwrap();
+impl DialogueState for ExampleDialogueState {
+    fn dialogue_name() -> &'static str {
+        "example"
+    }
+}
 
-//     Ok(match state {
-//         Start => {
-//             context
-//                 .api
-//                 .execute(SendMessage::new(chat_id, "What is your first name?"))
-//                 .await
-//                 .unwrap();
-//             Next(FirstName)
-//         }
-//         FirstName => {
-//             let first_name = input.get_text().unwrap();
-//             session.set("first_name", &first_name.data).await.unwrap();
-//             context
-//                 .api
-//                 .execute(SendMessage::new(chat_id, "What is your last name?"))
-//                 .await
-//                 .unwrap();
-//             Next(LastName)
-//         }
-//         LastName => {
-//             let last_name = input.get_text().unwrap();
-//             let first_name: String = session.get("first_name").await.unwrap().unwrap();
-//             let text = format!(
-//                 "First name: {first_name}\nLast name: {last_name}",
-//                 first_name = first_name,
-//                 last_name = last_name.data,
-//             );
-//             context.api.execute(SendMessage::new(chat_id, text)).await.unwrap();
-//             Exit
-//         }
-//     })
-// }
+async fn handle_dialogue(
+    api: Ref<Api>,
+    chat_id: ChatId,
+    input: ExampleDialogueInput,
+    text: Text,
+) -> Result<ExampleDialogueState, ExecuteError> {
+    match input.state {
+        ExampleDialogueState::Start => {
+            api.execute(SendMessage::new(chat_id, "What is your first name?"))
+                .await?;
+            Ok(ExampleDialogueState::FirstName)
+        }
+        ExampleDialogueState::FirstName => {
+            let first_name = text.data.clone();
+            api.execute(SendMessage::new(chat_id, "What is your last name?"))
+                .await?;
+            Ok(ExampleDialogueState::LastName { first_name })
+        }
+        ExampleDialogueState::LastName { first_name } => {
+            let last_name = &text.data;
+            api.execute(SendMessage::new(
+                chat_id,
+                format!("Your name is: {} {}", first_name, last_name),
+            ))
+            .await?;
+            Ok(ExampleDialogueState::Start)
+        }
+    }
+}
+
+fn getenv(name: &str) -> String {
+    env::var(name).unwrap_or_else(|_| panic!("{} is not set", name))
+}
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    // let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
-    // let proxy = env::var("CARAPAX_PROXY").ok();
+    let token = getenv("CARAPAX_TOKEN");
+    let proxy = env::var("CARAPAX_PROXY").ok();
+    let gc_period = getenv("CARAPAX_SESSION_GC_PERIOD");
+    let gc_period = Duration::from_secs(
+        gc_period
+            .parse::<u64>()
+            .expect("CARAPAX_SESSION_GC_PERIOD must be integer"),
+    ); // period between GC calls
+    let session_lifetime = getenv("CARAPAX_SESSION_LIFETIME");
+    let session_lifetime = Duration::from_secs(
+        session_lifetime
+            .parse::<u64>()
+            .expect("CARAPAX_SESSION_LIFETIME must be integer"),
+    ); // how long session lives
 
-    // let mut config = Config::new(token);
-    // if let Some(proxy) = proxy {
-    //     config = config.proxy(proxy).expect("Failed to set proxy");
-    // }
+    let mut config = Config::new(token);
+    if let Some(proxy) = proxy {
+        config = config.proxy(proxy).expect("Failed to set proxy");
+    }
 
-    // // let tmpdir = tempdir().expect("Failed to create temp directory");
-    // // let session_backend = FilesystemBackend::new(tmpdir.path());
-    // // let session_manager = SessionManager::new(session_backend);
+    let api = Api::new(config).expect("Failed to create API");
+    let tmpdir = tempdir().expect("Failed to create temp directory");
+    log::info!("Session directory: {}", tmpdir.path().display());
 
-    // let api = Api::new(config).expect("Failed to create API");
-    // // let dialogue_name = "example"; // unique dialogue name used to store state
-    // let dispatcher = Dispatcher::new(Context {
-    //     // api: api.clone(),
-    //     // session_manager: session_manager.clone(),
-    // });
-    // // dispatcher.add_handler(Dialogue::new(session_manager, dialogue_name, handle));
-    // LongPoll::new(api, dispatcher).run().await
+    let backend = FilesystemBackend::new(tmpdir.path());
+
+    // spawn GC to remove old sessions
+    let mut collector = SessionCollector::new(backend.clone(), gc_period, session_lifetime);
+    tokio::spawn(async move { collector.run().await });
+
+    let mut context = Context::default();
+    context.insert(api.clone());
+    context.insert(SessionManager::new(backend));
+
+    let mut dispatcher = Dispatcher::new(context);
+    dispatcher.add_handler(<DialogueDecorator<FilesystemBackend, _, _>>::new(handle_dialogue));
+    LongPoll::new(api, dispatcher).run().await
 }
