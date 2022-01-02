@@ -1,6 +1,6 @@
-use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
+// use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
 use dotenv::dotenv;
-use std::env;
+// use std::env;
 
 // #[allow(clippy::trivially_copy_pass_by_ref)]
 // async fn handle_message(_context: &(), message: Message) {
@@ -12,16 +12,16 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
-    let proxy = env::var("CARAPAX_PROXY").ok();
-    // let strategy = env::var("TGRS_RATE_LIMIT_STRATEGY").expect("TGRS_RATE_LIMIT_STRATEGY is not set");
+    // let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
+    // let proxy = env::var("CARAPAX_PROXY").ok();
+    // // let strategy = env::var("TGRS_RATE_LIMIT_STRATEGY").expect("TGRS_RATE_LIMIT_STRATEGY is not set");
 
-    let mut config = Config::new(token);
-    if let Some(proxy) = proxy {
-        config = config.proxy(proxy).expect("Failed to set proxy");
-    }
+    // let mut config = Config::new(token);
+    // if let Some(proxy) = proxy {
+    //     config = config.proxy(proxy).expect("Failed to set proxy");
+    // }
 
-    let api = Api::new(config).unwrap();
+    // let api = Api::new(config).unwrap();
 
     // 1 update per 5 seconds
     // let (capacity, interval) = (nonzero!(1u32), Duration::from_secs(5));
@@ -29,7 +29,7 @@ async fn main() {
     // Allow update when key is missing
     // let on_missing = true;
 
-    let dispatcher = Dispatcher::new(());
+    // let dispatcher = Dispatcher::new(());
 
     // match strategy.as_str() {
     //     "direct" => {
@@ -78,5 +78,5 @@ async fn main() {
 
     // dispatcher.add_handler(handle_message);
 
-    LongPoll::new(api, dispatcher).run().await
+    // LongPoll::new(api, dispatcher).run().await
 }

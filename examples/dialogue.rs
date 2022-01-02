@@ -1,13 +1,13 @@
-use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
+// use carapax::{longpoll::LongPoll, Api, Config, Dispatcher};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use std::env;
+// use std::env;
 // use tempfile::tempdir;
 
-struct Context {
-    // api: Api,
-// session_manager: SessionManager<FilesystemBackend>,
-}
+// struct Context {
+//     // api: Api,
+// // session_manager: SessionManager<FilesystemBackend>,
+// }
 
 #[derive(Serialize, Deserialize)]
 enum ExampleState {
@@ -69,24 +69,24 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
-    let proxy = env::var("CARAPAX_PROXY").ok();
+    // let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
+    // let proxy = env::var("CARAPAX_PROXY").ok();
 
-    let mut config = Config::new(token);
-    if let Some(proxy) = proxy {
-        config = config.proxy(proxy).expect("Failed to set proxy");
-    }
+    // let mut config = Config::new(token);
+    // if let Some(proxy) = proxy {
+    //     config = config.proxy(proxy).expect("Failed to set proxy");
+    // }
 
-    // let tmpdir = tempdir().expect("Failed to create temp directory");
-    // let session_backend = FilesystemBackend::new(tmpdir.path());
-    // let session_manager = SessionManager::new(session_backend);
+    // // let tmpdir = tempdir().expect("Failed to create temp directory");
+    // // let session_backend = FilesystemBackend::new(tmpdir.path());
+    // // let session_manager = SessionManager::new(session_backend);
 
-    let api = Api::new(config).expect("Failed to create API");
-    // let dialogue_name = "example"; // unique dialogue name used to store state
-    let dispatcher = Dispatcher::new(Context {
-        // api: api.clone(),
-        // session_manager: session_manager.clone(),
-    });
-    // dispatcher.add_handler(Dialogue::new(session_manager, dialogue_name, handle));
-    LongPoll::new(api, dispatcher).run().await
+    // let api = Api::new(config).expect("Failed to create API");
+    // // let dialogue_name = "example"; // unique dialogue name used to store state
+    // let dispatcher = Dispatcher::new(Context {
+    //     // api: api.clone(),
+    //     // session_manager: session_manager.clone(),
+    // });
+    // // dispatcher.add_handler(Dialogue::new(session_manager, dialogue_name, handle));
+    // LongPoll::new(api, dispatcher).run().await
 }
