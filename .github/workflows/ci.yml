@@ -82,5 +82,4 @@ jobs:
           toolchain: stable
           override: true
       - name: Run tests
-        working-directory: ./carapax
         run: cargo test --features=full
