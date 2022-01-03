@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.11.0 (xx.01.2022)
+
+- Tokio 1.15 and tgbot 0.16 support.
+- New handlers API.
+  - Removed `async_trait` and `carapax-codegen` dependencies.
+  - Changed signature of `Handler` trait.
+  - Added `HandlerInput` struct containing `Context` and `Update`.
+  - Renamed `TryFromUpdate` trait to `TryFromInput`.
+  - Removed `ErrorPolicy`.
+  - Added `Ref<T>` to allow to pass objects from context to handlers directly.
+  - Added `Predicate` handler to allow to wrap handlers with predicates.
+  - Added `CommandPredicate` handler to allow to run a handler only for a specific command.
+- Replaced `ratelimit_meter` by `governor`.
+- Removed i18n support.
+
 ## 0.10.0 (09.01.2020)
 
 - Added tokio 1.0 and tgbot 0.12 support.
