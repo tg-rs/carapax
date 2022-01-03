@@ -2,7 +2,7 @@ use carapax::{
     methods::SendMessage,
     session::{backend::fs::FilesystemBackend, Session, SessionCollector, SessionError, SessionManager},
     types::{ChatId, Command},
-    Api, CommandPredicate, Config, Context, Dispatcher, ExecuteError, HandlerResult, Predicate, Ref,
+    Api, CommandExt, Config, Context, Dispatcher, ExecuteError, HandlerResult, Ref,
 };
 use dotenv::dotenv;
 use std::{env, error::Error, fmt, time::Duration};
@@ -163,9 +163,9 @@ async fn main() {
 
     let mut dispatcher = Dispatcher::new(context);
     dispatcher
-        .add_handler(Predicate::new(CommandPredicate::new("/expire"), handle_expire))
-        .add_handler(Predicate::new(CommandPredicate::new("/reset"), handle_reset))
-        .add_handler(Predicate::new(CommandPredicate::new("/set"), handle_set))
+        .add_handler(handle_expire.command("/expire"))
+        .add_handler(handle_reset.command("/reset"))
+        .add_handler(handle_set.command("/set"))
         .add_handler(handle_update);
     LongPoll::new(api, dispatcher).run().await
 }
