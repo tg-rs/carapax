@@ -1,13 +1,14 @@
 use carapax::{
     methods::SendMessage,
-    session::{backend::fs::FilesystemBackend, Session, SessionCollector, SessionError, SessionManager},
+    session::{backend::fs::FilesystemBackend, Session, SessionError, SessionManager},
     types::{ChatId, Command},
-    Api, CommandExt, Config, Context, Dispatcher, ExecuteError, HandlerResult, Ref,
+    Api, CommandExt, ExecuteError, HandlerResult, Ref,
 };
 use dotenv::dotenv;
-use std::{env, error::Error, fmt, time::Duration};
+use helper::RunnerBuilder;
+use seance::SessionCollector;
+use std::{error::Error, fmt, time::Duration};
 use tempfile::tempdir;
-use tgbot::longpoll::LongPoll;
 
 #[derive(Debug)]
 enum AppError {
@@ -118,54 +119,48 @@ async fn handle_update(
     Ok(())
 }
 
-fn getenv(name: &str) -> String {
-    env::var(name).unwrap_or_else(|_| panic!("{} is not set", name))
-}
-
 #[tokio::main]
 async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let token = getenv("CARAPAX_TOKEN");
-    let proxy = env::var("CARAPAX_PROXY").ok();
-    let gc_period = getenv("CARAPAX_SESSION_GC_PERIOD");
+    let backend = backend_with_tmpdir();
+    spawn_collector(backend.clone());
+
+    RunnerBuilder::from_env()
+        .insert_data(SessionManager::new(backend))
+        .build()
+        .add_handler(handle_expire.command("/expire"))
+        .add_handler(handle_reset.command("/reset"))
+        .add_handler(handle_set.command("/set"))
+        .add_handler(handle_update)
+        .run()
+        .await;
+}
+
+fn backend_with_tmpdir() -> FilesystemBackend {
+    let tmpdir = tempdir().expect("Failed to create temp directory");
+    log::info!("Session directory: {}", tmpdir.path().display());
+    let backend = FilesystemBackend::new(tmpdir.path());
+    backend
+}
+
+fn spawn_collector(backend: FilesystemBackend) {
+    let gc_period = helper::get_env("CARAPAX_SESSION_GC_PERIOD");
     let gc_period = Duration::from_secs(
         gc_period
             .parse::<u64>()
             .expect("CARAPAX_SESSION_GC_PERIOD must be integer"),
     ); // period between GC calls
-    let session_lifetime = getenv("CARAPAX_SESSION_LIFETIME");
+
+    let session_lifetime = helper::get_env("CARAPAX_SESSION_LIFETIME");
     let session_lifetime = Duration::from_secs(
         session_lifetime
             .parse::<u64>()
             .expect("CARAPAX_SESSION_LIFETIME must be integer"),
     ); // how long session lives
 
-    let mut config = Config::new(token);
-    if let Some(proxy) = proxy {
-        config = config.proxy(proxy).expect("Failed to set proxy");
-    }
-
-    let api = Api::new(config).expect("Failed to create API");
-    let tmpdir = tempdir().expect("Failed to create temp directory");
-    log::info!("Session directory: {}", tmpdir.path().display());
-
-    let backend = FilesystemBackend::new(tmpdir.path());
-
     // spawn GC to remove old sessions
-    let mut collector = SessionCollector::new(backend.clone(), gc_period, session_lifetime);
+    let mut collector = SessionCollector::new(backend, gc_period, session_lifetime);
     tokio::spawn(async move { collector.run().await });
-
-    let mut context = Context::default();
-    context.insert(api.clone());
-    context.insert(SessionManager::new(backend));
-
-    let mut dispatcher = Dispatcher::new(context);
-    dispatcher
-        .add_handler(handle_expire.command("/expire"))
-        .add_handler(handle_reset.command("/reset"))
-        .add_handler(handle_set.command("/set"))
-        .add_handler(handle_update);
-    LongPoll::new(api, dispatcher).run().await
 }
