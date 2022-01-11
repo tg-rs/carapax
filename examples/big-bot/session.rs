@@ -1,14 +1,23 @@
+use crate::util::Module;
 use carapax::{
     methods::SendMessage,
-    session::{backend::fs::FilesystemBackend, Session, SessionError, SessionManager},
+    session::{backend::fs::FilesystemBackend, Session, SessionError},
     types::{ChatId, Command},
-    Api, CommandExt, ExecuteError, HandlerResult, Ref,
+    Api, CommandExt, Dispatcher, ExecuteError, HandlerResult, Ref,
 };
-use dotenv::dotenv;
-use helper::RunnerBuilder;
-use seance::SessionCollector;
-use std::{error::Error, fmt, time::Duration};
-use tempfile::tempdir;
+use std::{error::Error, fmt};
+
+pub struct SessionModule;
+
+impl Module for SessionModule {
+    fn add_handlers(&self, dispatcher: &mut Dispatcher) {
+        dispatcher
+            .add_handler(handle_expire.command("/expire"))
+            .add_handler(handle_reset.command("/reset"))
+            .add_handler(handle_set.command("/set"))
+            .add_handler(handle_update);
+    }
+}
 
 #[derive(Debug)]
 enum AppError {
@@ -51,7 +60,7 @@ async fn handle_expire(
     mut session: Session<FilesystemBackend>,
     chat_id: ChatId,
     command: Command,
-) -> Result<(), AppError> {
+) -> Result<HandlerResult, AppError> {
     let args = command.get_args();
     let seconds = if args.is_empty() {
         0
@@ -60,14 +69,14 @@ async fn handle_expire(
             Ok(x) => x,
             Err(err) => {
                 api.execute(SendMessage::new(chat_id, err.to_string())).await?;
-                return Ok(());
+                return Ok(HandlerResult::Stop);
             }
         }
     };
     log::info!("/expire {}", seconds);
     session.expire("counter", seconds).await?;
     api.execute(SendMessage::new(chat_id, "OK")).await?;
-    Ok(())
+    Ok(HandlerResult::Stop)
 }
 
 async fn handle_set(
@@ -105,62 +114,10 @@ async fn handle_reset(
     Ok(HandlerResult::Stop)
 }
 
-async fn handle_update(
-    api: Ref<Api>,
-    mut session: Session<FilesystemBackend>,
-    chat_id: ChatId,
-) -> Result<(), ExecuteError> {
+async fn handle_update(mut session: Session<FilesystemBackend>) -> Result<(), ExecuteError> {
     let val: Option<usize> = session.get("counter").await.unwrap();
     let val = val.unwrap_or(0) + 1;
     log::info!("got an update, increment counter by {}", val);
     session.set("counter", &val).await.unwrap();
-    let msg = format!("Count: {}", val);
-    api.execute(SendMessage::new(chat_id, msg)).await?;
     Ok(())
-}
-
-#[tokio::main]
-async fn main() {
-    dotenv().ok();
-    env_logger::init();
-
-    let backend = backend_with_tmpdir();
-    spawn_collector(backend.clone());
-
-    RunnerBuilder::from_env()
-        .insert_data(SessionManager::new(backend))
-        .build()
-        .add_handler(handle_expire.command("/expire"))
-        .add_handler(handle_reset.command("/reset"))
-        .add_handler(handle_set.command("/set"))
-        .add_handler(handle_update)
-        .run()
-        .await;
-}
-
-fn backend_with_tmpdir() -> FilesystemBackend {
-    let tmpdir = tempdir().expect("Failed to create temp directory");
-    log::info!("Session directory: {}", tmpdir.path().display());
-    let backend = FilesystemBackend::new(tmpdir.path());
-    backend
-}
-
-fn spawn_collector(backend: FilesystemBackend) {
-    let gc_period = helper::get_env("CARAPAX_SESSION_GC_PERIOD");
-    let gc_period = Duration::from_secs(
-        gc_period
-            .parse::<u64>()
-            .expect("CARAPAX_SESSION_GC_PERIOD must be integer"),
-    ); // period between GC calls
-
-    let session_lifetime = helper::get_env("CARAPAX_SESSION_LIFETIME");
-    let session_lifetime = Duration::from_secs(
-        session_lifetime
-            .parse::<u64>()
-            .expect("CARAPAX_SESSION_LIFETIME must be integer"),
-    ); // how long session lives
-
-    // spawn GC to remove old sessions
-    let mut collector = SessionCollector::new(backend, gc_period, session_lifetime);
-    tokio::spawn(async move { collector.run().await });
 }

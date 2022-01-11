@@ -37,24 +37,12 @@ tokio = "1.15"
 dotenv = "0.15"
 env_logger = "0.9"
 serde_json = "1.0"
+tokio = { version = "1.15", features = ["macros", "rt-multi-thread"] }
 tempfile = "3.2"
-helper = { path = "util-helper", package = "util-helper" }
 
 [[example]]
-name = "access"
-required-features = ["access"]
-
-[[example]]
-name = "dialogue"
-required-features = ["dialogue", "session-fs", "helper/session"]
-
-[[example]]
-name = "ratelimit"
-required-features = ["ratelimit"]
-
-[[example]]
-name = "session"
-required-features = ["session-fs"]
+name = "big-bot"
+required-features = ["full"]
 
 [package.metadata.docs.rs]
 all-features = true
