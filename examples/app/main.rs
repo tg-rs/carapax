@@ -30,7 +30,9 @@ async fn main() {
     context.insert(session_manager);
 
     let mut dispatcher = Dispatcher::new(context);
-    access::setup(&mut dispatcher, &get_env("CARAPAX_ACCESS_USERNAME"));
+    if let Ok(username) = env::var("CARAPAX_ACCESS_USERNAME") {
+        access::setup(&mut dispatcher, &username);
+    }
     command::setup(&mut dispatcher);
     dialogue::setup(&mut dispatcher);
     predicate::setup(&mut dispatcher);
