@@ -382,6 +382,10 @@ mod tests {
             <Ref<usize>>::try_from_input(input.clone()).await.unwrap().as_deref(),
             Some(&3)
         );
+        assert!(matches!(
+            <Ref<()>>::try_from_input(input.clone()).await,
+            Err(ConvertInputError::Context(_))
+        ));
     }
 
     #[tokio::test]
