@@ -144,7 +144,7 @@ pub enum HandlerResult {
 
 impl From<()> for HandlerResult {
     fn from(_: ()) -> Self {
-        HandlerResult::Continue
+        HandlerResult::Stop
     }
 }
 
@@ -333,12 +333,12 @@ mod tests {
 
     #[test]
     fn convert_handler_result() {
-        assert!(matches!(HandlerResult::from(()), HandlerResult::Continue));
+        assert!(matches!(HandlerResult::from(()), HandlerResult::Stop));
         assert!(matches!(HandlerResult::from(true), HandlerResult::Continue));
         assert!(matches!(HandlerResult::from(false), HandlerResult::Stop));
         assert!(matches!(
             HandlerResult::from(Ok::<(), ExampleError>(())),
-            HandlerResult::Continue
+            HandlerResult::Stop
         ));
         assert!(matches!(
             HandlerResult::from(Err::<(), ExampleError>(ExampleError)),

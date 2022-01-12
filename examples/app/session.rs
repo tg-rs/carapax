@@ -8,19 +8,10 @@ use carapax::{
 
 pub fn setup(dispatcher: &mut Dispatcher) {
     dispatcher
-        .add_handler(update_counter)
         .add_handler(get_counter.command("/cget"))
         .add_handler(set_counter.command("/cset"))
         .add_handler(expire_counter.command("/cexpire"))
         .add_handler(reset_counter.command("/creset"));
-}
-
-async fn update_counter(mut session: Session<FilesystemBackend>) -> Result<(), AppError> {
-    let val: Option<usize> = session.get("counter").await.unwrap();
-    let val = val.unwrap_or(0) + 1;
-    log::info!("got an update, increment counter by {}", val);
-    session.set("counter", &val).await.unwrap();
-    Ok(())
 }
 
 async fn get_counter(api: Ref<Api>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {

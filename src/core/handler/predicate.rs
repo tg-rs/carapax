@@ -160,12 +160,12 @@ mod tests {
         }
     }
 
-    async fn process_user(user: User) -> Result<(), ProcessError> {
+    async fn process_user(user: User) -> Result<HandlerResult, ProcessError> {
         log::info!("Processing user: {:?}", user);
         if user.id == 3 {
             Err(ProcessError)
         } else {
-            Ok(())
+            Ok(HandlerResult::Continue)
         }
     }
 
