@@ -5,8 +5,8 @@ use crate::{
         Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Text, Update, UpdateKind, User,
     },
 };
-use futures_util::future::{ok, BoxFuture, Ready};
-use std::{convert::Infallible, error::Error, fmt, future::Future};
+use futures_util::future::{ok, ready, BoxFuture, Ready};
+use std::{any::TypeId, convert::Infallible, error::Error, fmt, future::Future};
 use tgbot::types::InlineQuery;
 
 /// Allows to create a specific handler input
@@ -48,10 +48,18 @@ where
     T: Clone + Send + 'static,
 {
     type Future = Ready<Result<Option<Self>, Self::Error>>;
-    type Error = Infallible;
+    type Error = ConvertInputError;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.context.get::<T>().cloned().map(Ref::new))
+        ready(
+            input
+                .context
+                .get::<T>()
+                .cloned()
+                .map(Ref::new)
+                .ok_or_else(ConvertInputError::context::<T>)
+                .map(Some),
+        )
     }
 }
 
@@ -249,14 +257,14 @@ macro_rules! convert_tuple {
             )+
         {
             type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
-            type Error = ConvertUpdateError;
+            type Error = ConvertInputError;
 
             fn try_from_input(input: HandlerInput) -> Self::Future {
                 Box::pin(async move {
                     $(
                         let $T = match <$T>::try_from_input(
                             input.clone()
-                        ).await.map_err(ConvertUpdateError::new)? {
+                        ).await.map_err(ConvertInputError::tuple)? {
                             Some(v) => v,
                             None => return Ok(None)
                         };
@@ -279,25 +287,44 @@ convert_tuple!(A, B, C, D, E, F, G, H);
 convert_tuple!(A, B, C, D, E, F, G, H, I);
 convert_tuple!(A, B, C, D, E, F, G, H, I, J);
 
-/// An error when converting an update from a tuple
+/// An error when converting a [HandlerInput](strut.HandlerInput.html)
 #[derive(Debug)]
-pub struct ConvertUpdateError(Box<dyn Error + Send>);
+pub enum ConvertInputError {
+    /// Object not found in context
+    Context(TypeId),
+    /// Could not create a tuple
+    ///
+    /// Contains a first occurred error
+    Tuple(Box<dyn Error + Send>),
+}
 
-impl ConvertUpdateError {
-    fn new<E: Error + Send + 'static>(err: E) -> Self {
-        Self(Box::new(err))
+impl ConvertInputError {
+    fn context<T: 'static>() -> Self {
+        Self::Context(TypeId::of::<T>())
+    }
+
+    fn tuple<E: Error + Send + 'static>(err: E) -> Self {
+        Self::Tuple(Box::new(err))
     }
 }
 
-impl Error for ConvertUpdateError {
+impl Error for ConvertInputError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        self.0.source()
+        use self::ConvertInputError::*;
+        match self {
+            Context(_) => None,
+            Tuple(err) => err.source(),
+        }
     }
 }
 
-impl fmt::Display for ConvertUpdateError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.0, f)
+impl fmt::Display for ConvertInputError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        use self::ConvertInputError::*;
+        match self {
+            Context(type_id) => write!(out, "Object of type {:?} not found in context", type_id),
+            Tuple(err) => write!(out, "Unable to convert HandlerInput into tuple: {}", err),
+        }
     }
 }
 
