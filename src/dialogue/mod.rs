@@ -1,5 +1,5 @@
 use crate::{
-    core::{Handler, HandlerInput, HandlerResult, TryFromInput},
+    core::{Handler, HandlerInput, HandlerResult, PredicateResult, TryFromInput},
     session::CreateSessionError,
 };
 use futures_util::future::BoxFuture;
@@ -10,91 +10,122 @@ use std::{error::Error, fmt, marker::PhantomData};
 const SESSION_KEY_PREFIX: &str = "__carapax_dialogue";
 
 /// A decorator for dialogue handlers
-pub struct DialogueDecorator<B, H, HI> {
+pub struct DialogueDecorator<B, P, PI, H, HI, HS> {
     session_backend: PhantomData<B>,
+    predicate: P,
+    predicate_input: PhantomData<PI>,
     handler: H,
     handler_input: PhantomData<HI>,
+    handler_state: PhantomData<HS>,
 }
 
-impl<B, H, HI> Clone for DialogueDecorator<B, H, HI>
+impl<B, P, PI, H, HI, HS> Clone for DialogueDecorator<B, P, PI, H, HI, HS>
 where
+    P: Clone,
     H: Clone,
 {
     fn clone(&self) -> Self {
         DialogueDecorator {
             session_backend: self.session_backend,
+            predicate: self.predicate.clone(),
+            predicate_input: self.predicate_input,
             handler: self.handler.clone(),
             handler_input: self.handler_input,
+            handler_state: self.handler_state,
         }
     }
 }
 
-impl<B, H, HI> DialogueDecorator<B, H, HI> {
+impl<B, P, PI, H, HI, HS> DialogueDecorator<B, P, PI, H, HI, HS> {
     /// Creates a new DialogueDecorator
     ///
     /// # Arguments
     ///
+    /// * predicate - A predicate which allows to decide, should we start dialogue or not
     /// * handler - A dialogue handler
-    pub fn new(handler: H) -> Self {
+    pub fn new(predicate: P, handler: H) -> Self {
         Self {
             session_backend: PhantomData,
+            predicate,
+            predicate_input: PhantomData,
             handler,
             handler_input: PhantomData,
+            handler_state: PhantomData,
         }
     }
 }
 
-async fn handle_dialogue<B, H, HI, HO, HE>(handler: H, input: HandlerInput) -> Result<(), DialogueError>
+impl<B, P, PI, PO, H, HI, HR, HS, HE> Handler<HandlerInput> for DialogueDecorator<B, P, PI, H, HI, HS>
 where
     B: SessionBackend + Send + 'static,
-    H: Handler<HI, Output = Result<HO, HE>>,
+    P: Handler<PI, Output = PO> + 'static,
+    PI: TryFromInput,
+    PI::Error: 'static,
+    PO: Into<PredicateResult>,
+    H: Handler<HI, Output = Result<HR, HE>> + 'static,
     HI: TryFromInput,
     HI::Error: 'static,
-    HO: DialogueState,
+    HR: Into<DialogueResult<HS>>,
+    HS: DialogueState + Send + Sync,
     HE: Error + Send + 'static,
-{
-    let handler_input = match HI::try_from_input(input.clone())
-        .await
-        .map_err(|err| DialogueError::ConvertInput(Box::new(err)))?
-    {
-        Some(input) => input,
-        None => return Ok(()),
-    };
-    let handler_future = handler.handle(handler_input);
-    let state = handler_future
-        .await
-        .map_err(|err| DialogueError::Handle(Box::new(err)))?;
-    let mut session = <Session<B>>::try_from_input(input)
-        .await?
-        .expect("TryFromInput implementation for Session<B> never returns None");
-    let session_key = HO::session_key();
-    session
-        .set(session_key, &state)
-        .await
-        .map_err(DialogueError::SaveState)?;
-    Ok(())
-}
-
-impl<B, H, HI, HO, HE> Handler<HandlerInput> for DialogueDecorator<B, H, HI>
-where
-    H: Handler<HI, Output = Result<HO, HE>> + 'static,
-    HI: TryFromInput,
-    HI::Error: 'static,
-    HO: DialogueState + Send + Sync,
-    HE: Error + Send + 'static,
-    B: SessionBackend + Send + 'static,
 {
     type Output = HandlerResult;
     type Future = BoxFuture<'static, Self::Output>;
 
     fn handle(&self, input: HandlerInput) -> Self::Future {
+        let predicate = self.predicate.clone();
         let handler = self.handler.clone();
         Box::pin(async move {
-            let future = handle_dialogue::<B, H, HI, HO, HE>(handler, input);
-            match future.await {
-                Ok(()) => HandlerResult::Continue,
-                Err(err) => HandlerResult::Error(Box::new(err)),
+            let mut session = match <Session<B>>::try_from_input(input.clone()).await {
+                Ok(Some(session)) => session,
+                Ok(None) => unreachable!("TryFromInput implementation for Session<B> never returns None"),
+                Err(err) => return HandlerResult::Error(Box::new(err)),
+            };
+            let session_key = HS::session_key();
+            match session.get::<&str, HS>(&session_key).await {
+                Ok(Some(_)) => { /* We have dialogue state in session, so we must run dialog handler */ }
+                Ok(None) => {
+                    // Dialogue state not found in session, let's check predicate
+                    let predicate_input = match PI::try_from_input(input.clone()).await {
+                        Ok(Some(input)) => input,
+                        Ok(None) => return HandlerResult::Continue,
+                        Err(err) => return HandlerResult::Error(Box::new(err)),
+                    };
+                    let predicate_future = predicate.handle(predicate_input);
+                    match predicate_future.await.into() {
+                        PredicateResult::True => { /* Predicate returned true, so we must run dialog handler */ }
+                        PredicateResult::False(result) => return result,
+                    }
+                }
+                Err(err) => return HandlerResult::Error(Box::new(err)),
             }
+
+            let handler_input = match HI::try_from_input(input.clone()).await {
+                Ok(Some(input)) => input,
+                Ok(None) => return HandlerResult::Error(Box::new(DialogueError::ConvertHandlerInput)),
+                Err(err) => return HandlerResult::Error(Box::new(err)),
+            };
+            let handler_future = handler.handle(handler_input);
+            let result = match handler_future.await {
+                Ok(result) => result.into(),
+                Err(err) => return HandlerResult::Error(Box::new(err)),
+            };
+
+            match result {
+                DialogueResult::Next(state) => {
+                    if let Err(err) = session.set(session_key, &state).await {
+                        return HandlerResult::Error(Box::new(err));
+                    }
+                }
+                DialogueResult::Exit => {
+                    // Explicitly remove state from session in order to be sure that dialog will not run again
+                    if let Err(err) = session.remove(session_key).await {
+                        return HandlerResult::Error(Box::new(err));
+                    }
+                }
+            }
+
+            HandlerResult::Stop
         })
     }
 }
@@ -140,6 +171,24 @@ where
     }
 }
 
+/// Result of dialogue handler
+#[derive(Debug)]
+pub enum DialogueResult<S> {
+    /// Next state
+    Next(S),
+    /// Exit from dialogue
+    Exit,
+}
+
+impl<S> From<S> for DialogueResult<S>
+where
+    S: DialogueState,
+{
+    fn from(state: S) -> Self {
+        DialogueResult::Next(state)
+    }
+}
+
 /// Represents a state of dialogue
 pub trait DialogueState: Default + DeserializeOwned + Serialize {
     /// Unique name of dialogue
@@ -155,15 +204,11 @@ pub trait DialogueState: Default + DeserializeOwned + Serialize {
 #[derive(Debug)]
 pub enum DialogueError {
     /// Could not get input for dialogue handler
-    ConvertInput(Box<dyn Error + Send>),
+    ConvertHandlerInput,
     /// Failed to create session
     CreateSession(CreateSessionError),
-    /// Contains an error returned from dialogue handler
-    Handle(Box<dyn Error + Send>),
     /// Failed to load dialogue state
     LoadState(SessionError),
-    /// Failed to save dialogue state
-    SaveState(SessionError),
 }
 
 impl From<CreateSessionError> for DialogueError {
@@ -176,11 +221,9 @@ impl fmt::Display for DialogueError {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
         use self::DialogueError::*;
         match self {
-            ConvertInput(err) => write!(out, "Failed to convert input for dialogue handler: {}", err),
+            ConvertHandlerInput => write!(out, "Could not obtain input for dialogue handler"),
             CreateSession(err) => write!(out, "{}", err),
-            Handle(err) => write!(out, "Dialgoue handler: {}", err),
             LoadState(err) => write!(out, "Failed to load dialogue state: {}", err),
-            SaveState(err) => write!(out, "Failed to save dialogue state: {}", err),
         }
     }
 }
@@ -189,12 +232,30 @@ impl Error for DialogueError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         use self::DialogueError::*;
         match self {
+            ConvertHandlerInput => None,
             CreateSession(err) => Some(err),
             LoadState(err) => Some(err),
-            SaveState(err) => Some(err),
-            _ => None,
         }
     }
+}
+
+/// Dialogue shortcuts
+pub trait DialogueExt<P, PI, HI, HS>: Sized {
+    /// Shortcut to create a new dialogue decorator (`handler.dialogue(predicate)`)
+    ///
+    /// # Arguments
+    ///
+    /// * predicate - A predicate for dialogue
+    fn dialogue<B>(self, predicate: P) -> DialogueDecorator<B, P, PI, Self, HI, HS> {
+        DialogueDecorator::new(predicate, self)
+    }
+}
+
+impl<P, PI, H, HI, HS> DialogueExt<P, PI, HI, HS> for H
+where
+    H: Handler<HI>,
+    HI: TryFromInput,
+{
 }
 
 #[cfg(test)]
@@ -203,7 +264,7 @@ mod tests {
     use crate::{
         core::Context,
         session::{backend::fs::FilesystemBackend, SessionManager},
-        types::Update,
+        types::Text,
     };
     use serde::Deserialize;
     use std::{convert::Infallible, sync::Arc};
@@ -212,7 +273,7 @@ mod tests {
     #[derive(Clone, Copy, Deserialize, Serialize)]
     enum StateMock {
         Start,
-        Stop,
+        Step,
     }
 
     impl Default for StateMock {
@@ -229,25 +290,30 @@ mod tests {
 
     type InputMock = DialogueInput<StateMock, FilesystemBackend>;
 
-    async fn dialogue_handler(input: InputMock) -> Result<StateMock, Infallible> {
+    async fn dialogue_predicate(text: Text) -> bool {
+        text.data == "start"
+    }
+
+    async fn dialogue_handler(input: InputMock) -> Result<DialogueResult<StateMock>, Infallible> {
         Ok(match input.state {
-            StateMock::Start => StateMock::Stop,
-            StateMock::Stop => StateMock::Start,
+            StateMock::Start => StateMock::Step.into(),
+            StateMock::Step => DialogueResult::Exit,
         })
     }
 
-    fn create_update() -> Update {
-        serde_json::from_value(serde_json::json!({
+    fn create_input(context: Arc<Context>, text: &str) -> HandlerInput {
+        let update = serde_json::from_value(serde_json::json!({
             "update_id": 1,
             "message": {
                 "message_id": 1111,
                 "date": 0,
                 "from": {"id": 1, "is_bot": false, "first_name": "test"},
                 "chat": {"id": 1, "type": "private", "first_name": "test"},
-                "text": "test message from private chat"
+                "text": text
             }
         }))
-        .unwrap()
+        .unwrap();
+        HandlerInput { context, update }
     }
 
     #[tokio::test]
@@ -257,31 +323,29 @@ mod tests {
         let mut context = Context::default();
         let session_manager = SessionManager::new(backend);
         context.insert(session_manager.clone());
-        let handler = <DialogueDecorator<FilesystemBackend, _, _>>::new(dialogue_handler);
-        let input = HandlerInput {
-            context: Arc::new(context),
-            update: create_update(),
-        };
-        assert!(matches!(handler.handle(input.clone()).await, HandlerResult::Continue));
+        let context = Arc::new(context);
+        let handler = dialogue_handler.dialogue::<FilesystemBackend>(dialogue_predicate);
+
+        let input = create_input(context.clone(), "start");
 
         let mut session = <Session<FilesystemBackend>>::try_from_input(input.clone())
             .await
             .expect("Failed to get session")
             .expect("Session is None");
-        let state: StateMock = session
-            .get(StateMock::session_key())
-            .await
-            .expect("Failed to get state")
-            .expect("State is None");
-        assert!(matches!(state, StateMock::Stop));
+        let session_key = StateMock::session_key();
 
-        assert!(matches!(handler.handle(input.clone()).await, HandlerResult::Continue));
+        macro_rules! assert_state_matches {
+            ($state:pat) => {{
+                let state: Option<StateMock> = session.get(&session_key).await.expect("Failed to get state");
+                assert!(matches!(state, $state));
+            }};
+        }
 
-        let state: StateMock = session
-            .get(StateMock::session_key())
-            .await
-            .expect("Failed to get state")
-            .expect("State is None");
-        assert!(matches!(state, StateMock::Start));
+        assert!(matches!(handler.handle(input).await, HandlerResult::Stop));
+        assert_state_matches!(Some(StateMock::Step));
+
+        let input = create_input(context.clone(), "step");
+        assert!(matches!(handler.handle(input).await, HandlerResult::Stop));
+        assert_state_matches!(None);
     }
 }

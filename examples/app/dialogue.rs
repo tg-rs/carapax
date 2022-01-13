@@ -1,16 +1,16 @@
 use crate::error::AppError;
 use carapax::{
-    dialogue::{DialogueDecorator, DialogueInput, DialogueState},
+    dialogue::{DialogueExt, DialogueInput, DialogueResult, DialogueState},
     methods::SendMessage,
     session::backend::fs::FilesystemBackend,
     types::ChatId,
-    Api, Chain, Ref,
+    Api, Chain, CommandPredicate, Ref,
 };
 use serde::{Deserialize, Serialize};
 use tgbot::types::Text;
 
 pub fn setup(chain: &mut Chain) {
-    chain.add_handler(<DialogueDecorator<FilesystemBackend, _, _>>::new(example_dialogue));
+    chain.add_handler(example_dialogue.dialogue::<FilesystemBackend>(CommandPredicate::new("/dialogue")));
 }
 
 type ExampleDialogueInput = DialogueInput<ExampleDialogueState, FilesystemBackend>;
@@ -39,18 +39,18 @@ async fn example_dialogue(
     chat_id: ChatId,
     input: ExampleDialogueInput,
     text: Text,
-) -> Result<ExampleDialogueState, AppError> {
-    match input.state {
+) -> Result<DialogueResult<ExampleDialogueState>, AppError> {
+    let state = match input.state {
         ExampleDialogueState::Start => {
             api.execute(SendMessage::new(chat_id, "What is your first name?"))
                 .await?;
-            Ok(ExampleDialogueState::FirstName)
+            ExampleDialogueState::FirstName
         }
         ExampleDialogueState::FirstName => {
             let first_name = text.data.clone();
             api.execute(SendMessage::new(chat_id, "What is your last name?"))
                 .await?;
-            Ok(ExampleDialogueState::LastName { first_name })
+            ExampleDialogueState::LastName { first_name }
         }
         ExampleDialogueState::LastName { first_name } => {
             let last_name = &text.data;
@@ -59,7 +59,8 @@ async fn example_dialogue(
                 format!("Your name is: {} {}", first_name, last_name),
             ))
             .await?;
-            Ok(ExampleDialogueState::Start)
+            return Ok(DialogueResult::Exit);
         }
-    }
+    };
+    Ok(state.into())
 }
