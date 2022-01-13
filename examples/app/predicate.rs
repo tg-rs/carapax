@@ -2,11 +2,11 @@ use crate::error::AppError;
 use carapax::{
     methods::SendMessage,
     types::{ChatId, Text},
-    Api, Dispatcher, PredicateExt, Ref,
+    Api, DispatcherBuilder, PredicateExt, Ref,
 };
 
-pub fn setup(dispatcher: &mut Dispatcher) {
-    dispatcher.add_handler(pong.predicate(is_ping));
+pub fn setup(builder: &mut DispatcherBuilder) {
+    builder.add_handler(pong.predicate(is_ping));
 }
 
 async fn is_ping(text: Text) -> bool {

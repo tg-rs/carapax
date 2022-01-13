@@ -4,13 +4,13 @@ use carapax::{
     methods::SendMessage,
     session::backend::fs::FilesystemBackend,
     types::ChatId,
-    Api, Dispatcher, Ref,
+    Api, DispatcherBuilder, Ref,
 };
 use serde::{Deserialize, Serialize};
 use tgbot::types::Text;
 
-pub fn setup(dispatcher: &mut Dispatcher) {
-    dispatcher.add_handler(<DialogueDecorator<FilesystemBackend, _, _>>::new(example_dialogue));
+pub fn setup(builder: &mut DispatcherBuilder) {
+    builder.add_handler(<DialogueDecorator<FilesystemBackend, _, _>>::new(example_dialogue));
 }
 
 type ExampleDialogueInput = DialogueInput<ExampleDialogueState, FilesystemBackend>;

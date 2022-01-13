@@ -1,4 +1,4 @@
-use carapax::{longpoll::LongPoll, Api, Config, Context, Dispatcher};
+use carapax::{longpoll::LongPoll, Api, App, Config, Context, DispatcherBuilder};
 use dotenv::dotenv;
 use seance::{backend::fs::FilesystemBackend, SessionCollector, SessionManager};
 use std::{env, time::Duration};
@@ -29,18 +29,22 @@ async fn main() {
     let session_manager = SessionManager::new(session_backend);
     context.insert(session_manager);
 
-    let mut dispatcher = Dispatcher::new(context);
+    let mut builder = DispatcherBuilder::default();
     if let Ok(username) = env::var("CARAPAX_ACCESS_USERNAME") {
-        access::setup(&mut dispatcher, &username);
+        access::setup(&mut builder, &username);
     }
-    command::setup(&mut dispatcher);
-    dialogue::setup(&mut dispatcher);
-    predicate::setup(&mut dispatcher);
+    command::setup(&mut builder);
+    dialogue::setup(&mut builder);
+    predicate::setup(&mut builder);
+    session::setup(&mut builder);
+
+    let mut dispatcher = builder.build();
     if let Ok(ratelimit_strategy) = env::var("CARAPAX_RATE_LIMIT_STRATEGY") {
-        ratelimit::setup(&mut dispatcher, &ratelimit_strategy);
+        dispatcher = ratelimit::setup(dispatcher, &ratelimit_strategy);
     }
-    session::setup(&mut dispatcher);
-    LongPoll::new(api, dispatcher).run().await
+
+    let app = App::new(context, dispatcher);
+    LongPoll::new(api, app).run().await
 }
 
 fn get_env(s: &str) -> String {

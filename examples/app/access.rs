@@ -1,14 +1,15 @@
 use carapax::{
     access::{AccessExt, AccessRule, InMemoryAccessPolicy},
     types::Update,
-    Dispatcher,
+    DispatcherBuilder, HandlerResult,
 };
 
-pub fn setup(dispatcher: &mut Dispatcher, username: &str) {
+pub fn setup(builder: &mut DispatcherBuilder, username: &str) {
     let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user(username)]);
-    dispatcher.add_handler(log_protected.access(policy));
+    builder.add_handler(log_protected.access(policy));
 }
 
-async fn log_protected(update: Update) {
+async fn log_protected(update: Update) -> HandlerResult {
     log::info!("Got a new update in protected handler: {:?}", update);
+    HandlerResult::Continue
 }
