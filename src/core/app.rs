@@ -2,10 +2,7 @@ use crate::{
     core::{
         context::Context,
         dispatcher::Dispatcher,
-        handler::base::{
-            BoxedErrorHandler, ConvertErrorHandler, ErrorHandler, Handler, HandlerInput, HandlerResult,
-            LoggingErrorHandler,
-        },
+        handler::{Handler, HandlerError, HandlerInput, HandlerResult},
     },
     types::Update,
     UpdateHandler,
@@ -81,11 +78,58 @@ impl UpdateHandler for App {
     }
 }
 
+/// Allows to process errors returned by handlers
+pub trait ErrorHandler: Send {
+    /// A future returned by `handle` method
+    type Future: Future<Output = ()> + Send;
+
+    /// Handles a errors
+    ///
+    /// # Arguments
+    ///
+    /// * err - An error to handle
+    fn handle(&self, err: HandlerError) -> Self::Future;
+}
+
+type BoxedErrorHandler = Box<dyn ErrorHandler<Future = BoxFuture<'static, ()>> + Sync>;
+
+struct ConvertErrorHandler<H>(H);
+
+impl<H> ConvertErrorHandler<H> {
+    pub(in crate::core) fn boxed(handler: H) -> Box<Self> {
+        Box::new(Self(handler))
+    }
+}
+
+impl<H> ErrorHandler for ConvertErrorHandler<H>
+where
+    H: ErrorHandler,
+    H::Future: 'static,
+{
+    type Future = BoxFuture<'static, ()>;
+
+    fn handle(&self, err: HandlerError) -> Self::Future {
+        Box::pin(self.0.handle(err))
+    }
+}
+
+/// Writes an error to log
+pub struct LoggingErrorHandler;
+
+impl ErrorHandler for LoggingErrorHandler {
+    type Future = BoxFuture<'static, ()>;
+
+    fn handle(&self, err: HandlerError) -> Self::Future {
+        Box::pin(async move {
+            log::error!("An error has occurred: {}", err);
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{context::Ref, dispatcher::DispatcherBuilder, handler::HandlerError};
-    use futures_util::future::BoxFuture;
+    use crate::core::{context::Ref, dispatcher::DispatcherBuilder};
     use std::{error::Error, fmt};
     use tokio::sync::Mutex;
 

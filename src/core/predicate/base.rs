@@ -1,6 +1,10 @@
-use crate::core::{Handler, HandlerResult, TryFromInput};
+use crate::core::{
+    convert::TryFromInput,
+    handler::{Handler, HandlerResult},
+    predicate::result::PredicateResult,
+};
 use futures_util::future::BoxFuture;
-use std::{error::Error, marker::PhantomData};
+use std::marker::PhantomData;
 
 /// A predicate decorator
 ///
@@ -36,11 +40,11 @@ impl<P, PI, H, HI> Handler<(PI, HI)> for Predicate<P, PI, H, HI>
 where
     P: Handler<PI> + Clone + 'static,
     P::Output: Into<PredicateResult>,
-    PI: TryFromInput + 'static,
+    PI: TryFromInput + Clone + 'static,
     PI::Error: 'static,
     H: Handler<HI> + Clone + 'static,
     H::Output: Into<HandlerResult>,
-    HI: TryFromInput + 'static,
+    HI: TryFromInput + Clone + 'static,
     HI::Error: 'static,
 {
     type Output = HandlerResult;
@@ -60,59 +64,6 @@ where
             }
         })
     }
-}
-
-/// A predicate result
-#[derive(Debug)]
-pub enum PredicateResult {
-    /// Decorated handler will run
-    True,
-    /// Decorated handler will not run
-    ///
-    /// `HandlerResult` allows to decide, will next handler run or not.
-    False(HandlerResult),
-}
-
-impl From<bool> for PredicateResult {
-    fn from(value: bool) -> Self {
-        if value {
-            PredicateResult::True
-        } else {
-            PredicateResult::False(HandlerResult::Continue)
-        }
-    }
-}
-
-impl<T, E> From<Result<T, E>> for PredicateResult
-where
-    T: Into<PredicateResult>,
-    E: Error + Send + 'static,
-{
-    fn from(value: Result<T, E>) -> Self {
-        match value {
-            Ok(value) => value.into(),
-            Err(err) => PredicateResult::False(HandlerResult::Error(Box::new(err))),
-        }
-    }
-}
-
-/// Predicate shortcuts
-pub trait PredicateExt<P, PI, HI>: Sized {
-    /// Shortcut to create a new predicate decorator (`handler.predicate(predicate)`)
-    ///
-    /// # Arguments
-    ///
-    /// * predicate - A predicate handler
-    fn predicate(self, predicate: P) -> Predicate<P, PI, Self, HI> {
-        Predicate::new(predicate, self)
-    }
-}
-
-impl<P, PI, H, HI> PredicateExt<P, PI, HI> for H
-where
-    H: Handler<HI>,
-    HI: TryFromInput,
-{
 }
 
 #[cfg(test)]
@@ -178,20 +129,5 @@ mod tests {
         fn fmt(&self, out: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(out, "Process error")
         }
-    }
-
-    #[test]
-    fn convert_result() {
-        assert!(matches!(true.into(), PredicateResult::True));
-        assert!(matches!(false.into(), PredicateResult::False(HandlerResult::Continue)));
-        assert!(matches!(Ok::<bool, ProcessError>(true).into(), PredicateResult::True));
-        assert!(matches!(
-            Ok::<bool, ProcessError>(false).into(),
-            PredicateResult::False(HandlerResult::Continue)
-        ));
-        assert!(matches!(
-            Err::<bool, ProcessError>(ProcessError).into(),
-            PredicateResult::False(HandlerResult::Error(_))
-        ));
     }
 }
