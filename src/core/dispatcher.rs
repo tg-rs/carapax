@@ -1,121 +1,133 @@
-use crate::{
-    core::{
-        context::Context,
-        convert::TryFromInput,
-        handler::base::{
-            BoxedErrorHandler, BoxedHandler, ConvertErrorHandler, ConvertHandler, ErrorHandler, Handler, HandlerInput,
-            HandlerResult, LoggingErrorHandler,
-        },
-    },
-    types::Update,
-    UpdateHandler,
+use crate::core::{
+    convert::TryFromInput,
+    handler::base::{Handler, HandlerInput, HandlerResult},
 };
 use futures_util::future::BoxFuture;
-use std::{future::Future, sync::Arc};
+use std::{any::type_name, future::Future, marker::PhantomData, sync::Arc};
 
-/// Updates dispatcher
-///
-/// Implements [UpdateHandler](trait.UpdateHandler.html) trait, so you can use it
-/// in [LongPoll](longpoll/struct.LongPoll.html) struct
-/// or [webhook::run_server](webhook/fn.run_server.html) function.
-pub struct Dispatcher {
-    context: Arc<Context>,
-    handlers: Vec<BoxedHandler>,
-    error_handler: Arc<BoxedErrorHandler>,
+/// A builder for dispatcher
+#[derive(Default)]
+pub struct DispatcherBuilder {
+    handlers: Vec<Box<dyn InputHandler + Sync>>,
 }
 
-impl Dispatcher {
-    /// Creates a new Dispatcher
+impl DispatcherBuilder {
+    /// Adds a handler
     ///
     /// # Arguments
     ///
-    /// * context - A context to share data between handlers
-    pub fn new(context: Context) -> Self {
-        Self {
-            context: Arc::new(context),
-            handlers: Vec::new(),
-            error_handler: Arc::new(Box::new(LoggingErrorHandler)),
-        }
-    }
-
-    /// Adds a handler to dispatcher
-    ///
-    /// # Arguments
-    ///
-    /// * handler - A handler to add
+    /// * handler - Handler to add
     ///
     /// Handlers will be dispatched in the same order as they are added
     pub fn add_handler<H, I>(&mut self, handler: H) -> &mut Self
     where
         H: Handler<I> + Sync + Clone + 'static,
-        I: TryFromInput + 'static,
+        I: TryFromInput + Sync + 'static,
         <H::Future as Future>::Output: Into<HandlerResult>,
     {
-        self.handlers.push(ConvertHandler::boxed(handler));
+        self.handlers.push(ConvertInputHandler::boxed(handler));
         self
     }
 
-    /// Sets a handler to be executed when an error has occurred
-    ///
-    /// # Arguments
-    ///
-    /// * handler - A handler to set
-    ///
-    /// Error handler will be called if one of update handlers returned
-    /// [HandlerResult::Error](enum.HandlerResult.html)
-    ///
-    /// If this method is not called,
-    /// [LoggingErrorHandler](struct.LoggingErrorHandler.html)
-    /// will be used as default handler.
-    pub fn set_error_handler<H>(&mut self, handler: H) -> &mut Self
-    where
-        H: ErrorHandler + Sync + 'static,
-    {
-        self.error_handler = Arc::new(ConvertErrorHandler::boxed(handler));
-        self
-    }
-
-    fn dispatch(&self, update: Update) -> impl Future<Output = ()> {
-        let input = HandlerInput {
-            update,
-            context: self.context.clone(),
-        };
-        let futures: Vec<_> = self.handlers.iter().map(|h| h.handle(input.clone())).collect();
-        let error_handler = self.error_handler.clone();
-        async move {
-            for future in futures {
-                let result = future.await;
-                match result {
-                    HandlerResult::Continue => {}
-                    HandlerResult::Stop => break,
-                    HandlerResult::Error(err) => {
-                        error_handler.handle(err).await;
-                        break;
-                    }
-                }
-            }
+    /// Creates a new dispatcher
+    pub fn build(self) -> Dispatcher {
+        Dispatcher {
+            handlers: Arc::new(self.handlers),
         }
     }
 }
 
-impl UpdateHandler for Dispatcher {
-    type Future = BoxFuture<'static, ()>;
+/// Updates dispatcher
+#[derive(Clone)]
+pub struct Dispatcher {
+    handlers: Arc<Vec<Box<dyn InputHandler + Sync>>>,
+}
 
-    fn handle(&self, update: Update) -> Self::Future {
-        Box::pin(self.dispatch(update))
+impl Dispatcher {
+    fn dispatch(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> {
+        let handlers = self.handlers.clone();
+        async move {
+            for handler in handlers.iter() {
+                let type_name = handler.get_type_name();
+                log::debug!("Running '{}' handler...", type_name);
+                let result = handler.handle(input.clone()).await;
+                if matches!(result, HandlerResult::Stop | HandlerResult::Error(_)) {
+                    log::debug!("'{}' handler returned {:?}, loop stopped", type_name, result);
+                    return result;
+                }
+            }
+            HandlerResult::Stop
+        }
+    }
+}
+
+impl Handler<HandlerInput> for Dispatcher {
+    type Output = HandlerResult;
+    type Future = BoxFuture<'static, Self::Output>;
+
+    fn handle(&self, input: HandlerInput) -> Self::Future {
+        Box::pin(self.dispatch(input))
+    }
+}
+
+trait InputHandler: Send {
+    fn handle(&self, input: HandlerInput) -> BoxFuture<'static, HandlerResult>;
+
+    fn get_type_name(&self) -> &'static str {
+        type_name::<Self>()
+    }
+}
+
+#[derive(Clone)]
+struct ConvertInputHandler<H, I> {
+    handler: H,
+    input: PhantomData<I>,
+}
+
+impl<H, I> ConvertInputHandler<H, I> {
+    pub(in crate::core) fn boxed(handler: H) -> Box<Self> {
+        Box::new(Self {
+            handler,
+            input: PhantomData,
+        })
+    }
+}
+
+impl<H, I> InputHandler for ConvertInputHandler<H, I>
+where
+    H: Handler<I> + 'static,
+    I: TryFromInput,
+    I::Error: 'static,
+    <H::Future as Future>::Output: Into<HandlerResult>,
+{
+    fn handle(&self, input: HandlerInput) -> BoxFuture<'static, HandlerResult> {
+        let handler = self.handler.clone();
+        Box::pin(async move {
+            match I::try_from_input(input).await {
+                Ok(Some(input)) => {
+                    let future = handler.handle(input);
+                    future.await.into()
+                }
+                Ok(None) => HandlerResult::Continue,
+                Err(err) => HandlerResult::Error(Box::new(err)),
+            }
+        })
+    }
+
+    fn get_type_name(&self) -> &'static str {
+        type_name::<H>()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{context::Ref, handler::HandlerError};
-    use futures_util::future::FutureExt;
-    use std::{error::Error, fmt};
-    use tokio::sync::{
-        mpsc::{channel, Sender},
-        Mutex,
+    use crate::{
+        core::context::{Context, Ref},
+        types::Update,
     };
+    use std::{error::Error, fmt};
+    use tokio::sync::Mutex;
 
     #[derive(Clone)]
     struct UpdateStore(Arc<Mutex<Vec<Update>>>);
@@ -175,61 +187,37 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn dispatch_default() {
+    async fn dispatcher() {
         macro_rules! assert_dispatch {
             ($count:expr, $($handler:expr),*) => {{
                 let mut context = Context::default();
                 context.insert(UpdateStore::new());
-                let mut dispatcher = Dispatcher::new(context);
-                $(dispatcher.add_handler($handler);)*
+                let context = Arc::new(context);
+                let mut builder = DispatcherBuilder::default();
+                $(builder.add_handler($handler);)*
+                let dispatcher = builder.build();
                 let update = create_update();
-                dispatcher.dispatch(update).await;
-                let count = dispatcher.context.get::<UpdateStore>().unwrap().count().await;
+                let input = HandlerInput {
+                    context: context.clone(),
+                    update
+                };
+                let result = dispatcher.dispatch(input).await;
+                let count = context.get::<UpdateStore>().unwrap().count().await;
                 assert_eq!(count, $count);
+                result
             }};
         }
-        assert_dispatch!(2, handler_continue, handler_stop, handler_error);
-        assert_dispatch!(1, handler_stop, handler_continue, handler_error);
-        assert_dispatch!(1, handler_error, handler_stop, handler_continue);
-    }
 
-    struct MockErrorHandler {
-        sender: Arc<Sender<HandlerError>>,
-    }
+        let result = assert_dispatch!(2, handler_continue, handler_stop, handler_error);
+        assert!(matches!(result, HandlerResult::Stop));
 
-    impl MockErrorHandler {
-        fn new(sender: Sender<HandlerError>) -> Self {
-            MockErrorHandler {
-                sender: Arc::new(sender),
-            }
-        }
-    }
+        let result = assert_dispatch!(1, handler_stop, handler_continue, handler_error);
+        assert!(matches!(result, HandlerResult::Stop));
 
-    impl ErrorHandler for MockErrorHandler {
-        type Future = BoxFuture<'static, ()>;
+        let result = assert_dispatch!(1, handler_error, handler_stop, handler_continue);
+        assert!(matches!(result, HandlerResult::Error(_)));
 
-        fn handle(&self, err: HandlerError) -> Self::Future {
-            let sender = self.sender.clone();
-            Box::pin(async move {
-                sender.send(err).await.unwrap();
-            })
-        }
-    }
-
-    #[tokio::test]
-    async fn dispatch_custom_error_handler() {
-        let update = create_update();
-        let mut context = Context::default();
-        context.insert(UpdateStore::new());
-        let mut dispatcher = Dispatcher::new(context);
-        dispatcher.add_handler(handler_error);
-        dispatcher.add_handler(handler_continue);
-        let (tx, mut rx) = channel(1);
-        dispatcher.set_error_handler(MockErrorHandler::new(tx));
-        dispatcher.dispatch(update.clone()).await;
-        rx.close();
-        let count = dispatcher.context.get::<UpdateStore>().unwrap().count().await;
-        assert_eq!(count, 1);
-        assert!(rx.recv().now_or_never().is_some());
+        let result = assert_dispatch!(2, handler_continue, handler_continue);
+        assert!(matches!(result, HandlerResult::Stop));
     }
 }
