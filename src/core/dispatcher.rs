@@ -1,6 +1,6 @@
 use crate::core::{
     convert::TryFromInput,
-    handler::base::{Handler, HandlerInput, HandlerResult},
+    handler::{Handler, HandlerInput, HandlerResult},
 };
 use futures_util::future::BoxFuture;
 use std::{any::type_name, future::Future, marker::PhantomData, sync::Arc};

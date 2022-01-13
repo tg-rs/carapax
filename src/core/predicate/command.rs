@@ -1,10 +1,7 @@
 use crate::{
     core::{
-        convert::TryFromInput,
-        handler::{
-            predicate::{Predicate, PredicateResult},
-            Handler, HandlerResult,
-        },
+        handler::{Handler, HandlerResult},
+        predicate::PredicateResult,
     },
     types::Command,
 };
@@ -38,25 +35,6 @@ impl Handler<Command> for CommandPredicate {
             PredicateResult::False(HandlerResult::Continue)
         })
     }
-}
-
-/// Command shortcuts
-pub trait CommandExt<I>: Sized {
-    /// Shortcut to create a command handler (`handler.command("/name")`)
-    ///
-    /// # Arguments
-    ///
-    /// * name - Command name with leading `/`
-    fn command<S: Into<String>>(self, name: S) -> Predicate<CommandPredicate, Command, Self, I> {
-        Predicate::new(CommandPredicate::new(name), self)
-    }
-}
-
-impl<H, I> CommandExt<I> for H
-where
-    H: Handler<I>,
-    I: TryFromInput,
-{
 }
 
 #[cfg(test)]
