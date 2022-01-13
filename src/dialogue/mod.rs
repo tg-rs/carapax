@@ -66,11 +66,11 @@ where
 impl<B, H, HI, HO, HE> Handler<HandlerInput> for DialogueDecorator<B, H, HI>
 where
     H: Handler<HI, Output = Result<HO, HE>> + Clone + 'static,
-    HI: TryFromInput,
+    HI: TryFromInput + Clone,
     HI::Error: 'static,
     HO: DialogueState + Send + Sync,
     HE: Error + Send + 'static,
-    B: SessionBackend + Send + 'static,
+    B: SessionBackend + Clone + Send + 'static,
 {
     type Output = HandlerResult;
     type Future = BoxFuture<'static, Self::Output>;
