@@ -2,7 +2,7 @@ use carapax::{
     longpoll::LongPoll,
     methods::SendMessage,
     types::{ChatId, Text},
-    Api, Context, Dispatcher, ExecuteError, Ref,
+    Api, App, Context, DispatcherBuilder, ExecuteError, Ref,
 };
 use dotenv::dotenv;
 use std::env;
@@ -24,8 +24,10 @@ async fn main() {
     let mut context = Context::default();
     context.insert(api.clone());
 
-    let mut dispatcher = Dispatcher::new(context);
-    dispatcher.add_handler(echo);
+    let mut builder = DispatcherBuilder::default();
+    builder.add_handler(echo);
 
-    LongPoll::new(api, dispatcher).run().await
+    let dispatcher = builder.build();
+    let app = App::new(context, dispatcher);
+    LongPoll::new(api, app).run().await
 }

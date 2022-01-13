@@ -2,11 +2,11 @@ use crate::error::AppError;
 use carapax::{
     methods::SendMessage,
     types::{ChatId, User},
-    Api, CommandExt, Dispatcher, Ref,
+    Api, CommandExt, DispatcherBuilder, Ref,
 };
 
-pub fn setup(dispatcher: &mut Dispatcher) {
-    dispatcher.add_handler(greet.command("/hello"));
+pub fn setup(builder: &mut DispatcherBuilder) {
+    builder.add_handler(greet.command("/hello"));
 }
 
 async fn greet(api: Ref<Api>, chat_id: ChatId, user: User) -> Result<(), AppError> {

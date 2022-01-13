@@ -3,53 +3,50 @@ use carapax::{
     methods::SendMessage,
     session::{backend::fs::FilesystemBackend, Session},
     types::{ChatId, Command},
-    Api, CommandExt, Dispatcher, Ref,
+    Api, CommandExt, DispatcherBuilder, Ref,
 };
 
-pub fn setup(dispatcher: &mut Dispatcher) {
-    dispatcher
-        .add_handler(get_counter.command("/cget"))
-        .add_handler(set_counter.command("/cset"))
-        .add_handler(expire_counter.command("/cexpire"))
-        .add_handler(reset_counter.command("/creset"));
+const KEY: &str = "example-session-key";
+
+pub fn setup(builder: &mut DispatcherBuilder) {
+    builder
+        .add_handler(get.command("/sget"))
+        .add_handler(set.command("/sset"))
+        .add_handler(expire.command("/sexpire"))
+        .add_handler(reset.command("/sdel"));
 }
 
-async fn get_counter(api: Ref<Api>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
-    log::info!("/cget");
-    let val: Option<usize> = session.get("counter").await?;
+async fn get(api: Ref<Api>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
+    log::info!("/sget");
+    let val: Option<String> = session.get(KEY).await?;
     api.execute(SendMessage::new(
         chat_id,
-        format!("Counter value: {}", val.unwrap_or(0)),
+        format!("Value: {}", val.unwrap_or_else(|| String::from("None"))),
     ))
     .await?;
     Ok(())
 }
 
-async fn set_counter(
+async fn set(
     api: Ref<Api>,
     mut session: Session<FilesystemBackend>,
     chat_id: ChatId,
     command: Command,
 ) -> Result<(), AppError> {
     let args = command.get_args();
-    let val = if args.is_empty() {
-        0
-    } else {
-        match args[0].parse::<usize>() {
-            Ok(x) => x,
-            Err(err) => {
-                api.execute(SendMessage::new(chat_id, err.to_string())).await?;
-                return Ok(());
-            }
-        }
-    };
-    log::info!("/cset {}", val);
-    session.set("counter", &val).await?;
+    if args.is_empty() {
+        api.execute(SendMessage::new(chat_id, "You need to provide a value"))
+            .await?;
+        return Ok(());
+    }
+    let val = &args[0];
+    log::info!("/sset {}", val);
+    session.set(KEY, &val).await?;
     api.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())
 }
 
-async fn expire_counter(
+async fn expire(
     api: Ref<Api>,
     mut session: Session<FilesystemBackend>,
     chat_id: ChatId,
@@ -62,24 +59,24 @@ async fn expire_counter(
         match args[0].parse::<u64>() {
             Ok(x) => x,
             Err(err) => {
-                api.execute(SendMessage::new(chat_id, err.to_string())).await?;
+                api.execute(SendMessage::new(
+                    chat_id,
+                    format!("Number of seconds is invalid: {}", err.to_string()),
+                ))
+                .await?;
                 return Ok(());
             }
         }
     };
-    log::info!("/cexpire {}", seconds);
-    session.expire("counter", seconds).await?;
+    log::info!("/sexpire {}", seconds);
+    session.expire(KEY, seconds).await?;
     api.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())
 }
 
-async fn reset_counter(
-    api: Ref<Api>,
-    mut session: Session<FilesystemBackend>,
-    chat_id: ChatId,
-) -> Result<(), AppError> {
-    log::info!("/creset");
-    session.remove("counter").await.unwrap();
+async fn reset(api: Ref<Api>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
+    log::info!("/sdel");
+    session.remove(KEY).await.unwrap();
     api.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())
 }
