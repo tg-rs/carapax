@@ -2,7 +2,7 @@ use carapax::{
     ratelimit::{
         nonzero, DirectRateLimitPredicate, Jitter, KeyChat, KeyChatUser, KeyUser, KeyedRateLimitPredicate, Quota,
     },
-    Dispatcher, DispatcherBuilder, Predicate,
+    Dispatcher, DispatcherBuilder, PredicateExt,
 };
 use std::time::Duration;
 
@@ -14,34 +14,26 @@ pub fn setup(dispatcher: Dispatcher, strategy: &str) -> Dispatcher {
     let mut builder = DispatcherBuilder::default();
     match strategy {
         "direct_discard" => {
-            builder.add_handler(Predicate::new(DirectRateLimitPredicate::discard(quota), dispatcher));
+            builder.add_handler(dispatcher.predicate(DirectRateLimitPredicate::discard(quota)));
         }
         "direct_wait" => {
-            builder.add_handler(Predicate::new(DirectRateLimitPredicate::wait(quota), dispatcher));
+            builder.add_handler(dispatcher.predicate(DirectRateLimitPredicate::wait(quota)));
         }
         "direct_wait_with_jitter" => {
-            builder.add_handler(Predicate::new(
-                DirectRateLimitPredicate::wait_with_jitter(quota, jitter),
-                dispatcher,
-            ));
+            builder.add_handler(dispatcher.predicate(DirectRateLimitPredicate::wait_with_jitter(quota, jitter)));
         }
         "keyed_discard" => {
-            builder.add_handler(Predicate::new(
-                <KeyedRateLimitPredicate<KeyChat, _, _>>::discard(quota),
-                dispatcher,
-            ));
+            builder.add_handler(dispatcher.predicate(<KeyedRateLimitPredicate<KeyChat, _, _>>::discard(quota)));
         }
         "keyed_wait" => {
-            builder.add_handler(Predicate::new(
-                <KeyedRateLimitPredicate<KeyUser, _, _>>::wait(quota),
-                dispatcher,
-            ));
+            builder.add_handler(dispatcher.predicate(<KeyedRateLimitPredicate<KeyUser, _, _>>::wait(quota)));
         }
         "keyed_wait_with_jitter" => {
-            builder.add_handler(Predicate::new(
-                <KeyedRateLimitPredicate<KeyChatUser, _, _>>::wait_with_jitter(quota, jitter),
-                dispatcher,
-            ));
+            builder.add_handler(
+                dispatcher.predicate(<KeyedRateLimitPredicate<KeyChatUser, _, _>>::wait_with_jitter(
+                    quota, jitter,
+                )),
+            );
         }
         key => panic!("Unknown ratelimit stragey: {}", key),
     }
