@@ -1,10 +1,10 @@
 use carapax::{
     access::{AccessExt, AccessRule, InMemoryAccessPolicy},
     types::Update,
-    DispatcherBuilder, HandlerResult,
+    ChainBuilder, HandlerResult,
 };
 
-pub fn setup(builder: &mut DispatcherBuilder, username: &str) {
+pub fn setup(builder: &mut ChainBuilder, username: &str) {
     let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user(username)]);
     builder.add_handler(log_protected.access(policy));
 }

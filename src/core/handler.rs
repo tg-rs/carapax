@@ -13,7 +13,7 @@ where
     ///
     /// You should use [HandlerResult](enum.HandlerResult.html)
     /// (or any type, which can be converted into it)
-    /// if you want to use that handler in [Dispatcher](struct.Dispatcher.html)
+    /// if you want to use that handler in [App](struct.App.html)
     ///
     /// It is possible to use any other type, e.g. if you want to use it in a decorator.
     /// But finally you need to convert it into `HandlerResult`.

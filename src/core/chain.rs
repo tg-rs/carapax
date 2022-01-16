@@ -5,13 +5,13 @@ use crate::core::{
 use futures_util::future::BoxFuture;
 use std::{any::type_name, future::Future, marker::PhantomData, sync::Arc};
 
-/// A builder for dispatcher
+/// A builder for Chain
 #[derive(Default)]
-pub struct DispatcherBuilder {
+pub struct ChainBuilder {
     handlers: Vec<Box<dyn InputHandler + Sync>>,
 }
 
-impl DispatcherBuilder {
+impl ChainBuilder {
     /// Adds a handler
     ///
     /// # Arguments
@@ -29,22 +29,22 @@ impl DispatcherBuilder {
         self
     }
 
-    /// Creates a new dispatcher
-    pub fn build(self) -> Dispatcher {
-        Dispatcher {
+    /// Creates a new Chain
+    pub fn build(self) -> Chain {
+        Chain {
             handlers: Arc::new(self.handlers),
         }
     }
 }
 
-/// Updates dispatcher
+/// Updates Chain
 #[derive(Clone)]
-pub struct Dispatcher {
+pub struct Chain {
     handlers: Arc<Vec<Box<dyn InputHandler + Sync>>>,
 }
 
-impl Dispatcher {
-    fn dispatch(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> {
+impl Chain {
+    fn run(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> {
         let handlers = self.handlers.clone();
         async move {
             for handler in handlers.iter() {
@@ -61,12 +61,12 @@ impl Dispatcher {
     }
 }
 
-impl Handler<HandlerInput> for Dispatcher {
+impl Handler<HandlerInput> for Chain {
     type Output = HandlerResult;
     type Future = BoxFuture<'static, Self::Output>;
 
     fn handle(&self, input: HandlerInput) -> Self::Future {
-        Box::pin(self.dispatch(input))
+        Box::pin(self.run(input))
     }
 }
 
@@ -187,37 +187,37 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn dispatcher() {
-        macro_rules! assert_dispatch {
+    async fn chain() {
+        macro_rules! assert_handle {
             ($count:expr, $($handler:expr),*) => {{
                 let mut context = Context::default();
                 context.insert(UpdateStore::new());
                 let context = Arc::new(context);
-                let mut builder = DispatcherBuilder::default();
+                let mut builder = ChainBuilder::default();
                 $(builder.add_handler($handler);)*
-                let dispatcher = builder.build();
+                let chain = builder.build();
                 let update = create_update();
                 let input = HandlerInput {
                     context: context.clone(),
                     update
                 };
-                let result = dispatcher.dispatch(input).await;
+                let result = chain.handle(input).await;
                 let count = context.get::<UpdateStore>().unwrap().count().await;
                 assert_eq!(count, $count);
                 result
             }};
         }
 
-        let result = assert_dispatch!(2, handler_continue, handler_stop, handler_error);
+        let result = assert_handle!(2, handler_continue, handler_stop, handler_error);
         assert!(matches!(result, HandlerResult::Stop));
 
-        let result = assert_dispatch!(1, handler_stop, handler_continue, handler_error);
+        let result = assert_handle!(1, handler_stop, handler_continue, handler_error);
         assert!(matches!(result, HandlerResult::Stop));
 
-        let result = assert_dispatch!(1, handler_error, handler_stop, handler_continue);
+        let result = assert_handle!(1, handler_error, handler_stop, handler_continue);
         assert!(matches!(result, HandlerResult::Error(_)));
 
-        let result = assert_dispatch!(2, handler_continue, handler_continue);
+        let result = assert_handle!(2, handler_continue, handler_continue);
         assert!(matches!(result, HandlerResult::Continue));
     }
 }

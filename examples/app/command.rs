@@ -2,10 +2,10 @@ use crate::error::AppError;
 use carapax::{
     methods::SendMessage,
     types::{ChatId, User},
-    Api, CommandExt, DispatcherBuilder, Ref,
+    Api, ChainBuilder, CommandExt, Ref,
 };
 
-pub fn setup(builder: &mut DispatcherBuilder) {
+pub fn setup(builder: &mut ChainBuilder) {
     builder.add_handler(greet.command("/hello"));
 }
 
