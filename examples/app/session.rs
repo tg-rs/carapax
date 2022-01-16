@@ -21,7 +21,7 @@ async fn get(api: Ref<Api>, mut session: Session<FilesystemBackend>, chat_id: Ch
     let val: Option<String> = session.get(KEY).await?;
     api.execute(SendMessage::new(
         chat_id,
-        format!("Value: {}", val.unwrap_or_else(|| String::from("None"))),
+        format!("Value: {}", val.as_deref().unwrap_or("None")),
     ))
     .await?;
     Ok(())
