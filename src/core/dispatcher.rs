@@ -56,7 +56,7 @@ impl Dispatcher {
                     return result;
                 }
             }
-            HandlerResult::Stop
+            HandlerResult::Continue
         }
     }
 }
