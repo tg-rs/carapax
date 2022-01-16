@@ -1,10 +1,4 @@
-use crate::{
-    core::{
-        handler::{Handler, HandlerResult},
-        predicate::PredicateResult,
-    },
-    types::Command,
-};
+use crate::{core::handler::Handler, types::Command};
 use futures_util::future::{ready, Ready};
 
 /// Allows to run a handler for a specific command
@@ -25,15 +19,11 @@ impl CommandPredicate {
 }
 
 impl Handler<Command> for CommandPredicate {
-    type Output = PredicateResult;
+    type Output = bool;
     type Future = Ready<Self::Output>;
 
     fn handle(&self, input: Command) -> Self::Future {
-        ready(if input.get_name() == self.name {
-            PredicateResult::True
-        } else {
-            PredicateResult::False(HandlerResult::Continue)
-        })
+        ready(input.get_name() == self.name)
     }
 }
 
@@ -63,13 +53,7 @@ mod tests {
     #[tokio::test]
     async fn command_predicate() {
         let handler = CommandPredicate::new("/start");
-        assert!(matches!(
-            handler.handle(create_command("/start")).await,
-            PredicateResult::True
-        ));
-        assert!(matches!(
-            handler.handle(create_command("/unexpected")).await,
-            PredicateResult::False(HandlerResult::Continue)
-        ));
+        assert!(handler.handle(create_command("/start")).await,);
+        assert!(!handler.handle(create_command("/unexpected")).await);
     }
 }
