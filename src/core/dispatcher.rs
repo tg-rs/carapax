@@ -218,6 +218,6 @@ mod tests {
         assert!(matches!(result, HandlerResult::Error(_)));
 
         let result = assert_dispatch!(2, handler_continue, handler_continue);
-        assert!(matches!(result, HandlerResult::Stop));
+        assert!(matches!(result, HandlerResult::Continue));
     }
 }
