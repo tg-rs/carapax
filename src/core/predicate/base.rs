@@ -11,7 +11,6 @@ use std::marker::PhantomData;
 /// Wraps a handler with a predicate which allows to decide should handler run or not.
 ///
 /// Predicate must return [PredicateResult](enum.PredicateResult.html)
-#[derive(Clone)]
 pub struct Predicate<P, PI, H, HI> {
     predicate: P,
     predicate_input: PhantomData<PI>,
@@ -38,13 +37,13 @@ impl<P, PI, H, HI> Predicate<P, PI, H, HI> {
 
 impl<P, PI, H, HI> Handler<(PI, HI)> for Predicate<P, PI, H, HI>
 where
-    P: Handler<PI> + Clone + 'static,
+    P: Handler<PI> + 'static,
     P::Output: Into<PredicateResult>,
-    PI: TryFromInput + Clone + 'static,
+    PI: TryFromInput + 'static,
     PI::Error: 'static,
-    H: Handler<HI> + Clone + 'static,
+    H: Handler<HI> + 'static,
     H::Output: Into<HandlerResult>,
-    HI: TryFromInput + Clone + 'static,
+    HI: TryFromInput + 'static,
     HI::Error: 'static,
 {
     type Output = HandlerResult;
@@ -63,6 +62,21 @@ where
                 PredicateResult::False(result) => result,
             }
         })
+    }
+}
+
+impl<P, PI, H, HI> Clone for Predicate<P, PI, H, HI>
+where
+    P: Clone,
+    H: Clone,
+{
+    fn clone(&self) -> Self {
+        Predicate {
+            predicate: self.predicate.clone(),
+            predicate_input: self.predicate_input,
+            handler: self.handler.clone(),
+            handler_input: self.handler_input,
+        }
     }
 }
 

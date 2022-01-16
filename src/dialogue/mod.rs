@@ -10,11 +10,23 @@ use std::{error::Error, fmt, marker::PhantomData};
 const SESSION_KEY_PREFIX: &str = "__carapax_dialogue";
 
 /// A decorator for dialogue handlers
-#[derive(Clone)]
 pub struct DialogueDecorator<B, H, HI> {
     session_backend: PhantomData<B>,
     handler: H,
     handler_input: PhantomData<HI>,
+}
+
+impl<B, H, HI> Clone for DialogueDecorator<B, H, HI>
+where
+    H: Clone,
+{
+    fn clone(&self) -> Self {
+        DialogueDecorator {
+            session_backend: self.session_backend,
+            handler: self.handler.clone(),
+            handler_input: self.handler_input,
+        }
+    }
 }
 
 impl<B, H, HI> DialogueDecorator<B, H, HI> {
@@ -65,12 +77,12 @@ where
 
 impl<B, H, HI, HO, HE> Handler<HandlerInput> for DialogueDecorator<B, H, HI>
 where
-    H: Handler<HI, Output = Result<HO, HE>> + Clone + 'static,
-    HI: TryFromInput + Clone,
+    H: Handler<HI, Output = Result<HO, HE>> + 'static,
+    HI: TryFromInput,
     HI::Error: 'static,
     HO: DialogueState + Send + Sync,
     HE: Error + Send + 'static,
-    B: SessionBackend + Clone + Send + 'static,
+    B: SessionBackend + Send + 'static,
 {
     type Output = HandlerResult;
     type Future = BoxFuture<'static, Self::Output>;
