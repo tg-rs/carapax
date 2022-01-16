@@ -3,13 +3,13 @@ use carapax::{
     methods::SendMessage,
     session::{backend::fs::FilesystemBackend, Session},
     types::{ChatId, Command},
-    Api, ChainBuilder, CommandExt, Ref,
+    Api, Chain, CommandExt, Ref,
 };
 
 const KEY: &str = "example-session-key";
 
-pub fn setup(builder: &mut ChainBuilder) {
-    builder
+pub fn setup(chain: &mut Chain) {
+    chain
         .add_handler(get.command("/sget"))
         .add_handler(set.command("/sset"))
         .add_handler(expire.command("/sexpire"))

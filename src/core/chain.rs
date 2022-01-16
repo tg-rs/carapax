@@ -5,13 +5,13 @@ use crate::core::{
 use futures_util::future::BoxFuture;
 use std::{any::type_name, future::Future, marker::PhantomData, sync::Arc};
 
-/// A builder for Chain
-#[derive(Default)]
-pub struct ChainBuilder {
-    handlers: Vec<Box<dyn InputHandler + Sync>>,
+/// Handlers chain
+#[derive(Clone, Default)]
+pub struct Chain {
+    handlers: Arc<Vec<Box<dyn InputHandler + Sync>>>,
 }
 
-impl ChainBuilder {
+impl Chain {
     /// Adds a handler
     ///
     /// # Arguments
@@ -19,31 +19,21 @@ impl ChainBuilder {
     /// * handler - Handler to add
     ///
     /// Handlers will be dispatched in the same order as they are added
+    ///
+    /// # Panics
+    ///
+    /// Panics when trying to add a handler to a shared chain
     pub fn add_handler<H, I>(&mut self, handler: H) -> &mut Self
     where
         H: Handler<I> + Sync + Clone + 'static,
         I: TryFromInput + Sync + 'static,
         <H::Future as Future>::Output: Into<HandlerResult>,
     {
-        self.handlers.push(ConvertInputHandler::boxed(handler));
+        let handlers = Arc::get_mut(&mut self.handlers).expect("Can not add handler, chain is shared");
+        handlers.push(ConvertInputHandler::boxed(handler));
         self
     }
 
-    /// Creates a new Chain
-    pub fn build(self) -> Chain {
-        Chain {
-            handlers: Arc::new(self.handlers),
-        }
-    }
-}
-
-/// Updates Chain
-#[derive(Clone)]
-pub struct Chain {
-    handlers: Arc<Vec<Box<dyn InputHandler + Sync>>>,
-}
-
-impl Chain {
     fn run(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> {
         let handlers = self.handlers.clone();
         async move {
@@ -193,9 +183,8 @@ mod tests {
                 let mut context = Context::default();
                 context.insert(UpdateStore::new());
                 let context = Arc::new(context);
-                let mut builder = ChainBuilder::default();
-                $(builder.add_handler($handler);)*
-                let chain = builder.build();
+                let mut chain = Chain::default();
+                $(chain.add_handler($handler);)*
                 let update = create_update();
                 let input = HandlerInput {
                     context: context.clone(),

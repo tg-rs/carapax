@@ -1,12 +1,12 @@
 use carapax::{
     access::{AccessExt, AccessRule, InMemoryAccessPolicy},
     types::Update,
-    ChainBuilder, HandlerResult,
+    Chain, HandlerResult,
 };
 
-pub fn setup(builder: &mut ChainBuilder, username: &str) {
+pub fn setup(chain: &mut Chain, username: &str) {
     let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user(username)]);
-    builder.add_handler(log_protected.access(policy));
+    chain.add_handler(log_protected.access(policy));
 }
 
 async fn log_protected(update: Update) -> HandlerResult {

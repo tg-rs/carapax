@@ -153,7 +153,7 @@ impl ErrorHandler for LoggingErrorHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{chain::ChainBuilder, context::Ref};
+    use crate::core::{chain::Chain, context::Ref};
     use std::{error::Error, fmt};
     use tokio::sync::Mutex;
 
@@ -215,10 +215,9 @@ mod tests {
         let mut context = Context::default();
         context.insert(condition.clone());
 
-        let mut builder = ChainBuilder::default();
-        builder.add_handler(success_handler);
+        let mut chain = Chain::default();
+        chain.add_handler(success_handler);
 
-        let chain = builder.build();
         let app = App::new(context, chain);
 
         let update = create_update();
@@ -234,10 +233,9 @@ mod tests {
         };
 
         let context = Context::default();
-        let mut builder = ChainBuilder::default();
-        builder.add_handler(error_handler);
+        let mut chain = Chain::default();
+        chain.add_handler(error_handler);
 
-        let chain = builder.build();
         let mut app = App::new(context, chain);
         app.set_error_handler(condition.clone());
 

@@ -1,4 +1,4 @@
-use carapax::{longpoll::LongPoll, Api, App, ChainBuilder, Config, Context};
+use carapax::{longpoll::LongPoll, Api, App, Chain, Config, Context};
 use dotenv::dotenv;
 use seance::{backend::fs::FilesystemBackend, SessionCollector, SessionManager};
 use std::{env, time::Duration};
@@ -29,16 +29,15 @@ async fn main() {
     let session_manager = SessionManager::new(session_backend);
     context.insert(session_manager);
 
-    let mut builder = ChainBuilder::default();
+    let mut chain = Chain::default();
     if let Ok(username) = env::var("CARAPAX_ACCESS_USERNAME") {
-        access::setup(&mut builder, &username);
+        access::setup(&mut chain, &username);
     }
-    command::setup(&mut builder);
-    dialogue::setup(&mut builder);
-    predicate::setup(&mut builder);
-    session::setup(&mut builder);
+    command::setup(&mut chain);
+    dialogue::setup(&mut chain);
+    predicate::setup(&mut chain);
+    session::setup(&mut chain);
 
-    let mut chain = builder.build();
     if let Ok(ratelimit_strategy) = env::var("CARAPAX_RATE_LIMIT_STRATEGY") {
         chain = ratelimit::setup(chain, &ratelimit_strategy);
     }
