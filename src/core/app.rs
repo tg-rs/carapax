@@ -1,37 +1,45 @@
 use crate::{
     core::{
         context::Context,
-        dispatcher::Dispatcher,
+        convert::TryFromInput,
         handler::{Handler, HandlerError, HandlerInput, HandlerResult},
     },
     types::Update,
     UpdateHandler,
 };
 use futures_util::future::BoxFuture;
-use std::{future::Future, sync::Arc};
+use std::{future::Future, marker::PhantomData, sync::Arc};
 
 /// The main entry point
 ///
 /// Implements [UpdateHandler](trait.UpdateHandler.html) trait, so you can use it
 /// in [LongPoll](longpoll/struct.LongPoll.html) struct
 /// or [webhook::run_server](webhook/fn.run_server.html) function.
-pub struct App {
+pub struct App<H, HI> {
     context: Arc<Context>,
-    dispatcher: Dispatcher,
+    handler: H,
+    handler_input: PhantomData<HI>,
     error_handler: Arc<BoxedErrorHandler>,
 }
 
-impl App {
+impl<H, HI, HO> App<H, HI>
+where
+    H: Handler<HI, Output = HO>,
+    HI: TryFromInput,
+    HI::Error: 'static,
+    HO: Into<HandlerResult>,
+{
     /// Creates a new App
     ///
     /// # Arguments
     ///
     /// * context - A context to share data between handlers
-    /// * dispatcher - A dispatcher with update handlers
-    pub fn new(context: Context, dispatcher: Dispatcher) -> Self {
+    /// * handler - A handler to process updates
+    pub fn new(context: Context, handler: H) -> Self {
         Self {
             context: Arc::new(context),
-            dispatcher,
+            handler,
+            handler_input: PhantomData,
             error_handler: Arc::new(Box::new(LoggingErrorHandler)),
         }
     }
@@ -48,29 +56,45 @@ impl App {
     /// If this method is not called,
     /// [LoggingErrorHandler](struct.LoggingErrorHandler.html)
     /// will be used as default handler.
-    pub fn set_error_handler<H>(&mut self, handler: H) -> &mut Self
+    pub fn set_error_handler<E>(&mut self, handler: E) -> &mut Self
     where
-        H: ErrorHandler + Sync + 'static,
+        E: ErrorHandler + Sync + 'static,
     {
         self.error_handler = Arc::new(ConvertErrorHandler::boxed(handler));
         self
     }
 
     fn run(&self, update: Update) -> impl Future<Output = ()> {
-        let future = self.dispatcher.handle(HandlerInput {
+        let input = HandlerInput {
             update,
             context: self.context.clone(),
-        });
+        };
+        let handler = self.handler.clone();
         let error_handler = self.error_handler.clone();
         async move {
-            if let HandlerResult::Error(err) = future.await {
+            let input = match HI::try_from_input(input).await {
+                Ok(Some(input)) => input,
+                Ok(None) => return,
+                Err(err) => {
+                    error_handler.handle(Box::new(err));
+                    return;
+                }
+            };
+            let future = handler.handle(input);
+            if let HandlerResult::Error(err) = future.await.into() {
                 error_handler.handle(err).await;
             }
         }
     }
 }
 
-impl UpdateHandler for App {
+impl<H, HI, HO> UpdateHandler for App<H, HI>
+where
+    H: Handler<HI, Output = HO> + 'static,
+    HI: TryFromInput + 'static,
+    HI::Error: 'static,
+    HO: Into<HandlerResult> + Send + 'static,
+{
     type Future = BoxFuture<'static, ()>;
 
     fn handle(&self, update: Update) -> Self::Future {
