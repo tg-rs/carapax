@@ -61,7 +61,7 @@ async fn expire(
             Err(err) => {
                 api.execute(SendMessage::new(
                     chat_id,
-                    format!("Number of seconds is invalid: {}", err.to_string()),
+                    format!("Number of seconds is invalid: {}", err),
                 ))
                 .await?;
                 return Ok(());
