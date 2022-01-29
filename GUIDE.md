@@ -173,3 +173,66 @@ What you should return in different cases:
 For example, implementation of `Text` will return `None` if `Update` does not contain any actual text.
 
 * `Err(...)` in case of error during type creation.
+
+# `access` module
+
+```rust
+use carapax::access::{InMemoryAccessPolicy, AccessRule};
+
+let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user("john")]);
+let handler = image_handler.access(policy);
+```
+
+We create `InMemoryAccessPolicy` structure with rule to run `image_handler` only if message is from `@john`.
+
+It implements `AccessPolicy` trait which `access` method (from `AccessExt` trait) wait as the argument.
+
+# `session` module
+
+Session works with data from persistent store, so you can be sure your data is not lost across, say, bot restarts.
+
+```rust
+use carapax::session::{FilesystemBackend, SessionManager, Session, SessionError};
+
+let tmpdir = tempdir()?;
+let backend = FilesystemBackend::new(tmpdir.path());
+
+let gc_period = Duration::from_secs(120); // period between GC calls
+let session_lifetime = Duration::from_secs(60 * 60); // how long session lives
+// spawn GC to remove old sessions
+let mut collector = SessionCollector::new(backend.clone(), gc_period, session_lifetime);
+tokio::spawn(async move { collector.run().await });
+
+let manager = SessionManager::new(backend);
+context.insert(manager);
+
+fn store_data(session: Session<FilesystemBackend>) -> Result<(), SessionError> {
+    session.set("test", 123)
+}
+context.insert(store_data);
+```
+
+`backend` responds for session storing. Filesystem in this example.
+
+`manager` will be used by `Session` to acquire itself.
+
+# `dialogue` module
+
+See [dialogue.rs](examples/app/dialogue.rs) for example usage.
+
+The main thing you must know dialogues need session manager for their states.
+
+# `ratelimit` module
+
+```rust
+use carapax::ratelimit::{nonzero, DirectRateLimitPredicate, Jitter, Quota};
+
+let quota = Quota::with_period(Duration::from_secs(5))
+    .expect("Failed to create quota")
+    .allow_burst(nonzero!(1u32));
+let jitter = Jitter::up_to(Duration::from_secs(5));
+
+let handler = my_handler.predicate(DirectRateLimitPredicate::wait_with_jitter(quota, jitter));
+```
+
+As you can see, ratelimit is applied through predicate.
