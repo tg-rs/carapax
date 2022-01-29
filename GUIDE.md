@@ -36,14 +36,14 @@ let context = Context::new();
 context.insert(api.clone());
 ```
 
-`Context` is type map which contains all user data. We add `Api` into it in this case.
+`Context` is type map which contains all any objects you insert. We add `Api` into it in this case.
 
 ```rust
 let app = App::new(context, echo);
 ```
 
 `App` is the main entry point, the link between context and handler (`echo`). App implements `UpdateHandler` trait
-which is used for handling updates Telegram send you.
+which is used for handling updates Telegram sends you.
 
 ```rust
 LongPoll::new(api, app).run().await;
@@ -103,9 +103,9 @@ chain
     .add_handler(rate_limiter)
     .add_handler(statistics)
     .add_handler(cas)
-    .add_handler(start) // let's say this handler works with `/start` command
-    .add_handler(info) // this one shows information on `/info` command
-    .add_handler(cats); // and this one sends you awesome cats
+    .add_handler(start.command("/start"))
+    .add_handler(info.command("/info")) 
+    .add_handler(cats);
 ```
 
 # Controlling propagation
@@ -119,7 +119,7 @@ For example:
 fn i_want_text(message: Text) {}
 ```
 
-We expect message text but if user sends video, handler will not run and propagation of the next one will be started.
+We expect message text but if user sends sticker, handler will not run and propagation of the next one will be started.
 
 2. Return `HandlerResult`.
 
@@ -127,9 +127,9 @@ We expect message text but if user sends video, handler will not run and propaga
 async fn cas(client: Ref<CasClient>, user: User) -> HandlerResult {
     let is_user_banned = client.check_user(user.id);
     if is_user_banned {
-        HandlerResult::Continue
+        HandlerResult::Stop
     } else {
-        HandlerResult::Start
+        HandlerResult::Continue
     }
 } 
 ```
