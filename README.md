@@ -20,7 +20,9 @@ Name comes from [Carapace](https://en.wikipedia.org/wiki/Carapace) (carapax in l
 carapax = "0.11.0"
 ```
 
-## Examples
+## Usage
+
+You can check [GUIDE.md](GUIDE.md) or examples.
 
 In order to run [examples](https://github.com/tg-rs/carapax/tree/master/carapax/examples) you need to create a `.env` file:
 
