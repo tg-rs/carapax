@@ -153,3 +153,23 @@ vs
 ```rust
 let handler = Predicate::new(is_ping, pong);
 ```
+
+# Implement `TryFromInput` for your own types
+
+Just implement this trait:
+
+```rust
+pub trait TryFromInput: Send + Sized {
+    type Future: Future<Output = Result<Option<Self>, Self::Error>> + Send;
+    type Error: Error + Send;
+    fn try_from_input(input: HandlerInput) -> Self::Future;
+}
+```
+
+What you should return in different cases:
+* `Ok(Some(...))` in case of successful type creation.
+* `Ok(None)` in case of type cannot be created, and it is not critical. Handler will not run.
+
+For example, implementation of `Text` will return `None` if `Update` does not contain any actual text.
+
+* `Err(...)` in case of error during type creation.
