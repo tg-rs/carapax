@@ -95,7 +95,7 @@ We execute `sendMessage` method.
 
 What if we have bot that is more complicated than just sending messages back?
 
-We can use `Chain` handler. It chains handler and run them in a sequence.
+We can use `Chain` handler. It chains handlers and run them in a sequence.
 
 ```rust
 let chain = Chain::default();
