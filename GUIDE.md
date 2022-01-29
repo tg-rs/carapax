@@ -61,7 +61,7 @@ fn echo(api: Ref<Api>, chat_id: ChatId, message: Text) -> Result<(), ExecuteErro
 }
 ```
 
-`echo` is our handler. Signature of the handler also define it propagation behavior.
+`echo` is our handler. Signature of the handler also defines it propagation behavior.
 
 Every argument of `echo` implements `TryFromInput` so it creates itself from Telegram's update and `Context`.
 
