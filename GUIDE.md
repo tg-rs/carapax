@@ -5,7 +5,7 @@ It provides [`Api`](https://docs.rs/tgbot/latest/tgbot/struct.Api.html) struct
 which allows you to execute methods and download files.
 And [`UpdateHandler`](https://docs.rs/tgbot/latest/tgbot/trait.UpdateHandler.html) trait to process updates.
 
-Carapax introduces a more flexible update handlers and other utilities to build a complex bots.
+Carapax introduces more flexible update handlers and other utilities to build complex bots.
 
 Let's get started:
 
@@ -28,10 +28,10 @@ async fn echo(api: Ref<Api>, chat_id: ChatId, text: Text) -> Result<(), ExecuteE
 
 #[tokio::main]
 async fn main() {
-    // Create api client with a token provided by Bot Father.
+    // Create an api client with a token provided by Bot Father.
     let api = Api::new("BOT_TOKEN").expect("Failed to create API");
 
-    // Context is a type map wich allows to share objects between handlers.
+    // Context is a type map which allows one to share objects between handlers.
     // Every object you insert in context must implement Clone.
     let mut context = Context::default();
     context.insert(api.clone());
@@ -40,7 +40,7 @@ async fn main() {
     // First argument is the context.
     // Second - an input handler.
     // App implements UpdateHandler trait provided by tgbot,
-    // so you can use it in LongPoll or run_server
+    // so you can use it in either long polling (`LongPoll::new()`) or webhook (`run_server()`)
     let app = App::new(context, echo);
 
     if DEBUG {
@@ -55,28 +55,28 @@ async fn main() {
 
 ## Handlers
 
-In example above `app` calls `echo` handler on every new update received from Telegram API.
+In example above `app` calls `echo` handler on every update received from Telegram API.
 
 Handlers must implement [`Handler`](https://tg-rs.github.io/carapax/carapax/trait.Handler.html) trait.
-Since this trait is implemented for `Fn` (with up to 10 arguments), we can use a regular functions as handlers.
+Since this trait is implemented for `Fn` (with up to 10 arguments), we can use regular functions as handlers.
 It's recommended to use a function when you need a simple handler.
-Implement `Handler` trait for your own type only in a complex cases (e.g. you need a custom decorator or predicate).
+Implement `Handler` trait for your own type only in complex cases (e.g. you need a custom decorator or predicate).
 
-Handler takes any type which implements [`TryFromInput`](https://tg-rs.github.io/carapax/carapax/trait.TryFromInput.html) as input.
-And should return a future with [`HandlerResult`](https://tg-rs.github.io/carapax/carapax/enum.HandlerResult.html) output,
+Handler takes any type that implements [`TryFromInput`](https://tg-rs.github.io/carapax/carapax/trait.TryFromInput.html) as input.
+It should return a future with [`HandlerResult`](https://tg-rs.github.io/carapax/carapax/enum.HandlerResult.html) output,
 if you want to use it in `App` struct.
 
-`App` creates a [`HandlerInput`](https://tg-rs.github.io/carapax/carapax/struct.HandlerInput.html) with `Context` and an `Update`,
-converts it into an input for a specific handler using `TryFromInput` trait.
-Handler will be executed only if `TryFromInput` returned `Some(T)`.
-So, in example above, `echo` will run only when `Update` contains any `Text` (message text, media captions).
+`App` creates a [`HandlerInput`](https://tg-rs.github.io/carapax/carapax/struct.HandlerInput.html) with a `Context` and an `Update`,
+then converts it into an input for a specific handler using `TryFromInput` trait.
+Handler will be executed only when `TryFromInput` returns `Some(T)`.
+So, in example above, `echo` will be called only when `Update` contains any `Text` (message text, media captions).
 
-Use `Ref<T>` as argument type when you need to get an object from context.
-If object is not found, `TryFromInput` returns an error and handler will not run.
+Use `Ref<T>` as the argument type when you need to get an object from the context.
+If object is not found, `TryFromInput` returns an error, therefore the handler will not run.
 
 ### Chain
 
-Chain is a handler which allows to execute more than one handler:
+Chain is a handler which allows to execute several handlers, one after another:
 
 ```rust
 use carapax::Chain;
@@ -92,11 +92,11 @@ let chain = Chain::default()
 ```
 
 Handlers will run in same order as added.
-If a handler returns `HandlerResult::Stop` or `HandlerResult::Error(_)`, all handlers added after that handler will not run.
+If a handler returns `HandlerResult::Stop` or `HandlerResult::Error(_)`, all the subsequent handlers will not run.
 
 ### HandlerResult
 
-Normally every handler must return a `HandlerResult` or any type which converts into it:
+Normally every handler must return a `HandlerResult` or a type that converts into it:
 
 | From            | To                          |
 |-----------------|-----------------------------|
@@ -109,12 +109,12 @@ Normally every handler must return a `HandlerResult` or any type which converts 
 ## Predicates
 
 [`Predicate`](https://tg-rs.github.io/carapax/carapax/struct.Predicate.html)
-is a decorator which allows to decide, should handler run or not.
-It is useful when you need to implement a ratelimit or close a handler or entire bot from unwanted users and so on.
+is a decorator which allows to decide, should a handler run or not.
+It might be useful if you need to implement a ratelimiter, or allow only certain users to trigger a handler.
 
-A predicate handler must implement `Handler` trait, but return
+A predicate handler must implement `Handler` trait, and return
 a [`PredicateResult`](https://tg-rs.github.io/carapax/carapax/enum.PredicateResult.html)
-or any type which converts into it:
+or a type that converts into it:
 
 |   From            | To                            |
 |-------------------|-------------------------------|
@@ -178,7 +178,7 @@ async fn greet(api: Ref<Api>, chat_id: ChatId, user: User) {
 [AccessPredicate](https://tg-rs.github.io/carapax/carapax/access/struct.AccessPredicate.html) allows to protect handlers from unwanted users.
 It takes an [`AccessPolicy`](https://tg-rs.github.io/carapax/carapax/access/trait.AccessPolicy.html).
 Policy has `is_granted` method which takes a `HandlerInput` and returns a future with `bool` output.
-If `true` is returned - access is allowed, `false` - forbidden.
+If `true` is returned - access is granted, `false` - forbidden.
 
 [InMemoryAccessPolicy](https://tg-rs.github.io/carapax/carapax/access/struct.InMemoryAccessPolicy.html) is a simple policy 
 which stores [access rules](https://tg-rs.github.io/carapax/carapax/access/struct.AccessRule.html) in memory.
@@ -206,8 +206,8 @@ async fn protected_handler(update: Update) {
 
 ```
 
-Since `Chain` implements `Handler` you also can protect a group of handlers or entire bot.
-Of course you can implement your own policy in order to store access rules and/or a list of banned users in database or other storage.
+Since `Chain` implements `Handler` you can also protect a group of handlers or entire bot.
+Naturally, you can implement your own policy in order to store the access rules and/or a list of banned users in a database or some other storage.
 
 Note that you need to enable `access` feature in `Cargo.toml`:
 
@@ -227,7 +227,7 @@ and
 
 Direct is used when you need to limit all updates. Keyed - when you need to limit updates per chat and/or user.
 
-When limit is reached you can [discard](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.MethodDiscard.html) new updates 
+When limit is reached you can either [discard](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.MethodDiscard.html) the updates,
 or [wait](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.MethodWait.html) when next limiter will allow to pass an update
 
 Every type of predicate can be used [with](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.Jitter.html) or 
@@ -235,7 +235,7 @@ Every type of predicate can be used [with](https://tg-rs.github.io/carapax/carap
 
 See [example](examples/app/ratelimit.rs) for implementation details.
 
-Same as in access you can protect a single handler, chain or entire bot.
+Same as in access, you can protect a single handler, a chain or the entire bot.
 
 Note that you need to enable `ratelimit` feature in `Cargo.toml`:
 
@@ -246,11 +246,11 @@ carapax = { version = "0.11.0", features = ["ratelimit"] }
 ## Session
 
 
-Sessions allows to store data in a storage such as filesystem or redis. 
-So you can implement stateful handlers.
+Sessions allow to store data in a storage such as filesystem or redis. 
+Therefore you can implement stateful handlers.
 
 Session support is implemented using [seance](http://crates.io/crates/seance) crate.
-Carapax reexports all needed types from seance and you don't have to add it to your `Cargo.toml`.
+Carapax reexports all the needed types from seance, so you don't have to add it to your `Cargo.toml`.
 
 Every session has an identifier represented by [SessionId](https://tg-rs.github.io/carapax/carapax/session/struct.SessionId.html) struct.
 Note that it contains a chat ID and an user ID, but not all types of update can provide that information.
@@ -258,9 +258,9 @@ Note that it contains a chat ID and an user ID, but not all types of update can 
 [`SessionManager`](https://tg-rs.github.io/carapax/carapax/session/struct.SessionManager.html) allows to load a session by ID.
 Session ID in manager represented by `Into<String>` so you can use any type you want, if you have issues with updates without chat/user ID.
 
-You can get [`Session`](https://tg-rs.github.io/carapax/carapax/session/struct.Session.html) directly from manager, 
+You can either get [`Session`](https://tg-rs.github.io/carapax/carapax/session/struct.Session.html) directly from the manager, 
 or use `TryFromInput` and specify `session: Session<B>` in handler arguments.
-In both cases make sure that you added session manager to context.
+In both cases make sure that session manager is added to the context.
 
 See [example](examples/app/session.rs) for implementation details.
 
@@ -277,14 +277,14 @@ Or simply just use `session` if you have your own backend.
 Dialogue is a kind of stateful handler. It receives an initial or previous state and returns a new state.
 
 [`DialogueDecorator`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueDecorator.html) allows to make a dialogue handler.
-It takes a predicate which allows to decide should we start dialogue or not and a handler itself.
+It takes a predicate which allows to decide should we start a dialogue or not, and a handler itself.
 
 Dialogue handler takes a `HandlerInput` and returns a [`DialogueResult`](https://tg-rs.github.io/carapax/carapax/dialogue/enum.DialogueResult.html).
-There is a [`DialogueInput`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueInput.html) which allows to obtain a state from session.
-It implements `TryFromInput`, so you can use it as argument of your handler.
+There is a [`DialogueInput`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueInput.html) structure which allows to obtain a state from the session.
+It implements `TryFromInput`, so you can use it as an argument of your handler.
 
 [`DialogueState`](https://tg-rs.github.io/carapax/carapax/dialogue/trait.DialogueState.html) is a trait that you must implement for your own state.
-Dialogue name is used to determine session key for that dialogue and must be unique.
+Dialogue name is used to determine the session key for that dialogue, and must be unique.
 
 When returning a state you can convert it into `DialogueResult` without using `DialogueResult::Next(state)`: `state.into()`.
 
