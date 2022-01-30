@@ -2,7 +2,7 @@ use crate::{
     core::{
         context::Context,
         convert::TryFromInput,
-        handler::{Handler, HandlerError, HandlerInput, HandlerResult},
+        handler::{Handler, HandlerInput, HandlerResult},
     },
     types::Update,
     UpdateHandler,
@@ -19,7 +19,6 @@ pub struct App<H, HI> {
     context: Arc<Context>,
     handler: H,
     handler_input: PhantomData<HI>,
-    error_handler: Arc<BoxedErrorHandler>,
 }
 
 impl<H, HI, HO> App<H, HI>
@@ -40,28 +39,7 @@ where
             context: Arc::new(context),
             handler,
             handler_input: PhantomData,
-            error_handler: Arc::new(Box::new(LoggingErrorHandler)),
         }
-    }
-
-    /// Sets a handler to be executed when an error has occurred
-    ///
-    /// # Arguments
-    ///
-    /// * handler - A handler to set
-    ///
-    /// Error handler will be called if one of update handlers returned
-    /// [HandlerResult::Error](enum.HandlerResult.html)
-    ///
-    /// If this method is not called,
-    /// [LoggingErrorHandler](struct.LoggingErrorHandler.html)
-    /// will be used as default handler.
-    pub fn set_error_handler<E>(&mut self, handler: E) -> &mut Self
-    where
-        E: ErrorHandler + Sync + 'static,
-    {
-        self.error_handler = Arc::new(ConvertErrorHandler::boxed(handler));
-        self
     }
 
     fn run(&self, update: Update) -> impl Future<Output = ()> {
@@ -70,19 +48,18 @@ where
             context: self.context.clone(),
         };
         let handler = self.handler.clone();
-        let error_handler = self.error_handler.clone();
         async move {
             let input = match HI::try_from_input(input).await {
                 Ok(Some(input)) => input,
                 Ok(None) => return,
                 Err(err) => {
-                    error_handler.handle(Box::new(err));
+                    log::error!("Failed to convert input: {}", err);
                     return;
                 }
             };
             let future = handler.handle(input);
             if let HandlerResult::Error(err) = future.await.into() {
-                error_handler.handle(err).await;
+                log::error!("An error has occurred: {}", err);
             }
         }
     }
@@ -99,54 +76,6 @@ where
 
     fn handle(&self, update: Update) -> Self::Future {
         Box::pin(self.run(update))
-    }
-}
-
-/// Allows to process errors returned by handlers
-pub trait ErrorHandler: Send {
-    /// A future returned by `handle` method
-    type Future: Future<Output = ()> + Send;
-
-    /// Handles a errors
-    ///
-    /// # Arguments
-    ///
-    /// * err - An error to handle
-    fn handle(&self, err: HandlerError) -> Self::Future;
-}
-
-type BoxedErrorHandler = Box<dyn ErrorHandler<Future = BoxFuture<'static, ()>> + Sync>;
-
-struct ConvertErrorHandler<H>(H);
-
-impl<H> ConvertErrorHandler<H> {
-    pub(in crate::core) fn boxed(handler: H) -> Box<Self> {
-        Box::new(Self(handler))
-    }
-}
-
-impl<H> ErrorHandler for ConvertErrorHandler<H>
-where
-    H: ErrorHandler,
-    H::Future: 'static,
-{
-    type Future = BoxFuture<'static, ()>;
-
-    fn handle(&self, err: HandlerError) -> Self::Future {
-        Box::pin(self.0.handle(err))
-    }
-}
-
-/// Writes an error to log
-pub struct LoggingErrorHandler;
-
-impl ErrorHandler for LoggingErrorHandler {
-    type Future = BoxFuture<'static, ()>;
-
-    fn handle(&self, err: HandlerError) -> Self::Future {
-        Box::pin(async move {
-            log::error!("An error has occurred: {}", err);
-        })
     }
 }
 
@@ -172,8 +101,8 @@ mod tests {
     }
 
     #[derive(Clone)]
-    struct Condition {
-        value: Arc<Mutex<bool>>,
+    struct Counter {
+        value: Arc<Mutex<u8>>,
     }
 
     #[derive(Debug)]
@@ -187,61 +116,34 @@ mod tests {
 
     impl Error for ExampleError {}
 
-    impl ErrorHandler for Condition {
-        type Future = BoxFuture<'static, ()>;
-
-        fn handle(&self, _err: HandlerError) -> Self::Future {
-            let value = self.value.clone();
-            Box::pin(async move {
-                *value.lock().await = true;
-            })
-        }
+    async fn success_handler(counter: Ref<Counter>) -> HandlerResult {
+        *counter.value.lock().await += 1;
+        HandlerResult::Continue
     }
 
-    async fn success_handler(condition: Ref<Condition>) {
-        *condition.value.lock().await = true;
-    }
-
-    async fn error_handler(_: ()) -> Result<(), ExampleError> {
+    async fn error_handler(counter: Ref<Counter>) -> Result<(), ExampleError> {
+        *counter.value.lock().await += 1;
         Err(ExampleError)
     }
 
     #[tokio::test]
-    async fn handle_ok() {
-        let condition = Condition {
-            value: Arc::new(Mutex::new(false)),
+    async fn handle() {
+        let counter = Counter {
+            value: Arc::new(Mutex::new(0)),
         };
 
         let mut context = Context::default();
-        context.insert(condition.clone());
+        context.insert(counter.clone());
 
         let mut chain = Chain::default();
         chain.add_handler(success_handler);
+        chain.add_handler(error_handler);
 
         let app = App::new(context, chain);
 
         let update = create_update();
         app.handle(update).await;
 
-        assert!(*condition.value.lock().await);
-    }
-
-    #[tokio::test]
-    async fn handle_err() {
-        let condition = Condition {
-            value: Arc::new(Mutex::new(false)),
-        };
-
-        let context = Context::default();
-        let mut chain = Chain::default();
-        chain.add_handler(error_handler);
-
-        let mut app = App::new(context, chain);
-        app.set_error_handler(condition.clone());
-
-        let update = create_update();
-        app.handle(update).await;
-
-        assert!(*condition.value.lock().await);
+        assert_eq!(*counter.value.lock().await, 2);
     }
 }

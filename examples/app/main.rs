@@ -1,4 +1,4 @@
-use carapax::{longpoll::LongPoll, Api, App, Chain, Config, Context};
+use carapax::{longpoll::LongPoll, Api, App, Chain, Config, Context, ErrorExt, HandlerError};
 use dotenv::dotenv;
 use seance::{backend::fs::FilesystemBackend, SessionCollector, SessionManager};
 use std::{env, time::Duration};
@@ -42,7 +42,9 @@ async fn main() {
         chain = ratelimit::setup(chain, &ratelimit_strategy);
     }
 
-    let app = App::new(context, chain);
+    let handler = chain.on_error(error_handler);
+
+    let app = App::new(context, handler);
     LongPoll::new(api, app).run().await
 }
 
@@ -85,4 +87,9 @@ fn spawn_session_collector(backend: FilesystemBackend) {
     // spawn GC to remove old sessions
     let mut collector = SessionCollector::new(backend, gc_period, session_lifetime);
     tokio::spawn(async move { collector.run().await });
+}
+
+async fn error_handler(err: HandlerError) -> HandlerError {
+    log::error!("Got an error in custom error handler: {}", err);
+    err
 }
