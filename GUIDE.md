@@ -151,7 +151,7 @@ async fn pong(api: Ref<Api>, chat_id: ChatId) {
 ### Commands
 
 [`CommandPredicate`](https://tg-rs.github.io/carapax/carapax/struct.CommandPredicate.html#)
-is a decorator which allows to run handlers only when user sent a command.
+is a decorator which allows to run a handler only if update contains a command.
 Note that command name contains a leading slash (`/`).
 
 ```rust
@@ -175,12 +175,12 @@ async fn greet(api: Ref<Api>, chat_id: ChatId, user: User) {
 
 ### Access
 
-[AccessPredicate](https://tg-rs.github.io/carapax/carapax/access/struct.AccessPredicate.html) allows to protect handlers from unwanted users.
+[AccessPredicate](https://tg-rs.github.io/carapax/carapax/access/struct.AccessPredicate.html) allows to protect handlers.
 It takes an [`AccessPolicy`](https://tg-rs.github.io/carapax/carapax/access/trait.AccessPolicy.html).
 Policy has `is_granted` method which takes a `HandlerInput` and returns a future with `bool` output.
 If `true` is returned - access is granted, `false` - forbidden.
 
-[InMemoryAccessPolicy](https://tg-rs.github.io/carapax/carapax/access/struct.InMemoryAccessPolicy.html) is a simple policy 
+[InMemoryAccessPolicy](https://tg-rs.github.io/carapax/carapax/access/struct.InMemoryAccessPolicy.html) is a policy
 which stores [access rules](https://tg-rs.github.io/carapax/carapax/access/struct.AccessRule.html) in memory.
 
 Let's see how it works:
@@ -225,10 +225,11 @@ There are two type of predicates
 and 
 [`KeyedRateLimitPredicate`](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.KeyedRateLimitPredicate.html)
 
-Direct is used when you need to limit all updates. Keyed - when you need to limit updates per chat and/or user.
+Direct is used when you need to apply ratelimit for all incoming updates.
+Keyed - when you need to limit updates per chat and/or user.
 
 When limit is reached you can either [discard](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.MethodDiscard.html) the updates,
-or [wait](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.MethodWait.html) when next limiter will allow to pass an update
+or [wait](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.MethodWait.html) for the next available time slot.
 
 Every type of predicate can be used [with](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.Jitter.html) or 
 [without](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.NoJitter.html) jitter.
@@ -256,7 +257,8 @@ Every session has an identifier represented by [SessionId](https://tg-rs.github.
 Note that it contains a chat ID and an user ID, but not all types of update can provide that information.
 
 [`SessionManager`](https://tg-rs.github.io/carapax/carapax/session/struct.SessionManager.html) allows to load a session by ID.
-Session ID in manager represented by `Into<String>` so you can use any type you want, if you have issues with updates without chat/user ID.
+In manager, Session ID represented by a type constrained to `Into<String>`.
+If you have issues with updates without chat/user ID just don't use `SessionId`.
 
 You can either get [`Session`](https://tg-rs.github.io/carapax/carapax/session/struct.Session.html) directly from the manager, 
 or use `TryFromInput` and specify `session: Session<B>` in handler arguments.
@@ -270,11 +272,11 @@ Note that you need to enable either `session-fs` or `session-redis` feature in `
 carapax = { version = "0.11.0", features = ["session-fs"] }
 ```
 
-Or simply just use `session` if you have your own backend.
+Or just use `session` if you have your own backend.
 
 ## Dialogues
 
-Dialogue is a kind of stateful handler. It receives an initial or previous state and returns a new state.
+Dialogue is a kind of stateful handler. It receives an previous state and returns a new one.
 
 [`DialogueDecorator`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueDecorator.html) allows to make a dialogue handler.
 It takes a predicate which allows to decide should we start a dialogue or not, and a handler itself.
@@ -283,10 +285,11 @@ Dialogue handler takes a `HandlerInput` and returns a [`DialogueResult`](https:/
 There is a [`DialogueInput`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueInput.html) structure which allows to obtain a state from the session.
 It implements `TryFromInput`, so you can use it as an argument of your handler.
 
-[`DialogueState`](https://tg-rs.github.io/carapax/carapax/dialogue/trait.DialogueState.html) is a trait that you must implement for your own state.
-Dialogue name is used to determine the session key for that dialogue, and must be unique.
+State must implemenet [`DialogueState`](https://tg-rs.github.io/carapax/carapax/dialogue/trait.DialogueState.html) trait.
+Dialogue name must be unique. It defines a value for session key to store the state.
 
-When returning a state you can convert it into `DialogueResult` without using `DialogueResult::Next(state)`: `state.into()`.
+State can be converted into `DialogueResult`.
+Thus you can return `state.into()` instead of `DialogueResult::Next(state)`.
 
 See [example](examples/app/dialogue.rs) for implementation details.
 
