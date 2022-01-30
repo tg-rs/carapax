@@ -239,7 +239,7 @@ Same as in access you can protect a single handler, chain or entire bot.
 Note that you need to enable `ratelimit` feature in `Cargo.toml`:
 
 ```
-carapax = { version = "*", features = ["ratelimit"] }
+carapax = { version = "0.11.0", features = ["ratelimit"] }
 ```
 
 ## Session
@@ -266,7 +266,7 @@ See [example](examples/app/session.rs) for implementation details.
 Note that you need to enable either `session-fs` or `session-redis` feature in `Cargo.toml`:
 
 ```
-carapax = { version = "*", features = ["session-fs"] }
+carapax = { version = "0.11.0", features = ["session-fs"] }
 ```
 
 Or simply just use `session` if you have your own backend.
@@ -292,7 +292,7 @@ See [example](examples/app/dialogue.rs) for implementation details.
 Note that you need to enable `session` and `dialogue` features in `Cargo.toml`:
 
 ```
-carapax = { version = "*", features = ["session-fs", "dialogue"] }
+carapax = { version = "0.11.0", features = ["session-fs", "dialogue"] }
 ```
 
 And of course you can use any session backend.
