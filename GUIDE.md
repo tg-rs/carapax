@@ -1,238 +1,299 @@
-# Simple app
+# Introduction
 
-Here is a simple app:
+Carapax is based on [tgbot](https://github.com/tg-rs/tgbot) — a core library for interacting with Telegram API.
+It provides [`Api`](https://docs.rs/tgbot/latest/tgbot/struct.Api.html) struct
+which allows you to execute methods and download files.
+And [`UpdateHandler`](https://docs.rs/tgbot/latest/tgbot/trait.UpdateHandler.html) trait to process updates.
+
+Carapax introduces a more flexible update handlers and other utilities to build a complex bots.
+
+Let's get started:
 
 ```rust
-use carapax::{Api, Context, Api, Ref};
-use carapax::types::{ChatId, Text};
-use carapax::methods::SendMessage;
-use carapax::longpoll::LongPoll;
+use carapax::{
+    longpoll::LongPoll,
+    methods::SendMessage,
+    types::{ChatId, Text},
+    webhook::run_server,
+    Api, Context, ExecuteError, Ref, SyncedUpdateHandler
+};
 
-async fn echo(api: Ref<Api>, chat_id: ChatId, message: Text) -> Result<(), ExecuteError> {
-    let method = SendMessage::new(chat_id, message.data);
+async fn echo(api: Ref<Api>, chat_id: ChatId, text: Text) -> Result<(), ExecuteError> {
+    let method = SendMessage::new(chat_id, text.data);
     api.execute(method).await?;
     Ok(())
 }
 
+// Create api client with a token provided by Bot Father.
 let api = Api::new("BOT_TOKEN")?;
 
+// Context is a type map wich allows to share objects between handlers.
+// Every object you insert in context must implement Clone.
 let context = Context::new();
 context.insert(api.clone());
 
+// App is the main entry point.
+// First argument is the context.
+// Second - an input handler.
+// App implements UpdateHandler trait provided by tgbot,
+// so you can use it in LongPoll or run_server
 let app = App::new(context, echo);
-LongPoll::new(api, app).run().await;
+
+// Start receiving updates using longpoll method
+LongPoll::new(api, app).run().await.unwrap();
+
+// or webhook
+run_server(([127, 0, 0, 1], 8080), "/", SyncedUpdateHandler::new(app)).await.unwrap();
 ```
 
-Let's figure it out line-by-line.
+## Handlers
+
+In example above `app` calls `echo` handler on every new update received from Telegram API.
+
+Handlers must implement [`Handler`](https://tg-rs.github.io/carapax/carapax/trait.Handler.html) trait.
+Since this trait is implemented for `Fn` (with up to 10 arguments), we can use a regular functions as handlers.
+It's recommended to use a function when you need a simple handler.
+Implement `Handler` trait for your own type only in a complex cases (e.g. you need a custom decorator or predicate).
+
+Handler takes any type which implements [`TryFromInput`](https://tg-rs.github.io/carapax/carapax/trait.TryFromInput.html) as input.
+And should return a future with [`HandlerResult`](https://tg-rs.github.io/carapax/carapax/enum.HandlerResult.html) output,
+if you want to use it in `App` struct.
+
+`App` creates a [`HandlerInput`](https://tg-rs.github.io/carapax/carapax/struct.HandlerInput.html) with `Context` and an `Update`,
+converts it into an input for a specific handler using `TryFromInput` trait.
+Handler will be executed only if `TryFromInput` returned `Some(T)`.
+So, in example above, `echo` will run only when `Update` contains any `Text` (message text, media captions).
+
+Use `Ref<T>` as argument type when you need to get an object from context.
+If object is not found, `TryFromInput` returns an error and handler will not run.
+
+### Chain
+
+Chain is a handler which allows to execute more than one handler:
 
 ```rust
-let api = Api::new("BOT_TOKEN")?;
+use carapax::Chain;
+
+async fn handler1(_: ()) {}
+async fn handler2(_: ()) {}
+async fn handler3(_: ()) {}
+
+let chain = Chain::default()
+    .add_handler(handler1)
+    .add_handler(handler2)
+    .add_handler(handler3);
 ```
 
-`Api` is something like you can usually see as `Bot` in other languages. It executes all API methods and download files.
+Handlers will run in same order as added.
+If a handler returns `HandlerResult::Stop` or `HandlerResult::Error(_)`, all handlers added after that handler will not run.
+
+### HandlerResult
+
+Normally every handler must return a `HandlerResult` or any type which converts into it:
+
+| From            | To                          |
+|-----------------|-----------------------------|
+| `()`            | `HandlerResult::Stop`       |
+| `true`          | `HandlerResult::Continue`   |
+| `false`         | `HandlerResult::Stop`       |
+| `Result<T, E>`  | `T.into::<HandlerResult>()` |
+
+
+## Predicates
+
+[`Predicate`](https://tg-rs.github.io/carapax/carapax/struct.Predicate.html)
+is a decorator which allows to decide, should handler run or not.
+It is useful when you need to implement a ratelimit or close a handler or entire bot from unwanted users and so on.
+
+A predicate handler must implement `Handler` trait, but return
+a [`PredicateResult`](https://tg-rs.github.io/carapax/carapax/enum.PredicateResult.html)
+or any type which converts into it:
+
+|   From            | To                            |
+|-------------------|-------------------------------|
+| `true`            | `PredicateResult::Continue`   |
+| `false`           | `PredicateResult::Stop`       |
+| `Result<T, E>`    | `T.into::<PredicateResult>()` |
+
+
+Example:
 
 ```rust
-let context = Context::new();
-context.insert(api.clone());
-```
+use carapax::{
+    methods::SendMessage,
+    types::{ChatId, Text},
+    Api, Chain, Predicate, PredicateExt, Ref,
+};
 
-`Context` is type map which contains all any objects you insert. We add `Api` into it in this case.
-
-```rust
-let app = App::new(context, echo);
-```
-
-`App` is the main entry point, the link between context and handler (`echo`). App implements `UpdateHandler` trait
-which is used for handling updates Telegram sends you.
-
-```rust
-LongPoll::new(api, app).run().await;
-```
-
-`LongPoll` is structure for receiving updates using long polling. It accepts `Api` to execute `getUpdates` method and `UpdateHandler` which handle updates.
-
-Now the most interesting part. 
-
-```rust
-fn echo(api: Ref<Api>, chat_id: ChatId, message: Text) -> Result<(), ExecuteError> {
-    let method = SendMessage::new(chat_id, message.data);
-    api.execute(method).await?;
-    Ok(())
+fn setup(chain: &mut Chain) {
+    // decorate pong with is_ping
+    let handler = Predicate::new(is_ping, pong);
+    // or using PredicateExt
+    let handler = pong.predicate(is_ping);
+    chain.add_handler(handler);
 }
-```
 
-`echo` is our handler. Signature of the handler also defines it propagation behavior.
-
-Every argument of `echo` implements `TryFromInput` so it creates itself from Telegram's update and `Context`.
-
-```rust
-api: Ref<Api>
-```
-
-We get our data from `Context` using `Ref` type
-
-```rust
-chat_id: ChatId
-```
-
-We want to get chat ID so there will be try to get it from update. 
-If it is not applicable, handler will not be executed.
-
-```rust
-message: Text
-```
-
-Similar to the previous argument.
-
-```rust
-let method = SendMessage::new(chat_id, message.data);
-api.execute(method).await?;
-```
-
-We execute `sendMessage` method.
-
-# `Chain` handler
-
-What if we have bot that is more complicated than just sending messages back?
-
-We can use `Chain` handler. It chains handlers and run them in a sequence.
-
-```rust
-let chain = Chain::default();
-chain
-    .add_handler(rate_limiter)
-    .add_handler(statistics)
-    .add_handler(cas)
-    .add_handler(start.command("/start"))
-    .add_handler(info.command("/info")) 
-    .add_handler(cats);
-```
-
-# Controlling propagation
-
-Propagation of handlers can be controlled in two different ways:
-1. By handler arguments. 
-
-For example:
-
-```rust
-fn i_want_text(message: Text) {}
-```
-
-We expect message text but if user sends sticker, handler will not run and propagation of the next one will be started.
-
-2. Return `HandlerResult`.
-
-```rust
-async fn cas(client: Ref<CasClient>, user: User) -> HandlerResult {
-    let is_user_banned = client.check_user(user.id);
-    if is_user_banned {
-        HandlerResult::Stop
-    } else {
-        HandlerResult::Continue
-    }
-} 
-```
-
-In case of ban any next handler will not run.
-
-# `*Ext` traits
-
-It's recommended to use traits like `CommandExt`, `PredicateExt`, etc for convenient usage.
-
-For example:
-
-```rust
-use carapax::PredicateExt;
-
-let handler = pong.predicate(is_ping); 
-```
-
-vs
-
-```rust
-let handler = Predicate::new(is_ping, pong);
-```
-
-# Implement `TryFromInput` for your own types
-
-Just implement this trait:
-
-```rust
-pub trait TryFromInput: Send + Sized {
-    type Future: Future<Output = Result<Option<Self>, Self::Error>> + Send;
-    type Error: Error + Send;
-    fn try_from_input(input: HandlerInput) -> Self::Future;
+async fn is_ping(text: Text) -> bool {
+    text.data == "ping"
 }
-```
 
-What you should return in different cases:
-* `Ok(Some(...))` in case of successful type creation.
-* `Ok(None)` in case of type cannot be created, and it is not critical. Handler will not run.
-
-For example, implementation of `Text` will return `None` if `Update` does not contain any actual text.
-
-* `Err(...)` in case of error during type creation.
-
-# `access` module
-
-```rust
-use carapax::access::{InMemoryAccessPolicy, AccessRule};
-
-let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user("john")]);
-let handler = image_handler.access(policy);
-```
-
-We create `InMemoryAccessPolicy` structure with rule to run `image_handler` only if message is from `@john`.
-
-It implements `AccessPolicy` trait which `access` method (from `AccessExt` trait) wait as the argument.
-
-# `session` module
-
-Session works with data from persistent store, so you can be sure your data is not lost across, say, bot restarts.
-
-```rust
-use carapax::session::{FilesystemBackend, SessionManager, Session, SessionError};
-
-let tmpdir = tempdir()?;
-let backend = FilesystemBackend::new(tmpdir.path());
-
-let gc_period = Duration::from_secs(120); // period between GC calls
-let session_lifetime = Duration::from_secs(60 * 60); // how long session lives
-// spawn GC to remove old sessions
-let mut collector = SessionCollector::new(backend.clone(), gc_period, session_lifetime);
-tokio::spawn(async move { collector.run().await });
-
-let manager = SessionManager::new(backend);
-context.insert(manager);
-
-fn store_data(session: Session<FilesystemBackend>) -> Result<(), SessionError> {
-    session.set("test", 123)
+async fn pong(api: Ref<Api>, chat_id: ChatId) {
+    let method = SendMessage::new(chat_id, "pong");
+    api.execute(method).await.unwrap();
 }
-context.insert(store_data);
+
 ```
 
-`backend` responds for session storing. Filesystem in this example.
+### Commands
 
-`manager` will be used by `Session` to acquire itself.
-
-# `dialogue` module
-
-See [dialogue.rs](examples/app/dialogue.rs) for example usage.
-
-The main thing you must know dialogues need session manager for their states.
-
-# `ratelimit` module
+[`CommandPredicate`](https://tg-rs.github.io/carapax/carapax/struct.CommandPredicate.html#)
+is a decorator which allows to run handlers only when user sent a command.
+Note that command name contains a leading slash (`/`).
 
 ```rust
-use carapax::ratelimit::{nonzero, DirectRateLimitPredicate, Jitter, Quota};
+use carapax::{
+    methods::SendMessage,
+    types::{ChatId, User},
+    Api, Chain, CommandPredicate, CommandExt, Predicate, Ref,
+};
 
-let quota = Quota::with_period(Duration::from_secs(5))
-    .expect("Failed to create quota")
-    .allow_burst(nonzero!(1u32));
-let jitter = Jitter::up_to(Duration::from_secs(5));
+fn setup(chain: &mut Chain) {
+    let handler = Predicate::new(CommandPredicate::new("/hello"), greet);
+    // or using CommandExt
+    let handler = greet.command("/hello");
 
-let handler = my_handler.predicate(DirectRateLimitPredicate::wait_with_jitter(quota, jitter));
+    chain.add_handler(handler);
+}
+
+async fn greet(api: Ref<Api>, chat_id: ChatId, user: User) {
+    let method = SendMessage::new(chat_id, format!("Hello, {}", user.first_name));
+    api.execute(method).await.unwrap();
+}
+
 ```
 
-As you can see, ratelimit is applied through predicate.
+### Access
+
+[AccessPredicate](https://tg-rs.github.io/carapax/carapax/access/struct.AccessPredicate.html) allows to protect handlers from unwanted users.
+It takes an [`AccessPolicy`](https://tg-rs.github.io/carapax/carapax/access/trait.AccessPolicy.html).
+Policy has `is_granted` method which takes a `HandlerInput` and returns a future with `bool` output.
+If `true` is returned - access is allowed, `false` - forbidden.
+
+[InMemoryAccessPolicy](https://tg-rs.github.io/carapax/carapax/access/struct.InMemoryAccessPolicy.html) is a simple policy 
+which stores [access rules](https://tg-rs.github.io/carapax/carapax/access/struct.AccessRule.html) in memory.
+
+Let's see how it works:
+
+```rust
+use carapax::{
+    access::{AccessExt, AccessPredicate, AccessRule, InMemoryAccessPolicy},
+    types::Update,
+    Chain, Predicate, HandlerResult,
+};
+
+fn setup(chain: &mut Chain) {
+    let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user("username")]);
+    let handler = Predicate::new(AccessPredicate::new(policy), protected_handler);
+    // or using AccessExt
+    // let handler = protected_handler.access(policy);
+    chain.add_handler(handler);
+}
+
+async fn protected_handler(update: Update) {
+    log::info!("Got a new update in protected handler: {:?}", update);
+}
+
+```
+
+Since `Chain` implements `Handler` you also can protect a group of handlers or entire bot.
+Of course you can implement your own policy in order to store access rules and/or a list of banned users in database or other storage.
+
+Note that you need to enable `access` feature in `Cargo.toml`:
+
+```
+carapax = { version = "*", features = ["access"] }
+```
+
+
+### Ratelimit
+
+Carapax provides a ratelimit support using [governor](https://crates.io/crates/governor) crate.
+
+There are two type of predicates 
+[`DirectRateLimitPredicate`](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.DirectRateLimitPredicate.html)
+and 
+[`KeyedRateLimitPredicate`](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.KeyedRateLimitPredicate.html)
+
+Direct is used when you need to limit all updates. Keyed - when you need to limit updates per chat and/or user.
+
+When limit is reached you can [discard](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.MethodDiscard.html) new updates 
+or [wait](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.MethodWait.html) when next limiter will allow to pass an update
+
+Every type of predicate can be used [with](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.Jitter.html) or 
+[without](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.NoJitter.html) jitter.
+
+See [example](examples/app/ratelimit.rs) for implementation details.
+
+Same as in access you can protect a single handler, chain or entire bot.
+
+Note that you need to enable `ratelimit` feature in `Cargo.toml`:
+
+```
+carapax = { version = "*", features = ["ratelimit"] }
+```
+
+## Session
+
+
+Sessions allows to store data in a storage such as filesystem or redis. 
+So you can implement stateful handlers.
+
+Session support is implemented using [seance](http://crates.io/crates/seance) crate.
+Carapax reexports all needed types from seance and you don't have to add it to your `Cargo.toml`.
+
+Every session has an identifier represented by [SessionId](https://tg-rs.github.io/carapax/carapax/session/struct.SessionId.html) struct.
+Note that it contains a chat ID and an user ID, but not all types of update can provide that information.
+
+[`SessionManager`](https://tg-rs.github.io/carapax/carapax/session/struct.SessionManager.html) allows to load a session by ID.
+Session ID in manager represented by `Into<String>` so you can use any type you want, if you have issues with updates without chat/user ID.
+
+You can get [`Session`](https://tg-rs.github.io/carapax/carapax/session/struct.Session.html) directly from manager, 
+or use `TryFromInput` and specify `session: Session<B>` in handler arguments.
+In both cases make sure that you added session manager to context.
+
+See [example](examples/app/session.rs) for implementation details.
+
+Note that you need to enable either `session-fs` or `session-redis` feature in `Cargo.toml`:
+
+```
+carapax = { version = "*", features = ["session-fs"] }
+```
+
+Or simply just use `session` if you have your own backend.
+
+## Dialogues
+
+Dialogue is a kind of stateful handler. It receives an initial or previous state and returns a new state.
+
+[`DialogueDecorator`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueDecorator.html) allows to make a dialogue handler.
+It takes a predicate which allows to decide should we start dialogue or not and a handler itself.
+
+Dialogue handler takes a `HandlerInput` and returns a [`DialogueResult`](https://tg-rs.github.io/carapax/carapax/dialogue/enum.DialogueResult.html).
+There is a [`DialogueInput`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueInput.html) which allows to obtain a state from session.
+It implements `TryFromInput`, so you can use it as argument of your handler.
+
+[`DialogueState`](https://tg-rs.github.io/carapax/carapax/dialogue/trait.DialogueState.html) is a trait that you must implement for your own state.
+Dialogue name is used to determine session key for that dialogue and must be unique.
+
+When returning a state you can convert it into `DialogueResult` without using `DialogueResult::Next(state)`: `state.into()`.
+
+See [example](examples/app/dialogue.rs) for implementation details.
+
+Note that you need to enable `session` and `dialogue` features in `Cargo.toml`:
+
+```
+carapax = { version = "*", features = ["session-fs", "dialogue"] }
+```
+
+And of course you can use any session backend.
+
