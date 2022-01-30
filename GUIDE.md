@@ -9,14 +9,16 @@ Carapax introduces a more flexible update handlers and other utilities to build 
 
 Let's get started:
 
-```rust
+```rust no_run
 use carapax::{
     longpoll::LongPoll,
     methods::SendMessage,
     types::{ChatId, Text},
     webhook::run_server,
-    Api, Context, ExecuteError, Ref, SyncedUpdateHandler
+    Api, App, Context, ExecuteError, Ref, SyncedUpdateHandler
 };
+
+const DEBUG: bool = true;
 
 async fn echo(api: Ref<Api>, chat_id: ChatId, text: Text) -> Result<(), ExecuteError> {
     let method = SendMessage::new(chat_id, text.data);
@@ -24,26 +26,31 @@ async fn echo(api: Ref<Api>, chat_id: ChatId, text: Text) -> Result<(), ExecuteE
     Ok(())
 }
 
-// Create api client with a token provided by Bot Father.
-let api = Api::new("BOT_TOKEN")?;
+#[tokio::main]
+async fn main() {
+    // Create api client with a token provided by Bot Father.
+    let api = Api::new("BOT_TOKEN").expect("Failed to create API");
 
-// Context is a type map wich allows to share objects between handlers.
-// Every object you insert in context must implement Clone.
-let context = Context::new();
-context.insert(api.clone());
+    // Context is a type map wich allows to share objects between handlers.
+    // Every object you insert in context must implement Clone.
+    let mut context = Context::default();
+    context.insert(api.clone());
 
-// App is the main entry point.
-// First argument is the context.
-// Second - an input handler.
-// App implements UpdateHandler trait provided by tgbot,
-// so you can use it in LongPoll or run_server
-let app = App::new(context, echo);
+    // App is the main entry point.
+    // First argument is the context.
+    // Second - an input handler.
+    // App implements UpdateHandler trait provided by tgbot,
+    // so you can use it in LongPoll or run_server
+    let app = App::new(context, echo);
 
-// Start receiving updates using longpoll method
-LongPoll::new(api, app).run().await.unwrap();
-
-// or webhook
-run_server(([127, 0, 0, 1], 8080), "/", SyncedUpdateHandler::new(app)).await.unwrap();
+    if DEBUG {
+        // Start receiving updates using longpoll method
+        LongPoll::new(api, app).run().await;
+    } else {
+        // or webhook
+        run_server(([127, 0, 0, 1], 8080), "/", SyncedUpdateHandler::new(app)).await.expect("Failed to run webhook");
+    }
+}
 ```
 
 ## Handlers
@@ -122,13 +129,10 @@ Example:
 use carapax::{
     methods::SendMessage,
     types::{ChatId, Text},
-    Api, Chain, Predicate, PredicateExt, Ref,
+    Api, Chain, PredicateExt, Ref,
 };
 
 fn setup(chain: &mut Chain) {
-    // decorate pong with is_ping
-    let handler = Predicate::new(is_ping, pong);
-    // or using PredicateExt
     let handler = pong.predicate(is_ping);
     chain.add_handler(handler);
 }
@@ -154,14 +158,11 @@ Note that command name contains a leading slash (`/`).
 use carapax::{
     methods::SendMessage,
     types::{ChatId, User},
-    Api, Chain, CommandPredicate, CommandExt, Predicate, Ref,
+    Api, Chain, CommandExt, Ref,
 };
 
 fn setup(chain: &mut Chain) {
-    let handler = Predicate::new(CommandPredicate::new("/hello"), greet);
-    // or using CommandExt
     let handler = greet.command("/hello");
-
     chain.add_handler(handler);
 }
 
@@ -210,8 +211,8 @@ Of course you can implement your own policy in order to store access rules and/o
 
 Note that you need to enable `access` feature in `Cargo.toml`:
 
-```
-carapax = { version = "*", features = ["access"] }
+```toml
+carapax = { version = "0.11.0", features = ["access"] }
 ```
 
 
@@ -238,7 +239,7 @@ Same as in access you can protect a single handler, chain or entire bot.
 
 Note that you need to enable `ratelimit` feature in `Cargo.toml`:
 
-```
+```toml
 carapax = { version = "0.11.0", features = ["ratelimit"] }
 ```
 
@@ -265,7 +266,7 @@ See [example](examples/app/session.rs) for implementation details.
 
 Note that you need to enable either `session-fs` or `session-redis` feature in `Cargo.toml`:
 
-```
+```toml
 carapax = { version = "0.11.0", features = ["session-fs"] }
 ```
 
@@ -291,9 +292,8 @@ See [example](examples/app/dialogue.rs) for implementation details.
 
 Note that you need to enable `session` and `dialogue` features in `Cargo.toml`:
 
-```
+```toml
 carapax = { version = "0.11.0", features = ["session-fs", "dialogue"] }
 ```
 
 And of course you can use any session backend.
-
