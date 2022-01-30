@@ -22,9 +22,10 @@ carapax = "0.11.0"
 
 ## Usage
 
-You can check [GUIDE.md](GUIDE.md) or examples.
+Check out [GUIDE.md](https://github.com/tg-rs/carapax/tree/0.11.0/GUIDE.md) and
+[examples](https://github.com/tg-rs/carapax/tree/0.11.0/examples) directory.
 
-In order to run [examples](https://github.com/tg-rs/carapax/tree/0.11.0/carapax/examples) you need to create a `.env` file:
+In order to run examples you need to create a `.env` file:
 
 ```sh
 cp sample.env .env
