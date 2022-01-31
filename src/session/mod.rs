@@ -47,9 +47,9 @@ impl SessionId {
     }
 }
 
-impl Into<String> for SessionId {
-    fn into(self) -> String {
-        self.0
+impl From<SessionId> for String {
+    fn from(value: SessionId) -> Self {
+        value.0
     }
 }
 
