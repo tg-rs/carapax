@@ -189,8 +189,7 @@ fn main() {
 
 [AccessPredicate](https://tg-rs.github.io/carapax/carapax/access/struct.AccessPredicate.html) allows to setup access to handlers.
 It takes an [`AccessPolicy`](https://tg-rs.github.io/carapax/carapax/access/trait.AccessPolicy.html).
-Policy has `is_granted` method which takes a `HandlerInput` and returns a future with `bool` output.
-If `true` is returned - access is granted, `false` - forbidden.
+Policy allows to decide whether access granted or not, depending on `HandlerInput`.
 
 [InMemoryAccessPolicy](https://tg-rs.github.io/carapax/carapax/access/struct.InMemoryAccessPolicy.html) is a policy
 which stores [access rules](https://tg-rs.github.io/carapax/carapax/access/struct.AccessRule.html) in memory.
