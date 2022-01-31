@@ -1,19 +1,9 @@
 use regex::Regex;
-use std::{
-    fs::File,
-    io::{Error as IoError, Read},
-};
+use std::fs::read_to_string;
 use toml::Value;
 
-fn read_file(path: &str) -> Result<String, IoError> {
-    let mut file = File::open(path)?;
-    let mut buf = String::new();
-    file.read_to_string(&mut buf)?;
-    Ok(buf)
-}
-
 fn get_crate_version() -> String {
-    let manifest = read_file("./Cargo.toml").expect("Failed to get Cargo.toml data");
+    let manifest = read_to_string("./Cargo.toml").expect("Failed to get Cargo.toml data");
     let value: Value = manifest.parse().expect("Failed to parse Cargo.toml");
     let version = value["package"]["version"]
         .as_str()
@@ -25,7 +15,7 @@ fn get_crate_version() -> String {
 fn versions() {
     let version = get_crate_version();
     for filename in &["./README.md", "./GUIDE.md"] {
-        let readme = read_file(filename).unwrap();
+        let readme = read_to_string(filename).unwrap();
         for pattern in &[
             r#"https://github\.com/tg-rs/carapax/tree/([\d\.]+)"#,
             r#"carapax\s?=\s?"([\d\.]+)""#,
