@@ -83,27 +83,41 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Integer, User};
-    use std::{error::Error, fmt};
+    use crate::{
+        core::context::Ref,
+        types::{Integer, User},
+    };
+    use std::{error::Error, fmt, sync::Arc};
+    use tokio::sync::Mutex;
 
     #[tokio::test]
     async fn decorator() {
+        let condition = Ref::new(Condition::new());
         let handler = Predicate::new(has_access, process_user);
         let user_1 = create_user(1);
         let user_2 = create_user(2);
         let user_3 = create_user(3);
+
         assert!(matches!(
-            handler.handle(((user_1.clone(),), (user_1,))).await,
-            HandlerResult::Continue
+            handler.handle(((user_1.clone(),), (user_1, condition.clone()))).await,
+            HandlerResult::Ok
         ));
+        assert!(*condition.value.lock().await);
+        condition.set(false).await;
+
         assert!(matches!(
-            handler.handle(((user_2.clone(),), (user_2,))).await,
-            HandlerResult::Stop
+            handler.handle(((user_2.clone(),), (user_2, condition.clone()))).await,
+            HandlerResult::Ok
         ));
+        assert!(!*condition.value.lock().await);
+        condition.set(false).await;
+
         assert!(matches!(
-            handler.handle(((user_3.clone(),), (user_3,))).await,
-            HandlerResult::Error(_)
+            handler.handle(((user_3.clone(),), (user_3, condition.clone()))).await,
+            HandlerResult::Err(_)
         ));
+        assert!(*condition.value.lock().await);
+        condition.set(false).await;
     }
 
     fn create_user(id: Integer) -> User {
@@ -121,16 +135,34 @@ mod tests {
         if user.id != 2 {
             PredicateResult::True
         } else {
-            PredicateResult::False(HandlerResult::Stop)
+            PredicateResult::False(HandlerResult::Ok)
         }
     }
 
-    async fn process_user(user: User) -> Result<HandlerResult, ProcessError> {
+    async fn process_user(user: User, condition: Ref<Condition>) -> Result<HandlerResult, ProcessError> {
+        condition.set(true).await;
         log::info!("Processing user: {:?}", user);
         if user.id == 3 {
             Err(ProcessError)
         } else {
-            Ok(HandlerResult::Continue)
+            Ok(HandlerResult::Ok)
+        }
+    }
+
+    #[derive(Clone)]
+    struct Condition {
+        value: Arc<Mutex<bool>>,
+    }
+
+    impl Condition {
+        fn new() -> Self {
+            Self {
+                value: Arc::new(Mutex::new(false)),
+            }
+        }
+
+        async fn set(&self, value: bool) {
+            *self.value.lock().await = value;
         }
     }
 

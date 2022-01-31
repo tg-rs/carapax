@@ -88,34 +88,15 @@ pub type HandlerError = Box<dyn Error + Send>;
 /// A result returned by a handler
 #[derive(Debug)]
 pub enum HandlerResult {
-    /// Continue propagation
-    ///
-    /// Next handler (if exists) will run after current has finished
-    Continue,
-    /// Stop propagation
-    ///
-    /// Next handler (if exists) will not run after current has finished
-    Stop,
-    /// An error has occurred
-    ///
-    /// This error will be passed to [ErrorHandler](trait.ErrorHandler.html).
-    /// Next handler will run after current has finished.
-    Error(HandlerError),
+    /// Success
+    Ok,
+    /// Contains the error
+    Err(HandlerError),
 }
 
 impl From<()> for HandlerResult {
     fn from(_: ()) -> Self {
-        HandlerResult::Stop
-    }
-}
-
-impl From<bool> for HandlerResult {
-    fn from(flag: bool) -> Self {
-        if flag {
-            HandlerResult::Continue
-        } else {
-            HandlerResult::Stop
-        }
+        HandlerResult::Ok
     }
 }
 
@@ -127,7 +108,7 @@ where
     fn from(result: Result<T, E>) -> Self {
         match result {
             Ok(res) => res.into(),
-            Err(err) => HandlerResult::Error(Box::new(err)),
+            Err(err) => HandlerResult::Err(Box::new(err)),
         }
     }
 }
@@ -168,16 +149,14 @@ mod tests {
 
     #[test]
     fn convert() {
-        assert!(matches!(HandlerResult::from(()), HandlerResult::Stop));
-        assert!(matches!(HandlerResult::from(true), HandlerResult::Continue));
-        assert!(matches!(HandlerResult::from(false), HandlerResult::Stop));
+        assert!(matches!(HandlerResult::from(()), HandlerResult::Ok));
         assert!(matches!(
             HandlerResult::from(Ok::<(), ExampleError>(())),
-            HandlerResult::Stop
+            HandlerResult::Ok
         ));
         assert!(matches!(
             HandlerResult::from(Err::<(), ExampleError>(ExampleError)),
-            HandlerResult::Error(_)
+            HandlerResult::Err(_)
         ));
     }
 }
