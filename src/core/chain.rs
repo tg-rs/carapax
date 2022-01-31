@@ -23,6 +23,7 @@ impl Chain {
     /// # Panics
     ///
     /// Panics when trying to add a handler to a shared chain
+    #[allow(clippy::should_implement_trait)]
     pub fn add<H, I>(mut self, handler: H) -> Self
     where
         H: Handler<I> + Sync + Clone + 'static,
