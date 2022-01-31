@@ -83,6 +83,9 @@ impl From<Update> for HandlerInput {
 }
 
 /// An error returned by a handler
+// this type is needed because `dyn ...` is not Sized
+// this is required by
+// https://doc.rust-lang.org/stable/std/boxed/struct.Box.html#impl-From%3CE%3E
 pub struct HandlerError(Box<dyn Error + Send>);
 
 impl HandlerError {
