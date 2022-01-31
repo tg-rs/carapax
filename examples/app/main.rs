@@ -42,7 +42,7 @@ async fn main() {
         chain = ratelimit::setup(chain, &ratelimit_strategy);
     }
 
-    let handler = chain.error(error_handler);
+    let handler = chain.on_error(error_handler);
 
     let app = App::new(context, handler);
     LongPoll::new(api, app).run().await

@@ -127,7 +127,7 @@ pub trait ErrorExt<E, HI>: Sized {
     /// # Arguments
     ///
     /// * error_handler - An error handler
-    fn error(self, error_handler: E) -> ErrorDecorator<E, Self, HI> {
+    fn on_error(self, error_handler: E) -> ErrorDecorator<E, Self, HI> {
         ErrorDecorator::new(error_handler, self)
     }
 }
