@@ -301,3 +301,47 @@ See [example](examples/app/dialogue.rs) for more information.
 Note that you need to enable `session` and `dialogue` features in `Cargo.toml`.
 
 And of course you can use any session backend.
+
+## Error handling
+
+By default, `App` logs an error produced by a handler.
+
+You can use [`ErrorDecorator`](https://tg-rs.github.io/carapax/carapax/struct.ErrorDecorator.html). It allows processing an error returned by a handler.
+
+```rust
+use carapax::{
+    Chain, ErrorExt, ErrorDecorator, ErrorHandler, HandlerError,
+};
+use std::num::ParseIntError;
+use futures_util::future::BoxFuture;
+
+#[derive(Clone)]
+struct LoggingErrorHandler;
+
+impl ErrorHandler for LoggingErrorHandler {
+    type Future = BoxFuture<'static, HandlerError>;
+    
+    fn handle(&self, err: HandlerError) -> Self::Future {
+        Box::pin(async {
+            log::error!("An error occurred: {}", err);
+            err
+        })
+    }
+}
+
+async fn erroneous_handler(_: ()) -> Result<(), ParseIntError> {
+    let _num = "not a number".parse::<i32>()?;
+    Ok(())
+}
+
+fn main() {
+    // ...
+    // using ErrorExt
+    let handler = erroneous_handler.on_error(LoggingErrorHandler);
+    // or create decorator by hand
+    let handler = ErrorDecorator::new(LoggingErrorHandler, erroneous_handler);
+    let mut chain = Chain::default();
+    chain.add_handler(handler);
+    // ...
+}
+```
