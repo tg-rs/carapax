@@ -106,20 +106,6 @@ where
     }
 }
 
-/// Writes an error to log
-pub struct LoggingErrorHandler;
-
-impl ErrorHandler for LoggingErrorHandler {
-    type Future = BoxFuture<'static, HandlerError>;
-
-    fn handle(&self, err: HandlerError) -> Self::Future {
-        Box::pin(async move {
-            log::error!("An error has occurred: {}", err);
-            err
-        })
-    }
-}
-
 /// Error decorator shortcuts
 pub trait ErrorExt<E, HI>: Sized {
     /// Shortcut to create a new error decorator (`handler.error(error_handler)`)
