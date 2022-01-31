@@ -274,6 +274,10 @@ or use `TryFromInput` and specify `session: Session<B>` in handler arguments.
 Where `B` is a [session backend](https://tg-rs.github.io/carapax/carapax/session/backend/index.html).
 In both cases make sure that session manager is added to the context.
 
+As mentioned above, not all updates has `chat_id` or `user_id`.
+And handler will not run if it contains `Session<B>` or `SessionId` in arguments.
+In this case you need to get session from manager manually.
+
 See [example](examples/app/session.rs) for more information.
 
 Note that you need to enable either `session-fs` or `session-redis` feature in `Cargo.toml`.
