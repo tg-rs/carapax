@@ -62,17 +62,17 @@ where
                 Ok(Some(input)) => {
                     let future = handler.handle(input);
                     match future.await.into() {
-                        HandlerResult::Error(err) => {
+                        HandlerResult::Err(err) => {
                             let future = error_handler.handle(err);
-                            HandlerResult::Error(future.await)
+                            HandlerResult::Err(future.await)
                         }
                         result => result,
                     }
                 }
-                Ok(None) => HandlerResult::Continue,
+                Ok(None) => HandlerResult::Ok,
                 Err(err) => {
                     let future = error_handler.handle(Box::new(err));
-                    HandlerResult::Error(future.await)
+                    HandlerResult::Err(future.await)
                 }
             }
         })
@@ -187,7 +187,7 @@ mod tests {
         let update = create_update();
         let input = HandlerInput::from(update);
         let result = handler.handle(input).await;
-        assert!(matches!(result, HandlerResult::Error(_)));
+        assert!(matches!(result, HandlerResult::Err(_)));
         assert!(*condition.value.lock().await)
     }
 }

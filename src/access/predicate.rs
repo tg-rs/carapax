@@ -39,9 +39,9 @@ where
                 }
                 Ok(false) => {
                     log::info!("Access forbidden for {:?}", user);
-                    PredicateResult::False(HandlerResult::Stop)
+                    PredicateResult::False(HandlerResult::Ok)
                 }
-                Err(err) => PredicateResult::False(HandlerResult::Error(Box::new(err))),
+                Err(err) => PredicateResult::False(HandlerResult::Err(Box::new(err))),
             }
         })
     }
@@ -119,7 +119,7 @@ mod tests {
         .unwrap();
         let input_forbidden = HandlerInput::from(update_forbidden);
         let result = predicate.handle(input_forbidden).await;
-        assert!(matches!(result, PredicateResult::False(HandlerResult::Stop)));
+        assert!(matches!(result, PredicateResult::False(HandlerResult::Ok)));
 
         let update_error: Update = serde_json::from_value(serde_json::json!(
             {
@@ -136,6 +136,6 @@ mod tests {
         .unwrap();
         let input_error = HandlerInput::from(update_error);
         let result = predicate.handle(input_error).await;
-        assert!(matches!(result, PredicateResult::False(HandlerResult::Error(_))));
+        assert!(matches!(result, PredicateResult::False(HandlerResult::Err(_))));
     }
 }

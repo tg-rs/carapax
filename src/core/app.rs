@@ -58,7 +58,7 @@ where
                 }
             };
             let future = handler.handle(input);
-            if let HandlerResult::Error(err) = future.await.into() {
+            if let HandlerResult::Err(err) = future.await.into() {
                 log::error!("An error has occurred: {}", err);
             }
         }
@@ -116,9 +116,8 @@ mod tests {
 
     impl Error for ExampleError {}
 
-    async fn success_handler(counter: Ref<Counter>) -> HandlerResult {
+    async fn success_handler(counter: Ref<Counter>) {
         *counter.value.lock().await += 1;
-        HandlerResult::Continue
     }
 
     async fn error_handler(counter: Ref<Counter>) -> Result<(), ExampleError> {

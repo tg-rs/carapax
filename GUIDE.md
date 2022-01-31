@@ -94,7 +94,7 @@ let chain = Chain::default()
 ```
 
 Handlers will run in same order as added.
-If a handler returns `HandlerResult::Stop` or `HandlerResult::Error(_)`, all the subsequent handlers will not run.
+If a handler returns `HandlerResult::Err(_)`, all the subsequent handlers will not run.
 
 ### HandlerResult
 
@@ -102,9 +102,7 @@ Normally every handler must return a `HandlerResult` or a type that converts int
 
 | From            | To                          |
 |-----------------|-----------------------------|
-| `()`            | `HandlerResult::Stop`       |
-| `true`          | `HandlerResult::Continue`   |
-| `false`         | `HandlerResult::Stop`       |
+| `()`            | `HandlerResult::Ok`         |
 | `Result<T, E>`  | `T: Into<HandlerResult>`    |
 
 ### Error handling

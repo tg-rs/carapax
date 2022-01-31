@@ -1,7 +1,7 @@
 use carapax::{
     access::{AccessExt, AccessRule, InMemoryAccessPolicy},
     types::Update,
-    Chain, HandlerResult,
+    Chain,
 };
 
 pub fn setup(chain: Chain, username: &str) -> Chain {
@@ -9,7 +9,6 @@ pub fn setup(chain: Chain, username: &str) -> Chain {
     chain.add(log_protected.access(policy))
 }
 
-async fn log_protected(update: Update) -> HandlerResult {
+async fn log_protected(update: Update) {
     log::info!("Got a new update in protected handler: {:?}", update);
-    HandlerResult::Continue
 }

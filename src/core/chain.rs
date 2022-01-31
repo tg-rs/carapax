@@ -18,11 +18,13 @@ impl Chain {
     ///
     /// * handler - Handler to add
     ///
-    /// Handlers will be dispatched in the same order as they are added
+    /// Handlers will be dispatched in the same order as they are added.
+    ///
+    /// If a handler returns an error, subsequent handlers will not run.
     ///
     /// # Panics
     ///
-    /// Panics when trying to add a handler to a shared chain
+    /// Panics when trying to add a handler to a shared chain.
     #[allow(clippy::should_implement_trait)]
     pub fn add<H, I>(mut self, handler: H) -> Self
     where
@@ -42,12 +44,12 @@ impl Chain {
                 let type_name = handler.get_type_name();
                 log::debug!("Running '{}' handler...", type_name);
                 let result = handler.handle(input.clone()).await;
-                if matches!(result, HandlerResult::Stop | HandlerResult::Error(_)) {
+                if matches!(result, HandlerResult::Err(_)) {
                     log::debug!("'{}' handler returned {:?}, loop stopped", type_name, result);
                     return result;
                 }
             }
-            HandlerResult::Continue
+            HandlerResult::Ok
         }
     }
 }
@@ -99,8 +101,8 @@ where
                     let future = handler.handle(input);
                     future.await.into()
                 }
-                Ok(None) => HandlerResult::Continue,
-                Err(err) => HandlerResult::Error(Box::new(err)),
+                Ok(None) => HandlerResult::Ok,
+                Err(err) => HandlerResult::Err(Box::new(err)),
             }
         })
     }
@@ -137,14 +139,9 @@ mod tests {
         }
     }
 
-    async fn handler_continue(store: Ref<UpdateStore>, update: Update) -> HandlerResult {
+    async fn handler_ok(store: Ref<UpdateStore>, update: Update) -> HandlerResult {
         store.push(update).await;
-        HandlerResult::Continue
-    }
-
-    async fn handler_stop(store: Ref<UpdateStore>, update: Update) -> HandlerResult {
-        store.push(update).await;
-        HandlerResult::Stop
+        HandlerResult::Ok
     }
 
     async fn handler_error(store: Ref<UpdateStore>, update: Update) -> HandlerResult {
@@ -198,16 +195,13 @@ mod tests {
             }};
         }
 
-        let result = assert_handle!(2, handler_continue, handler_stop, handler_error);
-        assert!(matches!(result, HandlerResult::Stop));
+        let result = assert_handle!(2, handler_ok, handler_error);
+        assert!(matches!(result, HandlerResult::Err(_)));
 
-        let result = assert_handle!(1, handler_stop, handler_continue, handler_error);
-        assert!(matches!(result, HandlerResult::Stop));
+        let result = assert_handle!(1, handler_error, handler_ok);
+        assert!(matches!(result, HandlerResult::Err(_)));
 
-        let result = assert_handle!(1, handler_error, handler_stop, handler_continue);
-        assert!(matches!(result, HandlerResult::Error(_)));
-
-        let result = assert_handle!(2, handler_continue, handler_continue);
-        assert!(matches!(result, HandlerResult::Continue));
+        let result = assert_handle!(2, handler_ok, handler_ok);
+        assert!(matches!(result, HandlerResult::Ok));
     }
 }

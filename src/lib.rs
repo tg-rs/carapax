@@ -27,6 +27,7 @@ pub mod ratelimit;
 #[cfg_attr(nightly, doc(cfg(feature = "session")))]
 pub mod session;
 
+#[cfg(feature = "full")]
 mod doctest {
     #![doc = include_str!("../GUIDE.md")]
 }
