@@ -100,10 +100,12 @@ If a handler returns `HandlerResult::Err(_)`, all the subsequent handlers will n
 
 Normally every handler must return a `HandlerResult` or a type that converts into it:
 
-| From            | To                          |
-|-----------------|-----------------------------|
-| `()`            | `HandlerResult::Ok`         |
-| `Result<T, E>`  | `T: Into<HandlerResult>`    |
+| From           | To                     |
+|----------------|------------------------|
+| `()`           | `Ok(())`               |
+| `Result<T, E>` | `T: IntoHandlerResult` |
+
+`IntoHandlerResult` trait is semantically equivalent to `Into<HandlerResult>`.
 
 ### Error handling
 

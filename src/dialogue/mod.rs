@@ -1,6 +1,7 @@
 use crate::{
     core::{Handler, HandlerInput, HandlerResult, PredicateResult, TryFromInput},
     session::CreateSessionError,
+    HandlerError,
 };
 use futures_util::future::BoxFuture;
 use seance::{backend::SessionBackend, Session, SessionError};
@@ -79,7 +80,7 @@ where
             let mut session = match <Session<B>>::try_from_input(input.clone()).await {
                 Ok(Some(session)) => session,
                 Ok(None) => unreachable!("TryFromInput implementation for Session<B> never returns None"),
-                Err(err) => return HandlerResult::Err(Box::new(err)),
+                Err(err) => return HandlerResult::Err(HandlerError::boxed(err)),
             };
             let session_key = HS::session_key();
             match session.get::<&str, HS>(&session_key).await {
@@ -88,8 +89,8 @@ where
                     // Dialogue state not found in session, let's check predicate
                     let predicate_input = match PI::try_from_input(input.clone()).await {
                         Ok(Some(input)) => input,
-                        Ok(None) => return HandlerResult::Ok,
-                        Err(err) => return HandlerResult::Err(Box::new(err)),
+                        Ok(None) => return Ok(()),
+                        Err(err) => return HandlerResult::Err(HandlerError::boxed(err)),
                     };
                     let predicate_future = predicate.handle(predicate_input);
                     match predicate_future.await.into() {
@@ -97,35 +98,35 @@ where
                         PredicateResult::False(result) => return result,
                     }
                 }
-                Err(err) => return HandlerResult::Err(Box::new(err)),
+                Err(err) => return HandlerResult::Err(HandlerError::boxed(err)),
             }
 
             let handler_input = match HI::try_from_input(input.clone()).await {
                 Ok(Some(input)) => input,
-                Ok(None) => return HandlerResult::Err(Box::new(DialogueError::ConvertHandlerInput)),
-                Err(err) => return HandlerResult::Err(Box::new(err)),
+                Ok(None) => return HandlerResult::Err(HandlerError::boxed(DialogueError::ConvertHandlerInput)),
+                Err(err) => return HandlerResult::Err(HandlerError::boxed(err)),
             };
             let handler_future = handler.handle(handler_input);
             let result = match handler_future.await {
                 Ok(result) => result.into(),
-                Err(err) => return HandlerResult::Err(Box::new(err)),
+                Err(err) => return HandlerResult::Err(HandlerError::boxed(err)),
             };
 
             match result {
                 DialogueResult::Next(state) => {
                     if let Err(err) = session.set(session_key, &state).await {
-                        return HandlerResult::Err(Box::new(err));
+                        return HandlerResult::Err(HandlerError::boxed(err));
                     }
                 }
                 DialogueResult::Exit => {
                     // Explicitly remove state from session in order to be sure that dialog will not run again
                     if let Err(err) = session.remove(session_key).await {
-                        return HandlerResult::Err(Box::new(err));
+                        return HandlerResult::Err(HandlerError::boxed(err));
                     }
                 }
             }
 
-            HandlerResult::Ok
+            Ok(())
         })
     }
 }
@@ -341,11 +342,11 @@ mod tests {
             }};
         }
 
-        assert!(matches!(handler.handle(input).await, HandlerResult::Ok));
+        assert!(matches!(handler.handle(input).await, Ok(())));
         assert_state_matches!(Some(StateMock::Step));
 
         let input = create_input(context.clone(), "step");
-        assert!(matches!(handler.handle(input).await, HandlerResult::Ok));
+        assert!(matches!(handler.handle(input).await, Ok(())));
         assert_state_matches!(None);
     }
 }

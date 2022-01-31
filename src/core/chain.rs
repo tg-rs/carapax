@@ -1,6 +1,9 @@
-use crate::core::{
-    convert::TryFromInput,
-    handler::{Handler, HandlerInput, HandlerResult},
+use crate::{
+    core::{
+        convert::TryFromInput,
+        handler::{Handler, HandlerInput, HandlerResult},
+    },
+    HandlerError, IntoHandlerResult,
 };
 use futures_util::future::BoxFuture;
 use std::{any::type_name, future::Future, marker::PhantomData, sync::Arc};
@@ -30,7 +33,7 @@ impl Chain {
     where
         H: Handler<I> + Sync + Clone + 'static,
         I: TryFromInput + Sync + 'static,
-        <H::Future as Future>::Output: Into<HandlerResult>,
+        <H::Future as Future>::Output: IntoHandlerResult,
     {
         let handlers = Arc::get_mut(&mut self.handlers).expect("Can not add handler, chain is shared");
         handlers.push(ConvertInputHandler::boxed(handler));
@@ -44,12 +47,12 @@ impl Chain {
                 let type_name = handler.get_type_name();
                 log::debug!("Running '{}' handler...", type_name);
                 let result = handler.handle(input.clone()).await;
-                if matches!(result, HandlerResult::Err(_)) {
-                    log::debug!("'{}' handler returned {:?}, loop stopped", type_name, result);
-                    return result;
+                if let Err(err) = result {
+                    log::debug!("'{}' handler returned {}, loop stopped", type_name, err);
+                    return Err(err);
                 }
             }
-            HandlerResult::Ok
+            Ok(())
         }
     }
 }
@@ -91,7 +94,7 @@ where
     H: Handler<I> + 'static,
     I: TryFromInput,
     I::Error: 'static,
-    <H::Future as Future>::Output: Into<HandlerResult>,
+    <H::Future as Future>::Output: IntoHandlerResult,
 {
     fn handle(&self, input: HandlerInput) -> BoxFuture<'static, HandlerResult> {
         let handler = self.handler.clone();
@@ -99,10 +102,10 @@ where
             match I::try_from_input(input).await {
                 Ok(Some(input)) => {
                     let future = handler.handle(input);
-                    future.await.into()
+                    future.await.into_handler_result()
                 }
-                Ok(None) => HandlerResult::Ok,
-                Err(err) => HandlerResult::Err(Box::new(err)),
+                Ok(None) => Ok(()),
+                Err(err) => Err(HandlerError::boxed(err)),
             }
         })
     }
@@ -141,12 +144,12 @@ mod tests {
 
     async fn handler_ok(store: Ref<UpdateStore>, update: Update) -> HandlerResult {
         store.push(update).await;
-        HandlerResult::Ok
+        Ok(())
     }
 
     async fn handler_error(store: Ref<UpdateStore>, update: Update) -> HandlerResult {
         store.push(update).await;
-        HandlerResult::from(Err::<(), ErrorMock>(ErrorMock))
+        Err(HandlerError::boxed(ErrorMock))
     }
 
     #[derive(Debug)]
@@ -202,6 +205,6 @@ mod tests {
         assert!(matches!(result, HandlerResult::Err(_)));
 
         let result = assert_handle!(2, handler_ok, handler_ok);
-        assert!(matches!(result, HandlerResult::Ok));
+        assert!(matches!(result, Ok(())));
     }
 }

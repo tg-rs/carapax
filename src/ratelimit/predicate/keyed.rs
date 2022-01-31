@@ -1,5 +1,5 @@
 use crate::{
-    core::{Handler, HandlerResult, PredicateResult},
+    core::{Handler, PredicateResult},
     ratelimit::{
         jitter::NoJitter,
         key::Key,
@@ -123,7 +123,7 @@ where
                 Ok(_) => PredicateResult::True,
                 Err(_) => {
                     log::info!("KeyedRateLimitPredicate: update discarded");
-                    PredicateResult::False(HandlerResult::Ok)
+                    PredicateResult::False(Ok(()))
                 }
             }
         } else {
@@ -192,10 +192,7 @@ mod tests {
                     $first_key
                 );
                 assert!(
-                    matches!(
-                        handler.handle($first_key).await,
-                        PredicateResult::False(HandlerResult::Ok)
-                    ),
+                    matches!(handler.handle($first_key).await, PredicateResult::False(Ok(()))),
                     "[keyed/discard] handle({:?}) -> stop",
                     $first_key
                 );
@@ -205,10 +202,7 @@ mod tests {
                     $second_key
                 );
                 assert!(
-                    matches!(
-                        handler.handle($second_key).await,
-                        PredicateResult::False(HandlerResult::Ok)
-                    ),
+                    matches!(handler.handle($second_key).await, PredicateResult::False(Ok(()))),
                     "[keyed/discard] handle({:?}) -> stop",
                     $second_key
                 );
@@ -232,10 +226,7 @@ mod tests {
                     $first_key,
                 );
                 assert!(
-                    matches!(
-                        handler.handle($second_key).await,
-                        PredicateResult::False(HandlerResult::Ok)
-                    ),
+                    matches!(handler.handle($second_key).await, PredicateResult::False(Ok(()))),
                     "[keyed/discard/with_key] handle({:?}) -> stop",
                     $first_key,
                 );

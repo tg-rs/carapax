@@ -2,7 +2,7 @@ use crate::{
     core::{context::Context, convert::TryFromInput},
     types::Update,
 };
-use std::{error::Error, future::Future, sync::Arc};
+use std::{error::Error, fmt, future::Future, sync::Arc};
 
 /// Allows to handle an update
 pub trait Handler<I>: Clone + Send
@@ -83,32 +83,60 @@ impl From<Update> for HandlerInput {
 }
 
 /// An error returned by a handler
-pub type HandlerError = Box<dyn Error + Send>;
+pub struct HandlerError(Box<dyn Error + Send>);
 
-/// A result returned by a handler
-#[derive(Debug)]
-pub enum HandlerResult {
-    /// Success
-    Ok,
-    /// Contains the error
-    Err(HandlerError),
-}
-
-impl From<()> for HandlerResult {
-    fn from(_: ()) -> Self {
-        HandlerResult::Ok
+impl HandlerError {
+    /// Returns error in a box
+    pub fn boxed<E>(err: E) -> Self
+    where
+        E: Error + Send + 'static,
+    {
+        Self(Box::new(err))
     }
 }
 
-impl<T, E> From<Result<T, E>> for HandlerResult
+impl fmt::Debug for HandlerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+impl fmt::Display for HandlerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl std::error::Error for HandlerError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        self.0.source()
+    }
+}
+
+/// A result returned by a handler
+pub type HandlerResult = Result<(), HandlerError>;
+
+/// Converts objects into HandlerResult
+pub trait IntoHandlerResult {
+    /// Returns converted object
+    fn into_handler_result(self) -> HandlerResult;
+}
+
+impl IntoHandlerResult for () {
+    fn into_handler_result(self) -> HandlerResult {
+        Ok(self)
+    }
+}
+
+impl<T, E> IntoHandlerResult for Result<T, E>
 where
-    T: Into<HandlerResult>,
+    T: IntoHandlerResult,
     E: Error + Send + 'static,
 {
-    fn from(result: Result<T, E>) -> Self {
-        match result {
-            Ok(res) => res.into(),
-            Err(err) => HandlerResult::Err(Box::new(err)),
+    fn into_handler_result(self) -> HandlerResult {
+        match self {
+            Ok(ok) => ok.into_handler_result(),
+            Err(err) => Err(HandlerError::boxed(err)),
         }
     }
 }
@@ -149,13 +177,10 @@ mod tests {
 
     #[test]
     fn convert() {
-        assert!(matches!(HandlerResult::from(()), HandlerResult::Ok));
+        assert!(matches!(().into_handler_result(), Ok(())));
+        assert!(matches!(Ok::<(), ExampleError>(()).into_handler_result(), Ok(())));
         assert!(matches!(
-            HandlerResult::from(Ok::<(), ExampleError>(())),
-            HandlerResult::Ok
-        ));
-        assert!(matches!(
-            HandlerResult::from(Err::<(), ExampleError>(ExampleError)),
+            Err::<(), ExampleError>(ExampleError).into_handler_result(),
             HandlerResult::Err(_)
         ));
     }

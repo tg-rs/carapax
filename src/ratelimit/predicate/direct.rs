@@ -1,5 +1,5 @@
 use crate::{
-    core::{Handler, HandlerResult, PredicateResult},
+    core::{Handler, PredicateResult},
     ratelimit::{
         jitter::NoJitter,
         method::{MethodDiscard, MethodWait},
@@ -88,7 +88,7 @@ impl Handler<()> for DirectRateLimitPredicate<NoJitter, MethodDiscard> {
             Ok(_) => PredicateResult::True,
             Err(_) => {
                 log::info!("DirectRateLimitPredicate: update discarded");
-                PredicateResult::False(HandlerResult::Ok)
+                PredicateResult::False(Ok(()))
             }
         })
     }
@@ -134,7 +134,7 @@ mod tests {
             "[direct/discard/1] true"
         );
         assert!(
-            matches!(handler.handle(()).await, PredicateResult::False(HandlerResult::Ok)),
+            matches!(handler.handle(()).await, PredicateResult::False(Ok(()))),
             "[direct/discard/2] false"
         );
 
