@@ -47,6 +47,12 @@ impl SessionId {
     }
 }
 
+impl Into<String> for SessionId {
+    fn into(self) -> String {
+        self.0
+    }
+}
+
 impl TryFromInput for SessionId {
     type Error = Infallible;
     type Future = Ready<Result<Option<Self>, Self::Error>>;
