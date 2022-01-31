@@ -31,12 +31,12 @@ async fn main() {
 
     let mut chain = Chain::default();
     if let Ok(username) = env::var("CARAPAX_ACCESS_USERNAME") {
-        access::setup(&mut chain, &username);
+        chain = access::setup(chain, &username);
     }
-    command::setup(&mut chain);
-    dialogue::setup(&mut chain);
-    predicate::setup(&mut chain);
-    session::setup(&mut chain);
+    chain = command::setup(chain);
+    chain = dialogue::setup(chain);
+    chain = predicate::setup(chain);
+    chain = session::setup(chain);
 
     if let Ok(ratelimit_strategy) = env::var("CARAPAX_RATE_LIMIT_STRATEGY") {
         chain = ratelimit::setup(chain, &ratelimit_strategy);

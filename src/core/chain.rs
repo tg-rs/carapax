@@ -23,7 +23,7 @@ impl Chain {
     /// # Panics
     ///
     /// Panics when trying to add a handler to a shared chain
-    pub fn add_handler<H, I>(&mut self, handler: H) -> &mut Self
+    pub fn add<H, I>(mut self, handler: H) -> Self
     where
         H: Handler<I> + Sync + Clone + 'static,
         I: TryFromInput + Sync + 'static,
@@ -184,7 +184,7 @@ mod tests {
                 context.insert(UpdateStore::new());
                 let context = Arc::new(context);
                 let mut chain = Chain::default();
-                $(chain.add_handler($handler);)*
+                $(chain = chain.add($handler);)*
                 let update = create_update();
                 let input = HandlerInput {
                     context: context.clone(),

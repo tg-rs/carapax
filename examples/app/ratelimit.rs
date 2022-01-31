@@ -11,31 +11,18 @@ pub fn setup(chain: Chain, strategy: &str) -> Chain {
         .expect("Failed to create quota")
         .allow_burst(nonzero!(1u32));
     let jitter = Jitter::up_to(Duration::from_secs(5));
-    let mut result = Chain::default();
+    let result = Chain::default();
     match strategy {
-        "direct_discard" => {
-            result.add_handler(chain.predicate(DirectRateLimitPredicate::discard(quota)));
-        }
-        "direct_wait" => {
-            result.add_handler(chain.predicate(DirectRateLimitPredicate::wait(quota)));
-        }
+        "direct_discard" => result.add(chain.predicate(DirectRateLimitPredicate::discard(quota))),
+        "direct_wait" => result.add(chain.predicate(DirectRateLimitPredicate::wait(quota))),
         "direct_wait_with_jitter" => {
-            result.add_handler(chain.predicate(DirectRateLimitPredicate::wait_with_jitter(quota, jitter)));
+            result.add(chain.predicate(DirectRateLimitPredicate::wait_with_jitter(quota, jitter)))
         }
-        "keyed_discard" => {
-            result.add_handler(chain.predicate(<KeyedRateLimitPredicate<KeyChat, _, _>>::discard(quota)));
-        }
-        "keyed_wait" => {
-            result.add_handler(chain.predicate(<KeyedRateLimitPredicate<KeyUser, _, _>>::wait(quota)));
-        }
-        "keyed_wait_with_jitter" => {
-            result.add_handler(
-                chain.predicate(<KeyedRateLimitPredicate<KeyChatUser, _, _>>::wait_with_jitter(
-                    quota, jitter,
-                )),
-            );
-        }
+        "keyed_discard" => result.add(chain.predicate(<KeyedRateLimitPredicate<KeyChat, _, _>>::discard(quota))),
+        "keyed_wait" => result.add(chain.predicate(<KeyedRateLimitPredicate<KeyUser, _, _>>::wait(quota))),
+        "keyed_wait_with_jitter" => result.add(chain.predicate(
+            <KeyedRateLimitPredicate<KeyChatUser, _, _>>::wait_with_jitter(quota, jitter),
+        )),
         key => panic!("Unknown ratelimit stragey: {}", key),
     }
-    result
 }

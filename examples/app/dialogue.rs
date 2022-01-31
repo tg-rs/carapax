@@ -9,8 +9,8 @@ use carapax::{
 use serde::{Deserialize, Serialize};
 use tgbot::types::Text;
 
-pub fn setup(chain: &mut Chain) {
-    chain.add_handler(example_dialogue.dialogue::<FilesystemBackend>(CommandPredicate::new("/dialogue")));
+pub fn setup(chain: Chain) -> Chain {
+    chain.add(example_dialogue.dialogue::<FilesystemBackend>(CommandPredicate::new("/dialogue")))
 }
 
 type ExampleDialogueInput = DialogueInput<ExampleDialogueState, FilesystemBackend>;

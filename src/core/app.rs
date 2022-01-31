@@ -135,9 +135,7 @@ mod tests {
         let mut context = Context::default();
         context.insert(counter.clone());
 
-        let mut chain = Chain::default();
-        chain.add_handler(success_handler);
-        chain.add_handler(error_handler);
+        let chain = Chain::default().add(success_handler).add(error_handler);
 
         let app = App::new(context, chain);
 

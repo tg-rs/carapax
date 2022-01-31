@@ -5,8 +5,8 @@ use carapax::{
     Api, Chain, CommandExt, Ref,
 };
 
-pub fn setup(chain: &mut Chain) {
-    chain.add_handler(greet.command("/hello"));
+pub fn setup(chain: Chain) -> Chain {
+    chain.add(greet.command("/hello"))
 }
 
 async fn greet(api: Ref<Api>, chat_id: ChatId, user: User) -> Result<(), AppError> {

@@ -5,8 +5,8 @@ use carapax::{
     Api, Chain, PredicateExt, Ref,
 };
 
-pub fn setup(chain: &mut Chain) {
-    chain.add_handler(pong.predicate(is_ping));
+pub fn setup(chain: Chain) -> Chain {
+    chain.add(pong.predicate(is_ping))
 }
 
 async fn is_ping(text: Text) -> bool {

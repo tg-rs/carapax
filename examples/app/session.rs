@@ -8,12 +8,12 @@ use carapax::{
 
 const KEY: &str = "example-session-key";
 
-pub fn setup(chain: &mut Chain) {
+pub fn setup(chain: Chain) -> Chain {
     chain
-        .add_handler(get.command("/sget"))
-        .add_handler(set.command("/sset"))
-        .add_handler(expire.command("/sexpire"))
-        .add_handler(reset.command("/sdel"));
+        .add(get.command("/sget"))
+        .add(set.command("/sset"))
+        .add(expire.command("/sexpire"))
+        .add(reset.command("/sdel"))
 }
 
 async fn get(api: Ref<Api>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
