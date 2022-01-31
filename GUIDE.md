@@ -38,7 +38,7 @@ async fn main() {
 
     // App is the main entry point.
     // First argument is the context.
-    // Second - an input handler.
+    // Second - a handler.
     // App implements UpdateHandler trait provided by tgbot,
     // so you can use it in either long polling (`LongPoll::new()`) or webhook (`run_server()`)
     let app = App::new(context, echo);
@@ -103,7 +103,7 @@ Normally every handler must return a `HandlerResult` or a type that converts int
 | `()`            | `HandlerResult::Stop`       |
 | `true`          | `HandlerResult::Continue`   |
 | `false`         | `HandlerResult::Stop`       |
-| `Result<T, E>`  | `T.into::<HandlerResult>()` |
+| `Result<T, E>`  | `T: Into<HandlerResult>`    |
 
 
 ## Predicates
@@ -207,7 +207,7 @@ async fn protected_handler(update: Update) {
 ```
 
 Since `Chain` implements `Handler` you can also protect a group of handlers or entire bot.
-Naturally, you can implement your own policy in order to store the access rules and/or a list of banned users in a database or some other storage.
+Naturally, you can implement your own policy in order to store access rules and/or a list of banned users in a database or some other storage.
 
 Note that you need to enable `access` feature in `Cargo.toml`:
 
@@ -276,7 +276,7 @@ Or just use `session` if you have your own backend.
 
 ## Dialogues
 
-Dialogue is a kind of stateful handler. It receives an previous state and returns a new one.
+Dialogue is a kind of stateful handler. It receives the current state and returns a new one.
 
 [`DialogueDecorator`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueDecorator.html) allows to make a dialogue handler.
 It takes a predicate which allows to decide should we start a dialogue or not, and a handler itself.
