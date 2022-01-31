@@ -69,6 +69,8 @@ if you want to use it in `App` struct.
 `App` creates a [`HandlerInput`](https://tg-rs.github.io/carapax/carapax/struct.HandlerInput.html) with a `Context` and an `Update`,
 then converts it into an input for a specific handler using `TryFromInput` trait.
 Handler will be executed only when `TryFromInput` returns `Some(T)`.
+When your handler is a regular function, `TryFromInput` must return `Some(T)` for all arguments of the function.
+Handler will not run otherwise.
 So, in example above, `echo` will be called only when `Update` contains any `Text` (message text, media captions).
 
 Use `Ref<T>` as the argument type when you need to get an object from the context.
@@ -120,7 +122,7 @@ or a type that converts into it:
 |-------------------|-------------------------------|
 | `true`            | `PredicateResult::Continue`   |
 | `false`           | `PredicateResult::Stop`       |
-| `Result<T, E>`    | `T.into::<PredicateResult>()` |
+| `Result<T, E>`    | `T: Into<PredicateResult>`    |
 
 
 Example:
@@ -129,13 +131,8 @@ Example:
 use carapax::{
     methods::SendMessage,
     types::{ChatId, Text},
-    Api, Chain, PredicateExt, Ref,
+    Api, Chain, Predicate, PredicateExt, Ref,
 };
-
-fn setup(chain: &mut Chain) {
-    let handler = pong.predicate(is_ping);
-    chain.add_handler(handler);
-}
 
 async fn is_ping(text: Text) -> bool {
     text.data == "ping"
@@ -146,6 +143,16 @@ async fn pong(api: Ref<Api>, chat_id: ChatId) {
     api.execute(method).await.unwrap();
 }
 
+fn main() {
+    // ...
+    // using PredicateExt
+    let handler = pong.predicate(is_ping);
+    // or create predicate by hand
+    // let handler = Predicate::new(is_ping, pong);
+    let mut chain = Chain::default();
+    chain.add_handler(handler);
+    // ...
+}
 ```
 
 ### Commands
@@ -158,24 +165,29 @@ Note that command name contains a leading slash (`/`).
 use carapax::{
     methods::SendMessage,
     types::{ChatId, User},
-    Api, Chain, CommandExt, Ref,
+    Api, Chain, CommandExt, CommandPredicate, Predicate, Ref,
 };
-
-fn setup(chain: &mut Chain) {
-    let handler = greet.command("/hello");
-    chain.add_handler(handler);
-}
 
 async fn greet(api: Ref<Api>, chat_id: ChatId, user: User) {
     let method = SendMessage::new(chat_id, format!("Hello, {}", user.first_name));
     api.execute(method).await.unwrap();
 }
 
+fn main() {
+    // ...
+    // using CommandExt
+    let handler = greet.command("/hello");
+    // or create predicate by hand
+    let handler = Predicate::new(CommandPredicate::new("/hello"), greet);
+    let mut chain = Chain::default();
+    chain.add_handler(handler);
+    // ...
+}
 ```
 
 ### Access
 
-[AccessPredicate](https://tg-rs.github.io/carapax/carapax/access/struct.AccessPredicate.html) allows to protect handlers.
+[AccessPredicate](https://tg-rs.github.io/carapax/carapax/access/struct.AccessPredicate.html) allows to setup access to handlers.
 It takes an [`AccessPolicy`](https://tg-rs.github.io/carapax/carapax/access/trait.AccessPolicy.html).
 Policy has `is_granted` method which takes a `HandlerInput` and returns a future with `bool` output.
 If `true` is returned - access is granted, `false` - forbidden.
@@ -192,21 +204,23 @@ use carapax::{
     Chain, Predicate, HandlerResult,
 };
 
-fn setup(chain: &mut Chain) {
-    let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user("username")]);
-    let handler = Predicate::new(AccessPredicate::new(policy), protected_handler);
-    // or using AccessExt
-    // let handler = protected_handler.access(policy);
-    chain.add_handler(handler);
-}
-
 async fn protected_handler(update: Update) {
     log::info!("Got a new update in protected handler: {:?}", update);
 }
 
+fn main() {
+    let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user("username")]);
+    // using AccessExt
+    let handler = protected_handler.access(policy);
+    // or create predicate by hand
+    // let handler = Predicate::new(AccessPredicate::new(policy), protected_handler);
+    let mut chain = Chain::default();
+    chain.add_handler(handler);
+}
+
 ```
 
-Since `Chain` implements `Handler` you can also protect a group of handlers or entire bot.
+Since `Chain` implements `Handler` you can also protect a group of handlers.
 Naturally, you can implement your own policy in order to store access rules and/or a list of banned users in a database or some other storage.
 
 Note that you need to enable `access` feature in `Cargo.toml`:
@@ -236,13 +250,9 @@ Every type of predicate can be used [with](https://tg-rs.github.io/carapax/carap
 
 See [example](examples/app/ratelimit.rs) for implementation details.
 
-Same as in access, you can protect a single handler, a chain or the entire bot.
+Same as in access, you can protect a single handler or a chain.
 
-Note that you need to enable `ratelimit` feature in `Cargo.toml`:
-
-```toml
-carapax = { version = "0.11.0", features = ["ratelimit"] }
-```
+Note that you need to enable `ratelimit` feature in `Cargo.toml`.
 
 ## Session
 
@@ -262,15 +272,12 @@ If you have issues with updates without chat/user ID just don't use `SessionId`.
 
 You can either get [`Session`](https://tg-rs.github.io/carapax/carapax/session/struct.Session.html) directly from the manager, 
 or use `TryFromInput` and specify `session: Session<B>` in handler arguments.
+Where `B` is a [session backend](https://tg-rs.github.io/carapax/carapax/session/backend/index.html).
 In both cases make sure that session manager is added to the context.
 
-See [example](examples/app/session.rs) for implementation details.
+See [example](examples/app/session.rs) for more information.
 
-Note that you need to enable either `session-fs` or `session-redis` feature in `Cargo.toml`:
-
-```toml
-carapax = { version = "0.11.0", features = ["session-fs"] }
-```
+Note that you need to enable either `session-fs` or `session-redis` feature in `Cargo.toml`.
 
 Or just use `session` if you have your own backend.
 
@@ -281,7 +288,7 @@ Dialogue is a kind of stateful handler. It receives the current state and return
 [`DialogueDecorator`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueDecorator.html) allows to make a dialogue handler.
 It takes a predicate which allows to decide should we start a dialogue or not, and a handler itself.
 
-Dialogue handler takes a `HandlerInput` and returns a [`DialogueResult`](https://tg-rs.github.io/carapax/carapax/dialogue/enum.DialogueResult.html).
+Dialogue handler acts like a regular handler but returns a [`DialogueResult`](https://tg-rs.github.io/carapax/carapax/dialogue/enum.DialogueResult.html).
 There is a [`DialogueInput`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueInput.html) structure which allows to obtain a state from the session.
 It implements `TryFromInput`, so you can use it as an argument of your handler.
 
@@ -291,12 +298,8 @@ Dialogue name must be unique. It defines a value for session key to store the st
 State can be converted into `DialogueResult`.
 Thus you can return `state.into()` instead of `DialogueResult::Next(state)`.
 
-See [example](examples/app/dialogue.rs) for implementation details.
+See [example](examples/app/dialogue.rs) for more information.
 
-Note that you need to enable `session` and `dialogue` features in `Cargo.toml`:
-
-```toml
-carapax = { version = "0.11.0", features = ["session-fs", "dialogue"] }
-```
+Note that you need to enable `session` and `dialogue` features in `Cargo.toml`.
 
 And of course you can use any session backend.
