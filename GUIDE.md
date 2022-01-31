@@ -107,12 +107,55 @@ Normally every handler must return a `HandlerResult` or a type that converts int
 | `false`         | `HandlerResult::Stop`       |
 | `Result<T, E>`  | `T: Into<HandlerResult>`    |
 
+### Error handling
+
+By default, `App` logs an error produced by a handler.
+
+You can use [`ErrorDecorator`](https://tg-rs.github.io/carapax/carapax/struct.ErrorDecorator.html). It allows processing an error returned by a handler.
+
+```rust
+use carapax::{
+    Chain, ErrorExt, ErrorDecorator, ErrorHandler, HandlerError,
+};
+use std::num::ParseIntError;
+use futures_util::future::BoxFuture;
+
+#[derive(Clone)]
+struct LoggingErrorHandler;
+
+impl ErrorHandler for LoggingErrorHandler {
+    type Future = BoxFuture<'static, HandlerError>;
+    
+    fn handle(&self, err: HandlerError) -> Self::Future {
+        Box::pin(async {
+            log::error!("An error occurred: {}", err);
+            err
+        })
+    }
+}
+
+async fn erroneous_handler(_: ()) -> Result<(), ParseIntError> {
+    let _num = "not a number".parse::<i32>()?;
+    Ok(())
+}
+
+fn main() {
+    // ...
+    // using ErrorExt
+    let handler = erroneous_handler.on_error(LoggingErrorHandler);
+    // or create decorator by hand
+    // let handler = ErrorDecorator::new(LoggingErrorHandler, erroneous_handler);
+    let mut chain = Chain::default();
+    chain.add_handler(handler);
+    // ...
+}
+```
 
 ## Predicates
 
 [`Predicate`](https://tg-rs.github.io/carapax/carapax/struct.Predicate.html)
-is a decorator which allows to decide, should a handler run or not.
-It might be useful if you need to implement a ratelimiter, or allow only certain users to trigger a handler.
+is a decorator which allows deciding, should a handler run or not.
+It might be useful if you need to implement a rate-limiter, or allow only certain users to trigger a handler.
 
 A predicate handler must implement `Handler` trait, and return
 a [`PredicateResult`](https://tg-rs.github.io/carapax/carapax/enum.PredicateResult.html)
@@ -178,7 +221,7 @@ fn main() {
     // using CommandExt
     let handler = greet.command("/hello");
     // or create predicate by hand
-    let handler = Predicate::new(CommandPredicate::new("/hello"), greet);
+    //let handler = Predicate::new(CommandPredicate::new("/hello"), greet);
     let mut chain = Chain::default();
     chain.add_handler(handler);
     // ...
@@ -187,9 +230,9 @@ fn main() {
 
 ### Access
 
-[AccessPredicate](https://tg-rs.github.io/carapax/carapax/access/struct.AccessPredicate.html) allows to setup access to handlers.
+[AccessPredicate](https://tg-rs.github.io/carapax/carapax/access/struct.AccessPredicate.html) allows setting up access to handlers.
 It takes an [`AccessPolicy`](https://tg-rs.github.io/carapax/carapax/access/trait.AccessPolicy.html).
-Policy allows to decide whether access granted or not, depending on `HandlerInput`.
+Policy allows deciding whether access granted or not, depending on `HandlerInput`.
 
 [InMemoryAccessPolicy](https://tg-rs.github.io/carapax/carapax/access/struct.InMemoryAccessPolicy.html) is a policy
 which stores [access rules](https://tg-rs.github.io/carapax/carapax/access/struct.AccessRule.html) in memory.
@@ -222,12 +265,7 @@ fn main() {
 Since `Chain` implements `Handler` you can also protect a group of handlers.
 Naturally, you can implement your own policy in order to store access rules and/or a list of banned users in a database or some other storage.
 
-Note that you need to enable `access` feature in `Cargo.toml`:
-
-```toml
-carapax = { version = "0.11.0", features = ["access"] }
-```
-
+Note that you need to enable `access` feature in `Cargo.toml`.
 
 ### Ratelimit
 
@@ -247,7 +285,7 @@ or [wait](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.MethodWait.ht
 Every type of predicate can be used [with](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.Jitter.html) or 
 [without](https://tg-rs.github.io/carapax/carapax/ratelimit/struct.NoJitter.html) jitter.
 
-See [example](examples/app/ratelimit.rs) for implementation details.
+See [example](examples/app/ratelimit.rs) for more information.
 
 Same as in access, you can protect a single handler or a chain.
 
@@ -256,14 +294,14 @@ Note that you need to enable `ratelimit` feature in `Cargo.toml`.
 ## Session
 
 
-Sessions allow to store data in a storage such as filesystem or redis. 
+Sessions allow storing data in a storage such as filesystem or redis. 
 Therefore you can implement stateful handlers.
 
 Session support is implemented using [seance](http://crates.io/crates/seance) crate.
 Carapax reexports all the needed types from seance, so you don't have to add it to your `Cargo.toml`.
 
 Every session has an identifier represented by [SessionId](https://tg-rs.github.io/carapax/carapax/session/struct.SessionId.html) struct.
-Note that it contains a chat ID and an user ID, but not all types of update can provide that information.
+Note that it contains a chat ID and a user ID, but not all types of update can provide that information.
 
 [`SessionManager`](https://tg-rs.github.io/carapax/carapax/session/struct.SessionManager.html) allows to load a session by ID.
 In manager, Session ID represented by a type constrained to `Into<String>`.
@@ -289,17 +327,17 @@ Or just use `session` if you have your own backend.
 Dialogue is a kind of stateful handler. It receives the current state and returns a new one.
 
 [`DialogueDecorator`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueDecorator.html) allows to make a dialogue handler.
-It takes a predicate which allows to decide should we start a dialogue or not, and a handler itself.
+It takes a predicate which allows deciding should we start a dialogue or not, and a handler itself.
 
 Dialogue handler acts like a regular handler but returns a [`DialogueResult`](https://tg-rs.github.io/carapax/carapax/dialogue/enum.DialogueResult.html).
 There is a [`DialogueInput`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueInput.html) structure which allows to obtain a state from the session.
 It implements `TryFromInput`, so you can use it as an argument of your handler.
 
-State must implemenet [`DialogueState`](https://tg-rs.github.io/carapax/carapax/dialogue/trait.DialogueState.html) trait.
+State must implement [`DialogueState`](https://tg-rs.github.io/carapax/carapax/dialogue/trait.DialogueState.html) trait.
 Dialogue name must be unique. It defines a value for session key to store the state.
 
 State can be converted into `DialogueResult`.
-Thus you can return `state.into()` instead of `DialogueResult::Next(state)`.
+Thus, you can return `state.into()` instead of `DialogueResult::Next(state)`.
 
 See [example](examples/app/dialogue.rs) for more information.
 
