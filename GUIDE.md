@@ -144,7 +144,7 @@ fn main() {
     // using ErrorExt
     let handler = erroneous_handler.on_error(LoggingErrorHandler);
     // or create decorator by hand
-    let handler = ErrorDecorator::new(LoggingErrorHandler, erroneous_handler);
+    // let handler = ErrorDecorator::new(LoggingErrorHandler, erroneous_handler);
     let mut chain = Chain::default();
     chain.add_handler(handler);
     // ...
@@ -221,7 +221,7 @@ fn main() {
     // using CommandExt
     let handler = greet.command("/hello");
     // or create predicate by hand
-    let handler = Predicate::new(CommandPredicate::new("/hello"), greet);
+    //let handler = Predicate::new(CommandPredicate::new("/hello"), greet);
     let mut chain = Chain::default();
     chain.add_handler(handler);
     // ...
