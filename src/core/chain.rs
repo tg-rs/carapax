@@ -102,10 +102,10 @@ where
             match I::try_from_input(input).await {
                 Ok(Some(input)) => {
                     let future = handler.handle(input);
-                    future.await.into_handler_result()
+                    future.await.into_result()
                 }
                 Ok(None) => Ok(()),
-                Err(err) => Err(HandlerError::boxed(err)),
+                Err(err) => Err(HandlerError::new(err)),
             }
         })
     }
@@ -149,7 +149,7 @@ mod tests {
 
     async fn handler_error(store: Ref<UpdateStore>, update: Update) -> HandlerResult {
         store.push(update).await;
-        Err(HandlerError::boxed(ErrorMock))
+        Err(HandlerError::new(ErrorMock))
     }
 
     #[derive(Debug)]
@@ -199,10 +199,10 @@ mod tests {
         }
 
         let result = assert_handle!(2, handler_ok, handler_error);
-        assert!(matches!(result, HandlerResult::Err(_)));
+        assert!(matches!(result, Err(_)));
 
         let result = assert_handle!(1, handler_error, handler_ok);
-        assert!(matches!(result, HandlerResult::Err(_)));
+        assert!(matches!(result, Err(_)));
 
         let result = assert_handle!(2, handler_ok, handler_ok);
         assert!(matches!(result, Ok(())));

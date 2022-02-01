@@ -89,8 +89,8 @@ impl From<Update> for HandlerInput {
 pub struct HandlerError(Box<dyn Error + Send>);
 
 impl HandlerError {
-    /// Returns error in a box
-    pub fn boxed<E>(err: E) -> Self
+    /// Creates a new error
+    pub fn new<E>(err: E) -> Self
     where
         E: Error + Send + 'static,
     {
@@ -122,25 +122,21 @@ pub type HandlerResult = Result<(), HandlerError>;
 /// Converts objects into HandlerResult
 pub trait IntoHandlerResult {
     /// Returns converted object
-    fn into_handler_result(self) -> HandlerResult;
+    fn into_result(self) -> HandlerResult;
 }
 
 impl IntoHandlerResult for () {
-    fn into_handler_result(self) -> HandlerResult {
+    fn into_result(self) -> HandlerResult {
         Ok(self)
     }
 }
 
-impl<T, E> IntoHandlerResult for Result<T, E>
+impl<E> IntoHandlerResult for Result<(), E>
 where
-    T: IntoHandlerResult,
     E: Error + Send + 'static,
 {
-    fn into_handler_result(self) -> HandlerResult {
-        match self {
-            Ok(ok) => ok.into_handler_result(),
-            Err(err) => Err(HandlerError::boxed(err)),
-        }
+    fn into_result(self) -> HandlerResult {
+        self.map_err(HandlerError::new)
     }
 }
 
@@ -180,11 +176,8 @@ mod tests {
 
     #[test]
     fn convert() {
-        assert!(matches!(().into_handler_result(), Ok(())));
-        assert!(matches!(Ok::<(), ExampleError>(()).into_handler_result(), Ok(())));
-        assert!(matches!(
-            Err::<(), ExampleError>(ExampleError).into_handler_result(),
-            HandlerResult::Err(_)
-        ));
+        assert!(matches!(().into_result(), Ok(())));
+        assert!(matches!(Ok::<(), ExampleError>(()).into_result(), Ok(())));
+        assert!(matches!(Err::<(), ExampleError>(ExampleError).into_result(), Err(_)));
     }
 }

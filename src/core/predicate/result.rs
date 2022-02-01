@@ -30,7 +30,7 @@ where
     fn from(value: Result<T, E>) -> Self {
         match value {
             Ok(value) => value.into(),
-            Err(err) => PredicateResult::False(HandlerResult::Err(HandlerError::boxed(err))),
+            Err(err) => PredicateResult::False(Err(HandlerError::new(err))),
         }
     }
 }
@@ -62,7 +62,7 @@ mod tests {
         ));
         assert!(matches!(
             Err::<bool, ExampleError>(ExampleError).into(),
-            PredicateResult::False(HandlerResult::Err(_))
+            PredicateResult::False(Err(_))
         ));
     }
 }

@@ -1,6 +1,6 @@
 use crate::{
     access::policy::AccessPolicy,
-    core::{Handler, HandlerInput, HandlerResult, PredicateResult},
+    core::{Handler, HandlerInput, PredicateResult},
     HandlerError,
 };
 use futures_util::future::BoxFuture;
@@ -42,7 +42,7 @@ where
                     log::info!("Access forbidden for {:?}", user);
                     PredicateResult::False(Ok(()))
                 }
-                Err(err) => PredicateResult::False(HandlerResult::Err(HandlerError::boxed(err))),
+                Err(err) => PredicateResult::False(Err(HandlerError::new(err))),
             }
         })
     }
@@ -137,6 +137,6 @@ mod tests {
         .unwrap();
         let input_error = HandlerInput::from(update_error);
         let result = predicate.handle(input_error).await;
-        assert!(matches!(result, PredicateResult::False(HandlerResult::Err(_))));
+        assert!(matches!(result, PredicateResult::False(Err(_))));
     }
 }

@@ -94,7 +94,7 @@ let chain = Chain::default()
 ```
 
 Handlers will run in same order as added.
-If a handler returns `HandlerResult::Err(_)`, all the subsequent handlers will not run.
+If a handler returns `Err(_)`, all the subsequent handlers will not run.
 
 ### HandlerResult
 

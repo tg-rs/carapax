@@ -60,7 +60,7 @@ where
             match predicate_future.await.into() {
                 PredicateResult::True => {
                     let handler_future = handler.handle(handler_input);
-                    handler_future.await.into_handler_result()
+                    handler_future.await.into_result()
                 }
                 PredicateResult::False(result) => result,
             }
@@ -117,7 +117,7 @@ mod tests {
 
         assert!(matches!(
             handler.handle(((user_3.clone(),), (user_3, condition.clone()))).await,
-            HandlerResult::Err(_)
+            Err(_)
         ));
         assert!(*condition.value.lock().await);
         condition.set(false).await;
@@ -142,13 +142,13 @@ mod tests {
         }
     }
 
-    async fn process_user(user: User, condition: Ref<Condition>) -> Result<HandlerResult, ProcessError> {
+    async fn process_user(user: User, condition: Ref<Condition>) -> Result<(), ProcessError> {
         condition.set(true).await;
         log::info!("Processing user: {:?}", user);
         if user.id == 3 {
             Err(ProcessError)
         } else {
-            Ok(Ok(()))
+            Ok(())
         }
     }
 

@@ -58,7 +58,7 @@ where
                 }
             };
             let future = handler.handle(input);
-            if let Err(err) = future.await.into_handler_result() {
+            if let Err(err) = future.await.into_result() {
                 log::error!("An error has occurred: {}", err);
             }
         }
