@@ -1,4 +1,4 @@
-use crate::core::handler::HandlerResult;
+use crate::{core::handler::HandlerResult, HandlerError};
 use std::error::Error;
 
 /// A predicate result
@@ -17,7 +17,7 @@ impl From<bool> for PredicateResult {
         if value {
             PredicateResult::True
         } else {
-            PredicateResult::False(HandlerResult::Ok)
+            PredicateResult::False(Ok(()))
         }
     }
 }
@@ -30,7 +30,7 @@ where
     fn from(value: Result<T, E>) -> Self {
         match value {
             Ok(value) => value.into(),
-            Err(err) => PredicateResult::False(HandlerResult::Err(Box::new(err))),
+            Err(err) => PredicateResult::False(Err(HandlerError::new(err))),
         }
     }
 }
@@ -54,15 +54,15 @@ mod tests {
     #[test]
     fn convert_result() {
         assert!(matches!(true.into(), PredicateResult::True));
-        assert!(matches!(false.into(), PredicateResult::False(HandlerResult::Ok)));
+        assert!(matches!(false.into(), PredicateResult::False(Ok(()))));
         assert!(matches!(Ok::<bool, ExampleError>(true).into(), PredicateResult::True));
         assert!(matches!(
             Ok::<bool, ExampleError>(false).into(),
-            PredicateResult::False(HandlerResult::Ok)
+            PredicateResult::False(Ok(()))
         ));
         assert!(matches!(
             Err::<bool, ExampleError>(ExampleError).into(),
-            PredicateResult::False(HandlerResult::Err(_))
+            PredicateResult::False(Err(_))
         ));
     }
 }

@@ -94,16 +94,18 @@ let chain = Chain::default()
 ```
 
 Handlers will run in same order as added.
-If a handler returns `HandlerResult::Err(_)`, all the subsequent handlers will not run.
+If a handler returns `Err(_)`, all the subsequent handlers will not run.
 
 ### HandlerResult
 
-Normally every handler must return a `HandlerResult` or a type that converts into it:
+Normally every handler must return a `HandlerResult` which is alias to `Result` or 
+a type that converts into it (e.g. `IntoHandlerResult` implemented for the type):
 
-| From            | To                          |
-|-----------------|-----------------------------|
-| `()`            | `HandlerResult::Ok`         |
-| `Result<T, E>`  | `T: Into<HandlerResult>`    |
+| From             | To                  |
+|------------------|---------------------|
+| `()`             | `Ok(())`            |
+| `Ok(())`         | `Ok(())`            |
+| `Err(YourError)` | `Err(HandlerError)` |
 
 ### Error handling
 

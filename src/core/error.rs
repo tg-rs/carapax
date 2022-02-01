@@ -1,6 +1,9 @@
-use crate::core::{
-    convert::TryFromInput,
-    handler::{Handler, HandlerError, HandlerInput, HandlerResult},
+use crate::{
+    core::{
+        convert::TryFromInput,
+        handler::{Handler, HandlerError, HandlerInput, HandlerResult},
+    },
+    IntoHandlerResult,
 };
 use futures_util::future::BoxFuture;
 use std::{future::Future, marker::PhantomData};
@@ -48,7 +51,7 @@ where
     H: Handler<HI> + 'static,
     HI: TryFromInput,
     HI::Error: 'static,
-    H::Output: Into<HandlerResult>,
+    H::Output: IntoHandlerResult,
 {
     type Output = HandlerResult;
     type Future = BoxFuture<'static, Self::Output>;
@@ -61,18 +64,18 @@ where
             match future.await {
                 Ok(Some(input)) => {
                     let future = handler.handle(input);
-                    match future.await.into() {
-                        HandlerResult::Err(err) => {
+                    match future.await.into_result() {
+                        Err(err) => {
                             let future = error_handler.handle(err);
-                            HandlerResult::Err(future.await)
+                            Err(future.await)
                         }
                         result => result,
                     }
                 }
-                Ok(None) => HandlerResult::Ok,
+                Ok(None) => Ok(()),
                 Err(err) => {
-                    let future = error_handler.handle(Box::new(err));
-                    HandlerResult::Err(future.await)
+                    let future = error_handler.handle(HandlerError::new(err));
+                    Err(future.await)
                 }
             }
         })
@@ -187,7 +190,7 @@ mod tests {
         let update = create_update();
         let input = HandlerInput::from(update);
         let result = handler.handle(input).await;
-        assert!(matches!(result, HandlerResult::Err(_)));
+        assert!(matches!(result, Err(_)));
         assert!(*condition.value.lock().await)
     }
 }

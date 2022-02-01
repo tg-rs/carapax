@@ -1,6 +1,7 @@
 use crate::{
     access::policy::AccessPolicy,
-    core::{Handler, HandlerInput, HandlerResult, PredicateResult},
+    core::{Handler, HandlerInput, PredicateResult},
+    HandlerError,
 };
 use futures_util::future::BoxFuture;
 
@@ -39,9 +40,9 @@ where
                 }
                 Ok(false) => {
                     log::info!("Access forbidden for {:?}", user);
-                    PredicateResult::False(HandlerResult::Ok)
+                    PredicateResult::False(Ok(()))
                 }
-                Err(err) => PredicateResult::False(HandlerResult::Err(Box::new(err))),
+                Err(err) => PredicateResult::False(Err(HandlerError::new(err))),
             }
         })
     }
@@ -119,7 +120,7 @@ mod tests {
         .unwrap();
         let input_forbidden = HandlerInput::from(update_forbidden);
         let result = predicate.handle(input_forbidden).await;
-        assert!(matches!(result, PredicateResult::False(HandlerResult::Ok)));
+        assert!(matches!(result, PredicateResult::False(Ok(()))));
 
         let update_error: Update = serde_json::from_value(serde_json::json!(
             {
@@ -136,6 +137,6 @@ mod tests {
         .unwrap();
         let input_error = HandlerInput::from(update_error);
         let result = predicate.handle(input_error).await;
-        assert!(matches!(result, PredicateResult::False(HandlerResult::Err(_))));
+        assert!(matches!(result, PredicateResult::False(Err(_))));
     }
 }

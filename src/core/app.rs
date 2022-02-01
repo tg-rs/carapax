@@ -2,10 +2,10 @@ use crate::{
     core::{
         context::Context,
         convert::TryFromInput,
-        handler::{Handler, HandlerInput, HandlerResult},
+        handler::{Handler, HandlerInput},
     },
     types::Update,
-    UpdateHandler,
+    IntoHandlerResult, UpdateHandler,
 };
 use futures_util::future::BoxFuture;
 use std::{future::Future, marker::PhantomData, sync::Arc};
@@ -26,7 +26,7 @@ where
     H: Handler<HI, Output = HO>,
     HI: TryFromInput,
     HI::Error: 'static,
-    HO: Into<HandlerResult>,
+    HO: IntoHandlerResult,
 {
     /// Creates a new App
     ///
@@ -58,7 +58,7 @@ where
                 }
             };
             let future = handler.handle(input);
-            if let HandlerResult::Err(err) = future.await.into() {
+            if let Err(err) = future.await.into_result() {
                 log::error!("An error has occurred: {}", err);
             }
         }
@@ -70,7 +70,7 @@ where
     H: Handler<HI, Output = HO> + 'static,
     HI: TryFromInput + 'static,
     HI::Error: 'static,
-    HO: Into<HandlerResult> + Send + 'static,
+    HO: IntoHandlerResult + Send + 'static,
 {
     type Future = BoxFuture<'static, ()>;
 

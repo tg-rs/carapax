@@ -1,7 +1,10 @@
-use crate::core::{
-    convert::TryFromInput,
-    handler::{Handler, HandlerResult},
-    predicate::result::PredicateResult,
+use crate::{
+    core::{
+        convert::TryFromInput,
+        handler::{Handler, HandlerResult},
+        predicate::result::PredicateResult,
+    },
+    IntoHandlerResult,
 };
 use futures_util::future::BoxFuture;
 use std::marker::PhantomData;
@@ -42,7 +45,7 @@ where
     PI: TryFromInput + 'static,
     PI::Error: 'static,
     H: Handler<HI> + 'static,
-    H::Output: Into<HandlerResult>,
+    H::Output: IntoHandlerResult,
     HI: TryFromInput + 'static,
     HI::Error: 'static,
 {
@@ -57,7 +60,7 @@ where
             match predicate_future.await.into() {
                 PredicateResult::True => {
                     let handler_future = handler.handle(handler_input);
-                    handler_future.await.into()
+                    handler_future.await.into_result()
                 }
                 PredicateResult::False(result) => result,
             }
@@ -100,21 +103,21 @@ mod tests {
 
         assert!(matches!(
             handler.handle(((user_1.clone(),), (user_1, condition.clone()))).await,
-            HandlerResult::Ok
+            Ok(())
         ));
         assert!(*condition.value.lock().await);
         condition.set(false).await;
 
         assert!(matches!(
             handler.handle(((user_2.clone(),), (user_2, condition.clone()))).await,
-            HandlerResult::Ok
+            Ok(())
         ));
         assert!(!*condition.value.lock().await);
         condition.set(false).await;
 
         assert!(matches!(
             handler.handle(((user_3.clone(),), (user_3, condition.clone()))).await,
-            HandlerResult::Err(_)
+            Err(_)
         ));
         assert!(*condition.value.lock().await);
         condition.set(false).await;
@@ -135,17 +138,17 @@ mod tests {
         if user.id != 2 {
             PredicateResult::True
         } else {
-            PredicateResult::False(HandlerResult::Ok)
+            PredicateResult::False(Ok(()))
         }
     }
 
-    async fn process_user(user: User, condition: Ref<Condition>) -> Result<HandlerResult, ProcessError> {
+    async fn process_user(user: User, condition: Ref<Condition>) -> Result<(), ProcessError> {
         condition.set(true).await;
         log::info!("Processing user: {:?}", user);
         if user.id == 3 {
             Err(ProcessError)
         } else {
-            Ok(HandlerResult::Ok)
+            Ok(())
         }
     }
 
