@@ -22,7 +22,11 @@ jobs:
           override: true
           components: llvm-tools-preview
       - name: Install grcov
-        run: curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
+        run: |
+          curl https://api.github.com/repos/mozilla/grcov/releases/latest | 
+          grep -wo "https.*x86_64.*linux-gnu.*tar\.gz" | 
+          xargs curl -L | 
+          tar xz
       - name: Install rust-covfix
         run: |
           curl -L https://github.com/Kogia-sima/rust-covfix/releases/download/v0.2.2/rust-covfix-linux-x86_64.tar.xz | tar Jxf -
