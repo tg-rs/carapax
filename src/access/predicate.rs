@@ -1,7 +1,6 @@
 use crate::{
     access::policy::AccessPolicy,
-    core::{Handler, HandlerInput, PredicateResult},
-    HandlerError,
+    core::{Handler, HandlerError, HandlerInput, PredicateResult},
 };
 use futures_util::future::BoxFuture;
 

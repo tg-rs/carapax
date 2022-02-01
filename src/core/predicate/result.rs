@@ -1,4 +1,4 @@
-use crate::{core::handler::HandlerResult, HandlerError};
+use crate::core::handler::{HandlerError, HandlerResult};
 use std::error::Error;
 
 /// A predicate result

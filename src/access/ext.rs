@@ -1,5 +1,7 @@
-use super::predicate::AccessPredicate;
-use crate::core::{Handler, HandlerInput, Predicate, TryFromInput};
+use crate::{
+    access::predicate::AccessPredicate,
+    core::{Handler, HandlerInput, Predicate, TryFromInput},
+};
 
 /// Access shortcuts
 pub trait AccessExt<P, HI>: Sized {

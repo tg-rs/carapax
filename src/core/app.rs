@@ -2,13 +2,13 @@ use crate::{
     core::{
         context::Context,
         convert::TryFromInput,
-        handler::{Handler, HandlerInput},
+        handler::{Handler, HandlerInput, IntoHandlerResult},
     },
     types::Update,
-    IntoHandlerResult, UpdateHandler,
 };
 use futures_util::future::BoxFuture;
 use std::{future::Future, marker::PhantomData, sync::Arc};
+use tgbot::UpdateHandler;
 
 /// The main entry point
 ///

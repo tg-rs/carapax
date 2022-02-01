@@ -1,10 +1,7 @@
-use crate::{
-    core::{
-        convert::TryFromInput,
-        handler::{Handler, HandlerResult},
-        predicate::result::PredicateResult,
-    },
-    IntoHandlerResult,
+use crate::core::{
+    convert::TryFromInput,
+    handler::{Handler, HandlerResult, IntoHandlerResult},
+    predicate::result::PredicateResult,
 };
 use futures_util::future::BoxFuture;
 use std::marker::PhantomData;

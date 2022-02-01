@@ -1,7 +1,6 @@
 use crate::{
-    core::{Handler, HandlerInput, HandlerResult, PredicateResult, TryFromInput},
+    core::{Handler, HandlerError, HandlerInput, HandlerResult, PredicateResult, TryFromInput},
     session::CreateSessionError,
-    HandlerError,
 };
 use futures_util::future::BoxFuture;
 use seance::{backend::SessionBackend, Session, SessionError};
