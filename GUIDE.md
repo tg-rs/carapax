@@ -98,14 +98,14 @@ If a handler returns `Err(_)`, all the subsequent handlers will not run.
 
 ### HandlerResult
 
-Normally every handler must return a `HandlerResult` or a type that converts into it:
+Normally every handler must return a `HandlerResult` which is alias to `Result` or 
+a type that converts into it (e.g. `IntoHandlerResult` implemented for the type):
 
-| From           | To                     |
-|----------------|------------------------|
-| `()`           | `Ok(())`               |
-| `Result<T, E>` | `T: IntoHandlerResult` |
-
-`IntoHandlerResult` trait is semantically equivalent to `Into<HandlerResult>`.
+| From             | To                  |
+|------------------|---------------------|
+| `()`             | `Ok(())`            |
+| `Ok(())`         | `Ok(())`            |
+| `Err(YourError)` | `Err(HandlerError)` |
 
 ### Error handling
 
