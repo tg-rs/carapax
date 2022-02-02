@@ -5,6 +5,9 @@
 - Tokio 1.16 and tgbot 0.17 support.
 - New handlers API.
   - Removed `async_trait` and `carapax-codegen` dependencies.
+  - Removed `Dispatcher` in favor of `App` and `Chain`.
+  - `HandlerResult` is the alias to `Result<(), HandlerError>` now.
+  - `HandlerError` now wraps `Box<dyn Error>`.
   - Changed signature of `Handler` trait.
   - Added `HandlerInput` struct containing `Context` and `Update`.
   - Renamed `TryFromUpdate` trait to `TryFromInput`.
@@ -14,6 +17,7 @@
   - Added `CommandPredicate` handler to allow to run a handler only for a specific command.
 - Replaced `ratelimit_meter` by `governor`.
 - Removed i18n support.
+- And other breaking changes, see examples for more information.
 
 ## 0.10.0 (09.01.2020)
 
