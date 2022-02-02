@@ -1,4 +1,4 @@
-use carapax::{longpoll::LongPoll, Api, App, Chain, Config, Context, ErrorExt, HandlerError};
+use carapax::{longpoll::LongPoll, Api, App, Chain, Context, ErrorExt, HandlerError};
 use dotenv::dotenv;
 use seance::{backend::fs::FilesystemBackend, SessionCollector, SessionManager};
 use std::{env, time::Duration};
@@ -17,8 +17,7 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let config = create_config();
-    let api = Api::new(config).expect("Failed to create API");
+    let api = Api::new(get_env("CARAPAX_TOKEN")).expect("Failed to create API");
 
     let mut context = Context::default();
     context.insert(api.clone());
@@ -50,16 +49,6 @@ async fn main() {
 
 fn get_env(s: &str) -> String {
     env::var(s).unwrap_or_else(|_| panic!("{} is not set", s))
-}
-
-fn create_config() -> Config {
-    let token = get_env("CARAPAX_TOKEN");
-    let proxy = env::var("CARAPAX_PROXY").ok();
-    let mut config = Config::new(token);
-    if let Some(proxy) = proxy {
-        config = config.proxy(proxy).expect("Failed to set proxy");
-    }
-    config
 }
 
 fn create_session_backend() -> FilesystemBackend {
