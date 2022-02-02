@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.11.0 (xx.01.2022)
+## 0.11.0 (02.02.2022)
 
-- Tokio 1.15 and tgbot 0.16 support.
+- Tokio 1.16 and tgbot 0.17 support.
 - New handlers API.
   - Removed `async_trait` and `carapax-codegen` dependencies.
   - Changed signature of `Handler` trait.
