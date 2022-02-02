@@ -11,7 +11,7 @@ where
 {
     /// A future output returned by `handle` method
     ///
-    /// You should use [HandlerResult](enum.HandlerResult.html)
+    /// You should use [HandlerResult](type.HandlerResult.html)
     /// (or any type, which can be converted into it)
     /// if you want to use that handler in [App](struct.App.html)
     ///

@@ -63,7 +63,7 @@ It's recommended to use a function when you need a simple handler.
 Implement `Handler` trait for your own type only in complex cases (e.g. you need a custom decorator or predicate).
 
 Handler takes any type that implements [`TryFromInput`](https://tg-rs.github.io/carapax/carapax/trait.TryFromInput.html) as input.
-It should return a future with [`HandlerResult`](https://tg-rs.github.io/carapax/carapax/enum.HandlerResult.html) output,
+It should return a future with [`HandlerResult`](https://tg-rs.github.io/carapax/carapax/type.HandlerResult.html) output,
 if you want to use it in `App` struct.
 
 `App` creates a [`HandlerInput`](https://tg-rs.github.io/carapax/carapax/struct.HandlerInput.html) with a `Context` and an `Update`,
