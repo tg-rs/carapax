@@ -94,7 +94,7 @@ pub enum LoopResult {
 
 impl From<()> for LoopResult {
     fn from(_: ()) -> Self {
-        LoopResult::Stop
+        LoopResult::Continue
     }
 }
 
