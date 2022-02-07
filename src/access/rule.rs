@@ -1,6 +1,6 @@
 use crate::{
-    access::principal::{Principal, PrincipalChat, PrincipalUser},
-    types::Update,
+    access::principal::Principal,
+    types::{ChatId, Update, UserId},
 };
 
 /// Contains information about principal and grant
@@ -53,30 +53,30 @@ impl AccessRule {
     }
 
     /// Creates a new rule with granted access for a user
-    pub fn allow_user<P: Into<PrincipalUser>>(principal: P) -> Self {
+    pub fn allow_user<P: Into<UserId>>(principal: P) -> Self {
         Self::allow(principal.into())
     }
 
     /// Creates a new rule with forbidden access for a user
-    pub fn deny_user<P: Into<PrincipalUser>>(principal: P) -> Self {
+    pub fn deny_user<P: Into<UserId>>(principal: P) -> Self {
         Self::deny(principal.into())
     }
 
     /// Creates a new rule with granted access for a chat
-    pub fn allow_chat<P: Into<PrincipalChat>>(principal: P) -> Self {
+    pub fn allow_chat<P: Into<ChatId>>(principal: P) -> Self {
         Self::allow(principal.into())
     }
 
     /// Creates a new rule with forbidden access for a chat
-    pub fn deny_chat<P: Into<PrincipalChat>>(principal: P) -> Self {
+    pub fn deny_chat<P: Into<ChatId>>(principal: P) -> Self {
         Self::deny(principal.into())
     }
 
     /// Creates a new rule with granted access for a chat user
     pub fn allow_chat_user<C, U>(chat: C, user: U) -> Self
     where
-        C: Into<PrincipalChat>,
-        U: Into<PrincipalUser>,
+        C: Into<ChatId>,
+        U: Into<UserId>,
     {
         Self::allow((chat.into(), user.into()))
     }
@@ -84,8 +84,8 @@ impl AccessRule {
     /// Creates a new rule with forbidden access for a chat user
     pub fn deny_chat_user<C, U>(chat: C, user: U) -> Self
     where
-        C: Into<PrincipalChat>,
-        U: Into<PrincipalUser>,
+        C: Into<ChatId>,
+        U: Into<UserId>,
     {
         Self::deny((chat.into(), user.into()))
     }
@@ -120,8 +120,8 @@ mod tests {
         }))
         .unwrap();
 
-        let principal_chat = Principal::from(PrincipalChat::from(1));
-        let principal_user = Principal::from(PrincipalUser::from(1));
+        let principal_chat = Principal::from(ChatId::from(1));
+        let principal_user = Principal::from(UserId::from(1));
 
         let rule = AccessRule::new(principal_user.clone(), true);
         assert_eq!(rule.principal, principal_user);
@@ -148,8 +148,8 @@ mod tests {
         }))
         .unwrap();
 
-        let principal_chat = Principal::from(PrincipalChat::from(1));
-        let principal_user = Principal::from(PrincipalUser::from(1));
+        let principal_chat = Principal::from(ChatId::from(1));
+        let principal_user = Principal::from(UserId::from(1));
 
         let rule = AccessRule::allow(principal_user.clone());
         assert_eq!(rule.principal, principal_user);
@@ -201,7 +201,7 @@ mod tests {
         }))
         .unwrap();
 
-        let principal_user = Principal::from(PrincipalUser::from(1));
+        let principal_user = Principal::from(UserId::from(1));
 
         let rule = AccessRule::allow_user(1);
         assert_eq!(rule.principal, principal_user);
@@ -228,7 +228,7 @@ mod tests {
         }))
         .unwrap();
 
-        let principal_chat = Principal::from(PrincipalChat::from(1));
+        let principal_chat = Principal::from(ChatId::from(1));
 
         let rule = AccessRule::allow_chat(1);
         assert_eq!(rule.principal, principal_chat);
@@ -256,18 +256,12 @@ mod tests {
         .unwrap();
 
         let rule = AccessRule::allow_chat_user(1, 1);
-        assert_eq!(
-            rule.principal,
-            Principal::from((PrincipalChat::from(1), PrincipalUser::from(1)))
-        );
+        assert_eq!(rule.principal, Principal::from((ChatId::from(1), UserId::from(1))));
         assert!(rule.is_granted());
         assert!(rule.accepts(&update));
 
         let rule = AccessRule::deny_chat_user(1, 1);
-        assert_eq!(
-            rule.principal,
-            Principal::from((PrincipalChat::from(1), PrincipalUser::from(1)))
-        );
+        assert_eq!(rule.principal, Principal::from((ChatId::from(1), UserId::from(1))));
         assert!(!rule.is_granted());
         assert!(rule.accepts(&update));
     }
