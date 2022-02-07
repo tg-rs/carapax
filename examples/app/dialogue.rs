@@ -3,11 +3,10 @@ use carapax::{
     dialogue::{DialogueExt, DialogueInput, DialogueResult, DialogueState},
     methods::SendMessage,
     session::backend::fs::FilesystemBackend,
-    types::ChatId,
+    types::{ChatId, Text},
     Api, Chain, CommandPredicate, Ref,
 };
 use serde::{Deserialize, Serialize};
-use tgbot::types::Text;
 
 pub fn setup(chain: Chain) -> Chain {
     chain.add(example_dialogue.dialogue::<FilesystemBackend>(CommandPredicate::new("/dialogue")))

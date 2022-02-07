@@ -104,7 +104,7 @@ impl AccessRule {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tgbot::types::Update;
+    use crate::types::Update;
 
     #[test]
     fn access_rule_new() {

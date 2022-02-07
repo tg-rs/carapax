@@ -1,13 +1,12 @@
 use crate::{
     core::{context::Ref, handler::HandlerInput},
     types::{
-        CallbackQuery, ChatId, ChatJoinRequest, ChatMemberUpdated, ChosenInlineResult, Command, CommandError, Message,
-        Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Text, Update, UpdateKind, User,
+        CallbackQuery, ChatId, ChatJoinRequest, ChatMemberUpdated, ChosenInlineResult, Command, CommandError,
+        InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Text, Update, UpdateKind, User,
     },
 };
 use futures_util::future::{ok, ready, BoxFuture, Ready};
 use std::{any::TypeId, convert::Infallible, error::Error, fmt, future::Future};
-use tgbot::types::InlineQuery;
 
 /// Allows to create a specific handler input
 pub trait TryFromInput: Send + Sized {
