@@ -16,7 +16,7 @@ default = []
 # enable everything
 full = ["access", "dialogue", "ratelimit", "session-redis", "session-fs"]
 
-access = []
+access = ["serde"]
 dialogue = ["session", "serde"]
 ratelimit = ["governor", "nonzero_ext"]
 session = ["seance"]
