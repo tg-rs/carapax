@@ -1,17 +1,29 @@
 use crate::core::{
     convert::TryFromInput,
-    handler::{Handler, HandlerError, HandlerInput, HandlerResult},
+    handler::{Handler, HandlerError, HandlerInput, HandlerResult, IntoHandlerResult},
 };
 use futures_util::future::BoxFuture;
-use std::{any::type_name, error::Error, future::Future, marker::PhantomData, sync::Arc};
+use std::{any::type_name, future::Future, marker::PhantomData, sync::Arc};
 
 /// Handlers chain
+///
+/// Only a first handler found for given input will run by default.
+/// Use `all()` method if you want to run all handlers.
 #[derive(Clone, Default)]
 pub struct Chain {
     handlers: Arc<Vec<Box<dyn ChainHandler + Sync>>>,
+    strategy: ChainStrategy,
 }
 
 impl Chain {
+    /// Creates a new chain which runs all given handlers
+    pub fn all() -> Self {
+        Self {
+            strategy: ChainStrategy::All,
+            ..Default::default()
+        }
+    }
+
     /// Adds a handler
     ///
     /// # Arguments
@@ -30,7 +42,7 @@ impl Chain {
     where
         H: Handler<I, Output = O> + Sync + Clone + 'static,
         I: TryFromInput + Sync + 'static,
-        O: IntoChainResult,
+        O: IntoHandlerResult,
     {
         let handlers = Arc::get_mut(&mut self.handlers).expect("Can not add handler, chain is shared");
         handlers.push(ConvertHandler::boxed(handler));
@@ -39,22 +51,34 @@ impl Chain {
 
     fn run(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> {
         let handlers = self.handlers.clone();
+        let strategy = self.strategy;
         async move {
             for handler in handlers.iter() {
                 let type_name = handler.get_type_name();
                 log::debug!("Running '{}' handler...", type_name);
                 let result = handler.handle(input.clone()).await;
                 match result {
-                    Ok(LoopResult::Continue) => {
-                        log::debug!("'{}' handler returned {:?}, continue", type_name, LoopResult::Continue);
-                    }
-                    Ok(LoopResult::Stop) => {
-                        log::debug!("'{}' handler returned {:?}, stop", type_name, LoopResult::Stop);
-                        break;
-                    }
-                    Err(err) => {
-                        log::debug!("'{}' handler returned {}, stop", type_name, err);
+                    ChainResult::Ok(result) => match strategy {
+                        ChainStrategy::All => match result {
+                            Ok(()) => {
+                                log::debug!("[CONTINUE] Handler '{}' succeeded", type_name);
+                            }
+                            Err(err) => {
+                                log::debug!("[STOP] Handler '{}' returned an error: {}", type_name, err);
+                                return Err(err);
+                            }
+                        },
+                        ChainStrategy::FirstFound => {
+                            log::debug!("[STOP] First found handler: '{}'", type_name);
+                            return result;
+                        }
+                    },
+                    ChainResult::Err(err) => {
+                        log::debug!("[STOP] Could not convert input for '{}' handler: {}", type_name, err);
                         return Err(err);
+                    }
+                    ChainResult::Skipped => {
+                        log::debug!("[CONTINUE] Input not found for '{}' handler", type_name);
                     }
                 }
             }
@@ -72,6 +96,18 @@ impl Handler<HandlerInput> for Chain {
     }
 }
 
+#[derive(Clone, Copy)]
+enum ChainStrategy {
+    All,
+    FirstFound,
+}
+
+impl Default for ChainStrategy {
+    fn default() -> Self {
+        Self::FirstFound
+    }
+}
+
 trait ChainHandler: Send {
     fn handle(&self, input: HandlerInput) -> BoxFuture<'static, ChainResult>;
 
@@ -80,47 +116,10 @@ trait ChainHandler: Send {
     }
 }
 
-/// A specialized result for chain handler
-pub type ChainResult = Result<LoopResult, HandlerError>;
-
-/// Allows to control loop in chain
-#[derive(Clone, Copy, Debug)]
-pub enum LoopResult {
-    /// Next handler will run
-    Continue,
-    /// Next handler will not run
-    Stop,
-}
-
-impl From<()> for LoopResult {
-    fn from(_: ()) -> Self {
-        LoopResult::Continue
-    }
-}
-
-/// Converts objects into ChainResult
-pub trait IntoChainResult {
-    /// Performs conversion
-    fn into_result(self) -> ChainResult;
-}
-
-impl<T> IntoChainResult for T
-where
-    T: Into<LoopResult>,
-{
-    fn into_result(self) -> ChainResult {
-        Ok(self.into())
-    }
-}
-
-impl<T, E> IntoChainResult for Result<T, E>
-where
-    T: Into<LoopResult>,
-    E: Error + Send + 'static,
-{
-    fn into_result(self) -> ChainResult {
-        self.map(Into::into).map_err(HandlerError::new)
-    }
+enum ChainResult {
+    Ok(HandlerResult),
+    Err(HandlerError),
+    Skipped,
 }
 
 #[derive(Clone)]
@@ -143,18 +142,18 @@ where
     H: Handler<I, Output = R> + 'static,
     I: TryFromInput,
     I::Error: 'static,
-    R: IntoChainResult,
+    R: IntoHandlerResult,
 {
-    fn handle(&self, input: HandlerInput) -> BoxFuture<'static, Result<LoopResult, HandlerError>> {
+    fn handle(&self, input: HandlerInput) -> BoxFuture<'static, ChainResult> {
         let handler = self.handler.clone();
         Box::pin(async move {
             match I::try_from_input(input).await {
                 Ok(Some(input)) => {
                     let future = handler.handle(input);
-                    future.await.into_result()
+                    ChainResult::Ok(future.await.into_result())
                 }
-                Ok(None) => Ok(LoopResult::Continue),
-                Err(err) => Err(HandlerError::new(err)),
+                Ok(None) => ChainResult::Skipped,
+                Err(err) => ChainResult::Err(HandlerError::new(err)),
             }
         })
     }
@@ -191,14 +190,8 @@ mod tests {
         }
     }
 
-    async fn handler_continue(store: Ref<UpdateStore>, update: Update) -> LoopResult {
+    async fn handler_ok(store: Ref<UpdateStore>, update: Update) {
         store.push(update).await;
-        LoopResult::Continue
-    }
-
-    async fn handler_stop(store: Ref<UpdateStore>, update: Update) -> LoopResult {
-        store.push(update).await;
-        LoopResult::Stop
     }
 
     async fn handler_error(store: Ref<UpdateStore>, update: Update) -> HandlerResult {
@@ -234,11 +227,11 @@ mod tests {
     #[tokio::test]
     async fn chain() {
         macro_rules! assert_handle {
-            ($count:expr, $($handler:expr),*) => {{
+            ($strategy:ident, $count:expr, $($handler:expr),*) => {{
                 let mut context = Context::default();
                 context.insert(UpdateStore::new());
                 let context = Arc::new(context);
-                let mut chain = Chain::default();
+                let mut chain = Chain::$strategy();
                 $(chain = chain.add($handler);)*
                 let update = create_update();
                 let input = HandlerInput {
@@ -252,13 +245,19 @@ mod tests {
             }};
         }
 
-        let result = assert_handle!(2, handler_continue, handler_error, handler_stop);
+        let result = assert_handle!(all, 2, handler_ok, handler_error, handler_ok);
+        assert!(matches!(result, Err(_)));
+        let result = assert_handle!(default, 1, handler_ok, handler_error, handler_ok);
+        assert!(matches!(result, Ok(())));
+
+        let result = assert_handle!(all, 1, handler_error, handler_ok);
+        assert!(matches!(result, Err(_)));
+        let result = assert_handle!(default, 1, handler_error, handler_ok);
         assert!(matches!(result, Err(_)));
 
-        let result = assert_handle!(1, handler_error, handler_continue);
-        assert!(matches!(result, Err(_)));
-
-        let result = assert_handle!(1, handler_stop, handler_continue);
+        let result = assert_handle!(all, 2, handler_ok, handler_ok);
+        assert!(matches!(result, Ok(())));
+        let result = assert_handle!(default, 1, handler_ok, handler_ok);
         assert!(matches!(result, Ok(())));
     }
 }

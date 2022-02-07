@@ -28,7 +28,7 @@ async fn main() {
     let session_manager = SessionManager::new(session_backend);
     context.insert(session_manager);
 
-    let mut chain = Chain::default();
+    let mut chain = Chain::all();
     if let Ok(username) = env::var("CARAPAX_ACCESS_USERNAME") {
         chain = access::setup(chain, &username);
     }
