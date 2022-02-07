@@ -82,7 +82,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{chain::Chain, context::Ref};
+    use crate::core::{
+        chain::{Chain, LoopResult},
+        context::Ref,
+    };
     use std::{error::Error, fmt};
     use tokio::sync::Mutex;
 
@@ -116,8 +119,9 @@ mod tests {
 
     impl Error for ExampleError {}
 
-    async fn success_handler(counter: Ref<Counter>) {
+    async fn success_handler(counter: Ref<Counter>) -> LoopResult {
         *counter.value.lock().await += 1;
+        LoopResult::Continue
     }
 
     async fn error_handler(counter: Ref<Counter>) -> Result<(), ExampleError> {
