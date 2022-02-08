@@ -87,7 +87,7 @@ async fn handler1(_: ()) {}
 async fn handler2(_: ()) {}
 async fn handler3(_: ()) {}
 
-let chain = Chain::default()
+let chain = Chain::all() // or Chain::once
     .add(handler1)
     .add(handler2)
     .add(handler3);
@@ -95,6 +95,9 @@ let chain = Chain::default()
 
 Handlers will run in same order as added.
 If a handler returns `Err(_)`, all the subsequent handlers will not run.
+
+- `Chain::all()` - runs all given handlers.
+- `Chain::once()` - runs only a first handler found for given input.
 
 ### HandlerResult
 
@@ -145,7 +148,7 @@ fn main() {
     let handler = erroneous_handler.on_error(LoggingErrorHandler);
     // or create decorator by hand
     // let handler = ErrorDecorator::new(LoggingErrorHandler, erroneous_handler);
-    let chain = Chain::default().add(handler);
+    let chain = Chain::once().add(handler);
     // ...
 }
 ```
@@ -191,7 +194,7 @@ fn main() {
     let handler = pong.predicate(is_ping);
     // or create predicate by hand
     // let handler = Predicate::new(is_ping, pong);
-    let chain = Chain::default().add(handler);
+    let chain = Chain::once().add(handler);
     // ...
 }
 ```
@@ -220,7 +223,7 @@ fn main() {
     let handler = greet.command("/hello");
     // or create predicate by hand
     //let handler = Predicate::new(CommandPredicate::new("/hello"), greet);
-    let chain = Chain::default().add(handler);
+    let chain = Chain::once().add(handler);
     // ...
 }
 ```
@@ -253,7 +256,7 @@ fn main() {
     let handler = protected_handler.access(policy);
     // or create predicate by hand
     // let handler = Predicate::new(AccessPredicate::new(policy), protected_handler);
-    let chain = Chain::default().add(handler);
+    let chain = Chain::once().add(handler);
 }
 
 ```

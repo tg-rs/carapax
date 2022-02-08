@@ -11,7 +11,7 @@ pub fn setup(chain: Chain, strategy: &str) -> Chain {
         .expect("Failed to create quota")
         .allow_burst(nonzero!(1u32));
     let jitter = Jitter::up_to(Duration::from_secs(5));
-    let result = Chain::default();
+    let result = Chain::once();
     match strategy {
         "direct_discard" => result.add(chain.predicate(DirectRateLimitPredicate::discard(quota))),
         "direct_wait" => result.add(chain.predicate(DirectRateLimitPredicate::wait(quota))),

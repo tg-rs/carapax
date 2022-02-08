@@ -6,22 +6,33 @@ use futures_util::future::BoxFuture;
 use std::{any::type_name, future::Future, marker::PhantomData, sync::Arc};
 
 /// Handlers chain
-///
-/// Only a first handler found for given input will run by default.
-/// Use `all()` method if you want to run all handlers.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Chain {
     handlers: Arc<Vec<Box<dyn ChainHandler + Sync>>>,
     strategy: ChainStrategy,
 }
 
 impl Chain {
-    /// Creates a new chain which runs all given handlers
-    pub fn all() -> Self {
+    fn new(strategy: ChainStrategy) -> Self {
         Self {
-            strategy: ChainStrategy::All,
-            ..Default::default()
+            handlers: Arc::new(Vec::new()),
+            strategy,
         }
+    }
+
+    /// Creates a new chain
+    ///
+    /// Only a first handler found for given input will run.
+    /// Use `all()` method if you want to run all handlers.
+    pub fn once() -> Self {
+        Self::new(ChainStrategy::FirstFound)
+    }
+
+    /// Creates a new chain
+    ///
+    /// Runs all given handlers
+    pub fn all() -> Self {
+        Self::new(ChainStrategy::All)
     }
 
     /// Adds a handler
@@ -100,12 +111,6 @@ impl Handler<HandlerInput> for Chain {
 enum ChainStrategy {
     All,
     FirstFound,
-}
-
-impl Default for ChainStrategy {
-    fn default() -> Self {
-        Self::FirstFound
-    }
 }
 
 trait ChainHandler: Send {
@@ -247,17 +252,17 @@ mod tests {
 
         let result = assert_handle!(all, 2, handler_ok, handler_error, handler_ok);
         assert!(matches!(result, Err(_)));
-        let result = assert_handle!(default, 1, handler_ok, handler_error, handler_ok);
+        let result = assert_handle!(once, 1, handler_ok, handler_error, handler_ok);
         assert!(matches!(result, Ok(())));
 
         let result = assert_handle!(all, 1, handler_error, handler_ok);
         assert!(matches!(result, Err(_)));
-        let result = assert_handle!(default, 1, handler_error, handler_ok);
+        let result = assert_handle!(once, 1, handler_error, handler_ok);
         assert!(matches!(result, Err(_)));
 
         let result = assert_handle!(all, 2, handler_ok, handler_ok);
         assert!(matches!(result, Ok(())));
-        let result = assert_handle!(default, 1, handler_ok, handler_ok);
+        let result = assert_handle!(once, 1, handler_ok, handler_ok);
         assert!(matches!(result, Ok(())));
     }
 }
