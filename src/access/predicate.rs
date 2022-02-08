@@ -36,7 +36,7 @@ where
             let debug_principal = DebugPrincipal::from(&input.update);
             policy.is_granted(input).await.map(|value| {
                 log::info!(
-                    "Access for update {:?} is {}",
+                    "Access for {:?} is {}",
                     debug_principal,
                     if value { "granted" } else { "forbidden" }
                 );
