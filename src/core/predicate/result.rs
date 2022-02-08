@@ -1,4 +1,4 @@
-use crate::core::handler::{HandlerError, HandlerResult};
+use crate::core::handler::HandlerError;
 use std::error::Error;
 
 /// A predicate result
@@ -6,10 +6,10 @@ use std::error::Error;
 pub enum PredicateResult {
     /// Decorated handler will run
     True,
-    /// Decorated handler will not run
-    ///
-    /// `HandlerResult` allows to decide, will next handler run or not.
-    False(HandlerResult),
+    /// Decorated handler was not run
+    False,
+    /// An error has occurred in predicate
+    Err(HandlerError),
 }
 
 impl From<bool> for PredicateResult {
@@ -17,7 +17,7 @@ impl From<bool> for PredicateResult {
         if value {
             PredicateResult::True
         } else {
-            PredicateResult::False(Ok(()))
+            PredicateResult::False
         }
     }
 }
@@ -30,7 +30,7 @@ where
     fn from(value: Result<T, E>) -> Self {
         match value {
             Ok(value) => value.into(),
-            Err(err) => PredicateResult::False(Err(HandlerError::new(err))),
+            Err(err) => PredicateResult::Err(HandlerError::new(err)),
         }
     }
 }
@@ -54,15 +54,12 @@ mod tests {
     #[test]
     fn convert_result() {
         assert!(matches!(true.into(), PredicateResult::True));
-        assert!(matches!(false.into(), PredicateResult::False(Ok(()))));
+        assert!(matches!(false.into(), PredicateResult::False));
         assert!(matches!(Ok::<bool, ExampleError>(true).into(), PredicateResult::True));
-        assert!(matches!(
-            Ok::<bool, ExampleError>(false).into(),
-            PredicateResult::False(Ok(()))
-        ));
+        assert!(matches!(Ok::<bool, ExampleError>(false).into(), PredicateResult::False));
         assert!(matches!(
             Err::<bool, ExampleError>(ExampleError).into(),
-            PredicateResult::False(Err(_))
+            PredicateResult::Err(_)
         ));
     }
 }

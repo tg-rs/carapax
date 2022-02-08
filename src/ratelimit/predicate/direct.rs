@@ -88,7 +88,7 @@ impl Handler<()> for DirectRateLimitPredicate<NoJitter, MethodDiscard> {
             Ok(_) => PredicateResult::True,
             Err(_) => {
                 log::info!("DirectRateLimitPredicate: update discarded");
-                PredicateResult::False(Ok(()))
+                PredicateResult::False
             }
         })
     }
@@ -134,7 +134,7 @@ mod tests {
             "[direct/discard/1] true"
         );
         assert!(
-            matches!(handler.handle(()).await, PredicateResult::False(Ok(()))),
+            matches!(handler.handle(()).await, PredicateResult::False),
             "[direct/discard/2] false"
         );
 

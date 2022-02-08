@@ -1,9 +1,10 @@
 use crate::core::{
     convert::TryFromInput,
     handler::{Handler, HandlerError, HandlerInput, HandlerResult, IntoHandlerResult},
+    predicate::PredicateOutput,
 };
 use futures_util::future::BoxFuture;
-use std::{any::type_name, future::Future, marker::PhantomData, sync::Arc};
+use std::{any::type_name, error::Error, future::Future, marker::PhantomData, sync::Arc};
 
 /// Handlers chain
 #[derive(Clone)]
@@ -53,7 +54,7 @@ impl Chain {
     where
         H: Handler<I, Output = O> + Sync + Clone + 'static,
         I: TryFromInput + Sync + 'static,
-        O: IntoHandlerResult,
+        O: Into<ChainResult>,
     {
         let handlers = Arc::get_mut(&mut self.handlers).expect("Can not add handler, chain is shared");
         handlers.push(ConvertHandler::boxed(handler));
@@ -69,7 +70,7 @@ impl Chain {
                 log::debug!("Running '{}' handler...", type_name);
                 let result = handler.handle(input.clone()).await;
                 match result {
-                    ChainResult::Ok(result) => match strategy {
+                    ChainResult::Done(result) => match strategy {
                         ChainStrategy::All => match result {
                             Ok(()) => {
                                 log::debug!("[CONTINUE] Handler '{}' succeeded", type_name);
@@ -121,10 +122,49 @@ trait ChainHandler: Send {
     }
 }
 
-enum ChainResult {
-    Ok(HandlerResult),
+/// A specialized result for Chain
+pub enum ChainResult {
+    /// Handler has run
+    Done(HandlerResult),
+    /// An error has occurred before handler execution
     Err(HandlerError),
+    /// Handler has not run
     Skipped,
+}
+
+impl From<()> for ChainResult {
+    fn from(_: ()) -> Self {
+        ChainResult::Done(Ok(()))
+    }
+}
+
+impl<E> From<Result<(), E>> for ChainResult
+where
+    E: Error + Send + 'static,
+{
+    fn from(result: Result<(), E>) -> Self {
+        ChainResult::Done(result.map_err(HandlerError::new))
+    }
+}
+
+impl From<PredicateOutput> for ChainResult {
+    fn from(output: PredicateOutput) -> Self {
+        match output {
+            PredicateOutput::True(result) => ChainResult::Done(result),
+            PredicateOutput::False => ChainResult::Skipped,
+            PredicateOutput::Err(err) => ChainResult::Err(err),
+        }
+    }
+}
+
+impl IntoHandlerResult for ChainResult {
+    fn into_result(self) -> HandlerResult {
+        match self {
+            ChainResult::Done(result) => result,
+            ChainResult::Err(err) => Err(err),
+            ChainResult::Skipped => Ok(()),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -147,7 +187,7 @@ where
     H: Handler<I, Output = R> + 'static,
     I: TryFromInput,
     I::Error: 'static,
-    R: IntoHandlerResult,
+    R: Into<ChainResult>,
 {
     fn handle(&self, input: HandlerInput) -> BoxFuture<'static, ChainResult> {
         let handler = self.handler.clone();
@@ -155,7 +195,7 @@ where
             match I::try_from_input(input).await {
                 Ok(Some(input)) => {
                     let future = handler.handle(input);
-                    ChainResult::Ok(future.await.into_result())
+                    future.await.into()
                 }
                 Ok(None) => ChainResult::Skipped,
                 Err(err) => ChainResult::Err(HandlerError::new(err)),

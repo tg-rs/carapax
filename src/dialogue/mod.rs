@@ -94,7 +94,8 @@ where
                     let predicate_future = predicate.handle(predicate_input);
                     match predicate_future.await.into() {
                         PredicateResult::True => { /* Predicate returned true, so we must run dialog handler */ }
-                        PredicateResult::False(result) => return result,
+                        PredicateResult::False => return Ok(()),
+                        PredicateResult::Err(err) => return Err(err),
                     }
                 }
                 Err(err) => return Err(HandlerError::new(err)),

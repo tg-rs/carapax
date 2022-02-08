@@ -1,8 +1,10 @@
 use crate::{
     access::policy::AccessPolicy,
-    core::{Handler, HandlerError, HandlerInput, PredicateResult},
+    core::{Handler, HandlerInput},
+    types::{Integer, Update},
 };
 use futures_util::future::BoxFuture;
+use std::fmt;
 
 /// Allows to protect a handler with an access policy
 #[derive(Clone)]
@@ -25,25 +27,58 @@ impl<P> Handler<HandlerInput> for AccessPredicate<P>
 where
     P: AccessPolicy + Clone + Sync + 'static,
 {
-    type Output = PredicateResult;
+    type Output = Result<bool, P::Error>;
     type Future = BoxFuture<'static, Self::Output>;
 
     fn handle(&self, input: HandlerInput) -> Self::Future {
         let policy = self.policy.clone();
         Box::pin(async move {
-            let user = input.update.get_user().cloned();
-            match policy.is_granted(input).await {
-                Ok(true) => {
-                    log::info!("Access granted for {:?}", user);
-                    PredicateResult::True
-                }
-                Ok(false) => {
-                    log::info!("Access forbidden for {:?}", user);
-                    PredicateResult::False(Ok(()))
-                }
-                Err(err) => PredicateResult::False(Err(HandlerError::new(err))),
-            }
+            let debug_principal = DebugPrincipal::from(&input.update);
+            policy.is_granted(input).await.map(|value| {
+                log::info!(
+                    "Access for update {:?} is {}",
+                    debug_principal,
+                    if value { "granted" } else { "forbidden" }
+                );
+                value
+            })
         })
+    }
+}
+
+struct DebugPrincipal {
+    user_id: Option<Integer>,
+    user_username: Option<String>,
+    chat_id: Option<Integer>,
+    chat_username: Option<String>,
+}
+
+impl From<&Update> for DebugPrincipal {
+    fn from(update: &Update) -> Self {
+        DebugPrincipal {
+            user_id: update.get_user_id(),
+            user_username: update.get_user_username(),
+            chat_id: update.get_chat_id(),
+            chat_username: update.get_chat_username().map(String::from),
+        }
+    }
+}
+
+impl fmt::Debug for DebugPrincipal {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        let mut debug_struct = out.debug_struct("Principal");
+        macro_rules! debug_field {
+            ($field_name:ident) => {
+                if let Some(ref $field_name) = self.$field_name {
+                    debug_struct.field(stringify!($field_name), &$field_name);
+                }
+            };
+        }
+        debug_field!(user_id);
+        debug_field!(user_username);
+        debug_field!(chat_id);
+        debug_field!(chat_username);
+        debug_struct.finish()
     }
 }
 
@@ -102,7 +137,7 @@ mod tests {
         .unwrap();
         let input_granted = HandlerInput::from(update_granted);
         let result = predicate.handle(input_granted).await;
-        assert!(matches!(result, PredicateResult::True));
+        assert!(matches!(result, Ok(true)));
 
         let update_forbidden: Update = serde_json::from_value(serde_json::json!(
             {
@@ -119,7 +154,7 @@ mod tests {
         .unwrap();
         let input_forbidden = HandlerInput::from(update_forbidden);
         let result = predicate.handle(input_forbidden).await;
-        assert!(matches!(result, PredicateResult::False(Ok(()))));
+        assert!(matches!(result, Ok(false)));
 
         let update_error: Update = serde_json::from_value(serde_json::json!(
             {
@@ -136,6 +171,6 @@ mod tests {
         .unwrap();
         let input_error = HandlerInput::from(update_error);
         let result = predicate.handle(input_error).await;
-        assert!(matches!(result, PredicateResult::False(Err(_))));
+        assert!(matches!(result, Err(_)));
     }
 }

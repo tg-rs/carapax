@@ -123,7 +123,7 @@ where
                 Ok(_) => PredicateResult::True,
                 Err(_) => {
                     log::info!("KeyedRateLimitPredicate: update discarded");
-                    PredicateResult::False(Ok(()))
+                    PredicateResult::False
                 }
             }
         } else {
@@ -192,7 +192,7 @@ mod tests {
                     $first_key
                 );
                 assert!(
-                    matches!(handler.handle($first_key).await, PredicateResult::False(Ok(()))),
+                    matches!(handler.handle($first_key).await, PredicateResult::False),
                     "[keyed/discard] handle({:?}) -> stop",
                     $first_key
                 );
@@ -202,7 +202,7 @@ mod tests {
                     $second_key
                 );
                 assert!(
-                    matches!(handler.handle($second_key).await, PredicateResult::False(Ok(()))),
+                    matches!(handler.handle($second_key).await, PredicateResult::False),
                     "[keyed/discard] handle({:?}) -> stop",
                     $second_key
                 );
@@ -226,7 +226,7 @@ mod tests {
                     $first_key,
                 );
                 assert!(
-                    matches!(handler.handle($second_key).await, PredicateResult::False(Ok(()))),
+                    matches!(handler.handle($second_key).await, PredicateResult::False),
                     "[keyed/discard/with_key] handle({:?}) -> stop",
                     $first_key,
                 );

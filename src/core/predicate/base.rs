@@ -1,6 +1,6 @@
 use crate::core::{
     convert::TryFromInput,
-    handler::{Handler, HandlerResult, IntoHandlerResult},
+    handler::{Handler, HandlerError, HandlerResult, IntoHandlerResult},
     predicate::result::PredicateResult,
 };
 use futures_util::future::BoxFuture;
@@ -46,7 +46,7 @@ where
     HI: TryFromInput + 'static,
     HI::Error: 'static,
 {
-    type Output = HandlerResult;
+    type Output = PredicateOutput;
     type Future = BoxFuture<'static, Self::Output>;
 
     fn handle(&self, (predicate_input, handler_input): (PI, HI)) -> Self::Future {
@@ -54,12 +54,12 @@ where
         let handler = self.handler.clone();
         Box::pin(async move {
             let predicate_future = predicate.handle(predicate_input);
-            match predicate_future.await.into() {
-                PredicateResult::True => {
-                    let handler_future = handler.handle(handler_input);
-                    handler_future.await.into_result()
-                }
-                PredicateResult::False(result) => result,
+            let predicate_result = predicate_future.await.into();
+            if let PredicateResult::True = predicate_result {
+                let handler_future = handler.handle(handler_input);
+                handler_future.await.into_result().into()
+            } else {
+                predicate_result.into()
             }
         })
     }
@@ -76,6 +76,42 @@ where
             predicate_input: self.predicate_input,
             handler: self.handler.clone(),
             handler_input: self.handler_input,
+        }
+    }
+}
+
+/// Output of the predicate decorator
+pub enum PredicateOutput {
+    /// Decorated handler has run
+    True(HandlerResult),
+    /// Decorated handler has not run
+    False,
+    /// An error has occurred in predicate
+    Err(HandlerError),
+}
+
+impl From<PredicateResult> for PredicateOutput {
+    fn from(result: PredicateResult) -> Self {
+        match result {
+            PredicateResult::True => PredicateOutput::True(Ok(())),
+            PredicateResult::False => PredicateOutput::False,
+            PredicateResult::Err(err) => PredicateOutput::Err(err),
+        }
+    }
+}
+
+impl From<HandlerResult> for PredicateOutput {
+    fn from(result: HandlerResult) -> Self {
+        PredicateOutput::True(result)
+    }
+}
+
+impl IntoHandlerResult for PredicateOutput {
+    fn into_result(self) -> HandlerResult {
+        match self {
+            PredicateOutput::True(result) => result,
+            PredicateOutput::False => Ok(()),
+            PredicateOutput::Err(err) => Err(err),
         }
     }
 }
@@ -100,21 +136,21 @@ mod tests {
 
         assert!(matches!(
             handler.handle(((user_1.clone(),), (user_1, condition.clone()))).await,
-            Ok(())
+            PredicateOutput::True(Ok(()))
         ));
         assert!(*condition.value.lock().await);
         condition.set(false).await;
 
         assert!(matches!(
             handler.handle(((user_2.clone(),), (user_2, condition.clone()))).await,
-            Ok(())
+            PredicateOutput::False
         ));
         assert!(!*condition.value.lock().await);
         condition.set(false).await;
 
         assert!(matches!(
             handler.handle(((user_3.clone(),), (user_3, condition.clone()))).await,
-            Err(_)
+            PredicateOutput::True(Err(_))
         ));
         assert!(*condition.value.lock().await);
         condition.set(false).await;
@@ -135,7 +171,7 @@ mod tests {
         if user.id != 2 {
             PredicateResult::True
         } else {
-            PredicateResult::False(Ok(()))
+            PredicateResult::False
         }
     }
 
