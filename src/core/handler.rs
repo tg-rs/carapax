@@ -110,7 +110,7 @@ impl fmt::Display for HandlerError {
     }
 }
 
-impl std::error::Error for HandlerError {
+impl Error for HandlerError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         self.0.source()
     }
