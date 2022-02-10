@@ -57,7 +57,7 @@ impl From<&Update> for DebugPrincipal {
     fn from(update: &Update) -> Self {
         DebugPrincipal {
             user_id: update.get_user_id(),
-            user_username: update.get_user_username(),
+            user_username: update.get_user_username().map(String::from),
             chat_id: update.get_chat_id(),
             chat_username: update.get_chat_username().map(String::from),
         }
