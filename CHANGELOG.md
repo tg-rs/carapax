@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0 (10.02.2022)
+
+- Updated tgbot version to 0.18.
+- Added `Chain::once` method which allows to run first found handler only.
+- Removed `PrincipalUser` and `PrincipalChat` in favor of `UserId` and `ChatId`.
+
 ## 0.11.0 (02.02.2022)
 
 - Tokio 1.16 and tgbot 0.17 support.
