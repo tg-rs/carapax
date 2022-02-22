@@ -325,9 +325,6 @@ Or just use `session` if you have your own backend.
 
 Dialogue is a kind of stateful handler. It receives the current state and returns a new one.
 
-[`DialogueDecorator`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueDecorator.html) allows to make a dialogue handler.
-It takes a predicate which allows deciding should we start a dialogue or not, and a handler itself.
-
 Dialogue handler acts like a regular handler but returns a [`DialogueResult`](https://tg-rs.github.io/carapax/carapax/dialogue/enum.DialogueResult.html).
 There is a [`DialogueInput`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueInput.html) structure which allows to obtain a state from the session.
 It implements `TryFromInput`, so you can use it as an argument of your handler.
@@ -337,6 +334,11 @@ Dialogue name must be unique. It defines a value for session key to store the st
 
 State can be converted into `DialogueResult`.
 Thus, you can return `state.into()` instead of `DialogueResult::Next(state)`.
+
+You need to wrap dialogue handler in [`DialogueDecorator`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialogueDecorator.html) and
+[`DialoguePredicate`](https://tg-rs.github.io/carapax/carapax/dialogue/struct.DialoguePredicate.html)
+
+Predicate decides should handler run or not, decorator saves state and converts dialogue result into handler result.
 
 See [example](examples/app/dialogue.rs) for more information.
 
