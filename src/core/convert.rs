@@ -435,7 +435,7 @@ mod tests {
 
     #[tokio::test]
     async fn message() {
-        for data in vec![
+        for data in [
             serde_json::json!({
                 "update_id": 1,
                 "message": {
