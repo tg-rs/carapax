@@ -292,8 +292,8 @@ Note that you need to enable `ratelimit` feature in `Cargo.toml`.
 ## Session
 
 
-Sessions allow storing data in a storage such as filesystem or redis. 
-Therefore you can implement stateful handlers.
+Sessions allow storing data in a storage such as filesystem or redis.
+Therefore, you can implement stateful handlers.
 
 Session support is implemented using [seance](http://crates.io/crates/seance) crate.
 Carapax reexports all the needed types from seance, so you don't have to add it to your `Cargo.toml`.

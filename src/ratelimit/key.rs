@@ -5,7 +5,7 @@ use crate::{
 use futures_util::future::{ok, Ready};
 use std::{convert::Infallible, hash::Hash};
 
-/// Represents a key for keyed ratelimiter
+/// Represents a key for keyed rate-limiter
 pub trait Key: Clone + Eq + Hash + TryFromInput {}
 
 /// Represents a ratelimit key for a chat

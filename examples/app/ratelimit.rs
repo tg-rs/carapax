@@ -1,10 +1,11 @@
+use std::time::Duration;
+
 use carapax::{
     ratelimit::{
         nonzero, DirectRateLimitPredicate, Jitter, KeyChat, KeyChatUser, KeyUser, KeyedRateLimitPredicate, Quota,
     },
     Chain, PredicateExt,
 };
-use std::time::Duration;
 
 pub fn setup(chain: Chain, strategy: &str) -> Chain {
     let quota = Quota::with_period(Duration::from_secs(5))
@@ -23,6 +24,6 @@ pub fn setup(chain: Chain, strategy: &str) -> Chain {
         "keyed_wait_with_jitter" => result.add(chain.predicate(
             <KeyedRateLimitPredicate<KeyChatUser, _, _>>::wait_with_jitter(quota, jitter),
         )),
-        key => panic!("Unknown ratelimit stragey: {}", key),
+        key => panic!("Unknown ratelimit strategy: {}", key),
     }
 }

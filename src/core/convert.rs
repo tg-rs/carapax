@@ -463,7 +463,7 @@ mod tests {
                     "message_id": 1111,
                     "date": 0,
                     "author_signature": "test",
-                    "chat": {"id": 1, "type": "channel", "title": "channeltitle", "username": "channelusername"},
+                    "chat": {"id": 1, "type": "channel", "title": "channel title", "username": "channel_username"},
                     "text": "test message from channel"
                 }
             }),
@@ -472,7 +472,7 @@ mod tests {
                 "edited_channel_post": {
                     "message_id": 1111,
                     "date": 0,
-                    "chat": {"id": 1, "type": "channel", "title": "channeltitle", "username": "channelusername"},
+                    "chat": {"id": 1, "type": "channel", "title": "channel title", "username": "channel_username"},
                     "text": "test edited message from channel",
                     "edit_date": 1213
                 }
@@ -674,7 +674,7 @@ mod tests {
                     "chat": {
                         "id": 1,
                         "type": "group",
-                        "title": "grouptitle"
+                        "title": "group title"
                     },
                     "from": {
                         "id": 1,
@@ -718,7 +718,7 @@ mod tests {
                     "chat": {
                         "id": 1,
                         "type": "group",
-                        "title": "grouptitle"
+                        "title": "group title"
                     },
                     "from": {
                         "id": 1,
@@ -762,7 +762,7 @@ mod tests {
                     "chat": {
                         "id": 1,
                         "type": "group",
-                        "title": "grouptitle"
+                        "title": "group title"
                     },
                     "from": {
                         "id": 1,

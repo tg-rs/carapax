@@ -11,14 +11,14 @@ const KEY: &str = "example-session-key";
 
 pub fn setup(chain: Chain) -> Chain {
     chain
-        .add(get.command("/sget"))
-        .add(set.command("/sset"))
-        .add(expire.command("/sexpire"))
-        .add(reset.command("/sdel"))
+        .add(get.command("/s_get"))
+        .add(set.command("/s_set"))
+        .add(expire.command("/s_expire"))
+        .add(reset.command("/s_del"))
 }
 
 async fn get(client: Ref<Client>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
-    log::info!("/sget");
+    log::info!("/s_get");
     let val: Option<String> = session.get(KEY).await?;
     client
         .execute(SendMessage::new(
@@ -43,7 +43,7 @@ async fn set(
         return Ok(());
     }
     let val = &args[0];
-    log::info!("/sset {}", val);
+    log::info!("/s_set {}", val);
     session.set(KEY, &val).await?;
     client.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())
@@ -72,14 +72,14 @@ async fn expire(
             }
         }
     };
-    log::info!("/sexpire {}", seconds);
+    log::info!("/s_expire {}", seconds);
     session.expire(KEY, seconds).await?;
     client.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())
 }
 
 async fn reset(client: Ref<Client>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
-    log::info!("/sdel");
+    log::info!("/s_del");
     session.remove(KEY).await.unwrap();
     client.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())

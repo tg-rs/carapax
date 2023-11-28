@@ -1,10 +1,5 @@
-use crate::{
-    core::{Handler, PredicateResult},
-    ratelimit::{
-        jitter::NoJitter,
-        method::{MethodDiscard, MethodWait},
-    },
-};
+use std::sync::Arc;
+
 use futures_util::future::{ready, BoxFuture, Ready};
 use governor::{
     clock::DefaultClock,
@@ -12,12 +7,18 @@ use governor::{
     state::{InMemoryState, NotKeyed},
     RateLimiter,
 };
-use std::sync::Arc;
-
 pub use governor::{Jitter, Quota};
 pub use nonzero_ext::nonzero;
 
-/// A predicate with direct ratelimiter
+use crate::{
+    core::{Handler, PredicateResult},
+    ratelimit::{
+        jitter::NoJitter,
+        method::{MethodDiscard, MethodWait},
+    },
+};
+
+/// A predicate with direct rate-limiter
 ///
 /// Use this predicate when you need to limit all updates
 #[derive(Clone)]
@@ -123,8 +124,9 @@ impl Handler<()> for DirectRateLimitPredicate<Jitter, MethodWait> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::time::Duration;
+
+    use super::*;
 
     #[tokio::test]
     async fn direct() {

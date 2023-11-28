@@ -69,7 +69,7 @@ impl_fn!(A, B, C, D, E, F, G, H, I, J);
 pub struct HandlerInput {
     /// An Update received from Telegram API
     pub update: Update,
-    /// A context to share data betweeen handlers
+    /// A context to share data between handlers
     pub context: Arc<Context>,
 }
 

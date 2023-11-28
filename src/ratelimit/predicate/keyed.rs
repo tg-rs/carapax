@@ -15,7 +15,7 @@ use crate::{
     },
 };
 
-/// A predicate with keyed ratelimiter
+/// A predicate with keyed rate-limiter
 ///
 /// Each update will have it's own rate limit under key `K`
 #[derive(Clone)]
