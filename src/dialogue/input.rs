@@ -1,10 +1,12 @@
+use std::marker::PhantomData;
+
+use futures_util::future::BoxFuture;
+use seance::{backend::SessionBackend, Session};
+
 use crate::{
     core::{HandlerInput, TryFromInput},
     dialogue::{error::DialogueError, state::DialogueState},
 };
-use futures_util::future::BoxFuture;
-use seance::{backend::SessionBackend, Session};
-use std::marker::PhantomData;
 
 /// Input for dialogue handler
 #[derive(Clone)]
@@ -23,8 +25,8 @@ where
     S: DialogueState + Send,
     B: SessionBackend + Send + 'static,
 {
-    type Error = DialogueError;
     type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
+    type Error = DialogueError;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
         Box::pin(async move {

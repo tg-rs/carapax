@@ -1,19 +1,20 @@
+use std::{convert::Infallible, error::Error, fmt};
+
+use futures_util::future::{ok, BoxFuture, Ready};
+use seance::backend::SessionBackend;
+pub use seance::{backend, Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager};
+
 use crate::{
     core::{HandlerInput, TryFromInput},
     types::Integer,
 };
-use futures_util::future::{ok, BoxFuture, Ready};
-use seance::backend::SessionBackend;
-use std::{convert::Infallible, error::Error, fmt};
-
-pub use seance::{backend, Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager};
 
 impl<B> TryFromInput for Session<B>
 where
     B: SessionBackend + Send + 'static,
 {
-    type Error = CreateSessionError;
     type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
+    type Error = CreateSessionError;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
         Box::pin(async move {
@@ -54,8 +55,8 @@ impl From<SessionId> for String {
 }
 
 impl TryFromInput for SessionId {
-    type Error = Infallible;
     type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
         let chat_id = input.update.get_chat_id();

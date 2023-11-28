@@ -1,9 +1,11 @@
+use std::{convert::Infallible, hash::Hash};
+
+use futures_util::future::{ok, Ready};
+
 use crate::{
     core::{HandlerInput, TryFromInput},
     types::Integer,
 };
-use futures_util::future::{ok, Ready};
-use std::{convert::Infallible, hash::Hash};
 
 /// Represents a key for keyed rate-limiter
 pub trait Key: Clone + Eq + Hash + TryFromInput {}
@@ -19,8 +21,8 @@ impl From<Integer> for KeyChat {
 }
 
 impl TryFromInput for KeyChat {
-    type Error = Infallible;
     type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
         ok(input.update.get_chat_id().map(Self))
@@ -40,8 +42,8 @@ impl From<Integer> for KeyUser {
 }
 
 impl TryFromInput for KeyUser {
-    type Error = Infallible;
     type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
         ok(input.update.get_user().map(|user| Self(user.id)))
@@ -61,8 +63,8 @@ impl From<(Integer, Integer)> for KeyChatUser {
 }
 
 impl TryFromInput for KeyChatUser {
-    type Error = Infallible;
     type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
         if let Some(chat_id) = input.update.get_chat_id() {
