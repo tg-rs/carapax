@@ -1,8 +1,9 @@
+use std::{error::Error, fmt, future::Future, sync::Arc};
+
 use crate::{
     core::{context::Context, convert::TryFromInput},
     types::Update,
 };
-use std::{error::Error, fmt, future::Future, sync::Arc};
 
 /// Allows to handle an update
 pub trait Handler<I>: Clone + Send
@@ -142,8 +143,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fmt;
+
+    use super::*;
 
     #[test]
     fn convert_input() {
@@ -178,6 +180,6 @@ mod tests {
     fn convert() {
         assert!(matches!(().into_result(), Ok(())));
         assert!(matches!(Ok::<(), ExampleError>(()).into_result(), Ok(())));
-        assert!(matches!(Err::<(), ExampleError>(ExampleError).into_result(), Err(_)));
+        assert!(Err::<(), ExampleError>(ExampleError).into_result().is_err());
     }
 }

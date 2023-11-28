@@ -1,9 +1,11 @@
+use std::{future::Future, marker::PhantomData};
+
+use futures_util::future::BoxFuture;
+
 use crate::core::{
     convert::TryFromInput,
     handler::{Handler, HandlerError, HandlerInput, HandlerResult, IntoHandlerResult},
 };
-use futures_util::future::BoxFuture;
-use std::{future::Future, marker::PhantomData};
 
 /// Allows to process an error returned by a handler
 pub struct ErrorDecorator<E, H, HI> {
@@ -127,10 +129,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{core::handler::HandlerInput, types::Update};
     use std::{error::Error, fmt, sync::Arc};
+
     use tokio::sync::Mutex;
+
+    use crate::{core::handler::HandlerInput, types::Update};
+
+    use super::*;
 
     #[derive(Clone)]
     struct Condition {
@@ -187,7 +192,7 @@ mod tests {
         let update = create_update();
         let input = HandlerInput::from(update);
         let result = handler.handle(input).await;
-        assert!(matches!(result, Err(_)));
+        assert!(result.is_err());
         assert!(*condition.value.lock().await)
     }
 }

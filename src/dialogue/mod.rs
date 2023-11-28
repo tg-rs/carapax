@@ -1,3 +1,8 @@
+pub use self::{
+    decorator::DialogueDecorator, error::DialogueError, ext::DialogueExt, input::DialogueInput,
+    predicate::DialoguePredicate, result::DialogueResult, state::DialogueState,
+};
+
 mod decorator;
 mod error;
 mod ext;
@@ -6,23 +11,21 @@ mod predicate;
 mod result;
 mod state;
 
-pub use self::{
-    decorator::DialogueDecorator, error::DialogueError, ext::DialogueExt, input::DialogueInput,
-    predicate::DialoguePredicate, result::DialogueResult, state::DialogueState,
-};
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::{convert::Infallible, sync::Arc};
+
+    use seance::Session;
+    use serde::{Deserialize, Serialize};
+    use tempfile::tempdir;
+
     use crate::{
         core::{Chain, Context, Handler, HandlerInput, PredicateOutput, TryFromInput},
         session::{backend::fs::FilesystemBackend, SessionManager},
         types::Text,
     };
-    use seance::Session;
-    use serde::{Deserialize, Serialize};
-    use std::{convert::Infallible, sync::Arc};
-    use tempfile::tempdir;
+
+    use super::*;
 
     #[derive(Clone, Copy, Deserialize, Serialize)]
     enum State {
@@ -93,28 +96,23 @@ mod tests {
 
         let input = create_input(context.clone(), "start");
 
-        let mut session = get_session(input.clone()).await;
+        let session = &mut get_session(input.clone()).await;
         let session_key = State::session_key();
-
-        macro_rules! assert_state_matches {
-            ($state:pat) => {{
-                let state: Option<State> = session.get(&session_key).await.expect("Failed to get state");
-                assert!(matches!(state, $state));
-            }};
-        }
 
         assert!(matches!(
             handler.handle((input.clone(), input)).await,
             PredicateOutput::True(Ok(()))
         ));
-        assert_state_matches!(Some(State::Step));
+        let state: Option<State> = session.get(&session_key).await.expect("Failed to get state");
+        assert!(matches!(state, Some(State::Step)));
 
         let input = create_input(context.clone(), "step");
         assert!(matches!(
             handler.handle((input.clone(), input)).await,
             PredicateOutput::True(Ok(()))
         ));
-        assert_state_matches!(None);
+        let state: Option<State> = session.get(&session_key).await.expect("Failed to get state");
+        assert!(state.is_none());
     }
 
     async fn skip_handler(mut session: Session<FilesystemBackend>) {

@@ -1,10 +1,12 @@
+use std::{any::type_name, error::Error, future::Future, marker::PhantomData, sync::Arc};
+
+use futures_util::future::BoxFuture;
+
 use crate::core::{
     convert::TryFromInput,
     handler::{Handler, HandlerError, HandlerInput, HandlerResult, IntoHandlerResult},
     predicate::PredicateOutput,
 };
-use futures_util::future::BoxFuture;
-use std::{any::type_name, error::Error, future::Future, marker::PhantomData, sync::Arc};
 
 /// Handlers chain
 #[derive(Clone)]
@@ -210,13 +212,16 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::{error::Error, fmt};
+
+    use tokio::sync::Mutex;
+
     use crate::{
         core::context::{Context, Ref},
         types::Update,
     };
-    use std::{error::Error, fmt};
-    use tokio::sync::Mutex;
+
+    use super::*;
 
     #[derive(Clone)]
     struct UpdateStore(Arc<Mutex<Vec<Update>>>);
@@ -291,14 +296,14 @@ mod tests {
         }
 
         let result = assert_handle!(all, 2, handler_ok, handler_error, handler_ok);
-        assert!(matches!(result, Err(_)));
+        assert!(result.is_err());
         let result = assert_handle!(once, 1, handler_ok, handler_error, handler_ok);
         assert!(matches!(result, Ok(())));
 
         let result = assert_handle!(all, 1, handler_error, handler_ok);
-        assert!(matches!(result, Err(_)));
+        assert!(result.is_err());
         let result = assert_handle!(once, 1, handler_error, handler_ok);
-        assert!(matches!(result, Err(_)));
+        assert!(result.is_err());
 
         let result = assert_handle!(all, 2, handler_ok, handler_ok);
         assert!(matches!(result, Ok(())));
