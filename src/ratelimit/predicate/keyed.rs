@@ -1,3 +1,11 @@
+use std::{collections::HashSet, sync::Arc};
+
+use futures_util::future::{ready, BoxFuture, Either, Ready};
+use governor::{clock::DefaultClock, state::keyed::DefaultKeyedStateStore, RateLimiter};
+pub use governor::{Jitter, Quota};
+#[allow(unused_imports)]
+pub use nonzero_ext::nonzero;
+
 use crate::{
     core::{Handler, PredicateResult},
     ratelimit::{
@@ -6,12 +14,6 @@ use crate::{
         method::{MethodDiscard, MethodWait},
     },
 };
-use futures_util::future::{ready, BoxFuture, Either, Ready};
-use governor::{clock::DefaultClock, state::keyed::DefaultKeyedStateStore, RateLimiter};
-use std::{collections::HashSet, sync::Arc};
-
-pub use governor::{Jitter, Quota};
-pub use nonzero_ext::nonzero;
 
 /// A predicate with keyed ratelimiter
 ///
@@ -175,9 +177,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::ratelimit::key::{KeyChat, KeyChatUser, KeyUser};
     use std::time::Duration;
+
+    use crate::ratelimit::key::{KeyChat, KeyChatUser, KeyUser};
+
+    use super::*;
 
     #[tokio::test]
     async fn keyed() {
