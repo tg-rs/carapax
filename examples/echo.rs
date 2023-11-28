@@ -1,11 +1,13 @@
+use std::env;
+
+use dotenvy::dotenv;
+
 use carapax::{
     longpoll::LongPoll,
     methods::SendMessage,
     types::{ChatId, Text},
     Api, App, Context, ExecuteError, Ref,
 };
-use dotenv::dotenv;
-use std::env;
 
 async fn echo(api: Ref<Api>, chat_id: ChatId, message: Text) -> Result<(), ExecuteError> {
     let method = SendMessage::new(chat_id, message.data);

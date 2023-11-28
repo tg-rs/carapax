@@ -1,8 +1,10 @@
-use carapax::{longpoll::LongPoll, Api, App, Chain, Context, ErrorExt, HandlerError};
-use dotenv::dotenv;
-use seance::{backend::fs::FilesystemBackend, SessionCollector, SessionManager};
 use std::{env, time::Duration};
+
+use dotenvy::dotenv;
+use seance::{backend::fs::FilesystemBackend, SessionCollector, SessionManager};
 use tempfile::tempdir;
+
+use carapax::{longpoll::LongPoll, Api, App, Chain, Context, ErrorExt, HandlerError};
 
 mod access;
 mod command;
