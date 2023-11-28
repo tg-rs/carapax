@@ -87,9 +87,9 @@ async fn handler2(_: ()) {}
 async fn handler3(_: ()) {}
 
 let chain = Chain::all() // or Chain::once
-    .add(handler1)
-    .add(handler2)
-    .add(handler3);
+    .with(handler1)
+    .with(handler2)
+    .with(handler3);
 ```
 
 Handlers will run in same order as added.
@@ -147,7 +147,7 @@ fn main() {
     let handler = erroneous_handler.on_error(LoggingErrorHandler);
     // or create decorator by hand
     // let handler = ErrorDecorator::new(LoggingErrorHandler, erroneous_handler);
-    let chain = Chain::once().add(handler);
+    let chain = Chain::once().with(handler);
     // ...
 }
 ```
@@ -193,7 +193,7 @@ fn main() {
     let handler = pong.predicate(is_ping);
     // or create predicate by hand
     // let handler = Predicate::new(is_ping, pong);
-    let chain = Chain::once().add(handler);
+    let chain = Chain::once().with(handler);
     // ...
 }
 ```
@@ -222,7 +222,7 @@ fn main() {
     let handler = greet.command("/hello");
     // or create predicate by hand
     //let handler = Predicate::new(CommandPredicate::new("/hello"), greet);
-    let chain = Chain::once().add(handler);
+    let chain = Chain::once().with(handler);
     // ...
 }
 ```
@@ -255,7 +255,7 @@ fn main() {
     let handler = protected_handler.access(policy);
     // or create predicate by hand
     // let handler = Predicate::new(AccessPredicate::new(policy), protected_handler);
-    let chain = Chain::once().add(handler);
+    let chain = Chain::once().with(handler);
 }
 
 ```

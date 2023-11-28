@@ -11,10 +11,10 @@ const KEY: &str = "example-session-key";
 
 pub fn setup(chain: Chain) -> Chain {
     chain
-        .add(get.command("/s_get"))
-        .add(set.command("/s_set"))
-        .add(expire.command("/s_expire"))
-        .add(reset.command("/s_del"))
+        .with(get.command("/s_get"))
+        .with(set.command("/s_set"))
+        .with(expire.command("/s_expire"))
+        .with(reset.command("/s_del"))
 }
 
 async fn get(client: Ref<Client>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {

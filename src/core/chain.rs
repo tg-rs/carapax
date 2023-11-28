@@ -51,8 +51,7 @@ impl Chain {
     /// # Panics
     ///
     /// Panics when trying to add a handler to a shared chain.
-    #[allow(clippy::should_implement_trait)]
-    pub fn add<H, I, O>(mut self, handler: H) -> Self
+    pub fn with<H, I, O>(mut self, handler: H) -> Self
     where
         H: Handler<I, Output = O> + Sync + Clone + 'static,
         I: TryFromInput + Sync + 'static,
@@ -282,7 +281,7 @@ mod tests {
                 context.insert(UpdateStore::new());
                 let context = Arc::new(context);
                 let mut chain = Chain::$strategy();
-                $(chain = chain.add($handler);)*
+                $(chain = chain.with($handler);)*
                 let update = create_update();
                 let input = HandlerInput {
                     context: context.clone(),

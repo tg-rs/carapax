@@ -6,7 +6,7 @@ use carapax::{
 
 pub fn setup(chain: Chain, username: &str) -> Chain {
     let policy = InMemoryAccessPolicy::from(vec![AccessRule::allow_user(username)]);
-    chain.add(log_protected.access(policy))
+    chain.with(log_protected.access(policy))
 }
 
 async fn log_protected(update: Update) {

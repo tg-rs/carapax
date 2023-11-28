@@ -126,7 +126,7 @@ mod tests {
     async fn dialogue_in_chain_skipped() {
         let context = create_context();
         let handler = dialogue_handler.dialogue::<FilesystemBackend>(dialogue_predicate);
-        let chain = Chain::once().add(handler).add(skip_handler);
+        let chain = Chain::once().with(handler).with(skip_handler);
         let input = create_input(context.clone(), "skipped");
         let mut session = get_session(input.clone()).await;
         chain.handle(input).await.expect("Failed to run chain handler");
