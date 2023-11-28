@@ -1,3 +1,8 @@
+use std::{future::Future, marker::PhantomData, sync::Arc};
+
+use futures_util::future::BoxFuture;
+use tgbot::handler::UpdateHandler;
+
 use crate::{
     core::{
         context::Context,
@@ -6,15 +11,12 @@ use crate::{
     },
     types::Update,
 };
-use futures_util::future::BoxFuture;
-use std::{future::Future, marker::PhantomData, sync::Arc};
-use tgbot::UpdateHandler;
 
 /// The main entry point
 ///
-/// Implements [UpdateHandler](trait.UpdateHandler.html) trait, so you can use it
-/// in [LongPoll](longpoll/struct.LongPoll.html) struct
-/// or [webhook::run_server](webhook/fn.run_server.html) function.
+/// Implements [`UpdateHandler`] trait, so you can use it
+/// in [`LongPoll`] or [tgbot::handler::WebhookServer].
+#[derive(Clone)]
 pub struct App<H, HI> {
     context: Arc<Context>,
     handler: H,
@@ -81,10 +83,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::core::{chain::Chain, context::Ref};
     use std::{error::Error, fmt};
+
     use tokio::sync::Mutex;
+
+    use crate::core::{chain::Chain, context::Ref};
+
+    use super::*;
 
     fn create_update() -> Update {
         serde_json::from_value(serde_json::json!({

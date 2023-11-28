@@ -14,7 +14,7 @@ repository = "https://github.com/tg-rs/carapax"
 default = []
 
 # enable everything
-full = ["access", "dialogue", "ratelimit", "session-redis", "session-fs"]
+full = ["access", "dialogue", "ratelimit", "session-redis", "session-fs", "webhook"]
 
 access = ["dep:serde"]
 dialogue = ["session", "dep:serde"]
@@ -22,6 +22,7 @@ ratelimit = ["dep:governor", "dep:nonzero_ext"]
 session = ["dep:seance"]
 session-fs = ["session", "seance?/fs-backend"]
 session-redis = ["session", "seance?/redis-backend"]
+webhook = ["tgbot/webhook"]
 
 [dependencies]
 futures-util = "0.3"
@@ -30,7 +31,7 @@ log = "0.4"
 nonzero_ext = { version = "0.3", optional = true }
 seance = { version = "0.8", optional = true }
 serde = { version = "1.0", optional = true }
-tgbot = "0.18"
+tgbot = { path = "/home/ross/Projects/telegram/tgbot/" }
 tokio = "1.34"
 
 [dev-dependencies]

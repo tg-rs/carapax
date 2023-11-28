@@ -1,12 +1,14 @@
+use std::{any::TypeId, convert::Infallible, error::Error, fmt, future::Future};
+
+use futures_util::future::{ok, ready, BoxFuture, Ready};
+
 use crate::{
     core::{context::Ref, handler::HandlerInput},
     types::{
         CallbackQuery, ChatId, ChatJoinRequest, ChatMemberUpdated, ChosenInlineResult, Command, CommandError,
-        InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Text, Update, UpdateKind, User,
+        InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Text, Update, UpdateType, User,
     },
 };
-use futures_util::future::{ok, ready, BoxFuture, Ready};
-use std::{any::TypeId, convert::Infallible, error::Error, fmt, future::Future};
 
 /// Allows to create a specific handler input
 pub trait TryFromInput: Send + Sized {
@@ -109,11 +111,11 @@ impl TryFromInput for Message {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::Message(msg)
-            | UpdateKind::EditedMessage(msg)
-            | UpdateKind::ChannelPost(msg)
-            | UpdateKind::EditedChannelPost(msg) => Some(msg),
+        ok(match input.update.update_type {
+            UpdateType::Message(msg)
+            | UpdateType::EditedMessage(msg)
+            | UpdateType::ChannelPost(msg)
+            | UpdateType::EditedChannelPost(msg) => Some(msg),
             _ => None,
         })
     }
@@ -142,8 +144,8 @@ impl TryFromInput for InlineQuery {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::InlineQuery(query) => Some(query),
+        ok(match input.update.update_type {
+            UpdateType::InlineQuery(query) => Some(query),
             _ => None,
         })
     }
@@ -154,8 +156,8 @@ impl TryFromInput for ChosenInlineResult {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::ChosenInlineResult(result) => Some(result),
+        ok(match input.update.update_type {
+            UpdateType::ChosenInlineResult(result) => Some(result),
             _ => None,
         })
     }
@@ -166,8 +168,8 @@ impl TryFromInput for CallbackQuery {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::CallbackQuery(query) => Some(query),
+        ok(match input.update.update_type {
+            UpdateType::CallbackQuery(query) => Some(query),
             _ => None,
         })
     }
@@ -178,8 +180,8 @@ impl TryFromInput for ShippingQuery {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::ShippingQuery(query) => Some(query),
+        ok(match input.update.update_type {
+            UpdateType::ShippingQuery(query) => Some(query),
             _ => None,
         })
     }
@@ -190,8 +192,8 @@ impl TryFromInput for PreCheckoutQuery {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::PreCheckoutQuery(query) => Some(query),
+        ok(match input.update.update_type {
+            UpdateType::PreCheckoutQuery(query) => Some(query),
             _ => None,
         })
     }
@@ -202,8 +204,8 @@ impl TryFromInput for Poll {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::Poll(poll) => Some(poll),
+        ok(match input.update.update_type {
+            UpdateType::Poll(poll) => Some(poll),
             _ => None,
         })
     }
@@ -214,8 +216,8 @@ impl TryFromInput for PollAnswer {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::PollAnswer(poll_answer) => Some(poll_answer),
+        ok(match input.update.update_type {
+            UpdateType::PollAnswer(poll_answer) => Some(poll_answer),
             _ => None,
         })
     }
@@ -226,8 +228,8 @@ impl TryFromInput for ChatMemberUpdated {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::BotStatus(status) | UpdateKind::UserStatus(status) => Some(status),
+        ok(match input.update.update_type {
+            UpdateType::BotStatus(status) | UpdateType::UserStatus(status) => Some(status),
             _ => None,
         })
     }
@@ -238,8 +240,8 @@ impl TryFromInput for ChatJoinRequest {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.kind {
-            UpdateKind::ChatJoinRequest(request) => Some(request),
+        ok(match input.update.update_type {
+            UpdateType::ChatJoinRequest(request) => Some(request),
             _ => None,
         })
     }
@@ -329,9 +331,11 @@ impl fmt::Display for ConvertInputError {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::core::context::Context;
     use std::sync::Arc;
+
+    use crate::core::context::Context;
+
+    use super::*;
 
     #[tokio::test]
     async fn empty_tuple() {

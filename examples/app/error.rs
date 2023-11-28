@@ -1,5 +1,6 @@
-use carapax::{session::SessionError, ExecuteError};
 use std::{error::Error, fmt};
+
+use carapax::{api::ExecuteError, session::SessionError};
 
 #[derive(Debug)]
 pub enum AppError {

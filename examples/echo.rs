@@ -3,15 +3,15 @@ use std::env;
 use dotenvy::dotenv;
 
 use carapax::{
-    longpoll::LongPoll,
-    methods::SendMessage,
-    types::{ChatId, Text},
-    Api, App, Context, ExecuteError, Ref,
+    api::{Client, ExecuteError},
+    handler::LongPoll,
+    types::{ChatId, SendMessage, Text},
+    App, Context, Ref,
 };
 
-async fn echo(api: Ref<Api>, chat_id: ChatId, message: Text) -> Result<(), ExecuteError> {
+async fn echo(client: Ref<Client>, chat_id: ChatId, message: Text) -> Result<(), ExecuteError> {
     let method = SendMessage::new(chat_id, message.data);
-    api.execute(method).await?;
+    client.execute(method).await?;
     Ok(())
 }
 
@@ -21,11 +21,11 @@ async fn main() {
     env_logger::init();
 
     let token = env::var("CARAPAX_TOKEN").expect("CARAPAX_TOKEN is not set");
-    let api = Api::new(token).expect("Failed to create API");
+    let client = Client::new(token).expect("Failed to create API");
 
     let mut context = Context::default();
-    context.insert(api.clone());
+    context.insert(client.clone());
 
     let app = App::new(context, echo);
-    LongPoll::new(api, app).run().await
+    LongPoll::new(client, app).run().await
 }

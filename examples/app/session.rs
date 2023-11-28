@@ -1,10 +1,11 @@
-use crate::error::AppError;
 use carapax::{
-    methods::SendMessage,
+    api::Client,
     session::{backend::fs::FilesystemBackend, Session},
-    types::{ChatId, Command},
-    Api, Chain, CommandExt, Ref,
+    types::{ChatId, Command, SendMessage},
+    Chain, CommandExt, Ref,
 };
+
+use crate::error::AppError;
 
 const KEY: &str = "example-session-key";
 
@@ -16,38 +17,40 @@ pub fn setup(chain: Chain) -> Chain {
         .add(reset.command("/sdel"))
 }
 
-async fn get(api: Ref<Api>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
+async fn get(client: Ref<Client>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
     log::info!("/sget");
     let val: Option<String> = session.get(KEY).await?;
-    api.execute(SendMessage::new(
-        chat_id,
-        format!("Value: {}", val.as_deref().unwrap_or("None")),
-    ))
-    .await?;
+    client
+        .execute(SendMessage::new(
+            chat_id,
+            format!("Value: {}", val.as_deref().unwrap_or("None")),
+        ))
+        .await?;
     Ok(())
 }
 
 async fn set(
-    api: Ref<Api>,
+    client: Ref<Client>,
     mut session: Session<FilesystemBackend>,
     chat_id: ChatId,
     command: Command,
 ) -> Result<(), AppError> {
     let args = command.get_args();
     if args.is_empty() {
-        api.execute(SendMessage::new(chat_id, "You need to provide a value"))
+        client
+            .execute(SendMessage::new(chat_id, "You need to provide a value"))
             .await?;
         return Ok(());
     }
     let val = &args[0];
     log::info!("/sset {}", val);
     session.set(KEY, &val).await?;
-    api.execute(SendMessage::new(chat_id, "OK")).await?;
+    client.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())
 }
 
 async fn expire(
-    api: Ref<Api>,
+    client: Ref<Client>,
     mut session: Session<FilesystemBackend>,
     chat_id: ChatId,
     command: Command,
@@ -59,24 +62,25 @@ async fn expire(
         match args[0].parse::<u64>() {
             Ok(x) => x,
             Err(err) => {
-                api.execute(SendMessage::new(
-                    chat_id,
-                    format!("Number of seconds is invalid: {}", err),
-                ))
-                .await?;
+                client
+                    .execute(SendMessage::new(
+                        chat_id,
+                        format!("Number of seconds is invalid: {}", err),
+                    ))
+                    .await?;
                 return Ok(());
             }
         }
     };
     log::info!("/sexpire {}", seconds);
     session.expire(KEY, seconds).await?;
-    api.execute(SendMessage::new(chat_id, "OK")).await?;
+    client.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())
 }
 
-async fn reset(api: Ref<Api>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
+async fn reset(client: Ref<Client>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
     log::info!("/sdel");
     session.remove(KEY).await.unwrap();
-    api.execute(SendMessage::new(chat_id, "OK")).await?;
+    client.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())
 }

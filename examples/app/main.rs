@@ -4,7 +4,7 @@ use dotenvy::dotenv;
 use seance::{backend::fs::FilesystemBackend, SessionCollector, SessionManager};
 use tempfile::tempdir;
 
-use carapax::{longpoll::LongPoll, Api, App, Chain, Context, ErrorExt, HandlerError};
+use carapax::{api::Client, handler::LongPoll, App, Chain, Context, ErrorExt, HandlerError};
 
 mod access;
 mod command;
@@ -19,10 +19,10 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let api = Api::new(get_env("CARAPAX_TOKEN")).expect("Failed to create API");
+    let client = Client::new(get_env("CARAPAX_TOKEN")).expect("Failed to create API");
 
     let mut context = Context::default();
-    context.insert(api.clone());
+    context.insert(client.clone());
 
     let session_backend = create_session_backend();
     spawn_session_collector(session_backend.clone());
@@ -46,7 +46,7 @@ async fn main() {
     let handler = chain.on_error(error_handler);
 
     let app = App::new(context, handler);
-    LongPoll::new(api, app).run().await
+    LongPoll::new(client, app).run().await
 }
 
 fn get_env(s: &str) -> String {

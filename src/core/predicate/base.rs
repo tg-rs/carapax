@@ -1,10 +1,12 @@
+use std::marker::PhantomData;
+
+use futures_util::future::BoxFuture;
+
 use crate::core::{
     convert::TryFromInput,
     handler::{Handler, HandlerError, HandlerResult, IntoHandlerResult},
     predicate::result::PredicateResult,
 };
-use futures_util::future::BoxFuture;
-use std::marker::PhantomData;
 
 /// A predicate decorator
 ///
@@ -118,13 +120,16 @@ impl IntoHandlerResult for PredicateOutput {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::{error::Error, fmt, sync::Arc};
+
+    use tokio::sync::Mutex;
+
     use crate::{
         core::context::Ref,
         types::{Integer, User},
     };
-    use std::{error::Error, fmt, sync::Arc};
-    use tokio::sync::Mutex;
+
+    use super::*;
 
     #[tokio::test]
     async fn decorator() {
@@ -157,14 +162,7 @@ mod tests {
     }
 
     fn create_user(id: Integer) -> User {
-        User {
-            first_name: format!("test #{}", id),
-            id,
-            is_bot: false,
-            last_name: None,
-            language_code: None,
-            username: None,
-        }
+        User::new(id, format!("test #{}", id), false)
     }
 
     async fn has_access(user: User) -> PredicateResult {

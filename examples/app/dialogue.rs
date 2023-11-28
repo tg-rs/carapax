@@ -1,12 +1,14 @@
-use crate::error::AppError;
-use carapax::{
-    dialogue::{DialogueExt, DialogueInput, DialogueResult, DialogueState},
-    methods::SendMessage,
-    session::backend::fs::FilesystemBackend,
-    types::{ChatId, Text},
-    Api, Chain, CommandPredicate, Ref,
-};
 use serde::{Deserialize, Serialize};
+
+use carapax::{
+    api::Client,
+    dialogue::{DialogueExt, DialogueInput, DialogueResult, DialogueState},
+    session::backend::fs::FilesystemBackend,
+    types::{ChatId, SendMessage, Text},
+    Chain, CommandPredicate, Ref,
+};
+
+use crate::error::AppError;
 
 pub fn setup(chain: Chain) -> Chain {
     chain.add(example_dialogue.dialogue::<FilesystemBackend>(CommandPredicate::new("/dialogue")))
@@ -34,30 +36,33 @@ impl DialogueState for ExampleDialogueState {
 }
 
 async fn example_dialogue(
-    api: Ref<Api>,
+    client: Ref<Client>,
     chat_id: ChatId,
     input: ExampleDialogueInput,
     text: Text,
 ) -> Result<DialogueResult<ExampleDialogueState>, AppError> {
     let state = match input.state {
         ExampleDialogueState::Start => {
-            api.execute(SendMessage::new(chat_id, "What is your first name?"))
+            client
+                .execute(SendMessage::new(chat_id, "What is your first name?"))
                 .await?;
             ExampleDialogueState::FirstName
         }
         ExampleDialogueState::FirstName => {
             let first_name = text.data.clone();
-            api.execute(SendMessage::new(chat_id, "What is your last name?"))
+            client
+                .execute(SendMessage::new(chat_id, "What is your last name?"))
                 .await?;
             ExampleDialogueState::LastName { first_name }
         }
         ExampleDialogueState::LastName { first_name } => {
             let last_name = &text.data;
-            api.execute(SendMessage::new(
-                chat_id,
-                format!("Your name is: {} {}", first_name, last_name),
-            ))
-            .await?;
+            client
+                .execute(SendMessage::new(
+                    chat_id,
+                    format!("Your name is: {} {}", first_name, last_name),
+                ))
+                .await?;
             return Ok(DialogueResult::Exit);
         }
     };

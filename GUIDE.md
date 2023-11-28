@@ -11,30 +11,29 @@ Let's get started:
 
 ```rust no_run
 use carapax::{
-    longpoll::LongPoll,
-    methods::SendMessage,
-    types::{ChatId, Text},
-    webhook::run_server,
-    Api, App, Context, ExecuteError, Ref, SyncedUpdateHandler
+    api::{Client, ExecuteError},
+    handler::{LongPoll, WebhookServer},
+    types::{ChatId, SendMessage, Text},
+    App, Context, Ref
 };
 
 const DEBUG: bool = true;
 
-async fn echo(api: Ref<Api>, chat_id: ChatId, text: Text) -> Result<(), ExecuteError> {
+async fn echo(client: Ref<Client>, chat_id: ChatId, text: Text) -> Result<(), ExecuteError> {
     let method = SendMessage::new(chat_id, text.data);
-    api.execute(method).await?;
+    client.execute(method).await?;
     Ok(())
 }
 
 #[tokio::main]
 async fn main() {
     // Create an api client with a token provided by Bot Father.
-    let api = Api::new("BOT_TOKEN").expect("Failed to create API");
+    let client = Client::new("BOT_TOKEN").expect("Failed to create API");
 
     // Context is a type map which allows one to share objects between handlers.
     // Every object you insert in context must implement Clone.
     let mut context = Context::default();
-    context.insert(api.clone());
+    context.insert(client.clone());
 
     // App is the main entry point.
     // First argument is the context.
@@ -45,10 +44,10 @@ async fn main() {
 
     if DEBUG {
         // Start receiving updates using longpoll method
-        LongPoll::new(api, app).run().await;
+        LongPoll::new(client, app).run().await;
     } else {
         // or webhook
-        run_server(([127, 0, 0, 1], 8080), "/", SyncedUpdateHandler::new(app)).await.expect("Failed to run webhook");
+        WebhookServer::new("/", app).run(([127, 0, 0, 1], 8080)).await.expect("Failed to run webhook");
     }
 }
 ```
@@ -174,18 +173,18 @@ Example:
 
 ```rust
 use carapax::{
-    methods::SendMessage,
-    types::{ChatId, Text},
-    Api, Chain, Predicate, PredicateExt, Ref,
+    api::Client,
+    types::{ChatId, SendMessage, Text},
+    Chain, Predicate, PredicateExt, Ref,
 };
 
 async fn is_ping(text: Text) -> bool {
     text.data == "ping"
 }
 
-async fn pong(api: Ref<Api>, chat_id: ChatId) {
+async fn pong(client: Ref<Client>, chat_id: ChatId) {
     let method = SendMessage::new(chat_id, "pong");
-    api.execute(method).await.unwrap();
+    client.execute(method).await.unwrap();
 }
 
 fn main() {
@@ -207,14 +206,14 @@ Note that command name contains a leading slash (`/`).
 
 ```rust
 use carapax::{
-    methods::SendMessage,
-    types::{ChatId, User},
-    Api, Chain, CommandExt, CommandPredicate, Predicate, Ref,
+    api::Client,
+    types::{ChatId, SendMessage, User},
+    Chain, CommandExt, CommandPredicate, Predicate, Ref,
 };
 
-async fn greet(api: Ref<Api>, chat_id: ChatId, user: User) {
+async fn greet(client: Ref<Client>, chat_id: ChatId, user: User) {
     let method = SendMessage::new(chat_id, format!("Hello, {}", user.first_name));
-    api.execute(method).await.unwrap();
+    client.execute(method).await.unwrap();
 }
 
 fn main() {
