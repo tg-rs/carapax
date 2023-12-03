@@ -4,7 +4,7 @@ use futures_util::future::{ok, Ready};
 
 use crate::{
     core::{HandlerInput, TryFromInput},
-    types::Integer,
+    types::{ChatPeerId, UserPeerId},
 };
 
 /// Represents a key for keyed rate-limiter
@@ -12,11 +12,14 @@ pub trait Key: Clone + Eq + Hash + TryFromInput {}
 
 /// Represents a ratelimit key for a chat
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct KeyChat(Integer);
+pub struct KeyChat(ChatPeerId);
 
-impl From<Integer> for KeyChat {
-    fn from(value: Integer) -> Self {
-        Self(value)
+impl<T> From<T> for KeyChat
+where
+    T: Into<ChatPeerId>,
+{
+    fn from(value: T) -> Self {
+        Self(value.into())
     }
 }
 
@@ -33,11 +36,14 @@ impl Key for KeyChat {}
 
 /// Represents a ratelimit key for a user
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct KeyUser(Integer);
+pub struct KeyUser(UserPeerId);
 
-impl From<Integer> for KeyUser {
-    fn from(value: Integer) -> Self {
-        Self(value)
+impl<T> From<T> for KeyUser
+where
+    T: Into<UserPeerId>,
+{
+    fn from(value: T) -> Self {
+        Self(value.into())
     }
 }
 
@@ -54,11 +60,15 @@ impl Key for KeyUser {}
 
 /// Represents a ratelimit key for a chat user
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct KeyChatUser(Integer, Integer);
+pub struct KeyChatUser(ChatPeerId, UserPeerId);
 
-impl From<(Integer, Integer)> for KeyChatUser {
-    fn from((chat_id, user_id): (Integer, Integer)) -> Self {
-        Self(chat_id, user_id)
+impl<A, B> From<(A, B)> for KeyChatUser
+where
+    A: Into<ChatPeerId>,
+    B: Into<UserPeerId>,
+{
+    fn from((chat_id, user_id): (A, B)) -> Self {
+        Self(chat_id.into(), user_id.into())
     }
 }
 

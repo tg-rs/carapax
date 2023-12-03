@@ -1,10 +1,12 @@
+use std::fmt;
+
+use futures_util::future::BoxFuture;
+
 use crate::{
     access::policy::AccessPolicy,
     core::{Handler, HandlerInput},
-    types::{Integer, Update},
+    types::{ChatPeerId, ChatUsername, Update, UserPeerId, UserUsername},
 };
-use futures_util::future::BoxFuture;
-use std::fmt;
 
 /// Allows to protect a handler with an access policy
 #[derive(Clone)]
@@ -47,19 +49,19 @@ where
 }
 
 struct DebugPrincipal {
-    user_id: Option<Integer>,
-    user_username: Option<String>,
-    chat_id: Option<Integer>,
-    chat_username: Option<String>,
+    user_id: Option<UserPeerId>,
+    user_username: Option<UserUsername>,
+    chat_id: Option<ChatPeerId>,
+    chat_username: Option<ChatUsername>,
 }
 
 impl From<&Update> for DebugPrincipal {
     fn from(update: &Update) -> Self {
         DebugPrincipal {
             user_id: update.get_user_id(),
-            user_username: update.get_user_username().map(String::from),
+            user_username: update.get_user_username().cloned(),
             chat_id: update.get_chat_id(),
-            chat_username: update.get_chat_username().map(String::from),
+            chat_username: update.get_chat_username().cloned(),
         }
     }
 }
@@ -84,10 +86,16 @@ impl fmt::Debug for DebugPrincipal {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{core::HandlerInput, types::Update};
-    use futures_util::future::{err, ok, Ready};
     use std::{error::Error, fmt};
+
+    use futures_util::future::{err, ok, Ready};
+
+    use crate::{
+        core::HandlerInput,
+        types::{Integer, Update},
+    };
+
+    use super::*;
 
     #[derive(Debug)]
     struct ErrorMock;
@@ -108,7 +116,7 @@ mod tests {
         type Future = Ready<Result<bool, Self::Error>>;
 
         fn is_granted(&self, input: HandlerInput) -> Self::Future {
-            match input.update.get_user().map(|user| user.id) {
+            match input.update.get_user().map(|user| Integer::from(user.id)) {
                 Some(1) => ok(true),
                 Some(2) => ok(false),
                 Some(_) => err(ErrorMock),

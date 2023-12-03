@@ -5,8 +5,9 @@ use futures_util::future::{ok, ready, BoxFuture, Ready};
 use crate::{
     core::{context::Ref, handler::HandlerInput},
     types::{
-        CallbackQuery, ChatId, ChatJoinRequest, ChatMemberUpdated, ChosenInlineResult, Command, CommandError,
-        InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Text, Update, UpdateType, User,
+        CallbackQuery, Chat, ChatJoinRequest, ChatMemberUpdated, ChatPeerId, ChatUsername, ChosenInlineResult, Command,
+        CommandError, InlineQuery, Message, Poll, PollAnswer, PreCheckoutQuery, ShippingQuery, Text, Update, User,
+        UserPeerId, UserUsername,
     },
 };
 
@@ -73,12 +74,48 @@ impl TryFromInput for Update {
     }
 }
 
-impl TryFromInput for ChatId {
+impl TryFromInput for ChatPeerId {
     type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.get_chat_id().map(ChatId::Id))
+        ok(input.update.get_chat_id())
+    }
+}
+
+impl TryFromInput for ChatUsername {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(input.update.get_chat_username().cloned())
+    }
+}
+
+impl TryFromInput for Chat {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(input.update.get_chat().cloned())
+    }
+}
+
+impl TryFromInput for UserPeerId {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(input.update.get_user_id())
+    }
+}
+
+impl TryFromInput for UserUsername {
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
+    type Error = Infallible;
+
+    fn try_from_input(input: HandlerInput) -> Self::Future {
+        ok(input.update.get_user_username().cloned())
     }
 }
 
@@ -92,17 +129,11 @@ impl TryFromInput for User {
 }
 
 impl TryFromInput for Text {
-    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        Box::pin(async move {
-            match Message::try_from_input(input).await {
-                Ok(Some(message)) => Ok(message.get_text().cloned()),
-                Ok(None) => Ok(None),
-                Err(err) => Err(err),
-            }
-        })
+        ok(Message::try_from(input.update).ok().and_then(|x| x.get_text().cloned()))
     }
 }
 
@@ -111,31 +142,25 @@ impl TryFromInput for Message {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::Message(msg)
-            | UpdateType::EditedMessage(msg)
-            | UpdateType::ChannelPost(msg)
-            | UpdateType::EditedChannelPost(msg) => Some(msg),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for Command {
-    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
+    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = CommandError;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        Box::pin(async move {
-            match Message::try_from_input(input).await {
-                Ok(Some(message)) => match Command::try_from(message) {
-                    Ok(command) => Ok(Some(command)),
-                    Err(CommandError::NotFound) => Ok(None),
-                    Err(err) => Err(err),
-                },
-                Ok(None) | Err(_) => Ok(None),
-            }
-        })
+        ready(
+            Message::try_from(input.update)
+                .ok()
+                .map(Command::try_from)
+                .transpose()
+                .or_else(|err| match err {
+                    CommandError::NotFound => Ok(None),
+                    err => Err(err),
+                }),
+        )
     }
 }
 
@@ -144,10 +169,7 @@ impl TryFromInput for InlineQuery {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::InlineQuery(query) => Some(query),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
@@ -156,10 +178,7 @@ impl TryFromInput for ChosenInlineResult {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::ChosenInlineResult(result) => Some(result),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
@@ -168,10 +187,7 @@ impl TryFromInput for CallbackQuery {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::CallbackQuery(query) => Some(query),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
@@ -180,10 +196,7 @@ impl TryFromInput for ShippingQuery {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::ShippingQuery(query) => Some(query),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
@@ -192,10 +205,7 @@ impl TryFromInput for PreCheckoutQuery {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::PreCheckoutQuery(query) => Some(query),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
@@ -204,10 +214,7 @@ impl TryFromInput for Poll {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::Poll(poll) => Some(poll),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
@@ -216,10 +223,7 @@ impl TryFromInput for PollAnswer {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::PollAnswer(poll_answer) => Some(poll_answer),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
@@ -228,10 +232,7 @@ impl TryFromInput for ChatMemberUpdated {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::BotStatus(status) | UpdateType::UserStatus(status) => Some(status),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
@@ -240,10 +241,7 @@ impl TryFromInput for ChatJoinRequest {
     type Error = Infallible;
 
     fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(match input.update.update_type {
-            UpdateType::ChatJoinRequest(request) => Some(request),
-            _ => None,
-        })
+        ok(input.update.try_into().ok())
     }
 }
 
@@ -409,7 +407,7 @@ mod tests {
         let input = HandlerInput::from(update);
         assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
         assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
-        assert!(matches!(ChatId::try_from_input(input).await, Ok(Some(ChatId::Id(1)))));
+        assert_eq!(ChatPeerId::try_from_input(input).await, Ok(Some(1.into())));
     }
 
     #[tokio::test]

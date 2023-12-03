@@ -1,6 +1,6 @@
 use carapax::{
     api::Client,
-    types::{ChatId, SendMessage, Text},
+    types::{ChatPeerId, SendMessage, Text},
     Chain, PredicateExt, Ref,
 };
 
@@ -14,7 +14,7 @@ async fn is_ping(text: Text) -> bool {
     text.data == "ping"
 }
 
-async fn pong(client: Ref<Client>, chat_id: ChatId) -> Result<(), AppError> {
+async fn pong(client: Ref<Client>, chat_id: ChatPeerId) -> Result<(), AppError> {
     let method = SendMessage::new(chat_id, "pong");
     client.execute(method).await?;
     Ok(())

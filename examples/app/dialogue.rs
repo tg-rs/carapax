@@ -4,7 +4,7 @@ use carapax::{
     api::Client,
     dialogue::{DialogueExt, DialogueInput, DialogueResult, DialogueState},
     session::backend::fs::FilesystemBackend,
-    types::{ChatId, SendMessage, Text},
+    types::{ChatPeerId, SendMessage, Text},
     Chain, CommandPredicate, Ref,
 };
 
@@ -37,7 +37,7 @@ impl DialogueState for ExampleDialogueState {
 
 async fn example_dialogue(
     client: Ref<Client>,
-    chat_id: ChatId,
+    chat_id: ChatPeerId,
     input: ExampleDialogueInput,
     text: Text,
 ) -> Result<DialogueResult<ExampleDialogueState>, AppError> {

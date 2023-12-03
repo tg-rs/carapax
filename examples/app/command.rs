@@ -1,6 +1,6 @@
 use carapax::{
     api::Client,
-    types::{ChatId, SendMessage, User},
+    types::{ChatPeerId, SendMessage, User},
     Chain, CommandExt, Ref,
 };
 
@@ -10,7 +10,7 @@ pub fn setup(chain: Chain) -> Chain {
     chain.with(greet.command("/hello"))
 }
 
-async fn greet(client: Ref<Client>, chat_id: ChatId, user: User) -> Result<(), AppError> {
+async fn greet(client: Ref<Client>, chat_id: ChatPeerId, user: User) -> Result<(), AppError> {
     let method = SendMessage::new(chat_id, format!("Hello, {}", user.first_name));
     client.execute(method).await?;
     Ok(())

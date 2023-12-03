@@ -1,7 +1,7 @@
 use carapax::{
     api::Client,
     session::{backend::fs::FilesystemBackend, Session},
-    types::{ChatId, Command, SendMessage},
+    types::{ChatPeerId, Command, SendMessage},
     Chain, CommandExt, Ref,
 };
 
@@ -17,7 +17,11 @@ pub fn setup(chain: Chain) -> Chain {
         .with(reset.command("/s_del"))
 }
 
-async fn get(client: Ref<Client>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
+async fn get(
+    client: Ref<Client>,
+    mut session: Session<FilesystemBackend>,
+    chat_id: ChatPeerId,
+) -> Result<(), AppError> {
     log::info!("/s_get");
     let val: Option<String> = session.get(KEY).await?;
     client
@@ -32,7 +36,7 @@ async fn get(client: Ref<Client>, mut session: Session<FilesystemBackend>, chat_
 async fn set(
     client: Ref<Client>,
     mut session: Session<FilesystemBackend>,
-    chat_id: ChatId,
+    chat_id: ChatPeerId,
     command: Command,
 ) -> Result<(), AppError> {
     let args = command.get_args();
@@ -52,7 +56,7 @@ async fn set(
 async fn expire(
     client: Ref<Client>,
     mut session: Session<FilesystemBackend>,
-    chat_id: ChatId,
+    chat_id: ChatPeerId,
     command: Command,
 ) -> Result<(), AppError> {
     let args = command.get_args();
@@ -78,7 +82,11 @@ async fn expire(
     Ok(())
 }
 
-async fn reset(client: Ref<Client>, mut session: Session<FilesystemBackend>, chat_id: ChatId) -> Result<(), AppError> {
+async fn reset(
+    client: Ref<Client>,
+    mut session: Session<FilesystemBackend>,
+    chat_id: ChatPeerId,
+) -> Result<(), AppError> {
     log::info!("/s_del");
     session.remove(KEY).await.unwrap();
     client.execute(SendMessage::new(chat_id, "OK")).await?;

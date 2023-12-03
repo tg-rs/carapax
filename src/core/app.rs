@@ -1,7 +1,6 @@
 use std::{future::Future, marker::PhantomData, sync::Arc};
 
 use futures_util::future::BoxFuture;
-use tgbot::handler::UpdateHandler;
 
 use crate::{
     core::{
@@ -9,6 +8,7 @@ use crate::{
         convert::TryFromInput,
         handler::{Handler, HandlerInput, IntoHandlerResult},
     },
+    handler::UpdateHandler,
     types::Update,
 };
 

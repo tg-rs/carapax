@@ -13,13 +13,13 @@ Let's get started:
 use carapax::{
     api::{Client, ExecuteError},
     handler::{LongPoll, WebhookServer},
-    types::{ChatId, SendMessage, Text},
+    types::{ChatPeerId, SendMessage, Text},
     App, Context, Ref
 };
 
 const DEBUG: bool = true;
 
-async fn echo(client: Ref<Client>, chat_id: ChatId, text: Text) -> Result<(), ExecuteError> {
+async fn echo(client: Ref<Client>, chat_id: ChatPeerId, text: Text) -> Result<(), ExecuteError> {
     let method = SendMessage::new(chat_id, text.data);
     client.execute(method).await?;
     Ok(())
@@ -174,7 +174,7 @@ Example:
 ```rust
 use carapax::{
     api::Client,
-    types::{ChatId, SendMessage, Text},
+    types::{ChatPeerId, SendMessage, Text},
     Chain, Predicate, PredicateExt, Ref,
 };
 
@@ -182,7 +182,7 @@ async fn is_ping(text: Text) -> bool {
     text.data == "ping"
 }
 
-async fn pong(client: Ref<Client>, chat_id: ChatId) {
+async fn pong(client: Ref<Client>, chat_id: ChatPeerId) {
     let method = SendMessage::new(chat_id, "pong");
     client.execute(method).await.unwrap();
 }
@@ -207,11 +207,11 @@ Note that command name contains a leading slash (`/`).
 ```rust
 use carapax::{
     api::Client,
-    types::{ChatId, SendMessage, User},
+    types::{ChatPeerId, SendMessage, User},
     Chain, CommandExt, CommandPredicate, Predicate, Ref,
 };
 
-async fn greet(client: Ref<Client>, chat_id: ChatId, user: User) {
+async fn greet(client: Ref<Client>, chat_id: ChatPeerId, user: User) {
     let method = SendMessage::new(chat_id, format!("Hello, {}", user.first_name));
     client.execute(method).await.unwrap();
 }

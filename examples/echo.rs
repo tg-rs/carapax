@@ -5,11 +5,11 @@ use dotenvy::dotenv;
 use carapax::{
     api::{Client, ExecuteError},
     handler::LongPoll,
-    types::{ChatId, SendMessage, Text},
+    types::{ChatPeerId, SendMessage, Text},
     App, Context, Ref,
 };
 
-async fn echo(client: Ref<Client>, chat_id: ChatId, message: Text) -> Result<(), ExecuteError> {
+async fn echo(client: Ref<Client>, chat_id: ChatPeerId, message: Text) -> Result<(), ExecuteError> {
     let method = SendMessage::new(chat_id, message.data);
     client.execute(method).await?;
     Ok(())
