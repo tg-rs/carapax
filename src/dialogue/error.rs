@@ -1,15 +1,17 @@
-use crate::session::CreateSessionError;
-use seance::SessionError;
 use std::{error::Error, fmt};
 
-/// An error when processing dialogue
+use seance::SessionError;
+
+use crate::session::CreateSessionError;
+
+/// An error when processing dialogue.
 #[derive(Debug)]
 pub enum DialogueError {
-    /// Could not get input for dialogue handler
+    /// Failed to obtain input for the dialogue handler.
     ConvertHandlerInput,
-    /// Failed to create session
+    /// Failed to create a session.
     CreateSession(CreateSessionError),
-    /// Failed to load dialogue state
+    /// Failed to load the dialogue state.
     LoadState(SessionError),
 }
 

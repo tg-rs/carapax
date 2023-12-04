@@ -10,7 +10,7 @@ use crate::core::{
 #[cfg(test)]
 mod tests;
 
-/// Allows to process an error returned by a handler
+/// Allows to process an error returned by a handler.
 pub struct ErrorDecorator<E, H, HI> {
     error_handler: E,
     handler: H,
@@ -18,12 +18,12 @@ pub struct ErrorDecorator<E, H, HI> {
 }
 
 impl<E, H, HI> ErrorDecorator<E, H, HI> {
-    /// Creates a new ErrorDecorator
+    /// Creates a new `ErrorDecorator`.
     ///
     /// # Arguments
     ///
-    /// * error_handler - A error handler
-    /// * handler - A handler to decorate
+    /// * `error_handler` - A handler for errors returned by a decorated handler.
+    /// * `handler` - The handler to be decorated.
     pub fn new(error_handler: E, handler: H) -> Self {
         Self {
             error_handler,
@@ -84,18 +84,16 @@ where
     }
 }
 
-/// Allows to process errors returned by handlers
+/// Allows to process errors returned by handlers.
 pub trait ErrorHandler: Send {
-    /// A future returned by `handle` method
+    /// A future returned by [`Self::handle`] method.
     type Future: Future<Output = HandlerError> + Send;
 
-    /// Handles a errors
+    /// Handles a errors.
     ///
     /// # Arguments
     ///
-    /// * err - An error to handle
-    ///
-    /// You need to return the error in order to pass it to subsequent handler
+    /// * `err` - An error to handle.
     fn handle(&self, err: HandlerError) -> Self::Future;
 }
 
@@ -111,13 +109,15 @@ where
     }
 }
 
-/// Error decorator shortcuts
+/// Provides a shortcut for creating error decorator.
 pub trait ErrorExt<E, HI>: Sized {
-    /// Shortcut to create a new error decorator (`handler.error(error_handler)`)
+    /// A shortcut to create a new error decorator.
+    ///
+    /// Example: `handler.on_error(error_handler)`
     ///
     /// # Arguments
     ///
-    /// * error_handler - An error handler
+    /// * `error_handler` - An error handler.
     fn on_error(self, error_handler: E) -> ErrorDecorator<E, Self, HI> {
         ErrorDecorator::new(error_handler, self)
     }

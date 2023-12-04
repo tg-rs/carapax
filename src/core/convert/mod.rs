@@ -14,19 +14,19 @@ use crate::{
 #[cfg(test)]
 mod tests;
 
-/// Allows to create a specific handler input
+/// Allows to create a specific handler input.
 pub trait TryFromInput: Send + Sized {
-    /// A future returned by `try_from_input` method
+    /// A future returned by the [`Self::try_from_input`] method.
     type Future: Future<Output = Result<Option<Self>, Self::Error>> + Send;
 
-    /// An error when conversion failed
+    /// An error when conversion failed.
     type Error: Error + Send;
 
-    /// Performs conversion
+    /// Performs conversion.
     ///
     /// # Arguments
     ///
-    /// * input - A value to convert from
+    /// * `input` - An input to convert from.
     fn try_from_input(input: HandlerInput) -> Self::Future;
 }
 
@@ -289,14 +289,14 @@ convert_tuple!(A, B, C, D, E, F, G, H);
 convert_tuple!(A, B, C, D, E, F, G, H, I);
 convert_tuple!(A, B, C, D, E, F, G, H, I, J);
 
-/// An error when converting a [HandlerInput](strut.HandlerInput.html)
+/// An error when converting a [`HandlerInput`].
 #[derive(Debug)]
 pub enum ConvertInputError {
-    /// Object not found in context
+    /// Object is not found in the [`crate::Context`].
     Context(TypeId),
-    /// Could not create a tuple
+    /// Unable to convert [`HandlerInput`] into a tuple of specific inputs.
     ///
-    /// Contains a first occurred error
+    /// Contains a first occurred error.
     Tuple(Box<dyn Error + Send>),
 }
 

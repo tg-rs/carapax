@@ -5,14 +5,14 @@ use crate::core::handler::HandlerError;
 #[cfg(test)]
 mod tests;
 
-/// A predicate result
+/// Represents a result of a predicate.
 #[derive(Debug)]
 pub enum PredicateResult {
-    /// Decorated handler will run
+    /// A decorated handler will be executed.
     True,
-    /// Decorated handler was not run
+    /// A decorated handler was not executed.
     False,
-    /// An error has occurred in predicate
+    /// An error occurred during the predicate execution.
     Err(HandlerError),
 }
 

@@ -8,32 +8,30 @@ use crate::{
 #[cfg(test)]
 mod tests;
 
-/// Allows to handle an update
+/// Allows to handle a specific [`HandlerInput`].
 pub trait Handler<I>: Clone + Send
 where
     I: TryFromInput,
 {
-    /// A future output returned by `handle` method
+    /// A future output returned by [`Self::handle`] method.
     ///
-    /// You should use [HandlerResult](type.HandlerResult.html)
-    /// (or any type, which can be converted into it)
-    /// if you want to use that handler in [App](struct.App.html)
+    /// Use [`HandlerResult`] or any type that can be converted into it
+    /// if you want to use the handler in [`crate::App`].
     ///
     /// It is possible to use any other type, e.g. if you want to use it in a decorator.
-    /// But finally you need to convert it into `HandlerResult`.
+    /// But finally you need to convert it into [`HandlerResult`].
     type Output: Send;
 
-    /// A future returned by `handle` method
+    /// A future returned by [`Self::handle`] method.
     type Future: Future<Output = Self::Output> + Send;
 
-    /// Handles a specific input
+    /// Handles a specific input.
     ///
     /// # Arguments
     ///
-    /// * input - An input to handle
+    /// * `input` - The input to handle.
     ///
-    /// See [TryFromInput](trait.TryFromInput.html) trait implementations
-    /// for a list of supported types
+    /// See [`TryFromInput`] trait implementations for a list of supported types.
     fn handle(&self, input: I) -> Self::Future;
 }
 
@@ -68,12 +66,12 @@ impl_fn!(A, B, C, D, E, F, G, H);
 impl_fn!(A, B, C, D, E, F, G, H, I);
 impl_fn!(A, B, C, D, E, F, G, H, I, J);
 
-/// An input for a handler
+/// An input for a [`Handler`] trait implementations.
 #[derive(Clone, Debug)]
 pub struct HandlerInput {
-    /// An Update received from Telegram API
+    /// An Update received from Telegram API.
     pub update: Update,
-    /// A context to share data between handlers
+    /// A context with shared state.
     pub context: Arc<Context>,
 }
 
@@ -86,14 +84,15 @@ impl From<Update> for HandlerInput {
     }
 }
 
-/// An error returned by a handler
-// this type is needed because `dyn ...` is not Sized
-// this is required by
-// https://doc.rust-lang.org/stable/std/boxed/struct.Box.html#impl-From%3CE%3E
+/// An error returned by a [`Handler`] trait implementation.
 pub struct HandlerError(Box<dyn Error + Send>);
 
 impl HandlerError {
-    /// Creates a new error
+    /// Creates a new `HandlerError`.
+    ///
+    /// # Arguments
+    ///
+    /// * `err` - The actual error.
     pub fn new<E>(err: E) -> Self
     where
         E: Error + Send + 'static,
@@ -120,12 +119,12 @@ impl Error for HandlerError {
     }
 }
 
-/// A result returned by a handler
+/// A result returned by a [`Handler`] trait implementation.
 pub type HandlerResult = Result<(), HandlerError>;
 
-/// Converts objects into HandlerResult
+/// Converts objects into the [`HandlerResult`].
 pub trait IntoHandlerResult {
-    /// Returns converted object
+    /// Returns the converted object.
     fn into_result(self) -> HandlerResult;
 }
 

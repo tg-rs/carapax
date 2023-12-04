@@ -1,16 +1,18 @@
+use std::marker::PhantomData;
+
+use futures_util::future::BoxFuture;
+use seance::{backend::SessionBackend, Session};
+
 use crate::{
     core::{Handler, HandlerError, HandlerInput, PredicateResult, TryFromInput},
     dialogue::state::DialogueState,
 };
-use futures_util::future::BoxFuture;
-use seance::{backend::SessionBackend, Session};
-use std::marker::PhantomData;
 
 /// A predicate for dialogue
 ///
-/// Allows to decide, should dialogue start or not.
-/// We keep a dialogue state in session.
-/// Dialogue handler will run only when state exists, or inner predicate returned true.
+/// Allows to decide whether a dialogue should start or not.
+/// The dialogue handler runs only when his state exists in a session
+/// or when the inner predicate returns `true`.
 pub struct DialoguePredicate<B, P, PI, HS> {
     session_backend: PhantomData<B>,
     predicate: P,
@@ -19,11 +21,11 @@ pub struct DialoguePredicate<B, P, PI, HS> {
 }
 
 impl<B, P, PI, HS> DialoguePredicate<B, P, PI, HS> {
-    /// Creates a new predicate
+    /// Creates a new `DialoguePredicate`.
     ///
     /// # Arguments
     ///
-    /// * predicate - Inner predicate
+    /// * `predicate` - The inner predicate (e.g. command).
     pub fn new(predicate: P) -> Self {
         Self {
             session_backend: PhantomData,

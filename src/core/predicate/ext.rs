@@ -7,13 +7,15 @@ use crate::{
     types::Command,
 };
 
-/// Predicate shortcuts
+/// Provides a shortcut for wrapping a [`Handler`] by a [`Predicate`].
 pub trait PredicateExt<P, PI, HI>: Sized {
-    /// Shortcut to create a new predicate decorator (`handler.predicate(predicate)`)
+    /// Shortcut to create a wrap a [`Handler`] with a [`Predicate`].
+    ///
+    /// Example: `handler.predicate(predicate)`.
     ///
     /// # Arguments
     ///
-    /// * predicate - A predicate handler
+    /// * `predicate` - A predicate handler.
     fn predicate(self, predicate: P) -> Predicate<P, PI, Self, HI> {
         Predicate::new(predicate, self)
     }
@@ -26,13 +28,15 @@ where
 {
 }
 
-/// Command shortcuts
+/// Provides a shortcut for wrapping a [`Handler`] by a [`CommandPredicate`].
 pub trait CommandExt<I>: Sized {
-    /// Shortcut to create a command handler (`handler.command("/name")`)
+    /// Shortcut to create a command handler.
+    ///
+    /// Example: `handler.command("/name")`.
     ///
     /// # Arguments
     ///
-    /// * name - Command name with leading `/`
+    /// * `name` - A name of a command with leading `/`.
     fn command<S: Into<String>>(self, name: S) -> Predicate<CommandPredicate, Command, Self, I> {
         Predicate::new(CommandPredicate::new(name), self)
     }

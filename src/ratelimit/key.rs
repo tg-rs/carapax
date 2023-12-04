@@ -7,10 +7,10 @@ use crate::{
     types::{ChatPeerId, UserPeerId},
 };
 
-/// Represents a key for keyed rate-limiter
+/// Represents a key for a keyed rate limiter.
 pub trait Key: Clone + Eq + Hash + TryFromInput {}
 
-/// Represents a ratelimit key for a chat
+/// Represents a rate limit key for a chat.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct KeyChat(ChatPeerId);
 
@@ -34,7 +34,7 @@ impl TryFromInput for KeyChat {
 
 impl Key for KeyChat {}
 
-/// Represents a ratelimit key for a user
+/// Represents a rate limit key for a user.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct KeyUser(UserPeerId);
 
@@ -58,7 +58,7 @@ impl TryFromInput for KeyUser {
 
 impl Key for KeyUser {}
 
-/// Represents a ratelimit key for a chat user
+/// Represents a rate limit key for a user in a chat.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct KeyChatUser(ChatPeerId, UserPeerId);
 

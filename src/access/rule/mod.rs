@@ -6,7 +6,7 @@ use crate::{
 #[cfg(test)]
 mod tests;
 
-/// Contains information about principal and grant
+/// Represents an access rule containing information about a principal and access grant status.
 #[derive(Debug)]
 pub struct AccessRule {
     principal: Principal,
@@ -14,91 +14,146 @@ pub struct AccessRule {
 }
 
 impl AccessRule {
-    /// Creates a new rule
+    /// Creates a new `AccessRule`.
     ///
     /// # Arguments
     ///
-    /// * principal - A principal
-    /// * is_granted - Whether access granted or not
-    pub fn new<P: Into<Principal>>(principal: P, is_granted: bool) -> Self {
+    /// * `principal` - A principal.
+    /// * `is_granted` - A flag indicating whether access is granted (`true`) or denied (`false`).
+    pub fn new<T>(principal: T, is_granted: bool) -> Self
+    where
+        T: Into<Principal>,
+    {
         AccessRule {
             principal: principal.into(),
             is_granted,
         }
     }
 
-    /// Creates a new rule with granted access
+    /// Creates a new `AccessRule` with granted access for a principal.
     ///
     /// # Arguments
     ///
-    /// * principal - A principal
-    pub fn allow<P: Into<Principal>>(principal: P) -> Self {
-        Self::new(principal, true)
+    /// * `value` - The principal.
+    pub fn allow<T>(value: T) -> Self
+    where
+        T: Into<Principal>,
+    {
+        Self::new(value, true)
     }
 
-    /// Creates a new rule with forbidden access
+    /// Creates a new `AccessRule` with forbidden access for a principal.
     ///
     /// # Arguments
     ///
-    /// * principal - A principal
-    pub fn deny<P: Into<Principal>>(principal: P) -> Self {
-        Self::new(principal, false)
+    /// * `value` - The principal.
+    pub fn deny<T>(value: T) -> Self
+    where
+        T: Into<Principal>,
+    {
+        Self::new(value, false)
     }
 
-    /// Creates a new rule with granted access for all
+    /// Creates a new `AccessRule` with granted access for all principals.
     pub fn allow_all() -> Self {
         Self::allow(Principal::All)
     }
 
-    /// Creates a new rule with forbidden access for all
+    /// Creates a new `AccessRule` with denied access for all principals.
     pub fn deny_all() -> Self {
         Self::deny(Principal::All)
     }
 
-    /// Creates a new rule with granted access for a user
-    pub fn allow_user<P: Into<UserId>>(principal: P) -> Self {
-        Self::allow(principal.into())
-    }
-
-    /// Creates a new rule with forbidden access for a user
-    pub fn deny_user<P: Into<UserId>>(principal: P) -> Self {
-        Self::deny(principal.into())
-    }
-
-    /// Creates a new rule with granted access for a chat
-    pub fn allow_chat<P: Into<ChatId>>(principal: P) -> Self {
-        Self::allow(principal.into())
-    }
-
-    /// Creates a new rule with forbidden access for a chat
-    pub fn deny_chat<P: Into<ChatId>>(principal: P) -> Self {
-        Self::deny(principal.into())
-    }
-
-    /// Creates a new rule with granted access for a chat user
-    pub fn allow_chat_user<C, U>(chat: C, user: U) -> Self
+    /// Creates a new `AccessRule` with granted access for a specific user.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - Identifier of the user.
+    pub fn allow_user<T>(value: T) -> Self
     where
-        C: Into<ChatId>,
-        U: Into<UserId>,
+        T: Into<UserId>,
     {
-        Self::allow((chat.into(), user.into()))
+        Self::allow(value.into())
     }
 
-    /// Creates a new rule with forbidden access for a chat user
-    pub fn deny_chat_user<C, U>(chat: C, user: U) -> Self
+    /// Creates a new `AccessRule` with denied access for a specific user.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - Identifier of the user.
+    pub fn deny_user<T>(value: T) -> Self
     where
-        C: Into<ChatId>,
-        U: Into<UserId>,
+        T: Into<UserId>,
     {
-        Self::deny((chat.into(), user.into()))
+        Self::deny(value.into())
     }
 
-    /// Returns `true` if rule accepts an update and `false` otherwise
+    /// Creates a new `AccessRule` with granted access for a specific chat.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - Identifier of the chat.
+    pub fn allow_chat<T>(value: T) -> Self
+    where
+        T: Into<ChatId>,
+    {
+        Self::allow(value.into())
+    }
+
+    /// Creates a new `AccessRule` with denied access for a specific chat.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - Identifier of the chat.
+    pub fn deny_chat<T>(value: T) -> Self
+    where
+        T: Into<ChatId>,
+    {
+        Self::deny(value.into())
+    }
+
+    /// Creates a new `AccessRule` with granted access for a user within a specific chat.
+    ///
+    /// # Arguments
+    ///
+    /// * `chat_id` - Identifier of the chat.
+    /// * `user_id` - Identifier of the user.
+    pub fn allow_chat_user<A, B>(chat_id: A, user_id: B) -> Self
+    where
+        A: Into<ChatId>,
+        B: Into<UserId>,
+    {
+        Self::allow((chat_id.into(), user_id.into()))
+    }
+
+    /// Creates a new `AccessRule` with denied access for a user within a specific chat.
+    ///
+    /// # Arguments
+    ///
+    /// * `chat_id` - Identifier of the chat.
+    /// * `user_id` - Identifier of the user.
+    pub fn deny_chat_user<A, B>(chat_id: A, user_id: B) -> Self
+    where
+        A: Into<ChatId>,
+        B: Into<UserId>,
+    {
+        Self::deny((chat_id.into(), user_id.into()))
+    }
+
+    /// Indicates whether the `AccessRule` accepts an [`Update`].
+    ///
+    /// # Arguments
+    ///
+    /// * `update` - The update to be evaluated by the access rule.
+    ///
+    /// Returns `true` if `AccessRule` accepts an update and `false` otherwise.
     pub fn accepts(&self, update: &Update) -> bool {
         self.principal.accepts(update)
     }
 
-    /// Returns `true` if access is granted and `false` otherwise
+    /// Indicates whether access is granted by the rule.
+    ///
+    /// Returns `true` if access is granted and `false` otherwise.
     pub fn is_granted(&self) -> bool {
         self.is_granted
     }

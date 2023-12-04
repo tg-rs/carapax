@@ -3,13 +3,15 @@ use crate::{
     core::{Handler, HandlerInput, Predicate, TryFromInput},
 };
 
-/// Access shortcuts
+/// Provides a shortcut for wrapping a [`Handler`] by an [`AccessPredicate`].
 pub trait AccessExt<P, HI>: Sized {
-    /// Shortcut to wrap a handler with access predicate (`handler.access(policy)`)
+    /// Shortcut to wrap a [`Handler`] with an access predicate.
+    ///
+    /// Example: `let handler = handler.access(policy)`.
     ///
     /// # Arguments
     ///
-    /// * policy - An access policy
+    /// * `policy` - A [`crate::access::AccessPolicy`].
     fn access(self, policy: P) -> Predicate<AccessPredicate<P>, HandlerInput, Self, HI> {
         Predicate::new(AccessPredicate::new(policy), self)
     }

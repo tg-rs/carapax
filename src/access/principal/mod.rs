@@ -5,16 +5,17 @@ use crate::types::{ChatId, Update, UserId};
 #[cfg(test)]
 mod tests;
 
-/// Allows to decide should rule accept an update or not
+/// Represents a principal entity that decides whether
+/// an [`crate::access::AccessRule`] should accept an update.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Principal {
-    /// Accepts all updates
+    /// Accepts all updates without any specific conditions.
     All,
-    /// Accepts updates only from a specified user
+    /// Accepts updates only from a specified user.
     User(UserId),
-    /// Accepts updates only from a specified chat
+    /// Accepts updates only from a specified chat.
     Chat(ChatId),
-    /// Accepts updates only from a user in chat
+    /// Accepts updates only from a user within a specific chat.
     ChatUser(ChatId, UserId),
 }
 
@@ -37,34 +38,40 @@ impl From<(ChatId, UserId)> for Principal {
 }
 
 impl Principal {
-    /// Creates a principal for user
+    /// Creates a principal for a specific user.
     ///
     /// # Arguments
     ///
-    /// * user_id - ID of the user
-    pub fn user<T: Into<UserId>>(user_id: T) -> Self {
+    /// * `user_id` - ID of the user.
+    pub fn user<T>(user_id: T) -> Self
+    where
+        T: Into<UserId>,
+    {
         Principal::User(user_id.into())
     }
 
-    /// Creates a principal for chat
+    /// Creates a principal for a specific chat.
     ///
     /// # Arguments
     ///
-    /// * chat_id - ID of the chat
-    pub fn chat<T: Into<ChatId>>(chat_id: T) -> Self {
+    /// * `chat_id` - ID of the chat.
+    pub fn chat<T>(chat_id: T) -> Self
+    where
+        T: Into<ChatId>,
+    {
         Principal::Chat(chat_id.into())
     }
 
-    /// Creates a principal for chat user
+    /// Creates a principal for a user within a specific chat.
     ///
     /// # Arguments
     ///
-    /// * chat_id - ID of the chat
-    /// * user_id - ID of the user
-    pub fn chat_user<C, U>(chat_id: C, user_id: U) -> Self
+    /// * `chat_id` - ID of the chat.
+    /// * `user_id` - ID of the user.
+    pub fn chat_user<A, B>(chat_id: A, user_id: B) -> Self
     where
-        C: Into<ChatId>,
-        U: Into<UserId>,
+        A: Into<ChatId>,
+        B: Into<UserId>,
     {
         Principal::ChatUser(chat_id.into(), user_id.into())
     }

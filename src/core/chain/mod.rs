@@ -11,7 +11,19 @@ use crate::core::{
 #[cfg(test)]
 mod tests;
 
-/// Handlers chain
+/// Represents a chain of handlers.
+///
+/// The chain allows you to configure multiple handlers for the [`crate::App`].
+///
+/// There are two strategies to run handlers:
+/// - [`Self::once`] - the chain runs only a first found handler.
+/// - [`Self::all`] - the chain runs all found handlers.
+///
+/// A [`Handler`] considered found when [`TryFromInput::try_from_input`] for the handler returns [`Some`].
+///
+/// Handlers are dispatched in the order they are added.
+///
+/// If a handler returns an error, all subsequent handlers will not run.
 #[derive(Clone)]
 pub struct Chain {
     handlers: Arc<Vec<Box<dyn ChainHandler + Sync>>>,
@@ -26,30 +38,21 @@ impl Chain {
         }
     }
 
-    /// Creates a new chain
-    ///
-    /// Only a first handler found for given input will run.
-    /// Use `all()` method if you want to run all handlers.
+    /// Creates a new `Chain` that runs only the first found handler.
     pub fn once() -> Self {
         Self::new(ChainStrategy::FirstFound)
     }
 
-    /// Creates a new chain
-    ///
-    /// Runs all given handlers
+    /// Creates a new `Chain` that runs all given handlers.
     pub fn all() -> Self {
         Self::new(ChainStrategy::All)
     }
 
-    /// Adds a handler
+    /// Adds a handler to the chain.
     ///
     /// # Arguments
     ///
-    /// * handler - Handler to add
-    ///
-    /// Handlers will be dispatched in the same order as they are added.
-    ///
-    /// If a handler returns an error, subsequent handlers will not run.
+    /// * `handler` - The handler to add.
     ///
     /// # Panics
     ///
@@ -65,7 +68,7 @@ impl Chain {
         self
     }
 
-    fn run(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> {
+    fn handle_input(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> {
         let handlers = self.handlers.clone();
         let strategy = self.strategy;
         async move {
@@ -108,7 +111,7 @@ impl Handler<HandlerInput> for Chain {
     type Future = BoxFuture<'static, Self::Output>;
 
     fn handle(&self, input: HandlerInput) -> Self::Future {
-        Box::pin(self.run(input))
+        Box::pin(self.handle_input(input))
     }
 }
 
@@ -126,13 +129,13 @@ trait ChainHandler: Send {
     }
 }
 
-/// A specialized result for Chain
+/// A specialized result for the [`Chain`] handler.
 pub enum ChainResult {
-    /// Handler has run
+    /// A handler has been successfully executed.
     Done(HandlerResult),
-    /// An error has occurred before handler execution
+    /// An error has occurred before handler execution.
     Err(HandlerError),
-    /// Handler has not run
+    /// A handler has not been execute.
     Skipped,
 }
 

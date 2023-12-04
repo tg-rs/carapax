@@ -21,9 +21,9 @@ use crate::{
 #[cfg(test)]
 mod tests;
 
-/// A predicate with direct rate-limiter
+/// A predicate with a direct rate limiter.
 ///
-/// Use this predicate when you need to limit all updates
+/// Use this predicate when you need to limit all updates.
 #[derive(Clone)]
 pub struct DirectRateLimitPredicate<J, M> {
     limiter: Arc<RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>>,
@@ -32,13 +32,13 @@ pub struct DirectRateLimitPredicate<J, M> {
 }
 
 impl DirectRateLimitPredicate<NoJitter, MethodDiscard> {
-    /// Creates a new predicate with discard method
+    /// Creates a new `DirectRateLimitPredicate` with the discard method.
     ///
-    /// Predicate will stop update propagation when the rate limit is reached
+    /// The predicate will stop update propagation when the rate limit is reached.
     ///
     /// # Arguments
     ///
-    /// * quota - A rate-limiting quota
+    /// * `quota` - A rate limiting quota.
     pub fn discard(quota: Quota) -> Self {
         Self {
             limiter: Arc::new(RateLimiter::direct(quota)),
@@ -49,13 +49,13 @@ impl DirectRateLimitPredicate<NoJitter, MethodDiscard> {
 }
 
 impl DirectRateLimitPredicate<NoJitter, MethodWait> {
-    /// Creates a new predicate with wait method
+    /// Creates a new `DirectRateLimitPredicate` with the wait method.
     ///
-    /// Predicate will pause update propagation when the rate limit is reached
+    /// The predicate will pause update propagation when the rate limit is reached.
     ///
     /// # Arguments
     ///
-    /// * quota - A rate-limiting quota
+    /// * `quota` - A rate limiting quota.
     pub fn wait(quota: Quota) -> Self {
         Self {
             limiter: Arc::new(RateLimiter::direct(quota)),
@@ -66,14 +66,14 @@ impl DirectRateLimitPredicate<NoJitter, MethodWait> {
 }
 
 impl DirectRateLimitPredicate<Jitter, MethodWait> {
-    /// Creates a new predicate with wait method and jitter
+    /// Creates a new `DirectRateLimitPredicate` with the wait method and jitter.
     ///
-    /// Predicate will pause update propagation when the rate limit is reached
+    /// Predicate will pause update propagation when the rate limit is reached.
     ///
     /// # Arguments
     ///
-    /// * quota - A rate-limiting quota
-    /// * jitter - An interval specification for deviating from the nominal wait time
+    /// * `quota` - A rate limiting quota.
+    /// * `jitter` - An interval specification for deviating from the nominal wait time.
     pub fn wait_with_jitter(quota: Quota, jitter: Jitter) -> Self {
         Self {
             limiter: Arc::new(RateLimiter::direct(quota)),

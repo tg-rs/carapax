@@ -1,11 +1,11 @@
 use crate::dialogue::state::DialogueState;
 
-/// Result of dialogue handler
+/// Represents a result of a dialogue handler.
 #[derive(Debug)]
 pub enum DialogueResult<S> {
-    /// Next state
+    /// Indicates the next step of the dialogue containing the current value of the state.
     Next(S),
-    /// Exit from dialogue
+    /// Indicates an exit from the dialogue.
     Exit,
 }
 

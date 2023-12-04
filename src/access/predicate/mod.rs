@@ -11,18 +11,18 @@ use crate::{
 #[cfg(test)]
 mod tests;
 
-/// Allows to protect a handler with an access policy
+/// An access predicate for protecting a [`Handler`] with a specified [`AccessPolicy`].
 #[derive(Clone)]
 pub struct AccessPredicate<P> {
     policy: P,
 }
 
 impl<P> AccessPredicate<P> {
-    /// Creates a new AccessPredicate
+    /// Creates a new `AccessPredicate`.
     ///
     /// # Arguments
     ///
-    /// * policy - An access policy
+    /// * `policy` - An access policy.
     pub fn new(policy: P) -> Self {
         Self { policy }
     }

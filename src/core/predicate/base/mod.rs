@@ -11,11 +11,9 @@ use crate::core::{
 #[cfg(test)]
 mod tests;
 
-/// A predicate decorator
+/// Decorates a handler with a predicate, allowing control over whether the handler should run.
 ///
-/// Wraps a handler with a predicate which allows to decide should handler run or not.
-///
-/// Predicate must return [PredicateResult](enum.PredicateResult.html)
+/// The predicate must return a [`PredicateResult`].
 pub struct Predicate<P, PI, H, HI> {
     predicate: P,
     predicate_input: PhantomData<PI>,
@@ -24,12 +22,12 @@ pub struct Predicate<P, PI, H, HI> {
 }
 
 impl<P, PI, H, HI> Predicate<P, PI, H, HI> {
-    /// Creates a new decorator
+    /// Creates a new `Predicate`.
     ///
     /// # Arguments
     ///
-    /// * predicate - A predicate handler
-    /// * handler - A handler to wrap
+    /// * `predicate` - A predicate handler.
+    /// * `handler` - A handler to be decorated.
     pub fn new(predicate: P, handler: H) -> Self {
         Self {
             predicate,
@@ -87,11 +85,11 @@ where
 
 /// Output of the predicate decorator
 pub enum PredicateOutput {
-    /// Decorated handler has run
+    /// A decorated handler has been executed.
     True(HandlerResult),
-    /// Decorated handler has not run
+    /// A decorated handler has not been executed.
     False,
-    /// An error has occurred in predicate
+    /// An error occurred during a predicate execution.
     Err(HandlerError),
 }
 

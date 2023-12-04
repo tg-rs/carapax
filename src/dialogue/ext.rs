@@ -3,13 +3,18 @@ use crate::{
     dialogue::{decorator::DialogueDecorator, predicate::DialoguePredicate},
 };
 
-/// Dialogue shortcuts
+/// Provides a shortcut for wrapping a [`Handler`] by a [`DialogueDecorator`].
 pub trait DialogueExt<P, PI, HI, HS>: Sized {
-    /// Shortcut to create a new dialogue decorator (`handler.dialogue(predicate)`)
+    /// Shortcut to wrap a [`Handler`] with a [`DialogueDecorator`].
+    ///
+    /// Example: `handler.dialogue(predicate)`.
     ///
     /// # Arguments
     ///
-    /// * predicate - A predicate for dialogue
+    /// * `predicate` - A predicate to be execute before starting the dialogue.
+    ///
+    /// If you don't need to start the dialogue conditionally,
+    /// you can use [`DialogueDecorator::new`] directly.
     #[allow(clippy::type_complexity)]
     fn dialogue<B>(
         self,

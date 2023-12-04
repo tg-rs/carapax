@@ -15,10 +15,14 @@ use crate::{
 #[cfg(test)]
 mod tests;
 
-/// The main entry point
+/// The main entry point.
 ///
-/// Implements [`UpdateHandler`] trait, so you can use it
-/// in [`LongPoll`] or [tgbot::handler::WebhookServer].
+/// Implements the [`UpdateHandler`] trait, so you can use it
+/// in [`crate::handler::LongPoll`] or [crate::handler::WebhookServer].
+///
+/// Wraps an update into the [`HandlerInput`] struct and passes it to the inner handler.
+///
+/// Use [`crate::Chain`] struct to configure multiple handlers.
 #[derive(Clone)]
 pub struct App<H, HI> {
     context: Arc<Context>,
@@ -33,12 +37,12 @@ where
     HI::Error: 'static,
     HO: IntoHandlerResult,
 {
-    /// Creates a new App
+    /// Creates a new `App`.
     ///
     /// # Arguments
     ///
-    /// * context - A context to share data between handlers
-    /// * handler - A handler to process updates
+    /// * `context` - A context responsible for storing shared state.
+    /// * `handler` - A handler responsible for processing updates.
     pub fn new(context: Context, handler: H) -> Self {
         Self {
             context: Arc::new(context),
@@ -47,7 +51,7 @@ where
         }
     }
 
-    fn run(&self, update: Update) -> impl Future<Output = ()> {
+    fn handle_update(&self, update: Update) -> impl Future<Output = ()> {
         let input = HandlerInput {
             update,
             context: self.context.clone(),
@@ -80,6 +84,6 @@ where
     type Future = BoxFuture<'static, ()>;
 
     fn handle(&self, update: Update) -> Self::Future {
-        Box::pin(self.run(update))
+        Box::pin(self.handle_update(update))
     }
 }

@@ -8,7 +8,11 @@ use crate::{
     dialogue::{error::DialogueError, state::DialogueState},
 };
 
-/// Input for dialogue handler
+/// Represents an input for a dialogue handler.
+///
+/// The input provides access to the dialogue state.
+/// When included in a list of handler arguments,
+/// [`TryFromInput`] will automatically handle the extraction of the input.
 #[derive(Clone)]
 pub struct DialogueInput<S, B>
 where

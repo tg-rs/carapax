@@ -33,16 +33,16 @@ where
     }
 }
 
-/// Represents an ID of a session
+/// Represents an ID of a session.
 pub struct SessionId(String);
 
 impl SessionId {
-    /// Creates a new SessionID
+    /// Creates a new `SessionID`.
     ///
     /// # Arguments
     ///
-    /// * chat_id - ID of a chat
-    /// * user_id - ID of a user
+    /// * `chat_id` - ID of a chat.
+    /// * `user_id` - ID of a user.
     pub fn new(chat_id: ChatPeerId, user_id: UserPeerId) -> Self {
         Self(format!("{}-{}", chat_id, user_id))
     }
@@ -69,14 +69,14 @@ impl TryFromInput for SessionId {
     }
 }
 
-/// An error when creating a session
+/// An error when creating a session.
 #[derive(Debug)]
 pub enum CreateSessionError {
-    /// Session manager not found in context
+    /// Session manager not found in the [`crate::Context`].
     ManagerNotFound,
-    /// Could not create session ID
+    /// Could not create a session ID.
     ///
-    /// Chat or user ID is missing
+    /// Chat ID or User ID is missing in the [`crate::types::Update`].
     SessionIdNotFound,
 }
 

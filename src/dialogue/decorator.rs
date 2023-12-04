@@ -1,12 +1,22 @@
+use std::{error::Error, marker::PhantomData};
+
+use futures_util::future::BoxFuture;
+use seance::{backend::SessionBackend, Session};
+
 use crate::{
     core::{Handler, HandlerError, HandlerInput, HandlerResult, TryFromInput},
     dialogue::{error::DialogueError, result::DialogueResult, state::DialogueState},
 };
-use futures_util::future::BoxFuture;
-use seance::{backend::SessionBackend, Session};
-use std::{error::Error, marker::PhantomData};
 
-/// A decorator for dialogue handlers
+/// A decorator for dialogue handlers.
+///
+/// An inner handler must return a [`DialogueResult`].
+/// The decorator will automatically load and save the state of the dialogue returned in the result.
+///
+/// Note that you need to register
+/// a [`crate::session::SessionManager`] instance in the [`crate::Context`].
+/// Otherwise the decorator will return an error indicating that
+/// the session manager is not registered.
 pub struct DialogueDecorator<B, H, HI, HS> {
     session_backend: PhantomData<B>,
     handler: H,
@@ -15,11 +25,11 @@ pub struct DialogueDecorator<B, H, HI, HS> {
 }
 
 impl<B, H, HI, HS> DialogueDecorator<B, H, HI, HS> {
-    /// Creates a new DialogueDecorator
+    /// Creates a new `DialogueDecorator`.
     ///
     /// # Arguments
     ///
-    /// * handler - A dialogue handler
+    /// * `handler` - A dialogue handler.
     pub fn new(handler: H) -> Self {
         Self {
             session_backend: PhantomData,
@@ -85,7 +95,7 @@ where
                     }
                 }
                 DialogueResult::Exit => {
-                    // Explicitly remove state from session in order to be sure that dialog will not run again
+                    // Explicitly remove the state from the session to make sure that the dialog will not run again.
                     if let Err(err) = session.remove(session_key).await {
                         return Err(HandlerError::new(err));
                     }

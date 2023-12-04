@@ -5,18 +5,18 @@ use crate::{core::handler::Handler, types::Command};
 #[cfg(test)]
 mod tests;
 
-/// Allows to run a handler for a specific command
+/// Allows to run a handler only for a specific command.
 #[derive(Clone)]
 pub struct CommandPredicate {
     name: String,
 }
 
 impl CommandPredicate {
-    /// Creates a new CommandPredicate
+    /// Creates a new `CommandPredicate`.
     ///
     /// # Arguments
     ///
-    /// * name - Command name with leading `/`
+    /// * `name` - A name of a command with leading `/`.
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self { name: name.into() }
     }
