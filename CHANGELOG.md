@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.13.0 (xx.12.2023)
+
+- Updated dependencies:
+  - governor 0.6
+  - seance 0.8
+  - tgbot 0.19
+  - tokio 1.34
+- Renamed `add` method of `Chain` struct to `with`.
+- Updated `TryFromInput` implementations according to changes in tgbot.
+- Renamed shortcuts:
+  - `AccessExt`: `access` to `with_access_policy`.
+  - `PredicateExt`: `predicate` to `with_predicate`.
+  - `CommandExt`: `command` to `with_command`.
+  - `DialogueExt`: `dialogue` to `with_dialogue`.
+- Extracted a predicate from `DialogueDecorator`.
+  This allows to skip a dialogue handler in `Chain` using a first-found strategy.
+  As a result, you can now use multiple dialogue handlers.
+  Previously, only one handler could be used, and it had to be the last handler in a chain.
+
 ## 0.12.0 (10.02.2022)
 
 - Updated tgbot version to 0.18.
