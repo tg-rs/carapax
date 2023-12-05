@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.13.0 (xx.12.2023)
+## 0.13.0 (05.12.2023)
 
 - Updated dependencies:
   - governor 0.6
