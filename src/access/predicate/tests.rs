@@ -57,7 +57,7 @@ async fn access_predicate() {
     .unwrap();
     let input_granted = HandlerInput::from(update_granted);
     let result = predicate.handle(input_granted).await;
-    assert!(matches!(result, Ok(true)));
+    assert!(result.unwrap());
 
     let update_forbidden: Update = serde_json::from_value(serde_json::json!(
         {
@@ -74,7 +74,7 @@ async fn access_predicate() {
     .unwrap();
     let input_forbidden = HandlerInput::from(update_forbidden);
     let result = predicate.handle(input_forbidden).await;
-    assert!(matches!(result, Ok(false)));
+    assert!(!result.unwrap());
 
     let update_error: Update = serde_json::from_value(serde_json::json!(
         {
@@ -91,5 +91,5 @@ async fn access_predicate() {
     .unwrap();
     let input_error = HandlerInput::from(update_error);
     let result = predicate.handle(input_error).await;
-    assert!(matches!(result, Err(_)));
+    assert!(result.is_err());
 }
