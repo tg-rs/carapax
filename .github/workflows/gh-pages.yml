@@ -12,29 +12,20 @@ jobs:
       RUSTDOCFLAGS: --cfg=nightly
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
       - name: Install nightly toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: nightly
-          override: true
+          components: rustfmt
       - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --doc --all-features
+        run: cargo test --doc --all-features
       - name: Generate
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --all-features
+        run: cargo doc --all --all-features
       - name: Publish
-        uses: peaceiris/actions-gh-pages@v2
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          emptyCommits: false
-          forceOrphan: true
-        env:
-          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: ./target/doc
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          force_orphan: true
+          publish_branch: gh-pages
+          publish_dir: ./target/doc
