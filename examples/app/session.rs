@@ -35,10 +35,10 @@ const KEY: &str = "example-session-key";
 
 pub fn setup(chain: Chain) -> Chain {
     chain
-        .with(get.command("/s_get"))
-        .with(set.command("/s_set"))
-        .with(expire.command("/s_expire"))
-        .with(reset.command("/s_del"))
+        .with(get.with_command("/s_get"))
+        .with(set.with_command("/s_set"))
+        .with(expire.with_command("/s_expire"))
+        .with(reset.with_command("/s_del"))
 }
 
 async fn get(

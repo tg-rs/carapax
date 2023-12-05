@@ -16,7 +16,7 @@ pub trait PredicateExt<P, PI, HI>: Sized {
     /// # Arguments
     ///
     /// * `predicate` - A predicate handler.
-    fn predicate(self, predicate: P) -> Predicate<P, PI, Self, HI> {
+    fn with_predicate(self, predicate: P) -> Predicate<P, PI, Self, HI> {
         Predicate::new(predicate, self)
     }
 }
@@ -37,7 +37,7 @@ pub trait CommandExt<I>: Sized {
     /// # Arguments
     ///
     /// * `name` - A name of a command with leading `/`.
-    fn command<S: Into<String>>(self, name: S) -> Predicate<CommandPredicate, Command, Self, I> {
+    fn with_command<S: Into<String>>(self, name: S) -> Predicate<CommandPredicate, Command, Self, I> {
         Predicate::new(CommandPredicate::new(name), self)
     }
 }

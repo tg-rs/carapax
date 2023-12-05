@@ -23,7 +23,7 @@ use carapax::{
 use crate::error::AppError;
 
 pub fn setup(chain: Chain) -> Chain {
-    chain.with(pong.predicate(is_ping))
+    chain.with(pong.with_predicate(is_ping))
 }
 
 async fn is_ping(text: Text) -> bool {

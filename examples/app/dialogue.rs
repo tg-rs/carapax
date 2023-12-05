@@ -35,7 +35,7 @@ use carapax::{
 use crate::error::AppError;
 
 pub fn setup(chain: Chain) -> Chain {
-    chain.with(example_dialogue.dialogue::<FilesystemBackend>(CommandPredicate::new("/dialogue")))
+    chain.with(example_dialogue.with_dialogue::<FilesystemBackend>(CommandPredicate::new("/dialogue")))
 }
 
 type ExampleDialogueInput = DialogueInput<ExampleDialogueState, FilesystemBackend>;

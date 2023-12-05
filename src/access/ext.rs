@@ -12,7 +12,7 @@ pub trait AccessExt<P, HI>: Sized {
     /// # Arguments
     ///
     /// * `policy` - A [`crate::access::AccessPolicy`].
-    fn access(self, policy: P) -> Predicate<AccessPredicate<P>, HandlerInput, Self, HI> {
+    fn with_access_policy(self, policy: P) -> Predicate<AccessPredicate<P>, HandlerInput, Self, HI> {
         Predicate::new(AccessPredicate::new(policy), self)
     }
 }

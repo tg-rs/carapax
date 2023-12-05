@@ -12,7 +12,7 @@ use carapax::{
 use crate::error::AppError;
 
 pub fn setup(chain: Chain) -> Chain {
-    chain.with(greet.command("/hello"))
+    chain.with(greet.with_command("/hello"))
 }
 
 async fn greet(client: Ref<Client>, chat_id: ChatPeerId, user: User) -> Result<(), AppError> {

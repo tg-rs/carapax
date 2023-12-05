@@ -77,7 +77,7 @@ async fn get_session(input: HandlerInput) -> Session<FilesystemBackend> {
 #[tokio::test]
 async fn dialogue() {
     let context = create_context();
-    let handler = dialogue_handler.dialogue::<FilesystemBackend>(dialogue_predicate);
+    let handler = dialogue_handler.with_dialogue::<FilesystemBackend>(dialogue_predicate);
 
     let input = create_input(context.clone(), "start");
 
@@ -110,7 +110,7 @@ async fn skip_handler(mut session: Session<FilesystemBackend>) {
 #[tokio::test]
 async fn dialogue_in_chain_skipped() {
     let context = create_context();
-    let handler = dialogue_handler.dialogue::<FilesystemBackend>(dialogue_predicate);
+    let handler = dialogue_handler.with_dialogue::<FilesystemBackend>(dialogue_predicate);
     let chain = Chain::once().with(handler).with(skip_handler);
     let input = create_input(context.clone(), "skipped");
     let mut session = get_session(input.clone()).await;

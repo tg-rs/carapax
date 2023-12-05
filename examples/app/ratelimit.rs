@@ -30,14 +30,14 @@ pub fn setup(chain: Chain, strategy: &str) -> Chain {
     let jitter = Jitter::up_to(Duration::from_secs(5));
     let result = Chain::once();
     match strategy {
-        "direct_discard" => result.with(chain.predicate(DirectRateLimitPredicate::discard(quota))),
-        "direct_wait" => result.with(chain.predicate(DirectRateLimitPredicate::wait(quota))),
+        "direct_discard" => result.with(chain.with_predicate(DirectRateLimitPredicate::discard(quota))),
+        "direct_wait" => result.with(chain.with_predicate(DirectRateLimitPredicate::wait(quota))),
         "direct_wait_with_jitter" => {
-            result.with(chain.predicate(DirectRateLimitPredicate::wait_with_jitter(quota, jitter)))
+            result.with(chain.with_predicate(DirectRateLimitPredicate::wait_with_jitter(quota, jitter)))
         }
-        "keyed_discard" => result.with(chain.predicate(<KeyedRateLimitPredicate<KeyChat, _, _>>::discard(quota))),
-        "keyed_wait" => result.with(chain.predicate(<KeyedRateLimitPredicate<KeyUser, _, _>>::wait(quota))),
-        "keyed_wait_with_jitter" => result.with(chain.predicate(
+        "keyed_discard" => result.with(chain.with_predicate(<KeyedRateLimitPredicate<KeyChat, _, _>>::discard(quota))),
+        "keyed_wait" => result.with(chain.with_predicate(<KeyedRateLimitPredicate<KeyUser, _, _>>::wait(quota))),
+        "keyed_wait_with_jitter" => result.with(chain.with_predicate(
             <KeyedRateLimitPredicate<KeyChatUser, _, _>>::wait_with_jitter(quota, jitter),
         )),
         key => panic!("Unknown ratelimit strategy: {}", key),

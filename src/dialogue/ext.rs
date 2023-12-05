@@ -16,7 +16,7 @@ pub trait DialogueExt<P, PI, HI, HS>: Sized {
     /// If you don't need to start the dialogue conditionally,
     /// you can use [`DialogueDecorator::new`] directly.
     #[allow(clippy::type_complexity)]
-    fn dialogue<B>(
+    fn with_dialogue<B>(
         self,
         predicate: P,
     ) -> Predicate<DialoguePredicate<B, P, PI, HS>, HandlerInput, DialogueDecorator<B, Self, HI, HS>, HandlerInput>
