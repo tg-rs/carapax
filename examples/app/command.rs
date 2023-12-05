@@ -1,3 +1,8 @@
+//! # Commands
+//!
+//! By wrapping the [`greet`] handler with the [`carapax::CommandPredicate`],
+//! it ensures that the handler is executed only when an incoming update
+//! contains a message with the `/hello` command.
 use carapax::{
     api::Client,
     types::{ChatPeerId, SendMessage, User},

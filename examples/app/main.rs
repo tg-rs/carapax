@@ -1,3 +1,6 @@
+//! The example demonstrates the advanced usage of the framework covering all available features.
+//!
+//! For detailed information about each feature, refer to the documentation for each respective module.
 use std::{env, time::Duration};
 
 use dotenvy::dotenv;
@@ -26,10 +29,12 @@ async fn main() {
 
     let session_backend = create_session_backend();
     spawn_session_collector(session_backend.clone());
-
     let session_manager = SessionManager::new(session_backend);
     context.insert(session_manager);
 
+    // Chain is a handler which allows to execute several handlers, one after another.
+    // Handlers will run in same order as added.
+    // If a handler returns `Err(_)`, all the subsequent handlers will not run.
     let mut chain = Chain::all();
     if let Ok(username) = env::var("CARAPAX_ACCESS_USERNAME") {
         chain = access::setup(chain, &username);
@@ -43,6 +48,9 @@ async fn main() {
         chain = ratelimit::setup(chain, &ratelimit_strategy);
     }
 
+    // By default, `App` logs an error produced by a handler.
+    // Here we use a `ErrorDecorator` which allows to configure a custom handler
+    // for errors returned by the handler.
     let handler = chain.on_error(error_handler);
 
     let app = App::new(context, handler);
@@ -60,6 +68,7 @@ fn create_session_backend() -> FilesystemBackend {
     backend
 }
 
+/// Spawns a garbage collector for expired sessions
 fn spawn_session_collector(backend: FilesystemBackend) {
     let gc_period = get_env("CARAPAX_SESSION_GC_PERIOD");
     let gc_period = Duration::from_secs(

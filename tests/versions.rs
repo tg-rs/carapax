@@ -1,5 +1,6 @@
-use regex::Regex;
 use std::fs::read_to_string;
+
+use regex::Regex;
 use toml::Value;
 
 fn get_crate_version() -> String {
@@ -14,7 +15,7 @@ fn get_crate_version() -> String {
 #[test]
 fn versions() {
     let version = get_crate_version();
-    for filename in &["./README.md", "./GUIDE.md"] {
+    for filename in &["./README.md"] {
         let readme = read_to_string(filename).unwrap();
         for pattern in &[
             r#"https://github\.com/tg-rs/carapax/tree/([\d\.]+)"#,

@@ -1,3 +1,27 @@
+//! # Session
+//!
+//! Sessions provide a mechanism for storing a user-specific state in a storage such as filesystem or redis.
+//!
+//! Carapax utilizes the [seance](http://crates.io/crates/seance) crate for session support.
+//! The required types are reexported from Carapax,
+//! eliminating the need to add `seance` to your `Cargo.toml`.
+//!
+//! Every session is identified by a [SessionId](carapax::session::SessionId) struct,
+//! which includes both a chat ID and a user ID.
+//!
+//! You can either get [`Session`] directly from the manager,
+//! or use [`carapax::TryFromInput`] and specify `session: Session<B>` in handler arguments.
+//! Where `B` is a [session backend](carapax::session::backend).
+//! In both cases make sure that session manager is added to the context.
+//!
+//!
+//! If an update lacks `chat_id` and/or `user_id`,
+//! and the handler contains [`Session`] or [`carapax::session::SessionId`] in its arguments,
+//! the handler will not be execute.
+//! In such cases, you must obtain the session from the manager manually.
+//!
+//! Note that you need to enable either the `session-fs` or `session-redis` feature in `Cargo.toml`.
+//! Alternatively, use the `session` feature if you have your own backend.
 use carapax::{
     api::Client,
     session::{backend::fs::FilesystemBackend, Session},

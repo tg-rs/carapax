@@ -1,3 +1,27 @@
+//! # Dialogues
+//!
+//! A dialogue is a stateful handler that receives the current state and returns a new state.
+//!
+//! The dialogue handler operates similarly to a regular handler but returns a [`DialogueResult`].
+//! To obtain the state from the session, you can use the [`DialogueInput`] struct,
+//! which implements the [`carapax::TryFromInput`] trait
+//! and can be used as an argument for your handler.
+//!
+//! The state must implement the [`DialogueState`] trait,
+//! and each dialogue must have a unique name,
+//! defining a value for the session key to store the state.
+//!
+//! The state can be converted into the [`DialogueResult`].
+//! Thus, you can return `state.into()` instead of `DialogueResult::Next(state)`.
+//!
+//! You need to wrap the dialogue handler with the [`carapax::dialogue::DialogueDecorator`]
+//! and the [`carapax::dialogue::DialoguePredicate`].
+//!
+//! Predicate decides should the dialogue handler run or not,
+//! decorator saves the state and converts a result of the dialogue
+//! into the [`carapax::HandlerResult`].
+//!
+//! Note that you need to enable the `session` and `dialogue` features in `Cargo.toml`.
 use serde::{Deserialize, Serialize};
 
 use carapax::{

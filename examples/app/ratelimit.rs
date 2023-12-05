@@ -1,3 +1,19 @@
+//! # Ratelimit
+//!
+//! Carapax provides a ratelimit support using [governor](https://crates.io/crates/governor) crate.
+//!
+//! There are two type of predicates: [`DirectRateLimitPredicate`] and [`KeyedRateLimitPredicate`].
+//!
+//! Direct is used when you need to apply ratelimit for all incoming updates.
+//! Keyed - when you need to limit updates per chat and/or user.
+//!
+//! Once the limit is reached you can choose to either [discard](carapax::ratelimit::MethodDiscard) the updates,
+//! or [wait](carapax::ratelimit::MethodWait) for the next available time slot.
+//!
+//! Both types of predicates can be used [with](Jitter)
+//! or [without](carapax::ratelimit::NoJitter) jitter.
+//!
+//! Note that you need to enable the `ratelimit` feature in `Cargo.toml`.
 use std::time::Duration;
 
 use carapax::{

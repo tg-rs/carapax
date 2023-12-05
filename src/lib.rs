@@ -1,11 +1,11 @@
 //! A Telegram Bot framework
 #![cfg_attr(nightly, feature(doc_cfg))]
-#![warn(missing_docs)]
 
-mod core;
+pub use tgbot::*;
 
 pub use self::core::*;
-pub use tgbot::*;
+
+mod core;
 
 /// Access control
 #[cfg(feature = "access")]
@@ -26,8 +26,3 @@ pub mod ratelimit;
 #[cfg(feature = "session")]
 #[cfg_attr(nightly, doc(cfg(feature = "session")))]
 pub mod session;
-
-#[cfg(feature = "full")]
-mod doctest {
-    #![doc = include_str!("../GUIDE.md")]
-}
