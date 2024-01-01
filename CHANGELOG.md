@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.14.0 (01.01.2024)
+
+- Updated dependencies:
+  - seance 0.9
+  - tgbot 0.20
+  - tokio 1.35
+- `async fn` in traits:
+  - Removed `TryFromInput::Future` associated type.
+  - Removed `Handler::Future` associated type.
+
 ## 0.13.0 (05.12.2023)
 
 - Updated dependencies:
