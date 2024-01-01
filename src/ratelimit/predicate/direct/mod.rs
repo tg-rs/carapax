@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use futures_util::future::{ready, BoxFuture, Ready};
 use governor::{
     clock::DefaultClock,
     middleware::NoOpMiddleware,
@@ -85,42 +84,32 @@ impl DirectRateLimitPredicate<Jitter, MethodWait> {
 
 impl Handler<()> for DirectRateLimitPredicate<NoJitter, MethodDiscard> {
     type Output = PredicateResult;
-    type Future = Ready<Self::Output>;
 
-    fn handle(&self, (): ()) -> Self::Future {
-        ready(match self.limiter.check() {
+    async fn handle(&self, (): ()) -> Self::Output {
+        match self.limiter.check() {
             Ok(_) => PredicateResult::True,
             Err(_) => {
                 log::info!("DirectRateLimitPredicate: update discarded");
                 PredicateResult::False
             }
-        })
+        }
     }
 }
 
 impl Handler<()> for DirectRateLimitPredicate<NoJitter, MethodWait> {
     type Output = PredicateResult;
-    type Future = BoxFuture<'static, Self::Output>;
 
-    fn handle(&self, (): ()) -> Self::Future {
-        let limiter = self.limiter.clone();
-        Box::pin(async move {
-            limiter.until_ready().await;
-            PredicateResult::True
-        })
+    async fn handle(&self, (): ()) -> Self::Output {
+        self.limiter.until_ready().await;
+        PredicateResult::True
     }
 }
 
 impl Handler<()> for DirectRateLimitPredicate<Jitter, MethodWait> {
     type Output = PredicateResult;
-    type Future = BoxFuture<'static, Self::Output>;
 
-    fn handle(&self, (): ()) -> Self::Future {
-        let limiter = self.limiter.clone();
-        let jitter = self.jitter;
-        Box::pin(async move {
-            limiter.until_ready_with_jitter(jitter).await;
-            PredicateResult::True
-        })
+    async fn handle(&self, (): ()) -> Self::Output {
+        self.limiter.until_ready_with_jitter(self.jitter).await;
+        PredicateResult::True
     }
 }

@@ -1,7 +1,5 @@
 use std::{any::TypeId, convert::Infallible, error::Error, fmt, future::Future};
 
-use futures_util::future::{ok, ready, BoxFuture, Ready};
-
 use crate::{
     core::{context::Ref, handler::HandlerInput},
     types::{
@@ -16,9 +14,6 @@ mod tests;
 
 /// Allows to create a specific handler input.
 pub trait TryFromInput: Send + Sized {
-    /// A future returned by the [`Self::try_from_input`] method.
-    type Future: Future<Output = Result<Option<Self>, Self::Error>> + Send;
-
     /// An error when conversion failed.
     type Error: Error + Send;
 
@@ -27,24 +22,22 @@ pub trait TryFromInput: Send + Sized {
     /// # Arguments
     ///
     /// * `input` - An input to convert from.
-    fn try_from_input(input: HandlerInput) -> Self::Future;
+    fn try_from_input(input: HandlerInput) -> impl Future<Output = Result<Option<Self>, Self::Error>> + Send;
 }
 
 impl TryFromInput for HandlerInput {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(Some(input))
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(Some(input))
     }
 }
 
 impl TryFromInput for () {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(_input: HandlerInput) -> Self::Future {
-        ok(Some(()))
+    async fn try_from_input(_input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(Some(()))
     }
 }
 
@@ -52,199 +45,175 @@ impl<T> TryFromInput for Ref<T>
 where
     T: Clone + Send + 'static,
 {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = ConvertInputError;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ready(
-            input
-                .context
-                .get::<T>()
-                .cloned()
-                .map(Ref::new)
-                .ok_or_else(ConvertInputError::context::<T>)
-                .map(Some),
-        )
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        input
+            .context
+            .get::<T>()
+            .cloned()
+            .map(Ref::new)
+            .ok_or_else(ConvertInputError::context::<T>)
+            .map(Some)
     }
 }
 
 impl TryFromInput for Update {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(Some(input.update))
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(Some(input.update))
     }
 }
 
 impl TryFromInput for ChatPeerId {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.get_chat_id())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.get_chat_id())
     }
 }
 
 impl TryFromInput for ChatUsername {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.get_chat_username().cloned())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.get_chat_username().cloned())
     }
 }
 
 impl TryFromInput for Chat {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.get_chat().cloned())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.get_chat().cloned())
     }
 }
 
 impl TryFromInput for UserPeerId {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.get_user_id())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.get_user_id())
     }
 }
 
 impl TryFromInput for UserUsername {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.get_user_username().cloned())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.get_user_username().cloned())
     }
 }
 
 impl TryFromInput for User {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.get_user().cloned())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.get_user().cloned())
     }
 }
 
 impl TryFromInput for Text {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(Message::try_from(input.update).ok().and_then(|x| x.get_text().cloned()))
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(Message::try_from(input.update).ok().and_then(|x| x.get_text().cloned()))
     }
 }
 
 impl TryFromInput for Message {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for Command {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = CommandError;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ready(
-            Message::try_from(input.update)
-                .ok()
-                .map(Command::try_from)
-                .transpose()
-                .or_else(|err| match err {
-                    CommandError::NotFound => Ok(None),
-                    err => Err(err),
-                }),
-        )
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Message::try_from(input.update)
+            .ok()
+            .map(Command::try_from)
+            .transpose()
+            .or_else(|err| match err {
+                CommandError::NotFound => Ok(None),
+                err => Err(err),
+            })
     }
 }
 
 impl TryFromInput for InlineQuery {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for ChosenInlineResult {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for CallbackQuery {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for ShippingQuery {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for PreCheckoutQuery {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for Poll {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for PollAnswer {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for ChatMemberUpdated {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
 impl TryFromInput for ChatJoinRequest {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.try_into().ok())
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.try_into().ok())
     }
 }
 
@@ -258,21 +227,18 @@ macro_rules! convert_tuple {
                 $T::Error: 'static,
             )+
         {
-            type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
             type Error = ConvertInputError;
 
-            fn try_from_input(input: HandlerInput) -> Self::Future {
-                Box::pin(async move {
-                    $(
-                        let $T = match <$T>::try_from_input(
-                            input.clone()
-                        ).await.map_err(ConvertInputError::tuple)? {
-                            Some(v) => v,
-                            None => return Ok(None)
-                        };
-                    )+
-                    Ok(Some(($($T,)+)))
-                })
+            async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+                $(
+                    let $T = match <$T>::try_from_input(
+                        input.clone()
+                    ).await.map_err(ConvertInputError::tuple)? {
+                        Some(v) => v,
+                        None => return Ok(None)
+                    };
+                )+
+                Ok(Some(($($T,)+)))
             }
         }
     };

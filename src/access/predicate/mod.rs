@@ -1,7 +1,5 @@
 use std::fmt;
 
-use futures_util::future::BoxFuture;
-
 use crate::{
     access::policy::AccessPolicy,
     core::{Handler, HandlerInput},
@@ -33,25 +31,21 @@ where
     P: AccessPolicy + Clone + Sync + 'static,
 {
     type Output = Result<bool, P::Error>;
-    type Future = BoxFuture<'static, Self::Output>;
 
-    fn handle(&self, input: HandlerInput) -> Self::Future {
-        let policy = self.policy.clone();
-        Box::pin(async move {
-            let debug_principal = DebugPrincipal::from(&input.update);
-            let value = policy.is_granted(input).await;
-            match value {
-                Ok(value) => {
-                    log::info!(
-                        "Access for {:?} is {}",
-                        debug_principal,
-                        if value { "granted" } else { "forbidden" }
-                    );
-                    Ok(value)
-                }
-                Err(err) => Err(err),
+    async fn handle(&self, input: HandlerInput) -> Self::Output {
+        let debug_principal = DebugPrincipal::from(&input.update);
+        let value = self.policy.is_granted(input).await;
+        match value {
+            Ok(value) => {
+                log::info!(
+                    "Access for {:?} is {}",
+                    debug_principal,
+                    if value { "granted" } else { "forbidden" }
+                );
+                Ok(value)
             }
-        })
+            Err(err) => Err(err),
+        }
     }
 }
 

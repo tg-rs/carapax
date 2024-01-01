@@ -1,7 +1,5 @@
 use std::{future::Future, marker::PhantomData, sync::Arc};
 
-use futures_util::future::BoxFuture;
-
 use crate::{
     core::{
         context::Context,
@@ -76,14 +74,12 @@ where
 
 impl<H, HI, HO> UpdateHandler for App<H, HI>
 where
-    H: Handler<HI, Output = HO> + 'static,
-    HI: TryFromInput + 'static,
+    H: Handler<HI, Output = HO> + Sync + 'static,
+    HI: TryFromInput + Sync + 'static,
     HI::Error: 'static,
     HO: IntoHandlerResult + Send + 'static,
 {
-    type Future = BoxFuture<'static, ()>;
-
-    fn handle(&self, update: Update) -> Self::Future {
-        Box::pin(self.handle_update(update))
+    async fn handle(&self, update: Update) {
+        self.handle_update(update).await
     }
 }

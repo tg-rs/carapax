@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use futures_util::future::BoxFuture;
 use seance::{backend::SessionBackend, Session};
 
 use crate::{
@@ -29,26 +28,23 @@ where
     S: DialogueState + Send,
     B: SessionBackend + Send + 'static,
 {
-    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
     type Error = DialogueError;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        Box::pin(async move {
-            match <Session<B>>::try_from_input(input.clone()).await? {
-                Some(ref mut session) => {
-                    let session_key = S::session_key();
-                    let state = session
-                        .get(session_key)
-                        .await
-                        .map_err(DialogueError::LoadState)?
-                        .unwrap_or_default();
-                    Ok(Some(Self {
-                        state,
-                        session_backend: PhantomData,
-                    }))
-                }
-                None => unreachable!("TryFromInput implementation for Session<B> never returns None"),
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        match <Session<B>>::try_from_input(input.clone()).await? {
+            Some(ref mut session) => {
+                let session_key = S::session_key();
+                let state = session
+                    .get(session_key)
+                    .await
+                    .map_err(DialogueError::LoadState)?
+                    .unwrap_or_default();
+                Ok(Some(Self {
+                    state,
+                    session_backend: PhantomData,
+                }))
             }
-        })
+            None => unreachable!("TryFromInput implementation for Session<B> never returns None"),
+        }
     }
 }

@@ -22,9 +22,6 @@ where
     /// But finally you need to convert it into [`HandlerResult`].
     type Output: Send;
 
-    /// A future returned by [`Self::handle`] method.
-    type Future: Future<Output = Self::Output> + Send;
-
     /// Handles a specific input.
     ///
     /// # Arguments
@@ -32,7 +29,7 @@ where
     /// * `input` - The input to handle.
     ///
     /// See [`TryFromInput`] trait implementations for a list of supported types.
-    fn handle(&self, input: I) -> Self::Future;
+    fn handle(&self, input: I) -> impl Future<Output = Self::Output> + Send;
 }
 
 macro_rules! impl_fn {
@@ -46,10 +43,9 @@ macro_rules! impl_fn {
             R::Output: Send
         {
             type Output = R::Output;
-            type Future = R;
 
-            fn handle(&self, ($($I,)+): ($($I,)+)) -> Self::Future {
-                (self)($($I,)+)
+            async fn handle(&self, ($($I,)+): ($($I,)+)) -> Self::Output {
+                (self)($($I,)+).await
             }
         }
     };

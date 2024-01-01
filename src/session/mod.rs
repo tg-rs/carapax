@@ -1,6 +1,5 @@
 use std::{convert::Infallible, error::Error, fmt};
 
-use futures_util::future::{ok, BoxFuture, Ready};
 use seance::backend::SessionBackend;
 pub use seance::{backend, Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager};
 
@@ -13,23 +12,20 @@ impl<B> TryFromInput for Session<B>
 where
     B: SessionBackend + Send + 'static,
 {
-    type Future = BoxFuture<'static, Result<Option<Self>, Self::Error>>;
     type Error = CreateSessionError;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        Box::pin(async move {
-            match input.context.get::<SessionManager<B>>() {
-                Some(manager) => match SessionId::try_from_input(input.clone()).await {
-                    Ok(Some(session_id)) => {
-                        let session = manager.get_session(session_id.0);
-                        Ok(Some(session))
-                    }
-                    Ok(None) => Err(CreateSessionError::SessionIdNotFound),
-                    Err(_) => unreachable!(),
-                },
-                None => Err(CreateSessionError::ManagerNotFound),
-            }
-        })
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        match input.context.get::<SessionManager<B>>() {
+            Some(manager) => match SessionId::try_from_input(input.clone()).await {
+                Ok(Some(session_id)) => {
+                    let session = manager.get_session(session_id.0);
+                    Ok(Some(session))
+                }
+                Ok(None) => Err(CreateSessionError::SessionIdNotFound),
+                Err(_) => unreachable!(),
+            },
+            None => Err(CreateSessionError::ManagerNotFound),
+        }
     }
 }
 
@@ -55,13 +51,12 @@ impl From<SessionId> for String {
 }
 
 impl TryFromInput for SessionId {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
         let chat_id = input.update.get_chat_id();
         let user_id = input.update.get_user_id();
-        ok(if let (Some(chat_id), Some(user_id)) = (chat_id, user_id) {
+        Ok(if let (Some(chat_id), Some(user_id)) = (chat_id, user_id) {
             Some(SessionId::new(chat_id, user_id))
         } else {
             None

@@ -1,7 +1,5 @@
 use std::marker::PhantomData;
 
-use futures_util::future::BoxFuture;
-
 use crate::core::{
     convert::TryFromInput,
     handler::{Handler, HandlerError, HandlerResult, IntoHandlerResult},
@@ -40,31 +38,24 @@ impl<P, PI, H, HI> Predicate<P, PI, H, HI> {
 
 impl<P, PI, H, HI> Handler<(PI, HI)> for Predicate<P, PI, H, HI>
 where
-    P: Handler<PI> + 'static,
+    P: Handler<PI> + Sync + 'static,
     P::Output: Into<PredicateResult>,
-    PI: TryFromInput + 'static,
+    PI: TryFromInput + Sync + 'static,
     PI::Error: 'static,
-    H: Handler<HI> + 'static,
+    H: Handler<HI> + Sync + 'static,
     H::Output: IntoHandlerResult,
-    HI: TryFromInput + 'static,
+    HI: TryFromInput + Sync + 'static,
     HI::Error: 'static,
 {
     type Output = PredicateOutput;
-    type Future = BoxFuture<'static, Self::Output>;
 
-    fn handle(&self, (predicate_input, handler_input): (PI, HI)) -> Self::Future {
-        let predicate = self.predicate.clone();
-        let handler = self.handler.clone();
-        Box::pin(async move {
-            let predicate_future = predicate.handle(predicate_input);
-            let predicate_result = predicate_future.await.into();
-            if let PredicateResult::True = predicate_result {
-                let handler_future = handler.handle(handler_input);
-                handler_future.await.into_result().into()
-            } else {
-                predicate_result.into()
-            }
-        })
+    async fn handle(&self, (predicate_input, handler_input): (PI, HI)) -> Self::Output {
+        let predicate_result = self.predicate.handle(predicate_input).await.into();
+        if let PredicateResult::True = predicate_result {
+            self.handler.handle(handler_input).await.into_result().into()
+        } else {
+            predicate_result.into()
+        }
     }
 }
 

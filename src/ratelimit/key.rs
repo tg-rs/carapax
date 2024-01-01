@@ -1,7 +1,5 @@
 use std::{convert::Infallible, hash::Hash};
 
-use futures_util::future::{ok, Ready};
-
 use crate::{
     core::{HandlerInput, TryFromInput},
     types::{ChatPeerId, UserPeerId},
@@ -24,11 +22,10 @@ where
 }
 
 impl TryFromInput for KeyChat {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.get_chat_id().map(Self))
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.get_chat_id().map(Self))
     }
 }
 
@@ -48,11 +45,10 @@ where
 }
 
 impl TryFromInput for KeyUser {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        ok(input.update.get_user().map(|user| Self(user.id)))
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(input.update.get_user().map(|user| Self(user.id)))
     }
 }
 
@@ -73,15 +69,14 @@ where
 }
 
 impl TryFromInput for KeyChatUser {
-    type Future = Ready<Result<Option<Self>, Self::Error>>;
     type Error = Infallible;
 
-    fn try_from_input(input: HandlerInput) -> Self::Future {
-        if let Some(chat_id) = input.update.get_chat_id() {
-            ok(input.update.get_user().map(|user| Self(chat_id, user.id)))
+    async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
+        Ok(if let Some(chat_id) = input.update.get_chat_id() {
+            input.update.get_user().map(|user| Self(chat_id, user.id))
         } else {
-            ok(None)
-        }
+            None
+        })
     }
 }
 

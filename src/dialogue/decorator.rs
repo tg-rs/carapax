@@ -1,6 +1,5 @@
 use std::{error::Error, marker::PhantomData};
 
-use futures_util::future::BoxFuture;
 use seance::{backend::SessionBackend, Session};
 
 use crate::{
@@ -56,53 +55,48 @@ where
 
 impl<B, H, HI, HR, HS, HE> Handler<HandlerInput> for DialogueDecorator<B, H, HI, HS>
 where
-    B: SessionBackend + Send + 'static,
-    H: Handler<HI, Output = Result<HR, HE>> + 'static,
-    HI: TryFromInput,
+    B: SessionBackend + Send + Sync + 'static,
+    H: Handler<HI, Output = Result<HR, HE>> + Sync + 'static,
+    HI: TryFromInput + Sync,
     HI::Error: 'static,
     HR: Into<DialogueResult<HS>>,
     HS: DialogueState + Send + Sync,
     HE: Error + Send + 'static,
 {
     type Output = HandlerResult;
-    type Future = BoxFuture<'static, Self::Output>;
 
-    fn handle(&self, input: HandlerInput) -> Self::Future {
-        let handler = self.handler.clone();
-        Box::pin(async move {
-            let handler_input = match HI::try_from_input(input.clone()).await {
-                Ok(Some(input)) => input,
-                Ok(None) => return Err(HandlerError::new(DialogueError::ConvertHandlerInput)),
-                Err(err) => return Err(HandlerError::new(err)),
-            };
-            let handler_future = handler.handle(handler_input);
-            let result = match handler_future.await {
-                Ok(result) => result.into(),
-                Err(err) => return Err(HandlerError::new(err)),
-            };
+    async fn handle(&self, input: HandlerInput) -> Self::Output {
+        let handler_input = match HI::try_from_input(input.clone()).await {
+            Ok(Some(input)) => input,
+            Ok(None) => return Err(HandlerError::new(DialogueError::ConvertHandlerInput)),
+            Err(err) => return Err(HandlerError::new(err)),
+        };
+        let result = match self.handler.handle(handler_input).await {
+            Ok(result) => result.into(),
+            Err(err) => return Err(HandlerError::new(err)),
+        };
 
-            let mut session = match <Session<B>>::try_from_input(input).await {
-                Ok(Some(session)) => session,
-                Ok(None) => unreachable!("TryFromInput implementation for Session<B> never returns None"),
-                Err(err) => return Err(HandlerError::new(err)),
-            };
-            let session_key = HS::session_key();
+        let mut session = match <Session<B>>::try_from_input(input).await {
+            Ok(Some(session)) => session,
+            Ok(None) => unreachable!("TryFromInput implementation for Session<B> never returns None"),
+            Err(err) => return Err(HandlerError::new(err)),
+        };
+        let session_key = HS::session_key();
 
-            match result {
-                DialogueResult::Next(state) => {
-                    if let Err(err) = session.set(session_key, &state).await {
-                        return Err(HandlerError::new(err));
-                    }
-                }
-                DialogueResult::Exit => {
-                    // Explicitly remove the state from the session to make sure that the dialog will not run again.
-                    if let Err(err) = session.remove(session_key).await {
-                        return Err(HandlerError::new(err));
-                    }
+        match result {
+            DialogueResult::Next(state) => {
+                if let Err(err) = session.set(session_key, &state).await {
+                    return Err(HandlerError::new(err));
                 }
             }
+            DialogueResult::Exit => {
+                // Explicitly remove the state from the session to make sure that the dialog will not run again.
+                if let Err(err) = session.remove(session_key).await {
+                    return Err(HandlerError::new(err));
+                }
+            }
+        }
 
-            Ok(())
-        })
+        Ok(())
     }
 }

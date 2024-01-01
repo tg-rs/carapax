@@ -1,6 +1,5 @@
 use std::{collections::HashSet, sync::Arc};
 
-use futures_util::future::{ready, BoxFuture, Either, Ready};
 use governor::{clock::DefaultClock, state::keyed::DefaultKeyedStateStore, RateLimiter};
 pub use governor::{Jitter, Quota};
 #[allow(unused_imports)]
@@ -120,10 +119,9 @@ where
     K: Key + Sync,
 {
     type Output = PredicateResult;
-    type Future = Ready<Self::Output>;
 
-    fn handle(&self, input: K) -> Self::Future {
-        ready(if self.has_key(&input) {
+    async fn handle(&self, input: K) -> Self::Output {
+        if self.has_key(&input) {
             match self.limiter.check_key(&input) {
                 Ok(_) => PredicateResult::True,
                 Err(_) => {
@@ -133,7 +131,7 @@ where
             }
         } else {
             PredicateResult::True
-        })
+        }
     }
 }
 
@@ -142,17 +140,13 @@ where
     K: Key + Sync + 'static,
 {
     type Output = PredicateResult;
-    type Future = Either<Ready<Self::Output>, BoxFuture<'static, Self::Output>>;
 
-    fn handle(&self, input: K) -> Self::Future {
+    async fn handle(&self, input: K) -> Self::Output {
         if self.has_key(&input) {
-            let limiter = self.limiter.clone();
-            Either::Right(Box::pin(async move {
-                limiter.until_key_ready(&input).await;
-                PredicateResult::True
-            }))
+            self.limiter.until_key_ready(&input).await;
+            PredicateResult::True
         } else {
-            Either::Left(ready(PredicateResult::True))
+            PredicateResult::True
         }
     }
 }
@@ -162,18 +156,13 @@ where
     K: Key + Sync + 'static,
 {
     type Output = PredicateResult;
-    type Future = Either<Ready<Self::Output>, BoxFuture<'static, Self::Output>>;
 
-    fn handle(&self, input: K) -> Self::Future {
+    async fn handle(&self, input: K) -> Self::Output {
         if self.has_key(&input) {
-            let limiter = self.limiter.clone();
-            let jitter = self.jitter;
-            Either::Right(Box::pin(async move {
-                limiter.until_key_ready_with_jitter(&input, jitter).await;
-                PredicateResult::True
-            }))
+            self.limiter.until_key_ready_with_jitter(&input, self.jitter).await;
+            PredicateResult::True
         } else {
-            Either::Left(ready(PredicateResult::True))
+            PredicateResult::True
         }
     }
 }

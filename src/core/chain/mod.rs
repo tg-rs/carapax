@@ -108,10 +108,9 @@ impl Chain {
 
 impl Handler<HandlerInput> for Chain {
     type Output = HandlerResult;
-    type Future = BoxFuture<'static, Self::Output>;
 
-    fn handle(&self, input: HandlerInput) -> Self::Future {
-        Box::pin(self.handle_input(input))
+    async fn handle(&self, input: HandlerInput) -> Self::Output {
+        self.handle_input(input).await
     }
 }
 

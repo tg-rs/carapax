@@ -23,14 +23,10 @@ impl fmt::Display for ExampleError {
 impl Error for ExampleError {}
 
 impl ErrorHandler for Condition {
-    type Future = BoxFuture<'static, HandlerError>;
-
-    fn handle(&self, err: HandlerError) -> Self::Future {
+    async fn handle(&self, err: HandlerError) -> HandlerError {
         let value = self.value.clone();
-        Box::pin(async move {
-            *value.lock().await = true;
-            err
-        })
+        *value.lock().await = true;
+        err
     }
 }
 

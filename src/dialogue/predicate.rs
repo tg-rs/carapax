@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use futures_util::future::BoxFuture;
 use seance::{backend::SessionBackend, Session};
 
 use crate::{
@@ -52,43 +51,36 @@ where
 
 impl<B, P, PI, PO, HS> Handler<HandlerInput> for DialoguePredicate<B, P, PI, HS>
 where
-    B: SessionBackend + Send + 'static,
-    P: Handler<PI, Output = PO> + 'static,
-    PI: TryFromInput,
+    B: SessionBackend + Send + Sync + 'static,
+    P: Handler<PI, Output = PO> + Sync + 'static,
+    PI: TryFromInput + Sync,
     PI::Error: 'static,
     PO: Into<PredicateResult>,
     HS: DialogueState + Send + Sync,
 {
     type Output = PredicateResult;
-    type Future = BoxFuture<'static, Self::Output>;
 
-    fn handle(&self, input: HandlerInput) -> Self::Future {
-        let predicate = self.predicate.clone();
-        Box::pin(async move {
-            let mut session = match <Session<B>>::try_from_input(input.clone()).await {
-                Ok(Some(session)) => session,
-                Ok(None) => unreachable!("TryFromInput implementation for Session<B> never returns None"),
-                Err(err) => return PredicateResult::Err(HandlerError::new(err)),
-            };
-            let session_key = HS::session_key();
-            match session.get::<&str, HS>(&session_key).await {
-                Ok(Some(_)) => {
-                    // We have dialogue state in session, so we must run dialog handler
-                    PredicateResult::True
-                }
-                Ok(None) => {
-                    // Dialogue state not found in session, let's check predicate
-                    match PI::try_from_input(input.clone()).await {
-                        Ok(Some(predicate_input)) => {
-                            let predicate_future = predicate.handle(predicate_input);
-                            predicate_future.await.into()
-                        }
-                        Ok(None) => PredicateResult::False,
-                        Err(err) => PredicateResult::Err(HandlerError::new(err)),
-                    }
-                }
-                Err(err) => PredicateResult::Err(HandlerError::new(err)),
+    async fn handle(&self, input: HandlerInput) -> Self::Output {
+        let mut session = match <Session<B>>::try_from_input(input.clone()).await {
+            Ok(Some(session)) => session,
+            Ok(None) => unreachable!("TryFromInput implementation for Session<B> never returns None"),
+            Err(err) => return PredicateResult::Err(HandlerError::new(err)),
+        };
+        let session_key = HS::session_key();
+        match session.get::<&str, HS>(&session_key).await {
+            Ok(Some(_)) => {
+                // We have dialogue state in session, so we must run dialog handler
+                PredicateResult::True
             }
-        })
+            Ok(None) => {
+                // Dialogue state not found in session, let's check predicate
+                match PI::try_from_input(input.clone()).await {
+                    Ok(Some(predicate_input)) => self.predicate.handle(predicate_input).await.into(),
+                    Ok(None) => PredicateResult::False,
+                    Err(err) => PredicateResult::Err(HandlerError::new(err)),
+                }
+            }
+            Err(err) => PredicateResult::Err(HandlerError::new(err)),
+        }
     }
 }

@@ -1,7 +1,5 @@
 use std::{future::Future, marker::PhantomData};
 
-use futures_util::future::BoxFuture;
-
 use crate::core::{
     convert::TryFromInput,
     handler::{Handler, HandlerError, HandlerInput, HandlerResult, IntoHandlerResult},
@@ -49,63 +47,44 @@ where
 
 impl<E, H, HI> Handler<HandlerInput> for ErrorDecorator<E, H, HI>
 where
-    E: ErrorHandler + Clone + 'static,
-    H: Handler<HI> + 'static,
-    HI: TryFromInput,
+    E: ErrorHandler + Clone + Sync + 'static,
+    H: Handler<HI> + Sync + 'static,
+    HI: TryFromInput + Sync,
     HI::Error: 'static,
     H::Output: IntoHandlerResult,
 {
     type Output = HandlerResult;
-    type Future = BoxFuture<'static, Self::Output>;
 
-    fn handle(&self, input: HandlerInput) -> Self::Future {
-        let handler = self.handler.clone();
-        let error_handler = self.error_handler.clone();
-        Box::pin(async move {
-            let future = HI::try_from_input(input);
-            match future.await {
-                Ok(Some(input)) => {
-                    let future = handler.handle(input);
-                    match future.await.into_result() {
-                        Err(err) => {
-                            let future = error_handler.handle(err);
-                            Err(future.await)
-                        }
-                        result => result,
-                    }
-                }
-                Ok(None) => Ok(()),
-                Err(err) => {
-                    let future = error_handler.handle(HandlerError::new(err));
-                    Err(future.await)
-                }
-            }
-        })
+    async fn handle(&self, input: HandlerInput) -> Self::Output {
+        let future = HI::try_from_input(input);
+        match future.await {
+            Ok(Some(input)) => match self.handler.handle(input).await.into_result() {
+                Err(err) => Err(self.error_handler.handle(err).await),
+                result => result,
+            },
+            Ok(None) => Ok(()),
+            Err(err) => Err(self.error_handler.handle(HandlerError::new(err)).await),
+        }
     }
 }
 
 /// Allows to process errors returned by handlers.
 pub trait ErrorHandler: Send {
-    /// A future returned by [`Self::handle`] method.
-    type Future: Future<Output = HandlerError> + Send;
-
     /// Handles a errors.
     ///
     /// # Arguments
     ///
     /// * `err` - An error to handle.
-    fn handle(&self, err: HandlerError) -> Self::Future;
+    fn handle(&self, err: HandlerError) -> impl Future<Output = HandlerError> + Send;
 }
 
 impl<H, F> ErrorHandler for H
 where
-    H: Fn(HandlerError) -> F + Send,
+    H: Fn(HandlerError) -> F + Send + Sync,
     F: Future<Output = HandlerError> + Send,
 {
-    type Future = F;
-
-    fn handle(&self, err: HandlerError) -> Self::Future {
-        (self)(err)
+    async fn handle(&self, err: HandlerError) -> HandlerError {
+        (self)(err).await
     }
 }
 

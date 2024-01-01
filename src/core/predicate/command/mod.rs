@@ -1,5 +1,3 @@
-use futures_util::future::{ready, Ready};
-
 use crate::{core::handler::Handler, types::Command};
 
 #[cfg(test)]
@@ -24,9 +22,8 @@ impl CommandPredicate {
 
 impl Handler<Command> for CommandPredicate {
     type Output = bool;
-    type Future = Ready<Self::Output>;
 
-    fn handle(&self, input: Command) -> Self::Future {
-        ready(input.get_name() == self.name)
+    async fn handle(&self, input: Command) -> Self::Output {
+        input.get_name() == self.name
     }
 }
