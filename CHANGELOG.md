@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.0 (01.04.2024)
+
+- Updated dependencies:
+  - seance 0.11
+  - tgbot 0.22
+  - tokio 1.37
+
 ## 0.15.0 (18.02.2024)
 
 - Updated dependencies:
