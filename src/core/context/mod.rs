@@ -44,7 +44,7 @@ impl Context {
 /// Keep in mind that each time a handler is called with `Ref<T>` as an argument,
 /// the underlying value is cloned.
 #[derive(Clone)]
-pub struct Ref<T: Clone>(T);
+pub struct Ref<T: Clone>(pub T);
 
 impl<T: Clone> Ref<T> {
     pub(super) fn new(object: T) -> Self {
