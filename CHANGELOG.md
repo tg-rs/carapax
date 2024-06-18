@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18.0 (18.06.2024)
+
+- Updated dependencies:
+  - seance 0.12
+  - tgbot 0.25
+  - tokio 1.38
+- Inner value of `Ref` is public now.
+  This allows to use pattern matching syntax in handler arguments when you need direct access to the underlying data.
+
 ## 0.18.0 (29.05.2024)
 
 - Updated dependencies:
