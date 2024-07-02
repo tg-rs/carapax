@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error","TargetAddr"],"mod":["tcp"],"struct":["ProxyAddrsStream"],"trait":["IntoTargetAddr","ToProxyAddrs"],"type":["Result"]};
