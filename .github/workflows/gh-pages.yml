@@ -23,7 +23,7 @@ jobs:
       - name: Generate
         run: cargo doc --all --all-features
       - name: Publish
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           force_orphan: true
