@@ -23,7 +23,7 @@ jobs:
       - name: Generate
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
       - name: Publish
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: lcov.info
