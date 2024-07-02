@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.18.0 (18.06.2024)
+## 0.20.0 (02.07.2024)
+
+- Updated dependencies:
+  - tgbot 0.26
+
+## 0.19.0 (18.06.2024)
 
 - Updated dependencies:
   - seance 0.12
