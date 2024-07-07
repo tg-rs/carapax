@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.0 (07.07.2024)
+
+- Updated dependencies:
+  - tgbot 0.27
+
 ## 0.20.0 (02.07.2024)
 
 - Updated dependencies:
