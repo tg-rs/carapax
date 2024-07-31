@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This function simplifies transaction management slightly.  What it does is automatically watching keys and then going into a transaction loop util it succeeds.  Once it goes through the results are returned."><title>transaction in redis - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-970bf1bf55bd1c15.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="redis" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0-nightly (f8060d282 2024-07-30)" data-channel="nightly" data-search-js="search-ef54e092fea9c776.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-f9142fe437216fc3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../redis/index.html">redis</a><span class="version">0.26.0</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="index.html">redis</a>::<wbr><a class="fn" href="#">transaction</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/redis/connection.rs.html#1710-1737">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn transaction&lt;C: <a class="trait" href="trait.ConnectionLike.html" title="trait redis::ConnectionLike">ConnectionLike</a>, K: <a class="trait" href="trait.ToRedisArgs.html" title="trait redis::ToRedisArgs">ToRedisArgs</a>, T, F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html" title="trait core::ops::function::FnMut">FnMut</a>(<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut C</a>, &amp;mut <a class="struct" href="struct.Pipeline.html" title="struct redis::Pipeline">Pipeline</a>) -&gt; <a class="type" href="type.RedisResult.html" title="type redis::RedisResult">RedisResult</a>&lt;<a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;T&gt;&gt;&gt;(
+    con: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut C</a>,
+    keys: &amp;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">[K]</a>,
+    func: F,
+) -&gt; <a class="type" href="type.RedisResult.html" title="type redis::RedisResult">RedisResult</a>&lt;T&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This function simplifies transaction management slightly.  What it
+does is automatically watching keys and then going into a transaction
+loop util it succeeds.  Once it goes through the results are
+returned.</p>
+<p>To use the transaction two pieces of information are needed: a list
+of all the keys that need to be watched for modifications and a
+closure with the code that should be execute in the context of the
+transaction.  The closure is invoked with a fresh pipeline in atomic
+mode.  To use the transaction the function needs to return the result
+from querying the pipeline with the connection.</p>
+<p>The end result of the transaction is then available as the return
+value from the function call.</p>
+<p>Example:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>redis::Commands;
+<span class="kw">let </span>key = <span class="string">"the_key"</span>;
+<span class="kw">let </span>(new_val,) : (isize,) = redis::transaction(<span class="kw-2">&amp;mut </span>con, <span class="kw-2">&amp;</span>[key], |con, pipe| {
+    <span class="kw">let </span>old_val : isize = con.get(key)<span class="question-mark">?</span>;
+    pipe
+        .set(key, old_val + <span class="number">1</span>).ignore()
+        .get(key).query(con)
+})<span class="question-mark">?</span>;
+<span class="macro">println!</span>(<span class="string">"The incremented number is: {}"</span>, new_val);</code></pre></div>
+</div></details></section></div></main></body></html>

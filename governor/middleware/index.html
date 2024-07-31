@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Additional, customizable behavior for rate limiters."><title>governor::middleware - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-970bf1bf55bd1c15.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="governor" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0-nightly (f8060d282 2024-07-30)" data-channel="nightly" data-search-js="search-ef54e092fea9c776.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-f9142fe437216fc3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../governor/index.html">governor</a><span class="version">0.6.3</span></h2></div><h2 class="location"><a href="#">Module middleware</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#traits">Traits</a></li></ul></section><h2><a href="../index.html">In crate governor</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../index.html">governor</a>::<wbr><a class="mod" href="#">middleware</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/governor/middleware.rs.html#1-294">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Additional, customizable behavior for rate limiters.</p>
+<p>Rate-limiting middleware follows the principle that basic
+rate-limiting should be very cheap, and unless users desire more
+behavior, they should not pay any extra price.</p>
+<p>However, if you do desire more information about what the
+rate-limiter does (or the ability to install hooks in the
+decision-making process), you can. The <a href="trait.RateLimitingMiddleware.html" title="trait governor::middleware::RateLimitingMiddleware"><code>RateLimitingMiddleware</code></a>
+trait in this module allows you to customize:</p>
+<ul>
+<li>Any additional code that gets run when a rate-limiting decision is made.</li>
+<li>What value is returned in the positive or negative case.</li>
+</ul>
+<p>Writing middleware does <strong>not</strong> let you override rate-limiting
+decisions: They remain either positive (returning <code>Ok</code>) or negative
+(returning <code>Err</code>). However, you can override the values returned
+inside the Result for either decision.</p>
+<p>This crate ships two middlewares (named after their behavior in the
+positive outcome):</p>
+<ul>
+<li>
+<p>The cheapest still-useful one, <a href="struct.NoOpMiddleware.html" title="struct governor::middleware::NoOpMiddleware"><code>NoOpMiddleware</code></a>, named after its
+behavior in the positive case. In the positive case it returns
+<code>Ok(())</code>; in the negative case, <code>Err(</code><a href="../struct.NotUntil.html" title="struct governor::NotUntil"><code>NotUntil</code></a><code>)</code>.</p>
+</li>
+<li>
+<p>A more informative middleware, <a href="struct.StateInformationMiddleware.html" title="struct governor::middleware::StateInformationMiddleware"><code>StateInformationMiddleware</code></a>, which
+returns <code>Ok(</code><a href="struct.StateSnapshot.html" title="struct governor::middleware::StateSnapshot"><code>StateSnapshot</code></a><code>)</code>, or
+<code>Err(</code><a href="../struct.NotUntil.html" title="struct governor::NotUntil"><code>NotUntil</code></a><code>)</code>.</p>
+</li>
+</ul>
+<h3 id="using-a-custom-middleware"><a class="doc-anchor" href="#using-a-custom-middleware">§</a>Using a custom middleware</h3>
+<p>Middlewares are attached to the
+<a href="../struct.RateLimiter.html" title="struct governor::RateLimiter"><code>RateLimiter</code></a> at construction time using
+<a href="../struct.RateLimiter.html#method.with_middleware" title="method governor::RateLimiter::with_middleware"><code>RateLimiter::with_middleware</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>governor::{RateLimiter, Quota, middleware::StateInformationMiddleware};
+<span class="kw">let </span>lim = RateLimiter::direct(Quota::per_hour(<span class="macro">nonzero!</span>(<span class="number">1_u32</span>)))
+    .with_middleware::&lt;StateInformationMiddleware&gt;();
+
+<span class="comment">// A positive outcome with additional information:
+</span><span class="macro">assert!</span>(
+    lim.check()
+        <span class="comment">// Here we receive an Ok(StateSnapshot):
+        </span>.map(|outcome| <span class="macro">assert_eq!</span>(outcome.remaining_burst_capacity(), <span class="number">0</span>))
+        .is_ok()
+);
+
+<span class="comment">// The negative case:
+</span><span class="macro">assert!</span>(
+    lim.check()
+        <span class="comment">// Here we receive Err(NotUntil):
+        </span>.map_err(|outcome| <span class="macro">assert_eq!</span>(outcome.quota().burst_size().get(), <span class="number">1</span>))
+        .is_err()
+);</code></pre></div>
+<p>You can define your own middleware by <code>impl</code>ing <a href="trait.RateLimitingMiddleware.html" title="trait governor::middleware::RateLimitingMiddleware"><code>RateLimitingMiddleware</code></a>.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.NoOpMiddleware.html" title="struct governor::middleware::NoOpMiddleware">NoOp<wbr>Middleware</a></div><div class="desc docblock-short">A middleware that does nothing and returns <code>()</code> in the positive outcome.</div></li><li><div class="item-name"><a class="struct" href="struct.StateInformationMiddleware.html" title="struct governor::middleware::StateInformationMiddleware">State<wbr>Information<wbr>Middleware</a></div><div class="desc docblock-short">Middleware that returns the state of the rate limiter if a
+positive decision is reached.</div></li><li><div class="item-name"><a class="struct" href="struct.StateSnapshot.html" title="struct governor::middleware::StateSnapshot">State<wbr>Snapshot</a></div><div class="desc docblock-short">Information about the rate-limiting state used to reach a decision.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.RateLimitingMiddleware.html" title="trait governor::middleware::RateLimitingMiddleware">Rate<wbr>Limiting<wbr>Middleware</a></div><div class="desc docblock-short">Defines the behavior and return values of rate limiting decisions.</div></li></ul></section></div></main></body></html>
