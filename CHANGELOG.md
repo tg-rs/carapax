@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.25.0 (01.11.2024)
+
+- Updated dependencies:
+  - governor 0.7
+  - seance 0.15
+  - tgbot 0.31
+  - tokio 1.41
+
 ## 0.24.0 (07.09.2024)
 
 - Updated dependencies:
