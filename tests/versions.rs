@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use std::fs::read_to_string;
 
 use regex::Regex;
