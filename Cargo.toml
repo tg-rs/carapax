@@ -1,7 +1,7 @@
 [package]
 name = "carapax"
 description = "A Telegram Bot Framework"
-version = "0.26.0"
+version = "0.27.0"
 authors = ["Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2021"
 readme = "./README.md"
@@ -29,10 +29,10 @@ futures-util = "0.3"
 governor = { version = "0.7", optional = true }
 log = "0.4"
 nonzero_ext = { version = "0.3", optional = true }
-seance = { version = "0.15", optional = true }
+seance = { version = "0.16", optional = true }
 serde = { version = "1.0", optional = true }
-tgbot = "0.32"
-tokio = "1.41"
+tgbot = "0.33"
+tokio = "1.42"
 
 [dev-dependencies]
 dotenvy = "0.15"
@@ -40,7 +40,7 @@ env_logger = "0.11"
 regex = "1.11"
 serde_json = "1.0"
 tempfile = "3.14"
-tokio = { version = "1.41", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.42", features = ["macros", "rt-multi-thread"] }
 toml = "0.8"
 
 [lints.rust]
