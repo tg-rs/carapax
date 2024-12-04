@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DialogueError","DialogueResult"],"struct":["DialogueDecorator","DialogueInput","DialoguePredicate"],"trait":["DialogueExt","DialogueState"]};

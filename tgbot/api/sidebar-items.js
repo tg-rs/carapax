@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ClientError","DownloadFileError","ExecuteError","FormError","PayloadError"],"struct":["Client"],"trait":["Method"]};
