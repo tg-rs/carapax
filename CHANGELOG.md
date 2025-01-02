@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.28.0 (02.01.2024)
+
+- Updated dependencies:
+  - governor 0.8
+  - tgbot 0.34
+
 ## 0.27.0 (04.12.2024)
 
 - Updated dependencies:
