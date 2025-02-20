@@ -1,6 +1,6 @@
 use std::{error::Error, marker::PhantomData};
 
-use seance::{backend::SessionBackend, Session};
+use seance::{Session, backend::SessionBackend};
 
 use crate::{
     core::{Handler, HandlerError, HandlerInput, HandlerResult, TryFromInput},

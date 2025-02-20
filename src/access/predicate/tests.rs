@@ -1,6 +1,6 @@
 use std::{error::Error, fmt};
 
-use futures_util::future::{err, ok, Ready};
+use futures_util::future::{Ready, err, ok};
 
 use crate::{
     core::HandlerInput,

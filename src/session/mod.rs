@@ -1,7 +1,7 @@
 use std::{convert::Infallible, error::Error, fmt};
 
 use seance::backend::SessionBackend;
-pub use seance::{backend, Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager};
+pub use seance::{Session, SessionCollector, SessionCollectorHandle, SessionError, SessionManager, backend};
 
 use crate::{
     core::{HandlerInput, TryFromInput},

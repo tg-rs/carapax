@@ -1,4 +1,4 @@
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 const SESSION_KEY_PREFIX: &str = "__carapax_dialogue";
 

@@ -15,9 +15,9 @@
 //! | `Result<T, E>::Ok`  | `PredicateResult::from::<T>()`         |
 //! | `Result<T, E>::Err` | [`carapax::PredicateResult::Err`]      |
 use carapax::{
+    Chain, PredicateExt, Ref,
     api::Client,
     types::{ChatPeerId, SendMessage, Text},
-    Chain, PredicateExt, Ref,
 };
 
 use crate::error::AppError;

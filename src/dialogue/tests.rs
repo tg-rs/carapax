@@ -6,7 +6,7 @@ use tempfile::tempdir;
 
 use crate::{
     core::{Chain, Context, Handler, HandlerInput, PredicateOutput, TryFromInput},
-    session::{backend::fs::FilesystemBackend, SessionManager},
+    session::{SessionManager, backend::fs::FilesystemBackend},
     types::Text,
 };
 

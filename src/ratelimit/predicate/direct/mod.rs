@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
+pub use governor::{Jitter, Quota};
 use governor::{
+    RateLimiter,
     clock::DefaultClock,
     middleware::NoOpMiddleware,
     state::{InMemoryState, NotKeyed},
-    RateLimiter,
 };
-pub use governor::{Jitter, Quota};
 pub use nonzero_ext::nonzero;
 
 use crate::{

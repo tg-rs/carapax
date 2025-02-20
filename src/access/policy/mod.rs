@@ -1,6 +1,6 @@
 use std::{convert::Infallible, error::Error, future::Future, sync::Arc};
 
-use futures_util::future::{ok, Ready};
+use futures_util::future::{Ready, ok};
 
 use crate::{access::rule::AccessRule, core::HandlerInput};
 

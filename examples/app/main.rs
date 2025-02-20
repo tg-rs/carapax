@@ -4,10 +4,10 @@
 use std::{env, time::Duration};
 
 use dotenvy::dotenv;
-use seance::{backend::fs::FilesystemBackend, SessionCollector, SessionManager};
+use seance::{SessionCollector, SessionManager, backend::fs::FilesystemBackend};
 use tempfile::tempdir;
 
-use carapax::{api::Client, handler::LongPoll, App, Chain, Context, ErrorExt, HandlerError};
+use carapax::{App, Chain, Context, ErrorExt, HandlerError, api::Client, handler::LongPoll};
 
 mod access;
 mod command;

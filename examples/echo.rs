@@ -50,10 +50,10 @@ use std::env;
 use dotenvy::dotenv;
 
 use carapax::{
+    App, Context, Ref,
     api::{Client, ExecuteError},
     handler::{LongPoll, WebhookServer},
     types::{ChatPeerId, SendMessage, Text},
-    App, Context, Ref,
 };
 
 const DEBUG: bool = true;

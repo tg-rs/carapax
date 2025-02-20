@@ -25,11 +25,11 @@
 use serde::{Deserialize, Serialize};
 
 use carapax::{
+    Chain, CommandPredicate, Ref,
     api::Client,
     dialogue::{DialogueExt, DialogueInput, DialogueResult, DialogueState},
     session::backend::fs::FilesystemBackend,
     types::{ChatPeerId, SendMessage, Text},
-    Chain, CommandPredicate, Ref,
 };
 
 use crate::error::AppError;

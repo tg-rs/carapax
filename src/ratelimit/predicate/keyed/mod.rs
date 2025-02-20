@@ -1,7 +1,7 @@
 use std::{collections::HashSet, sync::Arc};
 
-use governor::{clock::DefaultClock, state::keyed::DefaultKeyedStateStore, RateLimiter};
 pub use governor::{Jitter, Quota};
+use governor::{RateLimiter, clock::DefaultClock, state::keyed::DefaultKeyedStateStore};
 #[allow(unused_imports)]
 pub use nonzero_ext::nonzero;
 

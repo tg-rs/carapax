@@ -4,9 +4,9 @@
 //! it ensures that the handler is executed only when an incoming update
 //! contains a message with the `/hello` command.
 use carapax::{
+    Chain, CommandExt, Ref,
     api::Client,
     types::{ChatPeerId, SendMessage, User},
-    Chain, CommandExt, Ref,
 };
 
 use crate::error::AppError;

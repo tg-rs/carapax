@@ -54,11 +54,7 @@ async fn has_access(user: User) -> PredicateResult {
 async fn process_user(user: User, condition: Ref<Condition>) -> Result<(), ProcessError> {
     condition.set(true).await;
     log::info!("Processing user: {:?}", user);
-    if user.id == 3 {
-        Err(ProcessError)
-    } else {
-        Ok(())
-    }
+    if user.id == 3 { Err(ProcessError) } else { Ok(()) }
 }
 
 #[derive(Clone)]

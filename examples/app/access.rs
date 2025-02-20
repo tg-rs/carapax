@@ -10,9 +10,9 @@
 //!
 //! Note that you need to enable the `access` feature in your `Cargo.toml`.
 use carapax::{
+    Chain,
     access::{AccessExt, AccessRule, InMemoryAccessPolicy},
     types::Update,
-    Chain,
 };
 
 pub fn setup(chain: Chain, username: &str) -> Chain {

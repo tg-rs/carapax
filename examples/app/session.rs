@@ -23,10 +23,10 @@
 //! Note that you need to enable either the `session-fs` or `session-redis` feature in `Cargo.toml`.
 //! Alternatively, use the `session` feature if you have your own backend.
 use carapax::{
-    api::Client,
-    session::{backend::fs::FilesystemBackend, Session},
-    types::{ChatPeerId, Command, SendMessage},
     Chain, CommandExt, Ref,
+    api::Client,
+    session::{Session, backend::fs::FilesystemBackend},
+    types::{ChatPeerId, Command, SendMessage},
 };
 
 use crate::error::AppError;

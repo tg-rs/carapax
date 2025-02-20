@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use seance::{backend::SessionBackend, Session};
+use seance::{Session, backend::SessionBackend};
 
 use crate::{
     core::{HandlerInput, TryFromInput},

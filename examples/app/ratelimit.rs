@@ -17,10 +17,10 @@
 use std::time::Duration;
 
 use carapax::{
-    ratelimit::{
-        nonzero, DirectRateLimitPredicate, Jitter, KeyChat, KeyChatUser, KeyUser, KeyedRateLimitPredicate, Quota,
-    },
     Chain, PredicateExt,
+    ratelimit::{
+        DirectRateLimitPredicate, Jitter, KeyChat, KeyChatUser, KeyUser, KeyedRateLimitPredicate, Quota, nonzero,
+    },
 };
 
 pub fn setup(chain: Chain, strategy: &str) -> Chain {

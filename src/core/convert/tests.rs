@@ -470,8 +470,10 @@ async fn tuple() {
     };
     assert!(HandlerInput::try_from_input(input.clone()).await.unwrap().is_some());
     assert!(Update::try_from_input(input.clone()).await.unwrap().is_some());
-    assert!(<(Ref<usize>, Update, User, Message)>::try_from_input(input.clone())
-        .await
-        .unwrap()
-        .is_some());
+    assert!(
+        <(Ref<usize>, Update, User, Message)>::try_from_input(input.clone())
+            .await
+            .unwrap()
+            .is_some()
+    );
 }
