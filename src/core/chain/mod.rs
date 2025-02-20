@@ -68,7 +68,7 @@ impl Chain {
         self
     }
 
-    fn handle_input(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> {
+    fn handle_input(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> + use<> {
         let handlers = self.handlers.clone();
         let strategy = self.strategy;
         async move {

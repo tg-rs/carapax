@@ -94,7 +94,7 @@ impl Resolver for UserId {
     fn accepts(&self, update: &Update) -> bool {
         match self {
             UserId::Id(user_id) => update.get_user().map(|u| u.id == *user_id),
-            UserId::Username(ref username) => update
+            UserId::Username(username) => update
                 .get_user()
                 .and_then(|u| u.username.as_ref().map(|x| x == username)),
         }
@@ -106,7 +106,7 @@ impl Resolver for ChatId {
     fn accepts(&self, update: &Update) -> bool {
         match self {
             ChatId::Id(chat_id) => update.get_chat_id().map(|x| x == *chat_id),
-            ChatId::Username(ref chat_username) => update.get_chat_username().map(|x| x == chat_username),
+            ChatId::Username(chat_username) => update.get_chat_username().map(|x| x == chat_username),
         }
         .unwrap_or(false)
     }

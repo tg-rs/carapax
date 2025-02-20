@@ -49,7 +49,7 @@ where
         }
     }
 
-    fn handle_update(&self, update: Update) -> impl Future<Output = ()> {
+    fn handle_update(&self, update: Update) -> impl Future<Output = ()> + use<H, HI, HO> {
         let input = HandlerInput {
             update,
             context: self.context.clone(),

@@ -51,11 +51,11 @@ where
 
     async fn handle(&self, (predicate_input, handler_input): (PI, HI)) -> Self::Output {
         let predicate_result = self.predicate.handle(predicate_input).await.into();
-        if let PredicateResult::True = predicate_result {
+        match predicate_result { PredicateResult::True => {
             self.handler.handle(handler_input).await.into_result().into()
-        } else {
+        } _ => {
             predicate_result.into()
-        }
+        }}
     }
 }
 

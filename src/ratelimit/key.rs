@@ -72,11 +72,11 @@ impl TryFromInput for KeyChatUser {
     type Error = Infallible;
 
     async fn try_from_input(input: HandlerInput) -> Result<Option<Self>, Self::Error> {
-        Ok(if let Some(chat_id) = input.update.get_chat_id() {
+        Ok(match input.update.get_chat_id() { Some(chat_id) => {
             input.update.get_user().map(|user| Self(chat_id, user.id))
-        } else {
+        } _ => {
             None
-        })
+        }})
     }
 }
 
