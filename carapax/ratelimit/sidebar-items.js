@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["nonzero"],"struct":["DirectRateLimitPredicate","Jitter","KeyChat","KeyChatUser","KeyUser","KeyedRateLimitPredicate","MethodDiscard","MethodWait","NoJitter","Quota"],"trait":["Key"]};

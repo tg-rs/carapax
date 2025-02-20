@@ -1,0 +1,1 @@
+searchState.loadedDescShard("derive_more", 0, "What <code>#[derive(From)]</code> generates\nModule containing derive definitions only, without their …\nModule containing derive definitions with their …\nWhat <code>#[derive(From)]</code> generates\nWhat <code>#[derive(From)]</code> generates")
