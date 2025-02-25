@@ -1,4 +1,4 @@
-use std::{any::type_name, error::Error, future::Future, marker::PhantomData, sync::Arc};
+use std::{any::type_name, error::Error, marker::PhantomData, sync::Arc};
 
 use futures_util::future::BoxFuture;
 
@@ -68,41 +68,40 @@ impl Chain {
         self
     }
 
-    fn handle_input(&self, input: HandlerInput) -> impl Future<Output = HandlerResult> + use<> {
+    async fn handle_input(&self, input: HandlerInput) -> HandlerResult {
         let handlers = self.handlers.clone();
         let strategy = self.strategy;
-        async move {
-            for handler in handlers.iter() {
-                let type_name = handler.get_type_name();
-                log::debug!("Running '{}' handler...", type_name);
-                let result = handler.handle(input.clone()).await;
-                match result {
-                    ChainResult::Done(result) => match strategy {
-                        ChainStrategy::All => match result {
-                            Ok(()) => {
-                                log::debug!("[CONTINUE] Handler '{}' succeeded", type_name);
-                            }
-                            Err(err) => {
-                                log::debug!("[STOP] Handler '{}' returned an error: {}", type_name, err);
-                                return Err(err);
-                            }
-                        },
-                        ChainStrategy::FirstFound => {
-                            log::debug!("[STOP] First found handler: '{}'", type_name);
-                            return result;
+
+        for handler in handlers.iter() {
+            let type_name = handler.get_type_name();
+            log::debug!("Running '{}' handler...", type_name);
+            let result = handler.handle(input.clone()).await;
+            match result {
+                ChainResult::Done(result) => match strategy {
+                    ChainStrategy::All => match result {
+                        Ok(()) => {
+                            log::debug!("[CONTINUE] Handler '{}' succeeded", type_name);
+                        }
+                        Err(err) => {
+                            log::debug!("[STOP] Handler '{}' returned an error: {}", type_name, err);
+                            return Err(err);
                         }
                     },
-                    ChainResult::Err(err) => {
-                        log::debug!("[STOP] Could not convert input for '{}' handler: {}", type_name, err);
-                        return Err(err);
+                    ChainStrategy::FirstFound => {
+                        log::debug!("[STOP] First found handler: '{}'", type_name);
+                        return result;
                     }
-                    ChainResult::Skipped => {
-                        log::debug!("[CONTINUE] Input not found for '{}' handler", type_name);
-                    }
+                },
+                ChainResult::Err(err) => {
+                    log::debug!("[STOP] Could not convert input for '{}' handler: {}", type_name, err);
+                    return Err(err);
+                }
+                ChainResult::Skipped => {
+                    log::debug!("[CONTINUE] Input not found for '{}' handler", type_name);
                 }
             }
-            Ok(())
         }
+        Ok(())
     }
 }
 

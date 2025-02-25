@@ -1,4 +1,4 @@
-use std::{future::Future, marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc};
 
 use crate::{
     core::{
@@ -49,25 +49,23 @@ where
         }
     }
 
-    fn handle_update(&self, update: Update) -> impl Future<Output = ()> + use<H, HI, HO> {
+    async fn handle_update(&self, update: Update) -> () {
         let input = HandlerInput {
             update,
             context: self.context.clone(),
         };
         let handler = self.handler.clone();
-        async move {
-            let input = match HI::try_from_input(input).await {
-                Ok(Some(input)) => input,
-                Ok(None) => return,
-                Err(err) => {
-                    log::error!("Failed to convert input: {}", err);
-                    return;
-                }
-            };
-            let future = handler.handle(input);
-            if let Err(err) = future.await.into_result() {
-                log::error!("An error has occurred: {}", err);
+        let input = match HI::try_from_input(input).await {
+            Ok(Some(input)) => input,
+            Ok(None) => return,
+            Err(err) => {
+                log::error!("Failed to convert input: {}", err);
+                return;
             }
+        };
+        let future = handler.handle(input);
+        if let Err(err) = future.await.into_result() {
+            log::error!("An error has occurred: {}", err);
         }
     }
 }
