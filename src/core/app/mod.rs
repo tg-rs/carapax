@@ -49,7 +49,7 @@ where
         }
     }
 
-    async fn handle_update(&self, update: Update) -> () {
+    async fn handle_update(&self, update: Update) {
         let input = HandlerInput {
             update,
             context: self.context.clone(),
