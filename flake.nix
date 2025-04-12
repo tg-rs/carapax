@@ -11,9 +11,22 @@
       let
         overlays = [ inputs.rust-overlay.overlays.default ];
         pkgs = import inputs.nixpkgs { inherit system overlays; };
+        rust-dev = (
+          pkgs.rust-bin.selectLatestNightlyWith (
+            toolchain:
+            toolchain.minimal.override {
+              extensions = [
+                "rust-analyzer"
+                "rust-src"
+                "rustfmt"
+              ];
+            }
+          )
+        );
       in
       {
         devShells.default = pkgs.mkShell {
+          RUST_SRC_PATH = "${rust-dev}/lib/rustlib/src/rust/library";
           buildInputs = [
             (pkgs.lib.hiPrio (
               pkgs.rust-bin.stable.latest.minimal.override {
@@ -23,15 +36,7 @@
                 ];
               }
             ))
-            (pkgs.rust-bin.selectLatestNightlyWith (
-              toolchain:
-              toolchain.minimal.override {
-                extensions = [
-                  "rust-analyzer"
-                  "rustfmt"
-                ];
-              }
-            ))
+            rust-dev
           ];
           shellHook = ''
             export CARGO_HOME="$PWD/.cargo"
