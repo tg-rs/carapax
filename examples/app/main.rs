@@ -64,8 +64,7 @@ fn get_env(s: &str) -> String {
 fn create_session_backend() -> FilesystemBackend {
     let tmpdir = tempdir().expect("Failed to create temp directory");
     log::info!("Session directory: {}", tmpdir.path().display());
-    let backend = FilesystemBackend::new(tmpdir.path());
-    backend
+    FilesystemBackend::new(tmpdir.path())
 }
 
 /// Spawns a garbage collector for expired sessions
