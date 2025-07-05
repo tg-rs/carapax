@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.31.0 (05.07.2025)
+
+- Updated dependencies:
+  - seance 0.19
+  - tgbot 0.39
+  - Set serde version to 1
+  - Set tokio version to 1
+
 ## 0.30.0 (12.04.2025)
 
 - Updated dependencies:
