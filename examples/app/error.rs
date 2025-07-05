@@ -11,8 +11,8 @@ pub enum AppError {
 impl fmt::Display for AppError {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AppError::Execute(err) => write!(out, "Execute error: {}", err),
-            AppError::Session(err) => write!(out, "Session error: {}", err),
+            AppError::Execute(err) => write!(out, "Execute error: {err}"),
+            AppError::Session(err) => write!(out, "Session error: {err}"),
         }
     }
 }

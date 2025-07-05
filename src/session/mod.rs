@@ -40,7 +40,7 @@ impl SessionId {
     /// * `chat_id` - ID of a chat.
     /// * `user_id` - ID of a user.
     pub fn new(chat_id: ChatPeerId, user_id: UserPeerId) -> Self {
-        Self(format!("{}-{}", chat_id, user_id))
+        Self(format!("{chat_id}-{user_id}"))
     }
 }
 

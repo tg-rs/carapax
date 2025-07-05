@@ -26,8 +26,8 @@ impl fmt::Display for DialogueError {
         use self::DialogueError::*;
         match self {
             ConvertHandlerInput => write!(out, "Could not obtain input for dialogue handler"),
-            CreateSession(err) => write!(out, "{}", err),
-            LoadState(err) => write!(out, "Failed to load dialogue state: {}", err),
+            CreateSession(err) => write!(out, "{err}"),
+            LoadState(err) => write!(out, "Failed to load dialogue state: {err}"),
         }
     }
 }

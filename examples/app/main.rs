@@ -58,7 +58,7 @@ async fn main() {
 }
 
 fn get_env(s: &str) -> String {
-    env::var(s).unwrap_or_else(|_| panic!("{} is not set", s))
+    env::var(s).unwrap_or_else(|_| panic!("{s} is not set"))
 }
 
 fn create_session_backend() -> FilesystemBackend {
@@ -89,6 +89,6 @@ fn spawn_session_collector(backend: FilesystemBackend) {
 }
 
 async fn error_handler(err: HandlerError) -> HandlerError {
-    log::error!("Got an error in custom error handler: {}", err);
+    log::error!("Got an error in custom error handler: {err}");
     err
 }

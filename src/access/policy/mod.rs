@@ -54,7 +54,7 @@ impl AccessPolicy for InMemoryAccessPolicy {
         for rule in rules.iter() {
             if rule.accepts(&input.update) {
                 result = rule.is_granted();
-                log::info!("Found rule: {:?} (is_granted={:?})", rule, result);
+                log::info!("Found rule: {rule:?} (is_granted={result:?})");
                 break;
             }
         }

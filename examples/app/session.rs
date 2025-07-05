@@ -71,7 +71,7 @@ async fn set(
         return Ok(());
     }
     let val = &args[0];
-    log::info!("/s_set {}", val);
+    log::info!("/s_set {val}");
     session.set(KEY, &val).await?;
     client.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())
@@ -93,14 +93,14 @@ async fn expire(
                 client
                     .execute(SendMessage::new(
                         chat_id,
-                        format!("Number of seconds is invalid: {}", err),
+                        format!("Number of seconds is invalid: {err}"),
                     ))
                     .await?;
                 return Ok(());
             }
         }
     };
-    log::info!("/s_expire {}", seconds);
+    log::info!("/s_expire {seconds}");
     session.expire(KEY, seconds).await?;
     client.execute(SendMessage::new(chat_id, "OK")).await?;
     Ok(())

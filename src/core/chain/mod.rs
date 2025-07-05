@@ -74,30 +74,30 @@ impl Chain {
 
         for handler in handlers.iter() {
             let type_name = handler.get_type_name();
-            log::debug!("Running '{}' handler...", type_name);
+            log::debug!("Running '{type_name}' handler...");
             let result = handler.handle(input.clone()).await;
             match result {
                 ChainResult::Done(result) => match strategy {
                     ChainStrategy::All => match result {
                         Ok(()) => {
-                            log::debug!("[CONTINUE] Handler '{}' succeeded", type_name);
+                            log::debug!("[CONTINUE] Handler '{type_name}' succeeded");
                         }
                         Err(err) => {
-                            log::debug!("[STOP] Handler '{}' returned an error: {}", type_name, err);
+                            log::debug!("[STOP] Handler '{type_name}' returned an error: {err}");
                             return Err(err);
                         }
                     },
                     ChainStrategy::FirstFound => {
-                        log::debug!("[STOP] First found handler: '{}'", type_name);
+                        log::debug!("[STOP] First found handler: '{type_name}'");
                         return result;
                     }
                 },
                 ChainResult::Err(err) => {
-                    log::debug!("[STOP] Could not convert input for '{}' handler: {}", type_name, err);
+                    log::debug!("[STOP] Could not convert input for '{type_name}' handler: {err}");
                     return Err(err);
                 }
                 ChainResult::Skipped => {
-                    log::debug!("[CONTINUE] Input not found for '{}' handler", type_name);
+                    log::debug!("[CONTINUE] Input not found for '{type_name}' handler");
                 }
             }
         }

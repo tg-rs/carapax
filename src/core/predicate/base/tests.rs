@@ -40,7 +40,7 @@ async fn decorator() {
 }
 
 fn create_user(id: Integer) -> User {
-    User::new(id, format!("test #{}", id), false)
+    User::new(id, format!("test #{id}"), false)
 }
 
 async fn has_access(user: User) -> PredicateResult {
@@ -53,7 +53,7 @@ async fn has_access(user: User) -> PredicateResult {
 
 async fn process_user(user: User, condition: Ref<Condition>) -> Result<(), ProcessError> {
     condition.set(true).await;
-    log::info!("Processing user: {:?}", user);
+    log::info!("Processing user: {user:?}");
     if user.id == 3 { Err(ProcessError) } else { Ok(()) }
 }
 

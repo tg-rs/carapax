@@ -59,13 +59,13 @@ where
             Ok(Some(input)) => input,
             Ok(None) => return,
             Err(err) => {
-                log::error!("Failed to convert input: {}", err);
+                log::error!("Failed to convert input: {err}");
                 return;
             }
         };
         let future = handler.handle(input);
         if let Err(err) = future.await.into_result() {
-            log::error!("An error has occurred: {}", err);
+            log::error!("An error has occurred: {err}");
         }
     }
 }

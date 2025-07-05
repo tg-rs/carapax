@@ -30,8 +30,7 @@ fn versions() {
                     let line_version = &captures[1];
                     assert_eq!(
                         line_version, version,
-                        "Expects version {} at {}:{} '{}', found {}",
-                        version, filename, line_number, line_data, line_version
+                        "Expects version {version} at {filename}:{line_number} '{line_data}', found {line_version}"
                     );
                 }
             }

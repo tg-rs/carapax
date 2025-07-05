@@ -21,5 +21,5 @@ pub fn setup(chain: Chain, username: &str) -> Chain {
 }
 
 async fn log_protected(update: Update) {
-    log::info!("Got a new update in the protected handler: {:?}", update);
+    log::info!("Got a new update in the protected handler: {update:?}");
 }

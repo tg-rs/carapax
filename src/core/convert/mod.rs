@@ -290,8 +290,8 @@ impl fmt::Display for ConvertInputError {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
         use self::ConvertInputError::*;
         match self {
-            Context(type_id) => write!(out, "Object of type {:?} not found in context", type_id),
-            Tuple(err) => write!(out, "Unable to convert HandlerInput into tuple: {}", err),
+            Context(type_id) => write!(out, "Object of type {type_id:?} not found in context"),
+            Tuple(err) => write!(out, "Unable to convert HandlerInput into tuple: {err}"),
         }
     }
 }

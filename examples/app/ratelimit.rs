@@ -40,6 +40,6 @@ pub fn setup(chain: Chain, strategy: &str) -> Chain {
         "keyed_wait_with_jitter" => result.with(chain.with_predicate(
             <KeyedRateLimitPredicate<KeyChatUser, _, _>>::wait_with_jitter(quota, jitter),
         )),
-        key => panic!("Unknown ratelimit strategy: {}", key),
+        key => panic!("Unknown ratelimit strategy: {key}"),
     }
 }

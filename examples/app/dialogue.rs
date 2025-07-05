@@ -84,7 +84,7 @@ async fn example_dialogue(
             client
                 .execute(SendMessage::new(
                     chat_id,
-                    format!("Your name is: {} {}", first_name, last_name),
+                    format!("Your name is: {first_name} {last_name}"),
                 ))
                 .await?;
             return Ok(DialogueResult::Exit);
