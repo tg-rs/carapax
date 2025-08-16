@@ -12,12 +12,12 @@ The name comes from [Carapace](https://en.wikipedia.org/wiki/Carapace) (carapax 
 
 ```toml
 [dependencies]
-carapax = "0.31.0"
+carapax = "0.32.0"
 ```
 
 ## Examples
 
-See examples in the [examples](https://github.com/tg-rs/carapax/tree/0.31.0/examples) directory.
+See examples in the [examples](https://github.com/tg-rs/carapax/tree/0.32.0/examples) directory.
 
 To run examples you need to create a `.env` file:
 
@@ -36,8 +36,8 @@ This project adheres to [ZeroVer](https://0ver.org/).
 - [Latest Documentation](https://docs.rs/carapax)
 - [Master Documentation](https://tg-rs.github.io/carapax/carapax/)
 - [Telegram Chat](https://t.me/tgrsusers)
-- [Changelog](https://github.com/tg-rs/carapax/tree/0.31.0/CHANGELOG.md)
-- [Code of Conduct](https://github.com/tg-rs/carapax/tree/0.31.0/CODE_OF_CONDUCT.md).
+- [Changelog](https://github.com/tg-rs/carapax/tree/0.32.0/CHANGELOG.md)
+- [Code of Conduct](https://github.com/tg-rs/carapax/tree/0.32.0/CODE_OF_CONDUCT.md).
 
 ## LICENSE
 

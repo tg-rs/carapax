@@ -1,7 +1,7 @@
 [package]
 name = "carapax"
 description = "A Telegram Bot Framework"
-version = "0.31.0"
+version = "0.32.0"
 authors = ["Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2024"
 readme = "./README.md"
