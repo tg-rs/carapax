@@ -6,7 +6,7 @@ use toml::Value;
 
 fn get_crate_version() -> String {
     let manifest = read_to_string("./Cargo.toml").expect("Failed to get Cargo.toml data");
-    let value: Value = manifest.parse().expect("Failed to parse Cargo.toml");
+    let value: Value = toml::from_str(&manifest).expect("Failed to parse Cargo.toml");
     let version = value["package"]["version"]
         .as_str()
         .expect("Can not get version from Cargo.toml");

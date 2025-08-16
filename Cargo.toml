@@ -31,7 +31,7 @@ log = "0.4"
 nonzero_ext = { version = "0.3", optional = true }
 seance = { version = "0.19", optional = true }
 serde = { version = "1", optional = true }
-tgbot = "0.39"
+tgbot = "0.40"
 tokio = "1"
 
 [dev-dependencies]
@@ -41,7 +41,7 @@ regex = "1"
 serde_json = "1"
 tempfile = "3"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-toml = "0.8"
+toml = "0.9"
 
 [lints.rust]
 missing_docs = "warn"
