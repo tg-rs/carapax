@@ -40,17 +40,14 @@ pub fn setup(chain: Chain) -> Chain {
 
 type ExampleDialogueInput = DialogueInput<ExampleDialogueState, FilesystemBackend>;
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 enum ExampleDialogueState {
+    #[default]
     Start,
     FirstName,
-    LastName { first_name: String },
-}
-
-impl Default for ExampleDialogueState {
-    fn default() -> Self {
-        Self::Start
-    }
+    LastName {
+        first_name: String,
+    },
 }
 
 impl DialogueState for ExampleDialogueState {

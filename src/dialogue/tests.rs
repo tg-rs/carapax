@@ -12,16 +12,11 @@ use crate::{
 
 use super::*;
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Default, Deserialize, Serialize)]
 enum State {
+    #[default]
     Start,
     Step,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self::Start
-    }
 }
 
 impl DialogueState for State {
