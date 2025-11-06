@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Principal"],"struct":["AccessPredicate","AccessRule","InMemoryAccessPolicy"],"trait":["AccessExt","AccessPolicy"]};
