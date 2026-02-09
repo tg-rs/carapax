@@ -1,6 +1,6 @@
 [package]
 name = "carapax"
-version = "0.33.0"
+version = "0.34.0"
 edition = "2024"
 description = "A Telegram Bot Framework"
 documentation = "https://docs.rs/carapax"
@@ -23,7 +23,7 @@ log = "0.4"
 nonzero_ext = { version = "0.3", optional = true }
 seance = { version = "0.20", optional = true }
 serde = { version = "1", optional = true }
-tgbot = "0.41"
+tgbot = "0.42"
 tokio = "1"
 
 [dev-dependencies]
