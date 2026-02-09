@@ -1,28 +1,20 @@
 [package]
 name = "carapax"
-description = "A Telegram Bot Framework"
 version = "0.33.0"
-authors = ["Ross Nomann <rossnomann@protonmail.com>"]
 edition = "2024"
-readme = "./README.md"
-license = "MIT"
+description = "A Telegram Bot Framework"
 documentation = "https://docs.rs/carapax"
+readme = "./README.md"
 repository = "https://github.com/tg-rs/carapax"
+license = "MIT"
 
-[features]
-# include nothing by default
-default = []
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "nightly"]
 
-# enable everything
-full = ["access", "dialogue", "ratelimit", "session-redis", "session-fs", "webhook"]
-
-access = ["dep:serde"]
-dialogue = ["session", "dep:serde"]
-ratelimit = ["dep:governor", "dep:nonzero_ext"]
-session = ["dep:seance"]
-session-fs = ["session", "seance?/fs-backend"]
-session-redis = ["session", "seance?/redis-backend"]
-webhook = ["tgbot/webhook"]
+[[example]]
+name = "app"
+required-features = ["full"]
 
 [dependencies]
 futures-util = "0.3"
@@ -43,14 +35,26 @@ tempfile = "3"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 toml = "0.9"
 
+[features]
+# include nothing by default
+default = []
+access = ["dep:serde"]
+dialogue = ["dep:serde", "session"]
+# enable everything
+full = [
+  "access",
+  "dialogue",
+  "ratelimit",
+  "session-fs",
+  "session-redis",
+  "webhook"
+]
+ratelimit = ["dep:governor", "dep:nonzero_ext"]
+session = ["dep:seance"]
+session-fs = ["seance?/fs-backend", "session"]
+session-redis = ["seance?/redis-backend", "session"]
+webhook = ["tgbot/webhook"]
+
 [lints.rust]
 missing_docs = "warn"
-unexpected_cfgs = { level = "allow", check-cfg = ['cfg(nightly)'] }
-
-[[example]]
-name = "app"
-required-features = ["full"]
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "nightly"]
+unexpected_cfgs = { level = "allow", check-cfg = ["cfg(nightly)"] }
