@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["absolute_iri","authority","fragment","host","iri","iri_reference","path","path_segment","port","query","relative_ref","scheme","userinfo"],"struct":["Error"]};
