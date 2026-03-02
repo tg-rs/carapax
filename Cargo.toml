@@ -23,7 +23,7 @@ log = "0.4"
 nonzero_ext = { version = "0.3", optional = true }
 seance = { version = "0.20", optional = true }
 serde = { version = "1", optional = true }
-tgbot = "0.42"
+tgbot = "0.43"
 tokio = "1"
 
 [dev-dependencies]
