@@ -291,13 +291,14 @@ async fn poll() {
                 "id": "id",
                 "question": "test poll",
                 "options": [
-                    {"text": "opt 1", "voter_count": 1},
-                    {"text": "opt 2", "voter_count": 2}
+                    {"text": "opt 1", "voter_count": 1, "persistent_id": "test-1"},
+                    {"text": "opt 2", "voter_count": 2, "persistent_id": "test-2"}
                 ],
                 "is_closed": false,
                 "total_voter_count": 3,
                 "is_anonymous": true,
                 "type": "regular",
+                "allows_revoting": false,
                 "allows_multiple_answers": false
             }
         }
@@ -322,6 +323,7 @@ async fn poll_answer() {
                     "is_bot": false
                 },
                 "option_ids": [0],
+                "option_persistent_ids": ["test"]
             }
         }
     ))
