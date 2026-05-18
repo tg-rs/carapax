@@ -299,7 +299,8 @@ async fn poll() {
                 "is_anonymous": true,
                 "type": "regular",
                 "allows_revoting": false,
-                "allows_multiple_answers": false
+                "allows_multiple_answers": false,
+                "members_only": false
             }
         }
     ))
