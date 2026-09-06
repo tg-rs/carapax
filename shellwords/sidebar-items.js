@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["escape","join","split"],"struct":["MismatchedQuotes"]};

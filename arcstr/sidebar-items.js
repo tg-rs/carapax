@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":[["format",1],["literal",1],["literal_substr",1]],"struct":["ArcStr","Substr"]};

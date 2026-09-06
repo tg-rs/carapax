@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":[["nonzero",1]],"mod":["literals"],"trait":["NonZero","NonZeroAble"]};

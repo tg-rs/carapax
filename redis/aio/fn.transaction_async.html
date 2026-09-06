@@ -1,0 +1,53 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Executes a Redis transaction asynchronously by automatically watching keys and running a transaction loop until it succeeds. Similar to the synchronous `transaction` function but for async execution."><title>transaction_async in redis::aio - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-203241e4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="redis" data-themes="" data-resource-suffix="" data-rustdoc-version="1.100.0-nightly (f248f4038 2026-09-05)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">transaction_async</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../redis/index.html">redis</a><span class="version">1.7.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">transaction_<wbr>async</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#notes" title="Notes">Notes</a><ul><li><a href="#warning-concurrent-transactions-on-multiplexed-connections" title="Warning: Concurrent Transactions on Multiplexed Connections">Warning: Concurrent Transactions on Multiplexed Connections</a></li><li><a href="#warning-transactions-on-cluster-connections" title="Warning: Transactions on cluster connections">Warning: Transactions on cluster connections</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In redis::<wbr>aio</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">redis</a>::<wbr><a href="index.html">aio</a></div><h1>Function <span class="fn">transaction_<wbr>async</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/redis/aio/connection.rs.html#132-162">Source</a> </span></div><pre class="rust item-decl"><code>pub async fn transaction_async&lt;C: <a class="trait" href="trait.ConnectionLike.html" title="trait redis::aio::ConnectionLike">ConnectionLike</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a>, K: <a class="trait" href="../trait.ToRedisArgs.html" title="trait redis::ToRedisArgs">ToRedisArgs</a>, T: <a class="trait" href="../trait.FromRedisValue.html" title="trait redis::FromRedisValue">FromRedisValue</a>, F: <a class="trait" href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html" title="trait core::ops::function::FnMut">FnMut</a>(C, <a class="struct" href="../struct.Pipeline.html" title="struct redis::Pipeline">Pipeline</a>) -&gt; Fut, Fut: <a class="trait" href="https://doc.rust-lang.org/nightly/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;T&gt;, <a class="struct" href="../struct.RedisError.html" title="struct redis::RedisError">RedisError</a>&gt;&gt;&gt;(
+    connection: C,
+    keys: &amp;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">[K]</a>,
+    func: F,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, <a class="struct" href="../struct.RedisError.html" title="struct redis::RedisError">RedisError</a>&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Executes a Redis transaction asynchronously by automatically watching keys and running
+a transaction loop until it succeeds. Similar to the synchronous <a href="../fn.transaction.html" title="fn redis::transaction"><code>transaction</code></a>
+function but for async execution.</p>
+<p>The provided closure may be executed multiple times if the transaction fails due to
+watched keys being modified between WATCH and EXEC. Any side effects in the closure
+should account for possible multiple executions. The closure should return <code>Ok(None)</code> to indicate a transaction failure and to
+retry (this will happen automatically if the last call in the closure is to run the transaction), or <code>Err(err)</code> to abort the
+transaction with an error. A successful transaction should return <code>Ok(Some(value))</code> with the desired result from the EXEC command.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>redis::{AsyncCommands, RedisResult, pipe};
+
+<span class="kw">async fn </span>increment(con: redis::aio::MultiplexedConnection) -&gt; RedisResult&lt;isize&gt; {
+    <span class="kw">let </span>key = <span class="string">"my_counter"</span>;
+    redis::aio::transaction_async(con, <span class="kw-2">&amp;</span>[key], |<span class="kw-2">mut </span>con, <span class="kw-2">mut </span>pipe| <span class="kw">async move </span>{
+        <span class="comment">// Read the current value first
+        </span><span class="kw">let </span>val: isize = con.get(key).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="comment">// Build the pipeline and execute it atomically (MULTI/EXEC are added automatically)
+        </span>pipe.set(key, val + <span class="number">1</span>)
+            .ignore()
+            .get(key)
+            .query_async(<span class="kw-2">&amp;mut </span>con)
+            .<span class="kw">await
+    </span>})
+    .<span class="kw">await
+</span>}</code></pre></div><h2 id="notes"><a class="doc-anchor" href="#notes">§</a>Notes</h2>
+<ul>
+<li>The closure may be executed multiple times if watched keys are modified by other
+clients between <code>WATCH</code> and <code>EXEC</code>; its side effects must be idempotent.</li>
+<li>A successful <code>EXEC</code> automatically discards all <code>WATCH</code>es, so no explicit <code>UNWATCH</code>
+is needed on the success path.</li>
+<li>The transaction is automatically abandoned if the closure returns an error; an
+explicit <code>UNWATCH</code> is sent in that case to leave the connection in a clean state.</li>
+</ul>
+<h3 id="warning-concurrent-transactions-on-multiplexed-connections"><a class="doc-anchor" href="#warning-concurrent-transactions-on-multiplexed-connections">§</a>Warning: Concurrent Transactions on Multiplexed Connections</h3>
+<p>When using a multiplexed connection (e.g. async connection types in this crate),
+cloning shares the underlying channel. Running concurrent transactions on clones of
+the same multiplexed connection could lead to unexpected behavior: the
+<code>WATCH</code>/<code>MULTI</code>/<code>EXEC</code> sequence from one transaction may interleave with commands from
+another. Ensure at most one transaction is active on a given multiplexed
+connection at a time.</p>
+<h3 id="warning-transactions-on-cluster-connections"><a class="doc-anchor" href="#warning-transactions-on-cluster-connections">§</a>Warning: Transactions on cluster connections</h3>
+<p>A cluster connection is a collection of multiple underlying connections to different
+cluster nodes. Running a transaction on a cluster connection is only safe if all the
+keys being watched and modified in the transaction are guaranteed to be on the same
+cluster node, since Redis transactions cannot span multiple nodes. It is the caller’s
+responsibility to ensure this condition is met when using <code>transaction_async</code> with a
+cluster connection.</p>
+<p>For more details on Redis transactions, see the <a href="https://redis.io/topics/transactions">Redis documentation</a></p>
+</div></details></section></div></main></body></html>
